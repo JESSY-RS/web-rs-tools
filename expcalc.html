@@ -65,7 +65,11 @@
 </head>
 <body>
     <form id="expForm">
-        <label for="currentLv">現在のｽﾃｰｼﾞLv:</label>
+        <label for="consumption">消費：</label>
+        <input type="number" id="consumption" name="consumption" value="0" min="0"><br><br>
+        <label for="possession">所持：</label>
+        <input type="number" id="possession" name="possession" value="0" min="0"><br><br>
+        <label for="currentLv"><font color="red">現在の</font>ｽﾃｰｼﾞLv:</label>
         <select id="currentLv" name="currentLv">
             <!-- 1から98までのオプションを生成 -->
             <script>
@@ -74,10 +78,6 @@
                 }
             </script>
         </select><br><br>
-        <label for="consumption">消費：</label>
-        <input type="number" id="consumption" name="consumption" value="0" min="0"><br><br>
-        <label for="possession">所持：</label>
-        <input type="number" id="possession" name="possession" value="0" min="0"><br><br>
         <input type="button" value="計算する" onclick="calculateEXP()">
     </form>
     <p id="result">EXPスタンプ必要数: <span id="requiredExp" class="black">--</span>個</p>
