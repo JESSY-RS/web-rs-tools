@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta http-equiv=Content-Type content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXPスタンプ必要数計算</title>
+
+    <style>
+        /* ページ全体の余白を設定 */
+        body {
+            margin: 20px;
+            background-color: #bbb;
+            color: #000;
+        }
+        /* 入力フィールドのスタイル */
+        input[type="number"] {
+            width: 210px;
+            font-size: 32px;
+            padding: 5px;
+            text-align: right;
+        }
+
+        #currentLv {
+            width: 300px;
+            font-size: 32px;
+            padding: 5px;
+            width: 100px;
+            text-align: left;
+        }
+
+        /* ボタンのスタイル */
+        input[type="button"] {
+            font-size: 28px;
+            padding: 5px 20px;
+        }
+
+        /* ラベルのスタイル */
+        label {
+            font-size: 32px;
+        }
+
+        /* 結果表示のスタイル */
+        #result {
+            font-size: 32px;
+            margin-top: 20px;
+        }
+
+        .red {
+            color: red;
+        }
+
+        .black {
+            color: black;
+        }
+
+        /* フッターのスタイル */
+        footer {
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            font-size: 16pt;
+            margin-top: 20px;
+        }
+    </style>
+
+</head>
+<body>
+    <form id="expForm">
+        <label for="currentLv">現在のｽﾃｰｼﾞLv:</label>
+        <select id="currentLv" name="currentLv">
+            <!-- 1から98までのオプションを生成 -->
+            <script>
+                for (let i = 1; i <= 98; i++) {
+                    document.write('<option value="' + i + '">' + i + '</option>');
+                }
+            </script>
+        </select><br><br>
+        <label for="consumption">消費：</label>
+        <input type="number" id="consumption" name="consumption" value="0" min="0"><br><br>
+        <label for="possession">所持：</label>
+        <input type="number" id="possession" name="possession" value="0" min="0"><br><br>
+        <input type="button" value="計算する" onclick="calculateEXP()">
+    </form>
+    <p id="result">EXPスタンプ必要数: <span id="requiredExp" class="black">--</span>個</p>
+
+    <footer>
+        ※使用は自己責任にて。</br>
+        ※必要数は進行度により多少誤差が出る場合があります。
+    </footer>
+
+    <script>
+        const expData = {
+            // Example data, replace with actual values from your Excel file
+            1: 2000,
+            2: 1999,
+            3: 1997,
+            4: 1994,
+            5: 1990,
+            6: 1986,
+            7: 1981,
+            8: 1975,
+            9: 1968,
+            10: 1960,
+            11: 1952,
+            12: 1944,
+            13: 1936,
+            14: 1928,
+            15: 1920,
+            16: 1912,
+            17: 1904,
+            18: 1896,
+            19: 1888,
+            20: 1880,
+            21: 1871,
+            22: 1863,
+            23: 1855,
+            24: 1847,
+            25: 1839,
+            26: 1831,
+            27: 1823,
+            28: 1815,
+            29: 1807,
+            30: 1799,
+            31: 1790,
+            32: 1782,
+            33: 1774,
+            34: 1766,
+            35: 1758,
+            36: 1749,
+            37: 1741,
+            38: 1733,
+            39: 1725,
+            40: 1717,
+            41: 1708,
+            42: 1700,
+            43: 1692,
+            44: 1683,
+            45: 1675,
+            46: 1667,
+            47: 1658,
+            48: 1650,
+            49: 1642,
+            50: 1634,
+            51: 1625,
+            52: 1617,
+            53: 1608,
+            54: 1600,
+            55: 1592,
+            56: 1583,
+            57: 1575,
+            58: 1566,
+            59: 1558,
+            60: 1550,
+            61: 1541,
+            62: 1532,
+            63: 1522,
+            64: 1512,
+            65: 1502,
+            66: 1490,
+            67: 1478,
+            68: 1466,
+            69: 1452,
+            70: 1438,
+            71: 1422,
+            72: 1405,
+            73: 1387,
+            74: 1368,
+            75: 1348,
+            76: 1326,
+            77: 1302,
+            78: 1277,
+            79: 1250,
+            80: 1222,
+            81: 1191,
+            82: 1158,
+            83: 1122,
+            84: 1084,
+            85: 1044,
+            86: 1000,
+            87: 953,
+            88: 903,
+            89: 850,
+            90: 794,
+            91: 732,
+            92: 666,
+            93: 596,
+            94: 518,
+            95: 435,
+            96: 343,
+            97: 242,
+            98: 130,
+            // ... add all necessary levels and corresponding B column values
+        };
+
+        function calculateEXP() {
+            const currentLv = parseInt(document.getElementById('currentLv').value) + 1;
+            const consumption = parseInt(document.getElementById('consumption').value);
+            const possession = parseInt(document.getElementById('possession').value);
+
+            if (isNaN(currentLv) || isNaN(consumption) || isNaN(possession)) {
+                alert('すべての入力フィールドに数字を入力してください。');
+                return;
+            }
+
+            const baseExp = expData[currentLv];
+
+            if (baseExp === undefined) {
+                alert('無効な現在のLvです。');
+                return;
+            }
+
+            const requiredExp = baseExp + consumption - possession;
+            const requiredExpElement = document.getElementById('requiredExp');
+            requiredExpElement.innerText = requiredExp;
+            requiredExpElement.classList.remove('black');
+            requiredExpElement.classList.add('red');
+        }
+    </script>
+</body>
+</html>
