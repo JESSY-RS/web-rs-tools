@@ -12,29 +12,29 @@
         /* ページ全体の余白を設定 */
         body {
             margin: 20px;
-            background-color: #bbb;
-            color: #000;
+            background-color: #333;
+            color: #eee;
         }
+
         /* 入力フィールドのスタイル */
         input[type="number"] {
-            width: 210px;
+            width: 214px;
             font-size: 32px;
             padding: 5px;
             text-align: right;
         }
 
         #currentLv {
-            width: 300px;
+            width: 105px;
             font-size: 32px;
             padding: 5px;
-            width: 100px;
             text-align: left;
         }
 
         /* ボタンのスタイル */
         input[type="button"] {
             font-size: 28px;
-            padding: 5px 20px;
+            padding: 5px 12px;
         }
 
         /* ラベルのスタイル */
@@ -53,15 +53,22 @@
         }
 
         .black {
-            color: black;
+            color: #eee;
         }
 
         /* フッターのスタイル */
         footer {
-            border-top: 1px solid #000;
+            border-top: 1px solid #eee;
             padding-top: 10px;
             font-size: 16pt;
             margin-top: 20px;
+        }
+
+        /* コピー用ボタンのスタイル */
+        #copyButton {
+            font-size: 28px;
+            padding: 5px 20px;
+            display: none; /* 初期状態では非表示 */
         }
     </style>
 
@@ -82,12 +89,13 @@
             </script>
         </select><br><br>
         <input type="button" value="計算する" onclick="calculateEXP()">
+        <input type="button" id="copyButton" value="コピーする" onclick="copyToClipboard()">
     </form>
-    <p id="result">EXPスタンプ必要数: <span id="requiredExp" class="black">--</span>個</p>
+    <p id="result"><font color="#65BBE9">EXPスタンプ必要数: </font><span id="requiredExp" class="black">--</span>個</p>
 
     <footer>
         ※使用は自己責任にて。</br>
-        ※必要数は進行度により多少誤差が出る場合があります。
+        ※必要数は進行度により多少誤差が出る場合があります。</br>
     </footer>
 
     <script>
@@ -191,6 +199,7 @@
             96: 343,
             97: 242,
             98: 130,
+            99: 0,
             // ... add all necessary levels and corresponding B column values
         };
 
@@ -216,7 +225,35 @@
             requiredExpElement.innerText = requiredExp;
             requiredExpElement.classList.remove('black');
             requiredExpElement.classList.add('red');
+
+            // コピー用ボタンを表示
+            document.getElementById('copyButton').value = 'コピーする';
+            document.getElementById('copyButton').style.display = 'inline-block';
         }
+
+        function copyToClipboard() {
+            const requiredExp = document.getElementById('requiredExp').innerText;
+            const tempInput = document.createElement('input');
+            tempInput.value = requiredExp;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+                document.getElementById('copyButton').value = 'コピーOK!!';
+            } catch (err) {
+                alert('クリップボードにコピーできませんでした: ' + err);
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        // ここにフォーカス時にテキストを選択するイベントリスナーを追加
+        document.getElementById('consumption').addEventListener('focus', function() {
+            this.select();
+        });
+
+        document.getElementById('possession').addEventListener('focus', function() {
+            this.select();
+        });
     </script>
 </body>
 </html>
