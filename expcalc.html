@@ -276,7 +276,7 @@
         // それぞれのレベルを入力したら対になるレベルの数値を変化させる
         document.getElementById('currentLv').addEventListener('input', function() {
             const currentLv = parseInt(this.value);
-            if (!isNaN(currentLv) && currentLv >= 1 && currentLv < 98) {
+            if (!isNaN(currentLv) && currentLv >= 1 && currentLv < 99) {
                 document.getElementById('nextLv').value = currentLv + 1;
             } else {
                 document.getElementById('nextLv').value = '';
