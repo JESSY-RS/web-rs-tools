@@ -222,15 +222,15 @@
             const consumption = parseInt(document.getElementById('consumption').value);
             const possession = parseInt(document.getElementById('possession').value);
 
-            if (isNaN(currentLv) || isNaN(consumption) || isNaN(possession)) {
-                alert('すべての入力フィールドに数字を入力してください。');
-                return;
-            }
-
             const baseExp = expData[currentLv];
 
             if (baseExp === undefined) {
                 alert('無効な現在のLvです。');
+                return;
+            }
+
+            if (isNaN(currentLv) || isNaN(consumption) || isNaN(possession)) {
+                alert('すべての入力フィールドに数字を入力してください。');
                 return;
             }
 
