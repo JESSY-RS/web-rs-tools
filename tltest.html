@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行動表サンプル</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 64px; /* ボタンのフォントサイズをCSSで変更可能に */
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+        th:nth-child(1) {
+            width: 10%; /* Turn列の幅を10%に指定 */
+            text-align: left; /* 見出しのTurnは左寄せ */
+        }
+        th:nth-child(2) {
+            width: 10%; /* タゲの幅を10%に指定 */
+            text-align: left; /* 見出しの狙は左寄せ */
+        }
+        th:nth-child(3) {
+            width: 80%; /* キャラ列の幅を80%に指定 */
+            text-align: left; /* 見出しのキャラは左寄せ */
+        }
+        td:nth-child(1) {
+            width: 10%; /* Turn列の幅を10%に指定 */
+            text-align: right; /* Turnデータは右寄せ */
+        }
+        td:nth-child(2) {
+            width: 18%; /* タゲの幅を10%に指定 */
+            text-align: center; /* タゲデータはセンター合わせ */
+        }
+        td:nth-child(3) {
+            width: 72%; /* キャラ列の幅を80%に指定 */
+            text-align: left; /* 使用技データは左寄せ */
+        }
+        th {
+            background-color: #65BBE9; /* 見出しの背景色を指定 */
+        }
+        button {
+            margin-bottom: 10px;
+            font-size: 64px; /* ボタンのフォントサイズをCSSで変更可能に */
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <button onclick="prevRow()">↑ 上へ</button>
+        <button onclick="prevColumn()">← 左へ</button>
+        <button onclick="nextRow()">↓ 下へ</button>
+        <button onclick="nextColumn()">→ 右へ</button>
+    </div>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Turn</th>
+                <th>タゲ</th>
+                <th id="colHeader">聖王</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="rowNumber">1</td>
+                <td id="targetValue">後</td>
+                <td id="colValue">ランス</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        const data = [
+            ["1", "後", "ランス", "　", "チェイン", "　", "アイシス", "中", "レギオン", "　", "ライフ"],
+            ["2", "　", "ヘブンズ", "後", "ライト", "　", "通常", "中", "レギオン", "　", "チャージ"],
+            ["3", "後", "ランス", "　", "チェイン", "　", "ストライク", "中", "レギオン", "　", "チャージ"],
+            ["4", "　", "ODランス", "　", "ODボルテ", "　", "ODジェイル", "　", "ODレギオン", "　", "ODチャージ"],
+            ["5", "後", "ランス", "後", "ライト", "　", "ストライク", "中", "レギオン", "　", "チャージ"],
+            ["6", "後", "ランス", "　", "チェイン", "　", "ストライク", "中", "レギオン", "　", "チャージ"],
+            ["7", "　", "ODランス", "　", "ODボルテ", "　", "ODジェイル", "　", "ODレギオン", "　", "ODクラスト"],
+            ["8", "後", "ランス", "後", "ライト", "　", "ストライク", "　", "貫突槍", "後", "クラスト"],
+            ["9", "後", "ODランス", "　", "ODチェイン", "　", "ODストライク", "後", "レギオン", "後", "クラスト"],
+            ["10", "　", "ランス", "　", "ライト", "　", "ストライク", "　", "貫突槍", "　", "クラスト"],
+            ["11", "　", "ODランス", "　", "ODライト", "　", "ODストライク", "　", "OD貫突槍", "　", "OD通常"]
+        ];
+
+        const columns = ["聖王", "メロトセロイ", "コーデリア", "ナイトハルト", "トーマス"];
+        const targets = ["狙1", "狙2", "狙3", "狙4", "狙5"];
+        let currentRow = 0;
+        let currentCol = 0;
+
+        function updateTable() {
+            document.getElementById("rowNumber").innerText = data[currentRow][0];
+            document.getElementById("targetValue").innerText = data[currentRow][currentCol * 2 + 1];
+            document.getElementById("colHeader").innerText = columns[currentCol];
+            document.getElementById("colValue").innerText = data[currentRow][currentCol * 2 + 2];
+        }
+
+        function prevRow() {
+            if (currentRow > 0) {
+                currentRow--;
+                currentCol = 0; // 行を切り替えた際にB列の内容を表示
+                updateTable();
+            }
+        }
+
+        function nextRow() {
+            if (currentRow < data.length - 1) {
+                currentRow++;
+                currentCol = 0; // 行を切り替えた際にB列の内容を表示
+                updateTable();
+            }
+        }
+
+        function prevColumn() {
+            if (currentCol > 0) {
+                currentCol--;
+                updateTable();
+            }
+        }
+
+        function nextColumn() {
+            if (currentCol < columns.length - 1) {
+                currentCol++;
+                updateTable();
+            }
+        }
+
+        updateTable();
+    </script>
+</body>
+</html>
