@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>時間計算</title>
+</head>
+<body>
+    <h1>時間計算</h1>
+    <label for="input1">入力欄1 (分:秒): </label>
+    <input type="text" id="input1" placeholder="例: 1:30"><br><br>
+
+    <label for="input2">入力欄2 (分:秒): </label>
+    <input type="text" id="input2" value="0:13"><br><br>
+
+    <label for="count">回数: </label>
+    <input type="number" id="count" value="1"><br><br>
+
+    <button onclick="calculateTotalTime()">計算する</button>
+
+    <h2>結果: <span id="result">0分0秒</span></h2>
+
+    <script>
+        function parseTime(timeStr) {
+            let parts = timeStr.split(':');
+            let minutes = parseInt(parts[0]);
+            let seconds = parseInt(parts[1]);
+            return (minutes * 60) + seconds;
+        }
+
+        function formatTime(totalSeconds) {
+            let minutes = Math.floor(totalSeconds / 60);
+            let seconds = totalSeconds % 60;
+            return `${minutes}分${seconds}秒`;
+        }
+
+        function calculateTotalTime() {
+            let input1 = document.getElementById('input1').value;
+            let input2 = document.getElementById('input2').value;
+            let count = parseInt(document.getElementById('count').value);
+
+            let time1 = parseTime(input1);
+            let time2 = parseTime(input2);
+
+            let totalTime = (time1 + time2) * count;
+
+            document.getElementById('result').innerText = formatTime(totalTime);
+        }
+    </script>
+</body>
+</html>
