@@ -158,9 +158,9 @@
 
         <div class="input-group1">
             <label for="input1-min">入力欄１</label>
-            <input type="number" id="input1-min" min="0" onfocus="this.select()">
+            <input type="number" id="input1-min" min="0" onfocus="this.select()" onkeydown="handleEnter(event, 'input1-sec')">
             <span class="separator">:</span>
-            <input type="number" id="input1-sec" min="0" onfocus="this.select()">
+            <input type="number" id="input1-sec" min="0" onfocus="this.select()" onkeydown="handleEnter(event, 'count')">
         </div>
 
         <div class="input-group2">
@@ -172,20 +172,16 @@
 
         <div class="input-group3">
             <label for="count">再戦回数</label>
-            <input type="number" id="count" min="1" onfocus="this.select()">
+            <input type="number" id="count" min="1" onfocus="this.select()" onkeydown="handleEnter(event, 'calculate-button')">
         </div>
 
         <p id="warning"></p>
-        <button onclick="calculateTotalTime()">計算する</button>
+        <button id="calculate-button" onclick="calculateTotalTime()">計算する</button>
 
         <div class="result">
             <span class="result-label">結果: </span><span id="result" class="result-time">00:00:00</span>
         </div>
-
-
     </div>
-
-<br>
 
     <footer>
         ※使用は自己責任にて。<br>
@@ -259,6 +255,14 @@
             document.getElementById('input2-min').value = initialValues.input2Min;
             document.getElementById('input2-sec').value = initialValues.input2Sec;
             document.getElementById('count').value = initialValues.count;
+        }
+
+        // Enterキー押下時にフォーカスを移動させる関数
+        function handleEnter(event, nextElementId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                document.getElementById(nextElementId).focus();
+            }
         }
     </script>
 </body>
