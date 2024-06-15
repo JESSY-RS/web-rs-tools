@@ -1,49 +1,238 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>時間計算</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="favicon-kiokucalc.ico">
+    <link rel="apple-touch-icon" href="apple-touch-icon-kiokucalc.png">
+    <link rel="icon" type="image/png" href="android-chrome-144x144-kiokucalc.png">
+    <title>記憶再戦時間計算</title> <!-- Created by じぇ -->
+
+    <style>
+        /* ページ全体のスタイル */
+        body {
+            margin: 20px;
+            background-color: #333;
+            color: #eee;
+        }
+
+        /* 見出しのスタイル */
+        .header {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight:bold;
+            color: #00ff00;
+            margin-right: 10px;
+            margin-top: 0px;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            font-weight:bold;
+            color: orange;
+            margin-top: 0px;
+            margin-bottom: 20px;
+        }
+
+        /* 入力フィールドのスタイル */
+        input[type="number"] {
+            width: 70px;
+            font-size: 32px;
+            padding: 5px;
+            text-align: right;
+        }
+
+        #count {
+            width: 180px;
+        }
+
+        /* ボタンのスタイル */
+        button {
+            font-size: 28px;
+            padding: 5px 12px;
+            margin-top: 5px;
+            margin-bottom: 20px;
+        }
+
+        .input-group1 label {
+            font-size: 20px;
+            margin-right: 5px;
+        }
+
+        .input-group1 {
+            margin-bottom: 10px;
+        }
+
+        .input-group2 label {
+            font-size: 20px;
+            margin-right: 5px;
+        }
+
+        .input-group2 {
+            margin-bottom: 20px;
+        }
+
+        .input-group3 label {
+            font-size: 20px;
+            margin-right: 5px;
+        }
+
+        .input-group3 {
+            margin-bottom: 10px;
+        }
+
+        /* コロン部分のスタイル */
+        .separator {
+            font-size: 32px;
+            margin-left: 1px;
+            margin-right: 1px;
+        }
+
+        /* 入力欄２の背景色 */
+        #input2-min, #input2-sec {
+            background-color: #888;
+        }
+
+        /* 結果表示のスタイル */
+        .result {
+            font-size: 42px;
+            font-weight:bold;
+        }
+
+        .result-label {
+            color: #1D9BF0;
+        }
+
+        .result-time {
+            color: #eee;
+        }
+
+        /* フッターのスタイル */
+        footer {
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            font-size: 16pt;
+            margin-top: 20px;
+        }
+
+        /* エラーメッセージのスタイル */
+        #warning {
+            color: red;
+            height: 32px;
+            margin-top: 5px;
+        }
+    </style>
+
 </head>
 <body>
-    <h1>時間計算</h1>
-    <label for="input1">入力欄1 (分:秒): </label>
-    <input type="text" id="input1" placeholder="例: 1:30"><br><br>
+    <div class="container">
+        <div class="header">
+            <span class="title">記憶再戦</span>
+            <span class="subtitle">⏰時間計算</span>
+        </div>
 
-    <label for="input2">入力欄2 (分:秒): </label>
-    <input type="text" id="input2" value="0:13"><br><br>
+        <div class="input-group1">
+            <label for="input1-min">入力欄１</label>
+            <input type="number" id="input1-min" min="0" onfocus="this.select()">
+            <span class="separator">:</span>
+            <input type="number" id="input1-sec" min="0" onfocus="this.select()">
+        </div>
 
-    <label for="count">回数: </label>
-    <input type="number" id="count" value="1"><br><br>
+        <div class="input-group2">
+            <label for="input2-min">入力欄２</label>
+            <input type="number" id="input2-min" min="0" onfocus="this.select()">
+            <span class="separator">:</span>
+            <input type="number" id="input2-sec" min="0" onfocus="this.select()">
+        </div>
 
-    <button onclick="calculateTotalTime()">計算する</button>
+        <div class="input-group3">
+            <label for="count">再戦回数</label>
+            <input type="number" id="count" min="1" onfocus="this.select()">
+        </div>
 
-    <h2>結果: <span id="result">0分0秒</span></h2>
+        <p id="warning"></p>
+        <button onclick="calculateTotalTime()">計算する</button>
+
+        <div class="result">
+            <span class="result-label">結果: </span><span id="result" class="result-time">00:00:00</span>
+        </div>
+    </div>
+
+    <footer>
+        ※使用は自己責任にて。<br>
+        ※ページをリロードすると各項目が初期値に戻ります。<br>
+    </footer>
 
     <script>
-        function parseTime(timeStr) {
-            let parts = timeStr.split(':');
-            let minutes = parseInt(parts[0]);
-            let seconds = parseInt(parts[1]);
-            return (minutes * 60) + seconds;
+        // 初期値の定義
+        const initialValues = {
+            input1Min: '',
+            input1Sec: '',
+            input2Min: '0',
+            input2Sec: '13',
+            count: ''
+        };
+
+        // 時間を計算する
+        function parseTime(minutes, seconds) {
+            return (minutes * 60) + parseInt(seconds);
         }
 
         function formatTime(totalSeconds) {
-            let minutes = Math.floor(totalSeconds / 60);
+            let hours = Math.floor(totalSeconds / 3600);
+            let minutes = Math.floor((totalSeconds % 3600) / 60);
             let seconds = totalSeconds % 60;
-            return `${minutes}分${seconds}秒`;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
 
+        // 結果を表示させる
         function calculateTotalTime() {
-            let input1 = document.getElementById('input1').value;
-            let input2 = document.getElementById('input2').value;
-            let count = parseInt(document.getElementById('count').value);
+            let input1Min = document.getElementById('input1-min').value;
+            let input1Sec = document.getElementById('input1-sec').value;
+            let input2Min = document.getElementById('input2-min').value;
+            let input2Sec = document.getElementById('input2-sec').value;
+            let count = document.getElementById('count').value;
 
-            let time1 = parseTime(input1);
-            let time2 = parseTime(input2);
+            let emptyFields = [];
 
-            let totalTime = (time1 + time2) * count;
+            if (input1Min === '' || input1Sec === '') {
+                emptyFields.push('入力欄１');
+            }
+            if (input2Min === '' || input2Sec === '') {
+                emptyFields.push('入力欄２');
+            }
+            if (count === '') {
+                emptyFields.push('再戦回数');
+            }
 
+            // 入力項目に不足がある場合は警告文を表示させる
+            if (emptyFields.length > 0) {
+                document.getElementById('warning').innerText = `※${emptyFields.join('・')}に数値を入力してください。`;
+                document.getElementById('result').innerText = '00:00:00';
+                return;
+            } else {
+                document.getElementById('warning').innerText = '';
+            }
+
+            let time1 = parseTime(parseInt(input1Min), parseInt(input1Sec));
+            let time2 = parseTime(parseInt(input2Min), parseInt(input2Sec));
+            let totalTime = (time1 + time2) * parseInt(count);
             document.getElementById('result').innerText = formatTime(totalTime);
+            document.getElementById('result').style.color = '#eee'; // 計算後にフォント色変更
+        }
+
+        // ページをリロードしたら各項目を初期値に戻す
+        window.onload = function() {
+            document.getElementById('input1-min').value = initialValues.input1Min;
+            document.getElementById('input1-sec').value = initialValues.input1Sec;
+            document.getElementById('input2-min').value = initialValues.input2Min;
+            document.getElementById('input2-sec').value = initialValues.input2Sec;
+            document.getElementById('count').value = initialValues.count;
         }
     </script>
 </body>
