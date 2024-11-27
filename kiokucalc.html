@@ -222,6 +222,12 @@
 
             let emptyFields = [];
 
+            // 入力欄1の分が空の場合、0に設定
+            if (input1Min === '') {
+                input1Min = '0';
+                document.getElementById('input1-min').value = '0'; // フィールドも更新
+            }
+
             if (input1Min === '' || input1Sec === '') {
                 emptyFields.push('入力欄１');
             }
