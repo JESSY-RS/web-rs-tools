@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -98,6 +99,13 @@
             background-color: #888;
         }
 
+        /* コピー用ボタンのスタイル */
+        #copyButton {
+            font-size: 28px;
+            padding: 5px 20px;
+            display: none; /* 初期状態では非表示 */
+        }
+
         /* 結果表示のスタイル */
         .result {
             font-size: 42px;
@@ -110,6 +118,11 @@
 
         .result-time {
             color: #eee;
+        }
+
+        /* フッターのスタイル */
+        link {
+            font-size: 16pt;
         }
 
         /* フッターのスタイル */
@@ -177,11 +190,14 @@
 
         <p id="warning"></p>
         <button id="calculate-button" onclick="calculateTotalTime()">計算する</button>
+        <input type="button" id="copyButton" value="結果コピー" onclick="copyToClipboard()">
 
         <div class="result">
             <span class="result-label">結果: </span><span id="result" class="result-time">00:00:00</span>
         </div>
     </div>
+
+　　<font size="4"><br><a href="kiokucalc2.html">再戦回数を計算する</a></br></font>
 
     <footer>
         ※使用は自己責任にて。<br>
@@ -252,6 +268,26 @@
             let totalTime = (time1 + time2) * parseInt(count);
             document.getElementById('result').innerText = formatTime(totalTime);
             document.getElementById('result').style.color = '#eee'; // 計算後にフォント色変更
+
+            // コピー用ボタンを表示
+            document.getElementById('copyButton').value = '結果コピー';
+            document.getElementById('copyButton').style.display = 'inline-block';
+        }
+
+        // クリップボードに情報をコピーする
+        function copyToClipboard() {
+            const requiredExp = document.getElementById('result').innerText;
+            const tempInput = document.createElement('input');
+            tempInput.value = requiredExp;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+                document.getElementById('copyButton').value = 'コピー完了';
+            } catch (err) {
+                alert('クリップボードにコピーできませんでした: ' + err);
+            }
+            document.body.removeChild(tempInput);
         }
 
         // ページをリロードしたら各項目を初期値に戻す
