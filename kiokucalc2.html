@@ -27,7 +27,7 @@
             font-weight:bold;
             color: fuchsia;
             margin-right: 10px;
-            margin-top: 0px;
+            margin-top: -10px;
             margin-bottom: 15px;
         }
 
@@ -49,14 +49,6 @@
 
         #count {
             width: 180px;
-        }
-
-        /* ボタンのスタイル */
-        button {
-            font-size: 28px;
-            padding: 5px 12px;
-            margin-top: 5px;
-            margin-bottom: 20px;
         }
 
         .input-group1 label {
@@ -83,7 +75,7 @@
         }
 
         .input-group3 {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         /* コロン部分のスタイル */
@@ -98,6 +90,14 @@
             background-color: #888;
         }
 
+        /* ボタンのスタイル */
+        button {
+            font-size: 28px;
+            padding: 5px 12px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+
         /* 手動入力欄 */
         #manual-input {
             width: 210px;
@@ -105,27 +105,42 @@
             padding: 8px;
             text-align: left;
             margin-top: 5px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: none; /* 初期状態では非表示 */
+        }
+
+        /* エラーメッセージのスタイル */
+        #warning {
+            color: red;
+            height: 32px;
+            margin-top: 5px;
+            margin-bottom: 20px;
         }
 
         /* 結果表示のスタイル */
         .result {
             font-size: 42px;
             font-weight:bold;
+            margin-top: 5px;
         }
 
         .result-label {
             color: #1D9BF0;
         }
 
-        .unit {
-            font-size: 36px;
+        .unit-str {
+            font-size: 32px;
         }
 
         .result-time {
             font-size: 42px;
             color: #eee;
+        }
+
+        /* ボトムのスタイル */
+        .bottom {
+            font-size: 16pt;
+            margin-top: 0px;
         }
 
         /* フッターのスタイル */
@@ -134,13 +149,6 @@
             padding-top: 10px;
             font-size: 16pt;
             margin-top: 20px;
-        }
-
-        /* エラーメッセージのスタイル */
-        #warning {
-            color: red;
-            height: 32px;
-            margin-top: 5px;
         }
 
         /* リンクのスタイル */
@@ -189,8 +197,8 @@
         <div class="input-group3">
             <label for="total-time-hour">所要時間</label>
             <button id="reflect-button" onclick="reflectClipboard()">時間を反映する</button>
-<input type="text" id="manual-input" placeholder="手動で貼り付け" ><br>
 
+            <input type="text" id="manual-input" placeholder="手動で貼り付け" ><br>
             <input type="number" id="total-time-hour" min="0" placeholder="時" onfocus="this.select()" onkeydown="handleEnter(event, 'total-time-min')">
             <span class="separator">:</span>
             <input type="number" id="total-time-min" min="0" placeholder="分" onfocus="this.select()" onkeydown="handleEnter(event, 'total-time-sec')">
@@ -207,12 +215,11 @@
         </div>
     </div>
 
-　　<font size="4"><br><a href="kiokucalc.html">所要時間を計算する</a></br></font>
+　　<div class="bottom"><a href="kiokucalc.html">所要時間を計算する</a></br></div>
 
     <footer>
         ※使用は自己責任にて。<br>
         ※ページをリロードすると各項目が初期値に戻ります。<br>
-        ※端末・ブラウザによっては時間の反映が出来ない場合があります。<br>
         <br>
         <a href="index.html">TOPへ戻る</a></br>
     </footer>
@@ -245,12 +252,6 @@
             let input1Sec = document.getElementById('input1-sec').value || 0;
             let input2Min = document.getElementById('input2-min').value || 0;
             let input2Sec = document.getElementById('input2-sec').value || 0;
-            let count = document.getElementById('count').value || 0;
-
-            if (count <= 0) {
-                document.getElementById('warning').innerText = "再戦回数を正しく入力してください。";
-                return;
-            }
 
             let time1 = parseTime(0, parseInt(input1Min), parseInt(input1Sec));
             let time2 = parseTime(0, parseInt(input2Min), parseInt(input2Sec));
@@ -260,6 +261,24 @@
         }
 
         function calculateCount() {
+            const manualInput = document.getElementById('manual-input').value;
+            const warning = document.getElementById('warning');
+
+            // manual-inputが入力されている場合
+            if (manualInput) {
+                const timeMatch = manualInput.match(/^(\d{1,2}):(\d{1,2}):(\d{1,2})$/);
+                if (!timeMatch) {
+                    warning.innerText = "※HH:MM:SS形式で入力してください。";
+                    return;
+                }
+
+                // 時間を分解して各項目に反映
+                const [_, hours, minutes, seconds] = timeMatch;
+                document.getElementById('total-time-hour').value = parseInt(hours, 10);
+                document.getElementById('total-time-min').value = parseInt(minutes, 10);
+                document.getElementById('total-time-sec').value = parseInt(seconds, 10);
+            }
+
             // 各入力欄を取得
             let input1Min = document.getElementById('input1-min');
             let input1Sec = document.getElementById('input1-sec');
@@ -278,15 +297,10 @@
             if (!totalTimeMin.value) totalTimeMin.value = 0;
             if (!totalTimeSec.value) totalTimeSec.value = 0;
 
-            // 再計算処理
+            // 計算処理
             let totalRetryTime = parseTime(0, parseInt(input1Min.value), parseInt(input1Sec.value)) +
                                  parseTime(0, parseInt(input2Min.value), parseInt(input2Sec.value));
         
-            if (totalRetryTime <= 0) {
-                document.getElementById('warning').innerText = "1回の再戦時間が0以下です。正しく入力してください。";
-                return;
-            }
-
             let totalTime = parseTime(parseInt(totalTimeHour.value), parseInt(totalTimeMin.value), parseInt(totalTimeSec.value));
             let count = Math.floor(totalTime / totalRetryTime);
 
@@ -294,6 +308,36 @@
             document.getElementById('result').innerText = count;
         }
 
+        async function reflectClipboard() {
+            try {
+                // クリップボードからテキストを取得
+                const text = await navigator.clipboard.readText();
+
+                // フォーマット "HH:MM:SS" を確認
+                const match = text.match(/^(\d{1,2}):(\d{1,2}):(\d{1,2})$/);
+
+                if (match) {
+                    // 各値を取得して反映
+                    const [_, hours, minutes, seconds] = match;
+                    document.getElementById('total-time-hour').value = parseInt(hours, 10);
+                    document.getElementById('total-time-min').value = parseInt(minutes, 10);
+                    document.getElementById('total-time-sec').value = parseInt(seconds, 10);
+                    document.getElementById('warning').innerText = ""; // エラーメッセージをクリア
+                } else {
+                    document.getElementById('warning').innerText = "※クリップボードの内容が不正です。HH:MM:SS形式で入力してください。";
+
+                    // ボタンを非表示にして手動入力欄を表示
+                    document.getElementById('reflect-button').style.display = 'none';
+                    document.getElementById('manual-input-group').style.display = 'inline-block';
+                }
+            } catch (error) {
+                document.getElementById('warning').innerText = "※反映出来ませんでした。お手数ですが手動で貼り付けてください。";
+
+                // ボタンを非表示にして手動入力欄を表示
+                document.getElementById('reflect-button').style.display = 'none';
+                document.getElementById('manual-input').style.display = 'inline-block';
+            }
+        }
 
         // ページをリロードしたら各項目を初期値に戻す
         window.onload = function() {
@@ -311,38 +355,6 @@
             if (event.key === 'Enter') {
                 event.preventDefault();
                 document.getElementById(nextElementId).focus();
-            }
-        }
-
-        async function reflectClipboard() {
-            try {
-                // クリップボードからテキストを取得
-                const text = await navigator.clipboard.readText();
-                // フォーマット "HH:MM:SS" を確認
-                const match = text.match(/^(\d{1,2}):(\d{1,2}):(\d{1,2})$/);
-                if (match) {
-                    // 各値を取得して反映
-                    const [_, hours, minutes, seconds] = match;
-                    document.getElementById('total-time-hour').value = parseInt(hours, 10);
-                    document.getElementById('total-time-min').value = parseInt(minutes, 10);
-                    document.getElementById('total-time-sec').value = parseInt(seconds, 10);
-                    document.getElementById('warning').innerText = ""; // エラーメッセージをクリア
-                } else {
-                    document.getElementById('warning').innerText = "クリップボードの内容が不正です。HH:MM:SS形式で入力してください。";
-
-                // ボタンを非表示にして手動入力欄を表示
-            document.getElementById('reflect-button').style.display = 'none';
-            document.getElementById('manual-input-group').style.display = 'inline-block';
-
-                }
-            } catch (error) {
-                console.error("クリップボードからデータを取得できませんでした:", error);
-                document.getElementById('warning').innerText = "反映できませんでした。手動で貼り付け欄に情報をペーストし、確認しながら時間を入力してください。";
-
-            // ボタンを非表示にして手動入力欄を表示
-            document.getElementById('reflect-button').style.display = 'none';
-            document.getElementById('manual-input').style.display = 'inline-block';
-
             }
         }
     </script>
