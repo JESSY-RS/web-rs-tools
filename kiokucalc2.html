@@ -47,10 +47,6 @@
             text-align: right;
         }
 
-        #count {
-            width: 180px;
-        }
-
         .input-group1 label {
             font-size: 20px;
             margin-right: 5px;
@@ -126,10 +122,6 @@
 
         .result-label {
             color: #1D9BF0;
-        }
-
-        .unit-str {
-            font-size: 32px;
         }
 
         .result-time {
@@ -211,7 +203,7 @@
         <button id="calculate-button" onclick="calculateCount()">計算する</button>
 
         <div class="result">
-            <span class="result-label">結果: </span><span id="result" class="result-time">--</span><span class="unit">回</span>
+            <span class="result-label">結果: </span><span id="result" class="result-time">--回</span>
         </div>
     </div>
 
@@ -231,6 +223,7 @@
             input1Sec: '',
             input2Min: '0',
             input2Sec: '13',
+            manuinput: '',
             totalHour: '',
             totalMin: '',
             totalSec: ''
@@ -345,6 +338,7 @@
             document.getElementById('input1-sec').value = initialValues.input1Sec;
             document.getElementById('input2-min').value = initialValues.input2Min;
             document.getElementById('input2-sec').value = initialValues.input2Sec;
+            document.getElementById('manual-input').value = initialValues.manuinput;
             document.getElementById('total-time-hour').value = initialValues.totalHour;
             document.getElementById('total-time-min').value = initialValues.totalMin;
             document.getElementById('total-time-sec').value = initialValues.totalSec;
