@@ -16,6 +16,11 @@
             color: #eee;
         }
 
+        /* ラベルのスタイル */
+        label {
+            font-size: 32px;
+        }
+
         /* 入力フィールドのスタイル */
         input[type="number"] {
             width: 214px;
@@ -40,15 +45,24 @@
             color: #137EFF;
         }
 
+        /* エラーメッセージのスタイル */
+        #warning {
+            color: red;
+            height: 32px;
+            margin-top: 10px;
+        }
+
         /* ボタンのスタイル */
         input[type="button"] {
             font-size: 28px;
             padding: 5px 12px;
         }
 
-        /* ラベルのスタイル */
-        label {
-            font-size: 32px;
+        /* コピー用ボタンのスタイル */
+        #copyButton {
+            font-size: 28px;
+            padding: 5px 20px;
+            display: none; /* 初期状態では非表示 */
         }
 
         /* 結果表示のスタイル */
@@ -71,13 +85,6 @@
             padding-top: 10px;
             font-size: 16pt;
             margin-top: 20px;
-        }
-
-        /* コピー用ボタンのスタイル */
-        #copyButton {
-            font-size: 28px;
-            padding: 5px 20px;
-            display: none; /* 初期状態では非表示 */
         }
 
         /* リンクのスタイル */
@@ -120,7 +127,9 @@
                 }
             </script>
         </select><br>
-        <font color="red" style="display: block; margin-top: 5px;">※現在のLv=左側の数字を基に計算されます。</font><br>
+
+        <div id="warning">※現在のLv=左側の数字を基に計算されます。</div><br>
+
         <input type="button" value="計算する" onclick="calculateEXP()">
         <input type="button" id="copyButton" value="コピーする" onclick="copyToClipboard()">
     </form>
@@ -246,12 +255,12 @@
             const baseExp = expData[currentLv];
 
             if (baseExp === undefined) {
-                alert('無効な現在のLvです。');
+                document.getElementById('warning').innerText = "※無効な現在のLvです。";
                 return;
             }
 
             if (isNaN(currentLv) || isNaN(consumption) || isNaN(possession)) {
-                alert('すべての入力フィールドに数字を入力してください。');
+                document.getElementById('warning').innerText = "※すべての入力フィールドに数字を入力してください。";
                 return;
             }
 
@@ -262,6 +271,7 @@
             requiredExpElement.classList.add('red');
 
             // コピー用ボタンを表示
+            document.getElementById('warning').innerText = '';
             document.getElementById('copyButton').value = 'コピーする';
             document.getElementById('copyButton').style.display = 'inline-block';
         }
@@ -276,7 +286,7 @@
                 document.execCommand('copy');
                 document.getElementById('copyButton').value = 'コピーOK!!';
             } catch (err) {
-                alert('クリップボードにコピーできませんでした: ' + err);
+                document.getElementById('warning').innerText = "※クリップボードにコピーできませんでした。";
             }
             document.body.removeChild(tempInput);
         }
@@ -300,7 +310,7 @@
             if (!isNaN(currentLv) && currentLv >= 1 && currentLv < 99) {
                 document.getElementById('nextLv').value = currentLv + 1;
             } else {
-                document.getElementById('nextLv').value = '';
+                document.getElementById('nextLv').value = "";
             }
         });
 
