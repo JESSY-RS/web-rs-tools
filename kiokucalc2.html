@@ -206,7 +206,8 @@
 
         <div class="input-group3">
             <label for="total-time-hour">所要時間</label>
-            <button id="reflect-button" onclick="reflectClipboard()">時間を反映する</button>
+            <button id="reflect-button" onclick="reflectClipboard()">コピペ</button>
+            <input type="button" id="c24hButton" value="24Ｈ" onclick="calclate24hour()">
 
             <input type="text" id="manual-input" placeholder="手動で貼り付け" ><br>
             <input type="number" id="total-time-hour" min="0" placeholder="時" onfocus="this.select()" onkeydown="handleEnter(event, 'total-time-min')">
@@ -219,7 +220,7 @@
         <p id="warning"></p>
 
         <button id="calculate-button" onclick="calculateCount()">計算する</button>
-        <input type="button" id="c24hButton" value="24Hで計算" onclick="calclate24hour()">
+
         <input type="button" id="copyButton" value="結果コピー" onclick="copyToClipboard()">
 
         <div class="result">
@@ -321,9 +322,6 @@
             document.getElementById('warning').innerText = ""; 
             document.getElementById('result').innerText = count;
 
-            // 24時間で計算ボタンを非表示
-            document.getElementById('c24hButton').style.display = 'none';
-
             // コピー用ボタンを表示
             document.getElementById('copyButton').value = '結果コピー';
             document.getElementById('copyButton').style.display = 'inline-block';
@@ -350,6 +348,9 @@
                     // ボタンを非表示にして手動入力欄を表示
                     document.getElementById('reflect-button').style.display = 'none';
                     document.getElementById('manual-input-group').style.display = 'inline-block';
+
+                   // 24時間で計算ボタンを非表示
+                   document.getElementById('c24hButton').style.display = 'none';
                 }
             } catch (error) {
                 document.getElementById('warning').innerText = "※反映出来ませんでした。お手数ですが手動で貼り付けてください。";
@@ -357,6 +358,9 @@
                 // ボタンを非表示にして手動入力欄を表示
                 document.getElementById('reflect-button').style.display = 'none';
                 document.getElementById('manual-input').style.display = 'inline-block';
+
+                // 24時間で計算ボタンを非表示
+                document.getElementById('c24hButton').style.display = 'none';
             }
         }
 
@@ -366,9 +370,6 @@
                 document.getElementById('total-time-hour').value = 24;
                 document.getElementById('total-time-min').value = 0;
                 document.getElementById('total-time-sec').value = 0;
-        
-                // 計算を実行
-                calculateCount();
         }
 
         // クリップボードに情報をコピーする
