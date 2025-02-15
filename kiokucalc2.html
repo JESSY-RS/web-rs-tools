@@ -105,6 +105,20 @@
             display: none; /* 初期状態では非表示 */
         }
 
+        /* 24時間で計算ボタンのスタイル */
+        #c24hButton {
+            font-size: 28px;
+            padding: 5px 20px;
+        }
+
+
+        /* コピー用ボタンのスタイル */
+        #copyButton {
+            font-size: 28px;
+            padding: 5px 20px;
+            display: none; /* 初期状態では非表示 */
+        }
+
         /* エラーメッセージのスタイル */
         #warning {
             color: red;
@@ -127,6 +141,10 @@
         .result-time {
             font-size: 42px;
             color: #eee;
+        }
+
+        .unit-str {
+            font-size: 40px;
         }
 
         /* ボトムのスタイル */
@@ -201,9 +219,11 @@
         <p id="warning"></p>
 
         <button id="calculate-button" onclick="calculateCount()">計算する</button>
+        <input type="button" id="c24hButton" value="24Hで計算" onclick="calclate24hour()">
+        <input type="button" id="copyButton" value="結果コピー" onclick="copyToClipboard()">
 
         <div class="result">
-            <span class="result-label">結果: </span><span id="result" class="result-time">--</span>回
+            <span class="result-label">結果: </span><span id="result" class="result-time">--</span><span class="unit-str">回</span>
         </div>
     </div>
 
@@ -297,8 +317,16 @@
             let totalTime = parseTime(parseInt(totalTimeHour.value), parseInt(totalTimeMin.value), parseInt(totalTimeSec.value));
             let count = Math.floor(totalTime / totalRetryTime);
 
-            document.getElementById('warning').innerText = ""; // エラーメッセージをクリア
+            // エラーメッセージをクリア
+            document.getElementById('warning').innerText = ""; 
             document.getElementById('result').innerText = count;
+
+            // 24時間で計算ボタンを非表示
+            document.getElementById('c24hButton').style.display = 'none';
+
+            // コピー用ボタンを表示
+            document.getElementById('copyButton').value = '結果コピー';
+            document.getElementById('copyButton').style.display = 'inline-block';
         }
 
         async function reflectClipboard() {
@@ -330,6 +358,33 @@
                 document.getElementById('reflect-button').style.display = 'none';
                 document.getElementById('manual-input').style.display = 'inline-block';
             }
+        }
+
+        //時間を24時間に設定して計算する
+        function calclate24hour() {
+                // 時間を24時間に設定
+                document.getElementById('total-time-hour').value = 24;
+                document.getElementById('total-time-min').value = 0;
+                document.getElementById('total-time-sec').value = 0;
+        
+                // 計算を実行
+                calculateCount();
+        }
+
+        // クリップボードに情報をコピーする
+        function copyToClipboard() {
+            const requiredExp = document.getElementById('result').innerText;
+            const tempInput = document.createElement('input');
+            tempInput.value = requiredExp;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand('copy');
+                document.getElementById('copyButton').value = 'コピー完了';
+            } catch (err) {
+                alert('クリップボードにコピーできませんでした: ' + err);
+            }
+            document.body.removeChild(tempInput);
         }
 
         // ページをリロードしたら各項目を初期値に戻す
