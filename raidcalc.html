@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>6.5周年制圧戦・周回効率比較ツール</title>
+
   <style>
     body { 
-      padding: 20px; 
+            margin: 20px;
       background-color: #2A2A2A; 
       color: #eee; 
     }
@@ -75,7 +77,8 @@
 
     <label>グレード選択：</label>
     <select id="gradeSelect1" onchange="updateItemValue(1)">
-      <option value="6">グレード6</option>
+      <option value="0">グレード0</option>
+      <option value="6" selected>グレード6</option>
       <option value="7">グレード7</option>
       <option value="8">グレード8</option>
       <option value="9">グレード9</option>
@@ -98,6 +101,7 @@
 
     <label>グレード選択：</label>
     <select id="gradeSelect2" onchange="updateItemValue(2)">
+      <option value="0">グレード0</option>
       <option value="6">グレード6</option>
       <option value="7">グレード7</option>
       <option value="8">グレード8</option>
@@ -114,8 +118,26 @@
     <div class="error" id="error2" style="display:none;"></div>
   </div>
 
+　　<div class="bottom"><a href="kiokucalc2.html">再戦回数を計算する</a></br></div>
+
+    <footer>
+        ※使用は自己責任にて。<br>
+        ※ページをリロードすると各項目が初期値に戻ります。<br>
+        <br>
+        <a href="index.html">TOPへ戻る</a></br>
+    </footer>
+
   <script>
+
+        // 初期値の定義
+        const initialValues = {
+            countInput: '',
+            itemPerGame1: '92.8',
+            itemPerGame2: '365.4',
+        };
+
     const gradeValues = {
+      0: 16.5,
       6: 92.8,
       7: 141.2,
       8: 192.4,
@@ -142,15 +164,19 @@
       const total = Math.floor(count * perGame);
       document.getElementById(`result${number}`).textContent = `結果：${total.toLocaleString()}個`;
     }
+
+        // ページをリロードしたら各項目を初期値に戻す
+window.onload = function() {
+  document.getElementById('countInput1').value = initialValues.countInput;
+  document.getElementById('countInput2').value = initialValues.countInput;
+  document.getElementById('itemPerGame1').value = initialValues.itemPerGame1;
+  document.getElementById('itemPerGame2').value = initialValues.itemPerGame2;
+  document.getElementById('gradeSelect1').value = "6";
+document.getElementById('gradeSelect2').value = "10";
+  updateItemValue(1);
+}
+
   </script>
-
-　　<div class="bottom"><a href="kiokucalc2.html">再戦回数を計算する</a></br></div>
-
-    <footer>
-        ※使用は自己責任にて。<br>
-        <br>
-        <a href="index.html">TOPへ戻る</a></br>
-    </footer>
 
 </body>
 </html>
