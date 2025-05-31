@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>6.5周年制圧戦・周回効率比較ツール</title>
+  <style>
+    body { 
+      padding: 20px; 
+      background-color: #2A2A2A; 
+      color: #eee; 
+    }
+    input, select { 
+      margin: 5px; 
+      padding: 5px; 
+      background-color: #fff; 
+      color: #000; 
+      border: 1px solid #555;
+    }
+    button { 
+      margin: 5px; 
+      padding: 5px; 
+      background-color: #fff; 
+      color: #000; 
+      border: 1px solid #555;
+      cursor: pointer;
+    }
+    .block { 
+      border: 1px solid #fff; 
+      padding: 15px; 
+      margin-bottom: 20px; 
+    }
+    .error {
+      color: #f00;
+      margin-top: 5px;
+    }
+
+        /* フッターのスタイル */
+        footer {
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            margin-top: 20px;
+        }
+
+        /* リンクのスタイル */
+        a:link {
+            color: #1D9BF0;
+            text-decoration: underline;
+        }
+
+        a:visited {
+            color: #7755FF;
+            text-decoration: underline;
+        }
+
+        a:hover {
+            color: #0CFF57;
+        }
+
+        a:active {
+             color: #FF0000;
+             text-decoration: underline;
+        }
+
+
+  </style>
+</head>
+<body>
+
+  <h2>6.5周年制圧戦・周回効率比較ツール</h2>
+
+  <div class="block">
+    <h3>比較①</h3>
+    <label>回数：</label>
+    <input type="number" id="countInput1" placeholder="回数を入力" /><br />
+
+    <label>グレード選択：</label>
+    <select id="gradeSelect1" onchange="updateItemValue(1)">
+      <option value="6">グレード6</option>
+      <option value="7">グレード7</option>
+      <option value="8">グレード8</option>
+      <option value="9">グレード9</option>
+      <option value="10">グレード10</option>
+    </select><br>
+
+    <label>個数：</label>
+    <input type="number" id="itemPerGame1" value="92.8" step="0.1" /><br />
+
+    <button onclick="calculateResult(1)">計算する</button>
+
+    <h3 id="result1">結果：-</h3>
+    <div class="error" id="error1" style="display:none;"></div>
+  </div>
+
+  <div class="block">
+    <h3>比較②</h3>
+    <label>回数：</label>
+    <input type="number" id="countInput2" placeholder="回数を入力" /><br />
+
+    <label>グレード選択：</label>
+    <select id="gradeSelect2" onchange="updateItemValue(2)">
+      <option value="6">グレード6</option>
+      <option value="7">グレード7</option>
+      <option value="8">グレード8</option>
+      <option value="9">グレード9</option>
+      <option value="10" selected>グレード10</option>
+    </select><br>
+
+    <label>個数：</label>
+    <input type="number" id="itemPerGame2" value="366.0" step="0.1" /><br />
+
+    <button onclick="calculateResult(2)">計算する</button>
+
+    <h3 id="result2">結果：-</h3>
+    <div class="error" id="error2" style="display:none;"></div>
+  </div>
+
+  <script>
+    const gradeValues = {
+      6: 92.8,
+      7: 141.2,
+      8: 192.4,
+      9: 286.6,
+      10: 366.0
+    };
+
+    function updateItemValue(number) {
+      const grade = document.getElementById(`gradeSelect${number}`).value;
+      document.getElementById(`itemPerGame${number}`).value = gradeValues[grade];
+    }
+
+    function calculateResult(number) {
+      const count = Number(document.getElementById(`countInput${number}`).value);
+      const errorDiv = document.getElementById(`error${number}`);
+      if (isNaN(count) || count <= 0) {
+        errorDiv.style.display = "block";
+        errorDiv.textContent = `比較${number}の回数を正しく入力してください`;
+        document.getElementById(`result${number}`).textContent = "結果：-";
+        return;
+      }
+      errorDiv.style.display = "none";
+      const perGame = Number(document.getElementById(`itemPerGame${number}`).value);
+      const total = Math.floor(count * perGame);
+      document.getElementById(`result${number}`).textContent = `結果：${total.toLocaleString()}個`;
+    }
+  </script>
+
+　　<div class="bottom"><a href="kiokucalc2.html">再戦回数を計算する</a></br></div>
+
+    <footer>
+        ※使用は自己責任にて。<br>
+        <br>
+        <a href="index.html">TOPへ戻る</a></br>
+    </footer>
+
+</body>
+</html>
