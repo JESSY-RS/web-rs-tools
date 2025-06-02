@@ -175,7 +175,8 @@ h3 {
 
         // 初期値の定義
         const initialValues = {
-
+            inputMin: '',
+            inputMinSec: '',
             countInput: '',
             itemPerGame1: '92.8',
             itemPerGame2: '365.4',
@@ -232,10 +233,10 @@ errorDiv.style.display = "block";
 
 // ページをリロードしたら各項目を初期値に戻す
 window.onload = function() {
-  document.getElementById('input-min1').value = initialValues.input-min;
-  document.getElementById('input-sec1').value = initialValues.input-sec;
-  document.getElementById('input-min2').value = initialValues.input-min;
-  document.getElementById('input-sec2').value = initialValues.input-sec;
+  document.getElementById('input-min1').value = initialValues.inputMin;
+  document.getElementById('input-sec1').value = initialValues.inputSec;
+  document.getElementById('input-min2').value = initialValues.inputMin;
+  document.getElementById('input-sec2').value = initialValues.inputSec;
   document.getElementById('countInput1').value = initialValues.countInput;
   document.getElementById('countInput2').value = initialValues.countInput;
   document.getElementById('itemPerGame1').value = initialValues.itemPerGame1;
