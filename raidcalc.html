@@ -1,3 +1,5 @@
+以下のhtmlコードでwindow.onload = function()がブラウザによっては正常に動作しないのですが、原因が分かりますか？
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,7 +8,7 @@
     <link rel="shortcut icon" href="favicon-raidcalc.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-raidcalc.png">
     <link rel="icon" type="image/png" href="android-chrome-144x144-raidcalc.png">
-    <title>6.5周年制圧戦・周回効率比較ツール</title>
+    <title>6.5周年制圧戦・周回効率比較ツール(デバッグ中19:14)</title>
 
   <style>
     body { 
@@ -163,7 +165,7 @@
     <div class="error" id="error2" style="display:none;"></div>
   </div>
 
-  <div class="bottom"><a href="raidcalc.html">再戦回数を計算する</a><br></div>
+  <div class="bottom"><a href="kiokucalc.html">所要時間を計算する</a><br></div>
 
   <footer>
       ※使用は自己責任にて。<br>
@@ -235,10 +237,10 @@
 
     // ページをリロードしたら各項目を初期値に戻す
     window.onload = function() {
-      document.getElementById('input-min1').value = initialValues.inputMin;
-      document.getElementById('input-sec1').value = initialValues.inputSec;
-      document.getElementById('input-min2').value = initialValues.inputMin;
-      document.getElementById('input-sec2').value = initialValues.inputSec;
+      document.getElementById('input1-min').value = initialValues.inputMin;
+      document.getElementById('input1-sec').value = initialValues.inputSec;
+      document.getElementById('input2-min').value = initialValues.inputMin;
+      document.getElementById('input2-sec').value = initialValues.inputSec;
       document.getElementById('countInput1').value = initialValues.countInput;
       document.getElementById('countInput2').value = initialValues.countInput;
       document.getElementById('itemPerGame1').value = initialValues.itemPerGame1;
