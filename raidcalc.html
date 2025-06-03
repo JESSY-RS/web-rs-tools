@@ -15,21 +15,21 @@
       color: #eee; 
     }
 
-h2 {
-  margin-top: 0px;
-  margin-bottom: 15px;
-}
+    h2 {
+      margin-top: 0px;
+      margin-bottom: 15px;
+    }
 
+    h3 {
+      margin-top: 0px;
+      margin-bottom: 10px;
+    }
 
-h3 {
-  margin-top: 0px;
-  margin-bottom: 10px;
-}
+    #result1, #result2 {
+      margin-top: 10px;
+      margin-bottom: 0px;
+    }
 
-#result1, #result2 {
-  margin-top: 10px;
-  margin-bottom: 0px;
-}
     input, select { 
       margin: 5px; 
       padding: 5px; 
@@ -45,7 +45,8 @@ h3 {
 
     button { 
       margin: 5px; 
-      padding: 5px; 
+      padding: 5px;
+      color: #fff; 
       background-color: #2A99E6; 
       border: 1px solid #555;
       cursor: pointer;
@@ -65,32 +66,32 @@ h3 {
       margin-top: 5px;
     }
 
-        /* フッターのスタイル */
-        footer {
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-            margin-top: 20px;
-        }
+    /* フッターのスタイル */
+    footer {
+        border-top: 1px solid #eee;
+        padding-top: 10px;
+        margin-top: 20px;
+    }
 
-        /* リンクのスタイル */
-        a:link {
-            color: #1D9BF0;
+    /* リンクのスタイル */
+    a:link {
+        color: #1D9BF0;
+        text-decoration: underline;
+    }
+
+    a:visited {
+        color: #7755FF;
+        text-decoration: underline;
+    }
+
+    a:hover {
+        color: #0CFF57;
+    }
+
+    a:active {
+            color: #FF0000;
             text-decoration: underline;
-        }
-
-        a:visited {
-            color: #7755FF;
-            text-decoration: underline;
-        }
-
-        a:hover {
-            color: #0CFF57;
-        }
-
-        a:active {
-             color: #FF0000;
-             text-decoration: underline;
-        }
+    }
 
   </style>
 </head>
@@ -101,12 +102,12 @@ h3 {
   <div class="block">
     <h3>比較①</h3>
 
-<div class="time-input" >
-  <label>1回の計測時間</label><br>
-  <input class="time-inputbox" type="number" placeholder="分" id="input1-min" min="0"> : 
-  <input class="time-inputbox" type="number" placeholder="秒" id="input1-sec" min="0">（+00:13）<br>
-<button onclick="calculate24h(1)">24Hで回数セット</button><br>
-</div>
+  <div class="time-input" >
+      <label>1回の計測時間</label><br>
+      <input class="time-inputbox" type="number" placeholder="分" id="input1-min" min="0"> : 
+      <input class="time-inputbox" type="number" placeholder="秒" id="input1-sec" min="0">（+00:13）<br>
+      <button onclick="calculate24h(1)">24Hで回数セット</button><br>
+  </div>
 
     <label>回数：</label>
     <input type="number" id="countInput1" placeholder="回数を入力" /><br />
@@ -133,12 +134,12 @@ h3 {
   <div class="block">
     <h3>比較②</h3>
 
-<div class="time-input" >
-  <label>1回の計測時間</label><br>
-  <input class="time-inputbox" type="number" placeholder="分" id="input2-min" min="0"> : 
-  <input class="time-inputbox"type="number" placeholder="秒" id="input2-sec" min="0">（+00:13）<br>
-<button onclick="calculate24h(2)">24Hで回数セット</button><br>
-</div>
+  <div class="time-input" >
+    <label>1回の計測時間</label><br>
+    <input class="time-inputbox" type="number" placeholder="分" id="input2-min" min="0"> : 
+    <input class="time-inputbox"type="number" placeholder="秒" id="input2-sec" min="0">（+00:13）<br>
+    <button onclick="calculate24h(2)">24Hで回数セット</button><br>
+  </div>
 
     <label>回数：</label>
     <input type="number" id="countInput2" placeholder="回数を入力" /><br />
@@ -162,25 +163,25 @@ h3 {
     <div class="error" id="error2" style="display:none;"></div>
   </div>
 
-　　<div class="bottom"><a href="raidcalc.html">再戦回数を計算する</a></br></div>
+  <div class="bottom"><a href="raidcalc.html">再戦回数を計算する</a><br></div>
 
-    <footer>
-        ※使用は自己責任にて。<br>
-        ※ページをリロードすると各項目が初期値に戻ります。<br>
-        <br>
-        <a href="index.html">TOPへ戻る</a></br>
-    </footer>
+  <footer>
+      ※使用は自己責任にて。<br>
+      ※ページをリロードすると各項目が初期値に戻ります。<br>
+      <br>
+      <a href="index.html">TOPへ戻る</a><br>
+  </footer>
 
   <script>
 
-        // 初期値の定義
-        const initialValues = {
-            inputMin: '',
-            inputMinSec: '',
-            countInput: '',
-            itemPerGame1: '92.8',
-            itemPerGame2: '365.4',
-        };
+    // 初期値の定義
+    const initialValues = {
+        inputMin: '',
+        inputMinSec: '',
+        countInput: '',
+        itemPerGame1: '92.8',
+        itemPerGame2: '365.4',
+    };
 
     const gradeValues = {
       0: 16.5,
@@ -211,40 +212,40 @@ h3 {
       document.getElementById(`result${number}`).textContent = `結果：${total.toLocaleString()}個`;
     }
 
-let resultCount = 0;
-
-function calculate24h(number) {
-  const min = parseInt(document.getElementById(`input${number}-min`).value) || 0;
-  const sec = parseInt(document.getElementById(`input${number}-sec`).value) || 0;
-  const oneTime = min * 60 + sec + 13; // 入力値 + 13秒
-  const totalTime = 86400; // 24時間＝86400秒
+    function calculate24h(number) {
+      let resultCount = 0;
+    
+      const min = parseInt(document.getElementById(`input${number}-min`).value) || 0;
+      const sec = parseInt(document.getElementById(`input${number}-sec`).value) || 0;
+      const oneTime = min * 60 + sec + 13; // 入力値 + 13秒
+      const totalTime = 86400; // 24時間＝86400秒
 
       const count = Number(document.getElementById(`countInput${number}`).value);
       const errorDiv = document.getElementById(`error${number}`);
-  if (oneTime === 13) {
-errorDiv.style.display = "block";
-    errorDiv.textContent = `※計測時間${number}を入力してください。`;
-    return;
-  }
 
-  resultCount = Math.floor(totalTime / oneTime);
-  document.getElementById(`countInput${number}`).value = resultCount;
-}
+      if (oneTime === 13) {
+        errorDiv.style.display = "block";
+        errorDiv.textContent = `※計測時間${number}を入力してください。`;
+        return;
+      }
 
-// ページをリロードしたら各項目を初期値に戻す
-window.onload = function() {
-  document.getElementById('input-min1').value = initialValues.inputMin;
-  document.getElementById('input-sec1').value = initialValues.inputSec;
-  document.getElementById('input-min2').value = initialValues.inputMin;
-  document.getElementById('input-sec2').value = initialValues.inputSec;
-  document.getElementById('countInput1').value = initialValues.countInput;
-  document.getElementById('countInput2').value = initialValues.countInput;
-  document.getElementById('itemPerGame1').value = initialValues.itemPerGame1;
-  document.getElementById('itemPerGame2').value = initialValues.itemPerGame2;
-  document.getElementById('gradeSelect1').value = "6";
-  document.getElementById('gradeSelect2').value = "10";
-  updateItemValue(1);
-}
+      resultCount = Math.floor(totalTime / oneTime);
+      document.getElementById(`countInput${number}`).value = resultCount;
+    }
+
+    // ページをリロードしたら各項目を初期値に戻す
+    window.onload = function() {
+      document.getElementById('input-min1').value = initialValues.inputMin;
+      document.getElementById('input-sec1').value = initialValues.inputSec;
+      document.getElementById('input-min2').value = initialValues.inputMin;
+      document.getElementById('input-sec2').value = initialValues.inputSec;
+      document.getElementById('countInput1').value = initialValues.countInput;
+      document.getElementById('countInput2').value = initialValues.countInput;
+      document.getElementById('itemPerGame1').value = initialValues.itemPerGame1;
+      document.getElementById('itemPerGame2').value = initialValues.itemPerGame2;
+      document.getElementById('gradeSelect1').value = "6";
+      document.getElementById('gradeSelect2').value = "10";
+    }
 
   </script>
 
