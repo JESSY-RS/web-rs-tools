@@ -93,6 +93,10 @@
       text-decoration: underline;
     }
 
+    .reResult {
+      max-width: 320px;
+    }
+
     .container {
       max-width: 500px;
     }
@@ -193,9 +197,28 @@
   <div class="error" id="error2" style="display:none;"></div>
   </div>
 
-  <div class="bottom"><a href="kiokucalc.html">所要時間を計算する</a><br></div>
-
+<div class="block">
+  <h3>目標個数から逆算</h3>
+  
+  <!-- 追加ボタン -->
+  <button onclick="setTargetFromResult(1)">比較①の結果をセット</button>
+  <button onclick="setTargetFromResult(2)">比較②の結果をセット</button>
   <br>
+
+  <label>目標個数：</label>
+  <input type="number" id="targetItemCount" placeholder="個数を入力" /><br>
+
+  <button onclick="calculateReverse()">逆算する</button>
+
+  <h3>結果</h3>
+  <div class="reResult" id="reverseResult"></div>
+  <div class="error" id="error3" style="display:none;"></div>
+<div class="reResult" id="reverseResult"></div>
+<div id="reverseMessage" style="margin-top:10px; font-weight:bold;"></div>
+<div class="error" id="error3" style="display:none;"></div>
+
+</div>
+
   <div class="container">
   <div class="title-box">■グレード⇆ダメージ換算早見表 (単位：百万)</div>
 
@@ -235,6 +258,12 @@
   </div>
 
   <br>
+
+　　<div class="bottom"><a href="kiokucalc.html">所要時間を計算する</a><br></div>
+　　<div class="bottom"><a href="kiokucalc2.html">再戦回数を計算する</a></br></div>
+
+  <br>
+
   ■関連記事<br>
   <a href="https://x.com/jessy_romasaga/status/1929476786771067261">https://x.com/jessy_romasaga/status/1929476786771067261</a><br>
   <a href="https://x.com/jessy_romasaga/status/1928710128066507018">https://x.com/jessy_romasaga/status/1928710128066507018</a><br>
@@ -320,7 +349,88 @@
       document.getElementById('itemPerGame2').value = initialValues.itemPerGame2;
       document.getElementById('gradeSelect1').value = "9";
       document.getElementById('gradeSelect2').value = "10";
+      document.getElementById('targetItemCount').value = "";
     }
+
+function calculateReverse() {
+  const targetItemCount = Number(document.getElementById("targetItemCount").value);
+  const resultDiv = document.getElementById("reverseResult");
+  resultDiv.innerHTML = "";
+
+  if (isNaN(targetItemCount) || targetItemCount <= 0) {
+    document.getElementById("reverseMessage").textContent = "";
+    resultDiv.innerHTML = "<div class='error'>※目標個数を正しく入力してください。</div>";
+    return;
+  }
+
+  let output = `<table border="1" cellspacing="0" cellpadding="5">
+    <thead>
+      <tr>
+        <th style="text-align:right;">Gr.</th>
+        <th style="text-align:right;">必要回数</th>
+        <th style="text-align:right;">1回の計測時間</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  const totalTime = 86400; // 24時間＝86400秒
+
+  function formatTimeWithOffset(seconds) {
+    // 13秒を引くが、マイナスにならないよう0未満なら0にする
+    const adjusted = Math.max(0, seconds - 13);
+    const mm = Math.floor(adjusted / 60).toString().padStart(2, "0");
+    const ss = (adjusted % 60).toString().padStart(2, "0");
+    return `${mm}:${ss}(+00:13)`;
+  }
+
+  for (const grade in gradeValues) {
+    const perGame = gradeValues[grade];
+    if (perGame === 0) continue;
+
+    const requiredCount = Math.ceil(targetItemCount / perGame);
+    const oneLapTime = Math.floor(totalTime / requiredCount);
+
+    output += `<tr>
+      <td style="text-align:right;">${grade}</td>
+      <td style="text-align:right;">${requiredCount.toLocaleString()}</td>
+      <td style="text-align:right;">${formatTimeWithOffset(oneLapTime)}</td>
+    </tr>`;
+  }
+
+  output += "</tbody></table>";
+  resultDiv.innerHTML = output;
+　document.getElementById("reverseMessage").textContent = "上記タイム未満で周回可能ならば報酬量は上回ります。";
+
+}
+
+
+// 比較①または比較②の結果から目標個数欄に値をセットする関数
+function setTargetFromResult(number) {
+  const resultText = document.getElementById(`result${number}`).textContent;  // 例: "結果：1,234個"
+  const match = resultText.match(/結果：([\d,]+)個/);
+
+    const reverseResultDiv = document.getElementById("reverseResult");
+
+    reverseResultDiv.innerHTML = "";
+
+    // 結果が未計算ならエラー表示
+    if (resultText === "結果：-") {
+      reverseResultDiv.innerHTML += `<div class="error">※比較${numberが計算されていません。</div>`;
+      return;
+    }
+
+    // エラー表示クリア（前回の残りを消すため）
+    reverseResultDiv.innerHTML = "";
+
+  if (match) {
+    // カンマを外して数字に変換
+    const count = Number(match[1].replace(/,/g, ''));
+    if (!isNaN(count)) {
+      document.getElementById('targetItemCount').value = count;
+    }
+  }
+}
+
 
   </script>
 
