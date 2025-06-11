@@ -8,11 +8,18 @@
     <link rel="icon" type="image/png" href="android-chrome-144x144-raidcalc.png">
     <title>6.5周年制圧戦・周回効率比較ツール</title>
 
+
   <style>
     body { 
       margin: 20px;
       background-color: #2A2A2A; 
       color: #eee; 
+    }
+
+    #warning {
+        color: red;
+        height: 32px;
+        margin-top: 10px;
     }
 
     h2 {
@@ -132,7 +139,7 @@
 <body>
 
   <h2>6.5周年制圧戦・周回効率比較ツール</h2>
-
+  <div id="warning">※グレード毎１戦あたりの個数変動の可能性あり注意。</div>
   <div class="block">
     <h3>比較①</h3>
 
@@ -223,32 +230,30 @@
     <thead>
       <tr>
         <th>Gr.</th>
-        <th>神</th>
-        <th>レ</th>
-        <th>ヴ</th>
-        <th>デ</th>
-        <th>ド</th>
-        <th>ス</th>
+        <th>アレツ</th>
+        <th>シムメシュ</th>
+        <th>シャムマベル</th>
+        <th>老人</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td>
+        <td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td>
       </tr>
       <tr>
-        <td class="num">6</td><td class="num">300</td><td class="num">300</td><td class="num">500</td><td class="num">300</td><td class="num">1,000</td><td class="num">1,000</td>
+        <td class="num">6</td><td class="num">300</td><td class="num">500</td><td class="num">300</td><td class="num">300</td>
       </tr>
       <tr>
-        <td class="num">7</td><td class="num">500</td><td class="num">500</td><td class="num">1,000</td><td class="num">500</td><td class="num">2,000</td><td class="num">2,000</td>
+        <td class="num">7</td><td class="num">500</td><td class="num">1,000</td><td class="num">400</td><td class="num">500</td>
       </tr>
       <tr>
-        <td class="num">8</td><td class="num">1,000</td><td class="num">1,000</td><td class="num">2,000</td><td class="num">1,000</td><td class="num">3,000</td><td class="num">3,000</td>
+        <td class="num">8</td><td class="num">1,000</td><td class="num">2,000</td><td class="num">500</td><td class="num">1,000</td>
       </tr>
       <tr>
-        <td class="num">9</td><td class="num">2,000</td><td class="num">1,500</td><td class="num">3,000</td><td class="num">1,500</td><td class="num">4,000</td><td class="num">4,000</td>
+        <td class="num">9</td><td class="num">2,000</td><td class="num">3,000</td><td class="num">750</td><td class="num">2,000</td>
       </tr>
       <tr>
-        <td class="num">10</td><td class="num">4,000</td><td class="num">2,500</td><td class="num">4,500</td><td class="num">2,500</td><td class="num">5,000</td><td class="num">5,000</td>
+        <td class="num">10</td><td class="num">3,000</td><td class="num">5,000</td><td class="num">1,000</td><td class="num">4,000</td>
       </tr>
     </tbody>
   </table>
@@ -400,7 +405,6 @@
 
     }
 
-
     // 比較①または比較②の結果から目標個数欄に値をセットする関数
     function setTargetFromResult(number) {
       const resultText = document.getElementById(`result${number}`).textContent;  // 例: "結果：1,234個"
@@ -420,14 +424,14 @@
       // エラー表示クリア（前回の残りを消すため）
       reverseResultDiv.innerHTML = "";
 
-    if (match) {
-      // カンマを外して数字に変換
-      const count = Number(match[1].replace(/,/g, ''));
-      if (!isNaN(count)) {
-        document.getElementById('targetItemCount').value = count;
+      if (match) {
+        // カンマを外して数字に変換
+        const count = Number(match[1].replace(/,/g, ''));
+        if (!isNaN(count)) {
+          document.getElementById('targetItemCount').value = count;
+        }
       }
     }
-  }
 
   </script>
 
