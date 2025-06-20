@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>四元ピアス獲得チェッカー</title>
+  <style>
+    body { 
+      margin: 20px;
+      background-color: #2A2A2A; 
+      color: #eee; 
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .group-title {
+      font-size: 28px;
+      margin-top: 50px;
+      margin-bottom: 8px;
+    }
+    .stars {
+      display: inline-block;
+      margin-left: 5px;
+    }
+    .star {
+      font-size: 36px;
+      margin: 0 2px;
+      cursor: pointer;
+    }
+    .line {
+      margin-bottom: 8px;
+    }
+    .crimson { color: pink; }
+    .purple { color: gray; }
+    .green { color: red; }
+    .blue { color: royalblue; }
+
+    input[type="file"] {
+      font-size: 18px;
+    }
+
+    button {
+      padding: 5px 10px;
+      font-size: 18px;
+    }
+    .controls {
+      margin-bottom: 15px;
+    }
+    /* 小分類ごとの色指定 */
+    .attr-zan  { color: white; }
+    .attr-da   { color: white; }
+    .attr-totsu{ color: white; }
+    .attr-netsu{ color: orangered; }
+    .attr-rei  { color: steelblue; }
+    .attr-rai  { color: yellow; }
+    .attr-you  { color: orange; }
+    .attr-in   { color: purple; }
+    .attr-mu   { color: white; }
+
+    /* 小分類ごとのフォントサイズ指定（例: 18pxに変更）*/
+    .attr-zan, .attr-da, .attr-totsu, .attr-netsu, .attr-rei,
+    .attr-rai, .attr-you, .attr-in, .attr-mu {
+      font-size: 30px;
+    }
+
+    /* フッターのスタイル */
+    footer {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      margin-top: 20px;
+    }
+
+  </style>
+</head>
+<body>
+
+<h1>四元ピアス獲得チェッカー</h1>
+<div class="controls">
+  <input type="file" id="fileInput" accept=".json"><br><br>
+  <button id="exportBtnTop">状態をエクスポート</button>
+</div>
+
+<div id="statusContainer"></div>
+
+<div style="margin-top: 30px;">
+  <button id="exportBtnBottom">状態をエクスポート</button>
+</div>
+<br>
+  <footer>
+    ※使用は自己責任にて。<br>
+    <br>
+  </footer>
+
+<script>
+const groups = [
+  { title: "◆緋のピアス", color: "crimson" },
+  { title: "◆濡羽のピアス", color: "purple" },
+  { title: "◆憲法のピアス", color: "green" },
+  { title: "◆瑠璃紺のピアス", color: "blue" }
+];
+
+const attributes = [
+  { name: "斬", class: "attr-zan" },
+  { name: "打", class: "attr-da" },
+  { name: "突", class: "attr-totsu" },
+  { name: "熱", class: "attr-netsu" },
+  { name: "冷", class: "attr-rei" },
+  { name: "雷", class: "attr-rai" },
+  { name: "陽", class: "attr-you" },
+  { name: "陰", class: "attr-in" },
+  { name: "無", class: "attr-mu" }
+];
+
+function init() {
+  const container = document.getElementById('statusContainer');
+  container.innerHTML = '';
+
+  groups.forEach(group => {
+    const groupTitle = document.createElement('div');
+    groupTitle.textContent = group.title;
+    groupTitle.className = `group-title ${group.color}`;
+    container.appendChild(groupTitle);
+
+    attributes.forEach(attr => {
+      const line = document.createElement('div');
+      line.className = 'line';
+
+      const name = document.createElement('span');
+      name.textContent = attr.name;
+      name.className = attr.class;
+
+      const stars = document.createElement('span');
+      stars.className = 'stars';
+      stars.dataset.key = `${group.title}_${attr.name}`;
+
+      for (let i = 0; i < 5; i++) {
+        const star = document.createElement('span');
+        star.textContent = '☆';
+        star.className = 'star';
+        star.dataset.index = i;
+        star.addEventListener('click', function () {
+          this.textContent = this.textContent === '☆' ? '★' : '☆';
+        });
+        stars.appendChild(star);
+      }
+
+      line.appendChild(name);
+      line.appendChild(stars);
+      container.appendChild(line);
+    });
+  });
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    try {
+      const data = JSON.parse(event.target.result);
+      for (const key in data) {
+        const stars = document.querySelector(`.stars[data-key="${key}"]`);
+        if (stars) {
+          const starElems = stars.querySelectorAll('.star');
+          for (let i = 0; i < 5; i++) {
+            starElems[i].textContent = data[key][i] || '☆';
+          }
+        }
+      }
+      alert('状態を読み込みました。');
+    } catch (error) {
+      alert('ファイルの内容が不正です。');
+    }
+  };
+  reader.readAsText(file);
+});
+
+function exportState() {
+  const result = {};
+  const allStars = document.querySelectorAll('.stars');
+  allStars.forEach(stars => {
+    const key = stars.dataset.key;
+    const starElems = stars.querySelectorAll('.star');
+    let starString = '';
+    starElems.forEach(s => starString += s.textContent);
+    result[key] = starString;
+  });
+
+  const blob = new Blob([JSON.stringify(result, null, 2)], {type: "application/json"});
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "四元ピアス獲得状況.json";
+  link.click();
+}
+
+document.getElementById('exportBtnTop').addEventListener('click', exportState);
+document.getElementById('exportBtnBottom').addEventListener('click', exportState);
+
+init();
+</script>
+
+</body>
+</html>
