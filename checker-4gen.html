@@ -55,12 +55,32 @@
     .attr-rai  { color: yellow; }
     .attr-you  { color: orange; }
     .attr-in   { color: purple; }
-    .attr-mu   { color: white; }
+    .attr-mu   { color: gray; }
 
     /* 小分類ごとのフォントサイズ指定（例: 18pxに変更）*/
     .attr-zan, .attr-da, .attr-totsu, .attr-netsu, .attr-rei,
     .attr-rai, .attr-you, .attr-in, .attr-mu {
       font-size: 30px;
+    }
+
+   /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
     }
 
     /* フッターのスタイル */
@@ -86,6 +106,9 @@
   <button id="exportBtnBottom">状態をエクスポート</button>
 </div>
 <br>
+
+  <br><a href="report-4gen.html">報告用ページへ</a><br>
+
   <footer>
     ※使用は自己責任にて。<br>
     <br>
