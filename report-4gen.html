@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>四元ピアス獲得・報告用</title>
+  <style>
+    body { 
+      margin: 20px;
+      background-color: #2A2A2A; 
+      color: #eee;
+      text-align: center;
+    }
+    h1 {
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+    .pierce-group {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 10px;
+    }
+    .pierce-category {
+      border: 1px solid #ccc;
+      padding: 5px;
+    }
+    .pierce-category h2 {
+      font-size: 18px;
+      margin: 3px 0;
+    }
+    .attribute {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: -3px 0;
+    }
+    .attribute span:first-child {
+      margin-right: 5px;
+      font-size: 18px;
+    }
+    .stars {
+      font-size: 20px;
+    }
+    input[type="file"] {
+      margin: 10px 0;
+      font-size: 12px;
+    }
+    /* 大分類色 */
+    .緋 { color: pink; }
+    .濡羽 { color: gray; }
+    .憲法 { color: red; }
+    .瑠璃紺 { color: royalblue; }
+
+    /* 小分類色 */
+    .斬 { color: white; }
+    .打 { color: white; }
+    .突 { color: white; }
+    .熱 { color: orangered; }
+    .冷 { color: steelblue; }
+    .雷 { color: yellow; }
+    .陽 { color: orange; }
+    .陰 { color: purple; }
+    .無 { color: gray; }
+
+   /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+  </style>
+</head>
+<body>
+
+<h1>四元ピアス獲得・報告用</h1>
+<input type="file" id="importJson" accept=".json">
+
+<div class="pierce-group" id="pierceGroup"></div>
+
+<br><a href="checker-4gen.html">チェッカーへ戻る</a><br>
+
+<script>
+const pierces = [
+  { name: "緋のピアス", className: "緋" },
+  { name: "濡羽のピアス", className: "濡羽" },
+  { name: "憲法のピアス", className: "憲法" },
+  { name: "瑠璃紺のピアス", className: "瑠璃紺" }
+];
+const attributes = [
+  "斬","打","突","熱","冷","雷","陽","陰","無"
+];
+const pierceGroup = document.getElementById("pierceGroup");
+
+pierces.forEach(p => {
+  const category = document.createElement("div");
+  category.className = "pierce-category";
+  category.innerHTML = `<h2 class="${p.className}">◆${p.name}</h2>`;
+  attributes.forEach(attr => {
+    const div = document.createElement("div");
+    div.className = "attribute";
+    div.innerHTML = `<span class="${attr}">${attr}</span> <span class="stars" id="◆${p.name}_${attr}">☆☆☆☆☆</span>`;
+    category.appendChild(div);
+  });
+  pierceGroup.appendChild(category);
+});
+
+// JSON読込
+document.getElementById("importJson").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = JSON.parse(e.target.result);
+    for (let key in data) {
+      const el = document.getElementById(key);
+      if (el) el.textContent = data[key];
+    }
+  };
+  reader.readAsText(file);
+});
+</script>
+
+</body>
+</html>
