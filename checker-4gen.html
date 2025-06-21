@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>四元ピアス獲得チェッカー</title>
   <style>
     body { 
@@ -66,33 +66,53 @@
       font-size: 30px;
     }
 
-   /* リンクのスタイル */
+    /* リンクのスタイル */
     a:link {
       color: #1D9BF0;
       text-decoration: underline;
     }
-
     a:visited {
       color: #7755FF;
       text-decoration: underline;
     }
-
     a:hover {
       color: #0CFF57;
     }
-
     a:active {
       color: #FF0000;
       text-decoration: underline;
     }
 
-    /* フッターのスタイル */
     footer {
       border-top: 1px solid #eee;
       padding-top: 10px;
       margin-top: 20px;
     }
 
+    /* スクロールボタンのスタイル */
+    .scroll-buttons {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .scroll-button {
+      background-color: #444;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .scroll-button:hover {
+      background-color: #666;
+    }
   </style>
 </head>
 <body>
@@ -109,13 +129,17 @@
   <button id="exportBtnBottom">状態をエクスポート</button>
 </div>
 <br>
+<a href="report-4gen.html">報告用ページへ</a><br>
 
-  <br><a href="report-4gen.html">報告用ページへ</a><br>
+<footer>
+  ※使用は自己責任にて。<br><br>
+</footer>
 
-  <footer>
-    ※使用は自己責任にて。<br>
-    <br>
-  </footer>
+<!-- スクロールボタン -->
+<div class="scroll-buttons">
+  <button class="scroll-button" id="scrollUp">↑</button>
+  <button class="scroll-button" id="scrollDown">↓</button>
+</div>
 
 <script>
 const groups = [
@@ -175,6 +199,32 @@ function init() {
       container.appendChild(line);
     });
   });
+
+  setupScrollButtons(); // ← スクロールボタンの初期化もここで
+}
+
+function setupScrollButtons() {
+  const groupTitles = document.querySelectorAll('.group-title');
+  let currentGroupIndex = 0;
+
+  function scrollToGroup(index) {
+    if (index >= 0 && index < groupTitles.length) {
+      groupTitles[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      currentGroupIndex = index;
+    }
+  }
+
+  document.getElementById('scrollDown').addEventListener('click', () => {
+    if (currentGroupIndex < groupTitles.length - 1) {
+      scrollToGroup(currentGroupIndex + 1);
+    }
+  });
+
+  document.getElementById('scrollUp').addEventListener('click', () => {
+    if (currentGroupIndex > 0) {
+      scrollToGroup(currentGroupIndex - 1);
+    }
+  });
 }
 
 document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -223,6 +273,7 @@ function exportState() {
 document.getElementById('exportBtnTop').addEventListener('click', exportState);
 document.getElementById('exportBtnBottom').addEventListener('click', exportState);
 
+// ✅ 初期化
 init();
 </script>
 
