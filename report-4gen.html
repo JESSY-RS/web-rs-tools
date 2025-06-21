@@ -65,7 +65,6 @@
     .雷  { color: yellow; }
     .陽  { color: darkorange; }
     .陰  { color: darkorchid; }
-    .無  { color: darkgray; }
 
     /* リンクのスタイル */
     a:link { color: #1D9BF0; text-decoration: underline; }
@@ -81,6 +80,8 @@
 
 <div class="pierce-group" id="pierceGroup"></div>
 
+<div id="summary" style="margin: 10px 0; font-size: 14px;"></div>
+
 <br><a href="checker-4gen.html">チェッカーへ戻る</a><br>
 
 <script>
@@ -90,7 +91,7 @@ const pierces = [
   { name: "憲法のピアス", className: "憲" },
   { name: "瑠璃紺のピアス", className: "瑠" }
 ];
-const attributes = ["斬","打","突","熱","冷","雷","陽","陰","無"];
+const attributes = ["斬","打","突","熱","冷","雷","陽","陰"];
 const pierceGroup = document.getElementById("pierceGroup");
 
 // 星を色付きで装飾する関数
@@ -123,6 +124,34 @@ pierces.forEach(p => {
   pierceGroup.appendChild(category);
 });
 
+// ★数を集計して表示する関数
+function updateSummary() {
+  let total = 0;
+  let categoryTotals = { "緋": 0, "憲": 0, "濡": 0, "瑠": 0 };
+
+  pierces.forEach(p => {
+    attributes.forEach(attr => {
+      const el = document.getElementById(`◆${p.name}_${attr}`);
+      if (el) {
+        const starCount = (el.textContent.match(/★/g) || []).length;
+        categoryTotals[p.className] += starCount;
+        total += starCount;
+      }
+    });
+  });
+
+  // 表示文字列作成
+  const summaryHTML = `
+    <span class="緋">緋</span>・${categoryTotals["緋"]}/40　
+    <span class="憲">憲</span>・${categoryTotals["憲"]}/40　
+    <span class="濡">濡</span>・${categoryTotals["濡"]}/40　
+    <span class="瑠">瑠</span>・${categoryTotals["瑠"]}/40　
+    全・${total}/160
+  `;
+
+  document.getElementById("summary").innerHTML = summaryHTML;
+}
+
 // JSON読込
 document.getElementById("importJson").addEventListener("change", e => {
   const file = e.target.files[0];
@@ -136,9 +165,13 @@ document.getElementById("importJson").addEventListener("change", e => {
         el.innerHTML = decorateStars(data[key]);
       }
     }
+    updateSummary(); // 読込後に集計実行
   };
   reader.readAsText(file);
 });
+
+// 初期表示の時点でも集計実行
+updateSummary();
 </script>
 
 </body>
