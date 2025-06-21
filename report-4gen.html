@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>四元ピアス獲得・報告用</title>
   <style>
-    body { 
-      margin: 20px;
-      background-color: #2A2A2A; 
+    body {
+      margin: 18px;
+      background-color: #2A2A2A;
       color: #eee;
       text-align: center;
     }
@@ -36,7 +36,7 @@
       margin: -3px 0;
     }
     .attribute span:first-child {
-      margin-right: 5px;
+      margin-left: 5px;
       font-size: 18px;
     }
     .stars {
@@ -64,26 +64,11 @@
     .陰  { color: darkorchid; }
     .無  { color: darkgray; }
 
-   /* リンクのスタイル */
-    a:link {
-      color: #1D9BF0;
-      text-decoration: underline;
-    }
-
-    a:visited {
-      color: #7755FF;
-      text-decoration: underline;
-    }
-
-    a:hover {
-      color: #0CFF57;
-    }
-
-    a:active {
-      color: #FF0000;
-      text-decoration: underline;
-    }
-
+    /* リンクのスタイル */
+    a:link { color: #1D9BF0; text-decoration: underline; }
+    a:visited { color: #7755FF; text-decoration: underline; }
+    a:hover { color: #0CFF57; }
+    a:active { color: #FF0000; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -102,11 +87,25 @@ const pierces = [
   { name: "憲法のピアス", className: "憲" },
   { name: "瑠璃紺のピアス", className: "瑠" }
 ];
-const attributes = [
-  "斬","打","突","熱","冷","雷","陽","陰","無"
-];
+const attributes = ["斬","打","突","熱","冷","雷","陽","陰","無"];
 const pierceGroup = document.getElementById("pierceGroup");
 
+// 星を色付きで装飾する関数
+function decorateStars(text) {
+  let result = "";
+  for (let char of text) {
+    if (char === "★") {
+      result += `<span style="color: gold; font-size: inherit;">★</span>`;
+    } else if (char === "☆") {
+      result += `<span style="color: white; font-size: inherit;">☆</span>`;
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+
+// 初期表示生成
 pierces.forEach(p => {
   const category = document.createElement("div");
   category.className = "pierce-category";
@@ -114,7 +113,8 @@ pierces.forEach(p => {
   attributes.forEach(attr => {
     const div = document.createElement("div");
     div.className = "attribute";
-    div.innerHTML = `<span class="${attr}">${attr}</span> <span class="stars" id="◆${p.name}_${attr}">☆☆☆☆☆</span>`;
+    const id = `◆${p.name}_${attr}`;
+    div.innerHTML = `<span class="${attr}">${attr}</span> <span class="stars" id="${id}">${decorateStars("☆☆☆☆☆")}</span>`;
     category.appendChild(div);
   });
   pierceGroup.appendChild(category);
@@ -129,7 +129,9 @@ document.getElementById("importJson").addEventListener("change", e => {
     const data = JSON.parse(e.target.result);
     for (let key in data) {
       const el = document.getElementById(key);
-      if (el) el.textContent = data[key];
+      if (el) {
+        el.innerHTML = decorateStars(data[key]);
+      }
     }
   };
   reader.readAsText(file);
