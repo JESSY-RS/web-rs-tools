@@ -142,11 +142,11 @@ function updateSummary() {
 
   // 表示文字列作成
   const summaryHTML = `
-    <span class="緋">緋</span>・${categoryTotals["緋"]}/40　
-    <span class="憲">憲</span>・${categoryTotals["憲"]}/40　
-    <span class="濡">濡</span>・${categoryTotals["濡"]}/40　
-    <span class="瑠">瑠</span>・${categoryTotals["瑠"]}/40　
-    全・${total}/160
+    <span class="緋">緋</span> ${categoryTotals["緋"]}/40　
+    <span class="憲">憲</span> ${categoryTotals["憲"]}/40　
+    <span class="濡">濡</span> ${categoryTotals["濡"]}/40　
+    <span class="瑠">瑠</span> ${categoryTotals["瑠"]}/40　
+    全 ${total}/160
   `;
 
   document.getElementById("summary").innerHTML = summaryHTML;
