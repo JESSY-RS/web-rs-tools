@@ -30,10 +30,6 @@
     .line {
       margin-bottom: 8px;
     }
-    .crimson { color: pink; }
-    .purple { color: gray; }
-    .green { color: red; }
-    .blue { color: royalblue; }
 
     input[type="file"] {
       font-size: 18px;
@@ -46,20 +42,27 @@
     .controls {
       margin-bottom: 15px;
     }
-    /* 小分類ごとの色指定 */
-    .attr-zan  { color: white; }
-    .attr-da   { color: white; }
-    .attr-totsu{ color: white; }
-    .attr-netsu{ color: orangered; }
-    .attr-rei  { color: steelblue; }
-    .attr-rai  { color: yellow; }
-    .attr-you  { color: orange; }
-    .attr-in   { color: purple; }
-    .attr-mu   { color: gray; }
 
-    /* 小分類ごとのフォントサイズ指定（例: 18pxに変更）*/
-    .attr-zan, .attr-da, .attr-totsu, .attr-netsu, .attr-rei,
-    .attr-rai, .attr-you, .attr-in, .attr-mu {
+    /* 大分類ごとの色指定 */
+    .緋 { color: hotpink; }
+    .憲 { color: red; }
+    .濡 { color: gray; }
+    .瑠 { color: royalblue; }
+
+    /* 小分類ごとの色指定 */
+    .斬  { color: gainsboro; }
+    .打  { color: gainsboro; }
+    .突  { color: gainsboro; }
+    .熱  { color: orangered; }
+    .冷  { color: dodgerblue; }
+    .雷  { color: yellow; }
+    .陽  { color: darkorange; }
+    .陰  { color: magenta; }
+    .無  { color: silver; }
+
+    /* 小分類ごとのフォントサイズ指定 */
+    .斬, .打, .突, .熱, .冷,
+    .雷, .陽, .陰, .無 {
       font-size: 30px;
     }
 
@@ -116,22 +119,22 @@
 
 <script>
 const groups = [
-  { title: "◆緋のピアス", color: "crimson" },
-  { title: "◆憲法のピアス", color: "green" },
-  { title: "◆濡羽のピアス", color: "purple" },
-  { title: "◆瑠璃紺のピアス", color: "blue" }
+  { title: "◆緋のピアス", color: "緋" },
+  { title: "◆憲法のピアス", color: "憲" },
+  { title: "◆濡羽のピアス", color: "濡" },
+  { title: "◆瑠璃紺のピアス", color: "瑠" }
 ];
 
 const attributes = [
-  { name: "斬", class: "attr-zan" },
-  { name: "打", class: "attr-da" },
-  { name: "突", class: "attr-totsu" },
-  { name: "熱", class: "attr-netsu" },
-  { name: "冷", class: "attr-rei" },
-  { name: "雷", class: "attr-rai" },
-  { name: "陽", class: "attr-you" },
-  { name: "陰", class: "attr-in" },
-  { name: "無", class: "attr-mu" }
+  { name: "斬", class: "斬" },
+  { name: "打", class: "打" },
+  { name: "突", class: "突" },
+  { name: "熱", class: "熱" },
+  { name: "冷", class: "冷" },
+  { name: "雷", class: "雷" },
+  { name: "陽", class: "陽" },
+  { name: "陰", class: "陰" },
+  { name: "無", class: "無" }
 ];
 
 function init() {
