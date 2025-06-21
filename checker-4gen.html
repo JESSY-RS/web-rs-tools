@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>四元ピアス獲得チェッカー</title>
   <style>
-    body { 
+    body {
       margin: 20px;
-      background-color: #2A2A2A; 
-      color: #eee; 
+      background-color: #2A2A2A;
+      color: #eee;
     }
     h1 {
       margin-bottom: 10px;
@@ -26,15 +26,17 @@
       font-size: 36px;
       margin: 0 2px;
       cursor: pointer;
+      color: white;
+    }
+    .star.on {
+      color: gold;
     }
     .line {
       margin-bottom: 8px;
     }
-
     input[type="file"] {
       font-size: 18px;
     }
-
     button {
       padding: 5px 10px;
       font-size: 18px;
@@ -42,31 +44,20 @@
     .controls {
       margin-bottom: 15px;
     }
-
-    /* 大分類ごとの色指定 */
     .緋 { color: hotpink; }
     .憲 { color: red; }
     .濡 { color: gray; }
     .瑠 { color: royalblue; }
-
-    /* 小分類ごとの色指定 */
-    .斬  { color: lightgray; }
-    .打  { color: lightgray; }
-    .突  { color: lightgray; }
-    .熱  { color: orangered; }
-    .冷  { color: dodgerblue; }
-    .雷  { color: yellow; }
-    .陽  { color: darkorange; }
-    .陰  { color: darkorchid; }
-    .無  { color: darkgray; }
-
-    /* 小分類ごとのフォントサイズ指定 */
-    .斬, .打, .突, .熱, .冷,
-    .雷, .陽, .陰, .無 {
+    .斬, .打, .突, .熱, .冷, .雷, .陽, .陰, .無 {
       font-size: 30px;
+      color: lightgray;
     }
-
-    /* リンクのスタイル */
+    .熱 { color: orangered; }
+    .冷 { color: dodgerblue; }
+    .雷 { color: yellow; }
+    .陽 { color: darkorange; }
+    .陰 { color: darkorchid; }
+    .無 { color: darkgray; }
     a:link {
       color: #1D9BF0;
       text-decoration: underline;
@@ -82,14 +73,11 @@
       color: #FF0000;
       text-decoration: underline;
     }
-
     footer {
       border-top: 1px solid #eee;
       padding-top: 10px;
       margin-top: 20px;
     }
-
-    /* スクロールボタンのスタイル */
     .scroll-buttons {
       position: fixed;
       top: 20px;
@@ -99,7 +87,6 @@
       flex-direction: column;
       gap: 10px;
     }
-
     .scroll-button {
       background-color: #444;
       color: #fff;
@@ -109,7 +96,6 @@
       cursor: pointer;
       border-radius: 4px;
     }
-
     .scroll-button:hover {
       background-color: #666;
     }
@@ -119,23 +105,17 @@
 
 <h1>四元ピアス獲得チェッカー</h1>
 <div class="controls">
-  <input type="file" id="fileInput" accept=".json"><br><br>
-  <button id="exportBtnTop">状態をエクスポート</button>
+  <input type="file" id="fileInput" accept=".json"><br>
 </div>
 
 <div id="statusContainer"></div>
 
-<div style="margin-top: 30px;">
-  <button id="exportBtnBottom">状態をエクスポート</button>
-</div>
-<br>
-<a href="report-4gen.html">報告用ページへ</a><br>
+<br><br><a href="report-4gen.html">報告用ページへ</a><br>
 
 <footer>
   ※使用は自己責任にて。<br><br>
 </footer>
 
-<!-- スクロールボタン -->
 <div class="scroll-buttons">
   <button class="scroll-button" id="scrollUp">↑</button>
   <button class="scroll-button" id="scrollDown">↓</button>
@@ -189,7 +169,13 @@ function init() {
         star.className = 'star';
         star.dataset.index = i;
         star.addEventListener('click', function () {
-          this.textContent = this.textContent === '☆' ? '★' : '☆';
+          if (this.textContent === '☆') {
+            this.textContent = '★';
+            this.classList.add('on');
+          } else {
+            this.textContent = '☆';
+            this.classList.remove('on');
+          }
         });
         stars.appendChild(star);
       }
@@ -198,9 +184,18 @@ function init() {
       line.appendChild(stars);
       container.appendChild(line);
     });
+
+    // グループごとのエクスポートボタン
+    const exportBtn = document.createElement('button');
+    exportBtn.textContent = '状態をエクスポート';
+    exportBtn.style.marginTop = '10px';
+    exportBtn.addEventListener('click', exportState);
+    container.appendChild(exportBtn);
+
+    container.appendChild(exportBtn);
   });
 
-  setupScrollButtons(); // ← スクロールボタンの初期化もここで
+  setupScrollButtons();
 }
 
 function setupScrollButtons() {
@@ -209,7 +204,7 @@ function setupScrollButtons() {
 
   function scrollToGroup(index) {
     if (index >= 0 && index < groupTitles.length) {
-      groupTitles[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
+      groupTitles[index].scrollIntoView({ behavior: 'instant', block: 'start' });
       currentGroupIndex = index;
     }
   }
@@ -227,31 +222,6 @@ function setupScrollButtons() {
   });
 }
 
-document.getElementById('fileInput').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(event) {
-    try {
-      const data = JSON.parse(event.target.result);
-      for (const key in data) {
-        const stars = document.querySelector(`.stars[data-key="${key}"]`);
-        if (stars) {
-          const starElems = stars.querySelectorAll('.star');
-          for (let i = 0; i < 5; i++) {
-            starElems[i].textContent = data[key][i] || '☆';
-          }
-        }
-      }
-      alert('状態を読み込みました。');
-    } catch (error) {
-      alert('ファイルの内容が不正です。');
-    }
-  };
-  reader.readAsText(file);
-});
-
 function exportState() {
   const result = {};
   const allStars = document.querySelectorAll('.stars');
@@ -263,19 +233,44 @@ function exportState() {
     result[key] = starString;
   });
 
-  const blob = new Blob([JSON.stringify(result, null, 2)], {type: "application/json"});
+  const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = "四元ピアス獲得状況.json";
   link.click();
 }
 
-document.getElementById('exportBtnTop').addEventListener('click', exportState);
-document.getElementById('exportBtnBottom').addEventListener('click', exportState);
+document.getElementById('fileInput').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    try {
+      const data = JSON.parse(event.target.result);
+      for (const key in data) {
+        const stars = document.querySelector(`.stars[data-key="${key}"]`);
+        if (stars) {
+          const starElems = stars.querySelectorAll('.star');
+          for (let i = 0; i < 5; i++) {
+            starElems[i].textContent = data[key][i] || '☆';
+            if (data[key][i] === '★') {
+              starElems[i].classList.add('on');
+            } else {
+              starElems[i].classList.remove('on');
+            }
+          }
+        }
+      }
+      //alert('状態を読み込みました。');
+    } catch (error) {
+      alert('ファイルの内容が不正です。');
+    }
+  };
+  reader.readAsText(file);
+});
 
-// ✅ 初期化
+// 初期化
 init();
 </script>
-
 </body>
 </html>
