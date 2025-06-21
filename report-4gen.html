@@ -66,11 +66,31 @@
     .陽  { color: darkorange; }
     .陰  { color: darkorchid; }
 
+    #summary {
+      text-align: center;
+      font-size: 16px;
+    }
+
     /* リンクのスタイル */
-    a:link { color: #1D9BF0; text-decoration: underline; }
-    a:visited { color: #7755FF; text-decoration: underline; }
-    a:hover { color: #0CFF57; }
-    a:active { color: #FF0000; text-decoration: underline; }
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
   </style>
 </head>
 <body>
@@ -80,7 +100,7 @@
 
 <div class="pierce-group" id="pierceGroup"></div>
 
-<div id="summary" style="margin: 10px 0; font-size: 14px;"></div>
+<div id="summary"></div>
 
 <br><a href="checker-4gen.html">チェッカーへ戻る</a><br>
 
@@ -141,13 +161,17 @@ function updateSummary() {
   });
 
   // 表示文字列作成
-  const summaryHTML = `
+const summaryHTML = `
+  <div>
     <span class="緋">緋</span> ${categoryTotals["緋"]}/40　
     <span class="憲">憲</span> ${categoryTotals["憲"]}/40　
     <span class="濡">濡</span> ${categoryTotals["濡"]}/40　
     <span class="瑠">瑠</span> ${categoryTotals["瑠"]}/40　
+  </div>
+  <div style="margin-top: 4px;">
     全 ${total}/160
-  `;
+  </div>
+`;
 
   document.getElementById("summary").innerHTML = summaryHTML;
 }
