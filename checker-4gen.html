@@ -9,14 +9,7 @@
   <title>四元ピアス獲得チェッカー</title> <!-- Created by じぇ -->
   <style>
 
- /* ハンバーガーメニューのスタイル */
-    .header {
-      position: relative;
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
+     /* ハンバーガーメニューのスタイル */
     .hamburger {
       font-size: 36px;
       cursor: pointer;
@@ -105,23 +98,28 @@
       border-bottom: none;
     }
 
+    /* 全体のスタイル */
     body {
       margin: 20px;
       background-color: #2A2A2A;
       color: #eee;
     }
+
     h1 {
       margin-bottom: 10px;
     }
+
     .group-title {
       font-size: 28px;
       margin-top: 50px;
       margin-bottom: 8px;
     }
+
     .stars {
       display: inline-block;
       margin-left: 5px;
     }
+
     .star {
       font-size: 36px;
       margin: 0 2px;
@@ -129,22 +127,28 @@
       color: darkgray;
       user-select: none; 
     }
+
     .star.on {
       color: gold;
     }
+
     .line {
       margin-bottom: 8px;
     }
+
     input[type="file"] {
       font-size: 18px;
     }
+
     button {
       padding: 5px 10px;
       font-size: 18px;
     }
+
     .controls {
       margin-bottom: 15px;
     }
+
     .緋 { color: hotpink; }
     .憲 { color: red; }
     .濡 { color: gray; }
@@ -159,30 +163,37 @@
     .陽 { color: darkorange; }
     .陰 { color: darkorchid; }
     .無 { color: darkgray; }
+
     a:link {
       color: #1D9BF0;
       text-decoration: underline;
     }
+
     a:visited {
       color: #7755FF;
       text-decoration: underline;
     }
+
     a:hover {
       color: #0CFF57;
     }
+
     a:active {
       color: #FF0000;
       text-decoration: underline;
     }
+
     .bottom {
         font-size: 16pt;
         margin-top: 20px;
     }
+
     footer {
       border-top: 1px solid #eee;
       padding-top: 10px;
       margin-top: 20px;
     }
+
     .scroll-buttons {
       position: fixed;
       top: 20px;
@@ -192,6 +203,7 @@
       flex-direction: column;
       gap: 10px;
     }
+
     .scroll-button {
       background-color: #444;
       color: #fff;
@@ -204,24 +216,31 @@
     .scroll-button:hover {
       background-color: #666;
     }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
   </style>
 </head>
 <body>
 
-  <!-- サイドメニューオーバーレイ -->
-  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+<!-- サイドメニューオーバーレイ -->
+<div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-  <!-- サイドメニュー -->
-  <div class="side-menu" id="sideMenu">
-    <div class="menu-close" onclick="closeMenu()">×</div>
-    <div class="menu-title">★実装テスト中★</div>
-    <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
-    <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
-    <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
-    <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
-    <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
-    <a href="expcalc.html" class="menu-item">>EXPスタンプ必要数計算</a>
-  </div>  
+<!-- サイドメニュー -->
+<div class="side-menu" id="sideMenu">
+  <div class="menu-close" onclick="closeMenu()">×</div>
+  <div class="menu-title">Web版いろいろ</div>
+  <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
+  <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
+  <div class="menu-spacer"></div>
+  <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
+  <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
+  <div class="menu-spacer"></div>
+  <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
+  <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
+</div>  
 
 <h1>四元ピアス獲得チェッカー</h1>
 
@@ -234,7 +253,9 @@
 <div class="bottom"><br><a href="report-4gen.html">報告用ページへ</a><br></div>
 
 <footer>
-  ※使用は自己責任にて。<br><br>
+  ※使用は自己責任にて。<br>
+  <br>
+  <a href="index.html">TOPへ戻る</a></br>
 </footer>
 
 <div class="scroll-buttons">
@@ -414,13 +435,7 @@ init();
       menuOverlay.classList.remove('open');
     }
 
-    // ESCキーでメニューを閉じる
-    document.addEventListener('keydown', function(event) {
-      if (event.key === 'Escape') {
-        closeMenu();
-      }
-    });
-
+    // フリックでメニュー開閉
     let startX = 0;
     let endX = 0;
 
@@ -437,11 +452,12 @@ init();
       let diffX = endX - startX;
 
       if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
+        // かつ開始位置が30px以内なら右フリックと判定
         if (diffX > 0 && startX < 30) {
-          // 右にフリック → 前のページへ
+          // 右にフリック
           toggleMenu();
         } else {
-          // 左にフリック → 次のページへ
+          // 左にフリック
           closeMenu();	
         }
       }
