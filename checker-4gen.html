@@ -1,3 +1,5 @@
+以下が現状のコードです
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -421,12 +423,13 @@
       const sideMenu = document.getElementById('sideMenu');
       const menuOverlay = document.getElementById('menuOverlay');
       
+      menuClose.style.color = '#eee';
+
       if (sideMenu.classList.contains('open')) {
         closeMenu();
       } else {
         sideMenu.classList.add('open');
         menuOverlay.classList.add('open');
-        menuClose.style.color = '#eee';
       }
     }
 
