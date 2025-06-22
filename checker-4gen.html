@@ -6,8 +6,105 @@
   <link rel="shortcut icon" href="favicon-shishi.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-shishi.png">
   <link rel="icon" type="image/png" href="web-app-manifest-192x192-shishi.png">
-  <title>四元ピアス獲得チェッカー</title>
+  <title>四元ピアス獲得チェッカー</title> <!-- Created by じぇ -->
   <style>
+
+ /* ハンバーガーメニューのスタイル */
+    .header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .hamburger {
+      font-size: 36px;
+      cursor: pointer;
+      margin-top: 10px;
+      margin-right: 10px;
+      user-select: none;
+      color: #eee;
+      transition: color 0.3s;
+    }
+
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 300px;
+      height: 100vh;
+      background-color: #1A1A1A;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #2A99E6;
+    }
+
+    .menu-item {
+      display: block;
+      padding: 12px 0;
+      color: #eee;
+      text-decoration: none;
+      border-bottom: 1px solid #333;
+      transition: color 0.3s;
+    }
+
+    .menu-item:hover {
+      color: #2A99E6;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
     body {
       margin: 20px;
       background-color: #2A2A2A;
@@ -111,7 +208,26 @@
 </head>
 <body>
 
+  <!-- サイドメニューオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <!-- サイドメニュー -->
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-close" onclick="closeMenu()">×</div>
+    <div class="menu-title">★実装テスト中★</div>
+    <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
+    <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
+    <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
+    <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
+    <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
+    <a href="expcalc.html" class="menu-item">>EXPスタンプ必要数計算</a>
+  </div>  
+
+<div class="header">
+<div class="hamburger" onclick="toggleMenu()">☰</div>
 <h1>四元ピアス獲得チェッカー</h1>
+</div>
+
 <div class="controls">
   <input type="file" id="fileInput" accept=".json"><br>
 </div>
@@ -279,6 +395,34 @@ document.getElementById('fileInput').addEventListener('change', function (e) {
 
 // 初期化
 init();
+
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      
+      if (sideMenu.classList.contains('open')) {
+        closeMenu();
+      } else {
+        sideMenu.classList.add('open');
+        menuOverlay.classList.add('open');
+      }
+    }
+
+    function closeMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      
+      sideMenu.classList.remove('open');
+      menuOverlay.classList.remove('open');
+    }
+
+    // ESCキーでメニューを閉じる
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeMenu();
+      }
+    });
 </script>
 </body>
 </html>
