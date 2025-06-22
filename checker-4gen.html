@@ -422,6 +422,30 @@ init();
         closeMenu();
       }
     });
+
+    let startX = 0;
+    let endX = 0;
+
+    document.addEventListener('touchstart', function(e) {
+      startX = e.changedTouches[0].screenX;
+    }, false);
+
+    document.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].screenX;
+      handleGesture();
+    }, false);
+
+    function handleGesture() {
+      let diffX = endX - startX;
+
+      if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
+        if (diffX > 0 && startX < 30) {
+          // 右にフリック → 前のページへ
+          toggleMenu();
+        }
+      }
+    }
+
 </script>
 </body>
 </html>
