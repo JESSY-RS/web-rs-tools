@@ -1,3 +1,5 @@
+以下のhtmlコードで再度メニューから◆緋のピアス、◆憲法のピアス、◆濡羽のピアス、◆瑠璃紺のピアス、それぞれの先頭に移動するためには、どの様に記述すれば良いですか？
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -129,10 +131,6 @@
       background-color: #666;
     }
 
-    .menu-spacer {
-      height: 30px;
-    }
-
      /* ハンバーガーメニューのスタイル */
     .hamburger {
       font-size: 36px;
@@ -223,6 +221,10 @@
       border-bottom: none;
     }
 
+    .menu-spacer {
+      height: 20px;
+    }
+
   </style>
 </head>
 <body>
@@ -241,6 +243,14 @@
       <div class="menu-spacer"></div>
       <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
       <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
+      <div class="menu-spacer"></div>
+      <div class="menu-spacer"></div>
+      <div class="menu-title">ピアス種別ジャンプ</div>
+      <a href="#緋Anchor" class="menu-item">◆緋のピアス</a>
+      <a href="#憲法Anchor" class="menu-item">◆憲法のピアス</a>
+      <a href="#濡羽Anchor" class="menu-item">◆濡羽のピアス</a>
+      <a href="#瑠璃紺Anchor" class="menu-item">◆瑠璃紺のピアス</a>
+      <div class="menu-spacer"></div>
     </div>  
 
     <h1>四元ピアス獲得チェッカー</h1>
@@ -293,6 +303,7 @@
         const groupTitle = document.createElement('div');
         groupTitle.textContent = group.title;
         groupTitle.className = `group-title ${group.color}`;
+        groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
         container.appendChild(groupTitle);
 
         attributes.forEach(attr => {
