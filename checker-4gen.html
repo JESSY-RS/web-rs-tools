@@ -164,6 +164,7 @@
     .陰 { color: darkorchid; }
     .無 { color: darkgray; }
 
+    /* リンクのスタイル */
     a:link {
       color: #1D9BF0;
       text-decoration: underline;
@@ -225,194 +226,195 @@
 </head>
 <body>
 
-<!-- サイドメニューオーバーレイ -->
-<div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+    <!-- サイドメニューオーバーレイ -->
+    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-<!-- サイドメニュー -->
-<div class="side-menu" id="sideMenu">
-  <div class="menu-close" onclick="closeMenu()">×</div>
-  <div class="menu-title">Web版いろいろ</div>
-  <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
-  <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
-  <div class="menu-spacer"></div>
-  <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
-  <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
-  <div class="menu-spacer"></div>
-  <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
-  <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
-</div>  
+    <!-- サイドメニュー -->
+    <div class="side-menu" id="sideMenu">
+      <div class="menu-close" onclick="closeMenu()">×</div>
+      <div class="menu-title">Web版いろいろ</div>
+      <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
+      <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
+      <div class="menu-spacer"></div>
+      <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
+      <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
+      <div class="menu-spacer"></div>
+      <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
+      <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
+    </div>  
 
-<h1>四元ピアス獲得チェッカー</h1>
+    <h1>四元ピアス獲得チェッカー</h1>
 
-<div class="controls">
-  <input type="file" id="fileInput" accept=".json"><br>
-</div>
+    <div class="controls">
+      <input type="file" id="fileInput" accept=".json"><br>
+    </div>
 
-<div id="statusContainer"></div>
+    <div id="statusContainer"></div>
 
-<div class="bottom"><br><a href="report-4gen.html">報告用ページへ</a><br></div>
+    <div class="bottom"><br><a href="report-4gen.html">報告用ページへ</a><br></div>
 
-<footer>
-  ※使用は自己責任にて。<br>
-  <br>
-  <a href="index.html">TOPへ戻る</a></br>
-</footer>
+    <footer>
+      ※使用は自己責任にて。<br>
+      <br>
+      <a href="index.html">TOPへ戻る</a><br>
+    </footer>
 
-<div class="scroll-buttons">
-  <button class="scroll-button" id="scrollUp">↑</button>
-  <button class="scroll-button" id="scrollDown">↓</button>
-</div>
+    <div class="scroll-buttons">
+      <button class="scroll-button" id="scrollUp">↑</button>
+      <button class="scroll-button" id="scrollDown">↓</button>
+    </div>
 
 <script>
-const groups = [
-  { title: "◆緋のピアス", color: "緋" },
-  { title: "◆憲法のピアス", color: "憲" },
-  { title: "◆濡羽のピアス", color: "濡" },
-  { title: "◆瑠璃紺のピアス", color: "瑠" }
-];
 
-const attributes = [
-  { name: "斬", class: "斬" },
-  { name: "打", class: "打" },
-  { name: "突", class: "突" },
-  { name: "熱", class: "熱" },
-  { name: "冷", class: "冷" },
-  { name: "雷", class: "雷" },
-  { name: "陽", class: "陽" },
-  { name: "陰", class: "陰" },
-  { name: "無", class: "無" }
-];
+    const groups = [
+      { title: "◆緋のピアス", color: "緋" },
+      { title: "◆憲法のピアス", color: "憲" },
+      { title: "◆濡羽のピアス", color: "濡" },
+      { title: "◆瑠璃紺のピアス", color: "瑠" }
+    ];
 
-function init() {
-  const container = document.getElementById('statusContainer');
-  container.innerHTML = '';
+    const attributes = [
+      { name: "斬", class: "斬" },
+      { name: "打", class: "打" },
+      { name: "突", class: "突" },
+      { name: "熱", class: "熱" },
+      { name: "冷", class: "冷" },
+      { name: "雷", class: "雷" },
+      { name: "陽", class: "陽" },
+      { name: "陰", class: "陰" },
+      { name: "無", class: "無" }
+    ];
 
-  groups.forEach(group => {
-    const groupTitle = document.createElement('div');
-    groupTitle.textContent = group.title;
-    groupTitle.className = `group-title ${group.color}`;
-    container.appendChild(groupTitle);
+    function init() {
+      const container = document.getElementById('statusContainer');
+      container.innerHTML = '';
 
-    attributes.forEach(attr => {
-      const line = document.createElement('div');
-      line.className = 'line';
+      groups.forEach(group => {
+        const groupTitle = document.createElement('div');
+        groupTitle.textContent = group.title;
+        groupTitle.className = `group-title ${group.color}`;
+        container.appendChild(groupTitle);
 
-      const name = document.createElement('span');
-      name.textContent = attr.name;
-      name.className = attr.class;
+        attributes.forEach(attr => {
+          const line = document.createElement('div');
+          line.className = 'line';
 
-      const stars = document.createElement('span');
-      stars.className = 'stars';
-      stars.dataset.key = `${group.title}_${attr.name}`;
+          const name = document.createElement('span');
+          name.textContent = attr.name;
+          name.className = attr.class;
 
-      for (let i = 0; i < 5; i++) {
-        const star = document.createElement('span');
-        star.textContent = '☆';
-        star.className = 'star';
-        star.dataset.index = i;
-        star.addEventListener('click', function () {
-          if (this.textContent === '☆') {
-            this.textContent = '★';
-            this.classList.add('on');
-          } else {
-            this.textContent = '☆';
-            this.classList.remove('on');
-          }
-        });
-        stars.appendChild(star);
-      }
+          const stars = document.createElement('span');
+          stars.className = 'stars';
+          stars.dataset.key = `${group.title}_${attr.name}`;
 
-      line.appendChild(name);
-      line.appendChild(stars);
-      container.appendChild(line);
-    });
-
-    // グループごとのエクスポートボタン
-    const exportBtn = document.createElement('button');
-    exportBtn.textContent = '状態をエクスポート';
-    exportBtn.style.marginTop = '15px';
-    exportBtn.addEventListener('click', exportState);
-    container.appendChild(exportBtn);
-
-    container.appendChild(exportBtn);
-  });
-
-  setupScrollButtons();
-}
-
-function setupScrollButtons() {
-  const groupTitles = document.querySelectorAll('.group-title');
-  let currentGroupIndex = 0;
-
-  function scrollToGroup(index) {
-    if (index >= 0 && index < groupTitles.length) {
-      groupTitles[index].scrollIntoView({ behavior: 'instant', block: 'start' });
-      currentGroupIndex = index;
-    }
-  }
-
-  document.getElementById('scrollDown').addEventListener('click', () => {
-    if (currentGroupIndex < groupTitles.length - 1) {
-      scrollToGroup(currentGroupIndex + 1);
-    }
-  });
-
-  document.getElementById('scrollUp').addEventListener('click', () => {
-    if (currentGroupIndex > 0) {
-      scrollToGroup(currentGroupIndex - 1);
-    }
-  });
-}
-
-function exportState() {
-  const result = {};
-  const allStars = document.querySelectorAll('.stars');
-  allStars.forEach(stars => {
-    const key = stars.dataset.key;
-    const starElems = stars.querySelectorAll('.star');
-    let starString = '';
-    starElems.forEach(s => starString += s.textContent);
-    result[key] = starString;
-  });
-
-  const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "四元ピアス獲得状況.json";
-  link.click();
-}
-
-document.getElementById('fileInput').addEventListener('change', function (e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function (event) {
-    try {
-      const data = JSON.parse(event.target.result);
-      for (const key in data) {
-        const stars = document.querySelector(`.stars[data-key="${key}"]`);
-        if (stars) {
-          const starElems = stars.querySelectorAll('.star');
           for (let i = 0; i < 5; i++) {
-            starElems[i].textContent = data[key][i] || '☆';
-            if (data[key][i] === '★') {
-              starElems[i].classList.add('on');
-            } else {
-              starElems[i].classList.remove('on');
-            }
+            const star = document.createElement('span');
+            star.textContent = '☆';
+            star.className = 'star';
+            star.dataset.index = i;
+            star.addEventListener('click', function () {
+              if (this.textContent === '☆') {
+                this.textContent = '★';
+                this.classList.add('on');
+              } else {
+                this.textContent = '☆';
+                this.classList.remove('on');
+              }
+            });
+            stars.appendChild(star);
           }
+
+          line.appendChild(name);
+          line.appendChild(stars);
+          container.appendChild(line);
+        });
+
+        // グループごとのエクスポートボタン
+        const exportBtn = document.createElement('button');
+        exportBtn.textContent = '状態をエクスポート';
+        exportBtn.style.marginTop = '15px';
+        exportBtn.addEventListener('click', exportState);
+        container.appendChild(exportBtn);
+
+        container.appendChild(exportBtn);
+      });
+
+      setupScrollButtons();
+    }
+
+    function setupScrollButtons() {
+      const groupTitles = document.querySelectorAll('.group-title');
+      let currentGroupIndex = 0;
+
+      function scrollToGroup(index) {
+        if (index >= 0 && index < groupTitles.length) {
+          groupTitles[index].scrollIntoView({ behavior: 'instant', block: 'start' });
+          currentGroupIndex = index;
         }
       }
-      //alert('状態を読み込みました。');
-    } catch (error) {
-      alert('ファイルの内容が不正です。');
-    }
-  };
-  reader.readAsText(file);
-});
 
-// 初期化
-init();
+      document.getElementById('scrollDown').addEventListener('click', () => {
+        if (currentGroupIndex < groupTitles.length - 1) {
+          scrollToGroup(currentGroupIndex + 1);
+        }
+      });
+
+      document.getElementById('scrollUp').addEventListener('click', () => {
+        if (currentGroupIndex > 0) {
+          scrollToGroup(currentGroupIndex - 1);
+        }
+      });
+    }
+
+    function exportState() {
+      const result = {};
+      const allStars = document.querySelectorAll('.stars');
+      allStars.forEach(stars => {
+        const key = stars.dataset.key;
+        const starElems = stars.querySelectorAll('.star');
+        let starString = '';
+        starElems.forEach(s => starString += s.textContent);
+        result[key] = starString;
+      });
+
+      const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "四元ピアス獲得状況.json";
+      link.click();
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        try {
+          const data = JSON.parse(event.target.result);
+          for (const key in data) {
+            const stars = document.querySelector(`.stars[data-key="${key}"]`);
+            if (stars) {
+              const starElems = stars.querySelectorAll('.star');
+              for (let i = 0; i < 5; i++) {
+                starElems[i].textContent = data[key][i] || '☆';
+                if (data[key][i] === '★') {
+                  starElems[i].classList.add('on');
+                } else {
+                  starElems[i].classList.remove('on');
+                }
+              }
+            }
+          }
+          //alert('状態を読み込みました。');
+        } catch (error) {
+          alert('ファイルの内容が不正です。');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // 初期化
+    init();
 
     // ハンバーガーメニューの関数
     function toggleMenu() {
@@ -424,6 +426,7 @@ init();
       } else {
         sideMenu.classList.add('open');
         menuOverlay.classList.add('open');
+        menuClose.style.color = '#eee';
       }
     }
 
