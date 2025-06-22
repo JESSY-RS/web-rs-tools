@@ -9,95 +9,6 @@
   <title>四元ピアス獲得チェッカー</title> <!-- Created by じぇ -->
   <style>
 
-     /* ハンバーガーメニューのスタイル */
-    .hamburger {
-      font-size: 36px;
-      cursor: pointer;
-      margin-top: 10px;
-      margin-right: 10px;
-      user-select: none;
-      color: #eee;
-      transition: color 0.3s;
-    }
-
-    .hamburger:hover {
-      color: #2A99E6;
-    }
-
-    .side-menu {
-      position: fixed;
-      top: 0;
-      left: -300px;
-      width: 300px;
-      height: 100vh;
-      background-color: #1A1A1A;
-      border-right: 1px solid #555;
-      transition: left 0.3s ease;
-      z-index: 1000;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .side-menu.open {
-      left: 0;
-    }
-
-    .menu-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s;
-    }
-
-    .menu-overlay.open {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .menu-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 24px;
-      cursor: pointer;
-      color: #eee;
-      user-select: none;
-    }
-
-    .menu-close:hover {
-      color: #ff6b6b;
-    }
-
-    .menu-title {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 20px;
-      color: #2A99E6;
-    }
-
-    .menu-item {
-      display: block;
-      padding: 12px 0;
-      color: #eee;
-      text-decoration: none;
-      border-bottom: 1px solid #333;
-      transition: color 0.3s;
-    }
-
-    .menu-item:hover {
-      color: #2A99E6;
-    }
-
-    .menu-item:last-child {
-      border-bottom: none;
-    }
-
     /* 全体のスタイル */
     body {
       margin: 20px;
@@ -220,6 +131,95 @@
 
     .menu-spacer {
       height: 30px;
+    }
+
+     /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      font-size: 36px;
+      cursor: pointer;
+      margin-top: 10px;
+      margin-right: 10px;
+      user-select: none;
+      color: #eee;
+      transition: color 0.3s;
+    }
+
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 300px;
+      height: 100vh;
+      background-color: #1A1A1A;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #2A99E6;
+    }
+
+    .menu-item {
+      display: block;
+      padding: 12px 0;
+      color: #eee;
+      text-decoration: none;
+      border-bottom: 1px solid #333;
+      transition: color 0.3s;
+    }
+
+    .menu-item:hover {
+      color: #2A99E6;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
     }
 
   </style>
@@ -426,7 +426,6 @@
       } else {
         sideMenu.classList.add('open');
         menuOverlay.classList.add('open');
-        menuClose.style.color = '#eee';
       }
     }
 
@@ -461,11 +460,9 @@
         if (diffX > 0 && startX < 30) {
           // 右にフリック
           toggleMenu();
-          menuClose.style.color = '#eee';
         } else {
           // 左にフリック
           closeMenu();
-          menuClose.style.color = '#eee';
         }
       }
     }
