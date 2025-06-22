@@ -440,6 +440,9 @@ init();
         if (diffX > 0 && startX < 30) {
           // 右にフリック → 前のページへ
           toggleMenu();
+        } else {
+          // 左にフリック → 次のページへ
+          closeMenu();	
         }
       }
     }
