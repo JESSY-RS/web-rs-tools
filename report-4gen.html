@@ -7,44 +7,54 @@
   <link rel="apple-touch-icon" href="apple-touch-icon-fue.png">
   <link rel="icon" type="image/png" href="web-app-manifest-192x192-fue.png">
   <title>四元ピアス獲得・報告用</title> <!-- Created by じぇ -->
+
   <style>
+
     body {
       margin: 20px;
       background-color: #2A2A2A;
       color: #eee;
       text-align: center;
     }
+
     h1 {
       font-size: 20px;
       margin-bottom: 5px;
     }
+
     .pierce-group {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
       margin: 10px;
     }
+
     .pierce-category {
       border: 1px solid #ccc;
       padding: 5px;
     }
+
     .pierce-category h2 {
       font-size: 18px;
       margin: 3px 0;
     }
+
     .attribute {
       display: flex;
       justify-content: center;
       align-items: center;
       margin: -3px 0;
     }
+
     .attribute span:first-child {
       margin-left: 5px;
       font-size: 18px;
     }
+
     .stars {
       font-size: 20px;
     }
+
     input[type="file"] {
       margin: 10px 0;
       font-size: 12px;
@@ -66,9 +76,27 @@
     .陽  { color: darkorange; }
     .陰  { color: darkorchid; }
 
+    /* 集計部分のスタイル */
     #summary {
       text-align: center;
       font-size: 16px;
+    }
+
+    /* 拡大縮小のスタイル */
+    .zoom-buttons {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
     }
 
     /* リンクのスタイル */
@@ -91,143 +119,128 @@
       text-decoration: underline;
     }
 
-
-.zoom-buttons {
-  position: fixed;
-  top: 15px;
-  right: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  z-index: 1000;
-}
-.zoom-buttons button {
-  padding: 5px 10px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-
   </style>
+
 </head>
 <body>
 
-<div class="zoom-buttons">
-  <button onclick="changeZoom(0.1)">＋</button>
-  <button onclick="changeZoom(-0.1)">－</button>
-</div>
+    <div class="zoom-buttons">
+      <button onclick="changeZoom(0.1)">＋</button>
+      <button onclick="changeZoom(-0.1)">－</button>
+    </div>
 
+    <h1>四元ピアス獲得・報告用</h1>
+    <input type="file" id="importJson" accept=".json">
 
-<h1>四元ピアス獲得・報告用</h1>
-<input type="file" id="importJson" accept=".json">
+    <div class="pierce-group" id="pierceGroup"></div>
 
-<div class="pierce-group" id="pierceGroup"></div>
+    <div id="summary"></div>
 
-<div id="summary"></div>
-
-<br><a href="checker-4gen.html">チェッカーへ戻る</a><br>
+    <br><a href="checker-4gen.html">チェッカーへ戻る</a><br>
 
 <script>
-const pierces = [
-  { name: "緋のピアス", className: "緋" },
-  { name: "濡羽のピアス", className: "濡" },
-  { name: "憲法のピアス", className: "憲" },
-  { name: "瑠璃紺のピアス", className: "瑠" }
-];
-const attributes = ["斬","打","突","熱","冷","雷","陽","陰"];
-const pierceGroup = document.getElementById("pierceGroup");
 
-// 星を色付きで装飾する関数
-function decorateStars(text) {
-  let result = "";
-  for (let char of text) {
-    if (char === "★") {
-      result += `<span style="color: gold; font-size: inherit;">★</span>`;
-    } else if (char === "☆") {
-      result += `<span style="color: gray; font-size: inherit;">☆</span>`;
-    } else {
-      result += char;
-    }
-  }
-  return result;
-}
+    const pierces = [
+      { name: "緋のピアス", className: "緋" },
+      { name: "濡羽のピアス", className: "濡" },
+      { name: "憲法のピアス", className: "憲" },
+      { name: "瑠璃紺のピアス", className: "瑠" }
+    ];
+    const attributes = ["斬","打","突","熱","冷","雷","陽","陰"];
+    const pierceGroup = document.getElementById("pierceGroup");
 
-// 初期表示生成
-pierces.forEach(p => {
-  const category = document.createElement("div");
-  category.className = "pierce-category";
-  category.innerHTML = `<h2 class="${p.className}">◆${p.name}</h2>`;
-  attributes.forEach(attr => {
-    const div = document.createElement("div");
-    div.className = "attribute";
-    const id = `◆${p.name}_${attr}`;
-    div.innerHTML = `<span class="${attr}">${attr}</span> <span class="stars" id="${id}">${decorateStars("☆☆☆☆☆")}</span>`;
-    category.appendChild(div);
-  });
-  pierceGroup.appendChild(category);
-});
-
-// ★数を集計して表示する関数
-function updateSummary() {
-  let total = 0;
-  let categoryTotals = { "緋": 0, "憲": 0, "濡": 0, "瑠": 0 };
-
-  pierces.forEach(p => {
-    attributes.forEach(attr => {
-      const el = document.getElementById(`◆${p.name}_${attr}`);
-      if (el) {
-        const starCount = (el.textContent.match(/★/g) || []).length;
-        categoryTotals[p.className] += starCount;
-        total += starCount;
+    // 星を色付きで装飾する関数
+    function decorateStars(text) {
+      let result = "";
+      for (let char of text) {
+        if (char === "★") {
+          result += `<span style="color: gold; font-size: inherit;">★</span>`;
+        } else if (char === "☆") {
+          result += `<span style="color: gray; font-size: inherit;">☆</span>`;
+        } else {
+          result += char;
+        }
       }
+      return result;
+    }
+
+    // 初期表示生成
+    pierces.forEach(p => {
+      const category = document.createElement("div");
+      category.className = "pierce-category";
+      category.innerHTML = `<h2 class="${p.className}">◆${p.name}</h2>`;
+      attributes.forEach(attr => {
+        const div = document.createElement("div");
+        div.className = "attribute";
+        const id = `◆${p.name}_${attr}`;
+        div.innerHTML = `<span class="${attr}">${attr}</span> <span class="stars" id="${id}">${decorateStars("☆☆☆☆☆")}</span>`;
+        category.appendChild(div);
+      });
+      pierceGroup.appendChild(category);
     });
-  });
 
-  // 表示文字列作成
-const summaryHTML = `
-  <div>
-    <span class="緋">緋</span> ${categoryTotals["緋"]}/40　
-    <span class="憲">憲</span> ${categoryTotals["憲"]}/40　
-    <span class="濡">濡</span> ${categoryTotals["濡"]}/40　
-    <span class="瑠">瑠</span> ${categoryTotals["瑠"]}/40
-  </div>
-  <div style="margin-top: 4px;">
-    全 ${total}/160
-  </div>
-`;
+    // ★数を集計して表示する関数
+    function updateSummary() {
+      let total = 0;
+      let categoryTotals = { "緋": 0, "憲": 0, "濡": 0, "瑠": 0 };
 
-  document.getElementById("summary").innerHTML = summaryHTML;
-}
+      pierces.forEach(p => {
+        attributes.forEach(attr => {
+          const el = document.getElementById(`◆${p.name}_${attr}`);
+          if (el) {
+            const starCount = (el.textContent.match(/★/g) || []).length;
+            categoryTotals[p.className] += starCount;
+            total += starCount;
+          }
+        });
+      });
 
-// JSON読込
-document.getElementById("importJson").addEventListener("change", e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const data = JSON.parse(e.target.result);
-    for (let key in data) {
-      const el = document.getElementById(key);
-      if (el) {
-        el.innerHTML = decorateStars(data[key]);
-      }
+    // 表示文字列作成
+    const summaryHTML = `
+      <div>
+        <span class="緋">緋</span> ${categoryTotals["緋"]}/40　
+        <span class="憲">憲</span> ${categoryTotals["憲"]}/40　
+        <span class="濡">濡</span> ${categoryTotals["濡"]}/40　
+        <span class="瑠">瑠</span> ${categoryTotals["瑠"]}/40
+      </div>
+      <div style="margin-top: 4px;">
+        全 ${total}/160
+      </div>
+    `;
+
+      document.getElementById("summary").innerHTML = summaryHTML;
     }
-    updateSummary(); // 読込後に集計実行
-  };
-  reader.readAsText(file);
-});
 
-// 初期表示の時点でも集計実行
-updateSummary();
+    // JSON読込
+    document.getElementById("importJson").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const data = JSON.parse(e.target.result);
+        for (let key in data) {
+          const el = document.getElementById(key);
+          if (el) {
+            el.innerHTML = decorateStars(data[key]);
+          }
+        }
+        updateSummary(); // 読込後に集計実行
+      };
+      reader.readAsText(file);
+    });
 
-let zoomLevel = 1;
+    // 初期表示の時点でも集計実行
+    updateSummary();
 
-function changeZoom(delta) {
-  zoomLevel += delta;
-  if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
-  if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
-  document.body.style.zoom = zoomLevel;
-}
+    let zoomLevel = 1;
+
+    // 拡大縮小の関数
+    function changeZoom(delta) {
+      zoomLevel += delta;
+      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
+      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
+      document.body.style.zoom = zoomLevel;
+    }
 
 </script>
 
