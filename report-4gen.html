@@ -181,6 +181,10 @@
       border-bottom: none;
     }
 
+    .menu-spacer {
+      height: 30px;
+    }
+
   </style>
 </head>
 <body>
@@ -211,6 +215,58 @@
 <br><a href="checker-4gen.html">チェッカーへ戻る</a><br>
 
 <script>
+
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      
+      if (sideMenu.classList.contains('open')) {
+        closeMenu();
+      } else {
+        sideMenu.classList.add('open');
+        menuOverlay.classList.add('open');
+      }
+    }
+
+    function closeMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      const menuClose = document.getElementById('menuClose');
+      
+      sideMenu.classList.remove('open');
+      menuOverlay.classList.remove('open');
+      menuClose.style.color = '#eee';
+    }
+
+    // フリックでメニュー開閉
+    let startX = 0;
+    let endX = 0;
+
+    document.addEventListener('touchstart', function(e) {
+      startX = e.changedTouches[0].screenX;
+    }, false);
+
+    document.addEventListener('touchend', function(e) {
+      endX = e.changedTouches[0].screenX;
+      handleGesture();
+    }, false);
+
+    function handleGesture() {
+      let diffX = endX - startX;
+
+      if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
+        // かつ開始位置が30px以内なら右フリックと判定
+        if (diffX > 0 && startX < 30) {
+          // 右にフリック
+          toggleMenu();
+        } else {
+          // 左にフリック
+          closeMenu();
+        }
+      }
+    }
+
 const pierces = [
   { name: "緋のピアス", className: "緋" },
   { name: "濡羽のピアス", className: "濡" },
@@ -302,57 +358,6 @@ document.getElementById("importJson").addEventListener("change", e => {
 
 // 初期表示の時点でも集計実行
 updateSummary();
-
-    // ハンバーガーメニューの関数
-    function toggleMenu() {
-      const sideMenu = document.getElementById('sideMenu');
-      const menuOverlay = document.getElementById('menuOverlay');
-      
-      if (sideMenu.classList.contains('open')) {
-        closeMenu();
-      } else {
-        sideMenu.classList.add('open');
-        menuOverlay.classList.add('open');
-      }
-    }
-
-    function closeMenu() {
-      const sideMenu = document.getElementById('sideMenu');
-      const menuOverlay = document.getElementById('menuOverlay');
-      const menuClose = document.getElementById('menuClose');
-      
-      sideMenu.classList.remove('open');
-      menuOverlay.classList.remove('open');
-      menuClose.style.color = '#eee';
-    }
-
-    // フリックでメニュー開閉
-    let startX = 0;
-    let endX = 0;
-
-    document.addEventListener('touchstart', function(e) {
-      startX = e.changedTouches[0].screenX;
-    }, false);
-
-    document.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].screenX;
-      handleGesture();
-    }, false);
-
-    function handleGesture() {
-      let diffX = endX - startX;
-
-      if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
-        // かつ開始位置が30px以内なら右フリックと判定
-        if (diffX > 0 && startX < 30) {
-          // 右にフリック
-          toggleMenu();
-        } else {
-          // 左にフリック
-          closeMenu();
-        }
-      }
-    }
 
 </script>
 
