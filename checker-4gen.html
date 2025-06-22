@@ -460,11 +460,12 @@
         // かつ開始位置が30px以内なら右フリックと判定
         if (diffX > 0 && startX < 30) {
           // 右にフリック
-          menuClose.style.color = '#eee';
           toggleMenu();
+          menuClose.style.color = '#eee';
         } else {
           // 左にフリック
-          closeMenu();	
+          closeMenu();
+          menuClose.style.color = '#eee';
         }
       }
     }
