@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="shortcut icon" href="favicon-shishi.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-shishi.png">
   <link rel="icon" type="image/png" href="web-app-manifest-192x192-shishi.png">
   <title>四元ピアス獲得チェッカー</title> <!-- Created by じぇ -->
+
   <style>
 
-    /* 全体のスタイル */
     body {
       margin: 20px;
       background-color: #2A2A2A;
@@ -36,7 +37,7 @@
       margin: 0 2px;
       cursor: pointer;
       color: darkgray;
-      user-select: none; 
+      user-select: none;
     }
 
     .star.on {
@@ -60,20 +61,26 @@
       margin-bottom: 15px;
     }
 
+    /* 大分類ごとの色指定 */
     .緋 { color: hotpink; }
     .憲 { color: red; }
     .濡 { color: gray; }
     .瑠 { color: royalblue; }
-    .斬, .打, .突, .熱, .冷, .雷, .陽, .陰, .無 {
-      font-size: 30px;
-      color: lightgray;
-    }
+
+    /* 小分類ごとの色指定 */
+    .斬 { color: lightgray; }
+    .打 { color: lightgray; }
+    .突 { color: lightgray; }
     .熱 { color: orangered; }
     .冷 { color: dodgerblue; }
     .雷 { color: yellow; }
     .陽 { color: darkorange; }
     .陰 { color: darkorchid; }
     .無 { color: darkgray; }
+
+    .斬, .打, .突, .熱, .冷, .雷, .陽, .陰, .無 {
+      font-size: 30px;
+    }
 
     /* リンクのスタイル */
     a:link {
@@ -96,16 +103,19 @@
     }
 
     .bottom {
-        font-size: 16pt;
-        margin-top: 20px;
-    }
-
-    footer {
-      border-top: 1px solid #eee;
-      padding-top: 10px;
+      font-size: 16pt;
       margin-top: 20px;
     }
 
+    /* フッターのスタイル */
+    footer {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      font-size: 16pt;
+      margin-top: 20px;
+    }
+
+    /* スクロールボタンのスタイル */
     .scroll-buttons {
       position: fixed;
       top: 20px;
@@ -125,11 +135,12 @@
       cursor: pointer;
       border-radius: 4px;
     }
+
     .scroll-button:hover {
       background-color: #666;
     }
 
-     /* ハンバーガーメニューのスタイル */
+    /* ハンバーガーメニューのスタイル */
     .hamburger {
       font-size: 36px;
       cursor: pointer;
@@ -150,7 +161,7 @@
       left: -300px;
       width: 300px;
       height: 100vh;
-      background-color: #1A1A1A;
+      background-color: #2A2A2A;
       border-right: 1px solid #555;
       transition: left 0.3s ease;
       z-index: 1000;
@@ -197,12 +208,14 @@
     .menu-title {
       font-size: 20px;
       font-weight: bold;
+      text-align: left;
       margin-bottom: 10px;
       color: #2A99E6;
     }
 
     .menu-item {
       font-size: 18px;
+      text-align: left;
       display: block;
       padding: 12px 0;
       color: #eee;
@@ -224,55 +237,107 @@
     }
 
   </style>
+
 </head>
 <body>
 
-    <!-- サイドメニューオーバーレイ -->
-    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+  <!-- サイドメニューオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-    <!-- サイドメニュー -->
-    <div class="side-menu" id="sideMenu">
-      <div class="menu-title">リユニのWeb版いろいろ</div>
-      <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
-      <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
-      <div class="menu-spacer"></div>
-      <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
-      <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
-      <div class="menu-spacer"></div>
-      <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
-      <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
-      <div class="menu-spacer"></div>
-      <div class="menu-spacer"></div>
-      <div class="menu-title">ピアス種別ジャンプ</div>
-      <a href="#緋Anchor" class="menu-item" onclick="closeMenu()">◆緋のピアス</a>
-      <a href="#憲法Anchor" class="menu-item" onclick="closeMenu()">◆憲法のピアス</a>
-      <a href="#濡羽Anchor" class="menu-item" onclick="closeMenu()">◆濡羽のピアス</a>
-      <a href="#瑠璃紺Anchor" class="menu-item" onclick="closeMenu()">◆瑠璃紺のピアス</a>
-      <div class="menu-spacer"></div>
-    </div>  
+  <!-- サイドメニュー -->
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
+    <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
+    <div class="menu-spacer"></div>
+    <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
+    <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
+    <div class="menu-spacer"></div>
+    <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
+    <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
+    <div class="menu-spacer"></div>
+    <div class="menu-spacer"></div>
+    <div class="menu-title">ピアス種別ジャンプ</div>
+    <a href="#緋Anchor" class="menu-item" onclick="closeMenu()">◆緋のピアス</a>
+    <a href="#憲法Anchor" class="menu-item" onclick="closeMenu()">◆憲法のピアス</a>
+    <a href="#濡羽Anchor" class="menu-item" onclick="closeMenu()">◆濡羽のピアス</a>
+    <a href="#瑠璃紺Anchor" class="menu-item" onclick="closeMenu()">◆瑠璃紺のピアス</a>
+    <div class="menu-spacer"></div>
+  </div>
 
-    <h1>四元ピアス獲得チェッカー</h1>
+  <h1>四元ピアス獲得チェッカー</h1>
 
-    <div class="controls">
-      <input type="file" id="fileInput" accept=".json"><br>
-    </div>
+  <div class="controls">
+    <input type="file" id="fileInput" accept=".json"><br>
+  </div>
 
-    <div id="statusContainer"></div>
+  <div id="statusContainer"></div>
 
-    <div class="bottom"><br><a href="report-4gen.html">報告用ページへ</a><br></div>
+  <div class="bottom"><br><a href="report-4gen.html">報告用ページへ</a><br></div>
 
-    <footer>
-      ※使用は自己責任にて。<br>
-      <br>
-      <a href="index.html">TOPへ戻る</a><br>
-    </footer>
+  <footer>
+    ※使用は自己責任にて。<br>
+    <br>
+    <a href="index.html">INDEXへ戻る</a><br>
+  </footer>
 
-    <div class="scroll-buttons">
-      <button class="scroll-button" id="scrollUp">↑</button>
-      <button class="scroll-button" id="scrollDown">↓</button>
-    </div>
+  <div class="scroll-buttons">
+    <button class="scroll-button" id="scrollUp">↑</button>
+    <button class="scroll-button" id="scrollDown">↓</button>
+  </div>
 
-<script>
+  <script>
+
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+
+      if (sideMenu.classList.contains('open')) {
+        closeMenu();
+      } else {
+        sideMenu.classList.add('open');
+        menuOverlay.classList.add('open');
+      }
+    }
+
+    function closeMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      const menuClose = document.getElementById('menuClose');
+
+      sideMenu.classList.remove('open');
+      menuOverlay.classList.remove('open');
+      menuClose.style.color = '#eee';
+    }
+
+    // フリックでメニュー開閉
+    let startX = 0;
+    let endX = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      startX = e.changedTouches[0].screenX;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      endX = e.changedTouches[0].screenX;
+      handleGesture();
+    }, false);
+
+    function handleGesture() {
+      let diffX = endX - startX;
+
+      if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
+        // かつ開始位置が30px以内なら右フリックと判定
+        if (diffX > 0 && startX < 30) {
+          // 右にフリック
+          toggleMenu();
+        } else {
+          // 左にフリック
+          closeMenu();
+        }
+      }
+    }
 
     const groups = [
       { title: "◆緋のピアス", color: "緋" },
@@ -425,57 +490,7 @@
     // 初期化
     init();
 
-    // ハンバーガーメニューの関数
-    function toggleMenu() {
-      const sideMenu = document.getElementById('sideMenu');
-      const menuOverlay = document.getElementById('menuOverlay');
-      
-      if (sideMenu.classList.contains('open')) {
-        closeMenu();
-      } else {
-        sideMenu.classList.add('open');
-        menuOverlay.classList.add('open');
-      }
-    }
+  </script>
 
-    function closeMenu() {
-      const sideMenu = document.getElementById('sideMenu');
-      const menuOverlay = document.getElementById('menuOverlay');
-      const menuClose = document.getElementById('menuClose');
-      
-      sideMenu.classList.remove('open');
-      menuOverlay.classList.remove('open');
-      menuClose.style.color = '#eee';
-    }
-
-    // フリックでメニュー開閉
-    let startX = 0;
-    let endX = 0;
-
-    document.addEventListener('touchstart', function(e) {
-      startX = e.changedTouches[0].screenX;
-    }, false);
-
-    document.addEventListener('touchend', function(e) {
-      endX = e.changedTouches[0].screenX;
-      handleGesture();
-    }, false);
-
-    function handleGesture() {
-      let diffX = endX - startX;
-
-      if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
-        // かつ開始位置が30px以内なら右フリックと判定
-        if (diffX > 0 && startX < 30) {
-          // 右にフリック
-          toggleMenu();
-        } else {
-          // 左にフリック
-          closeMenu();
-        }
-      }
-    }
-
-</script>
 </body>
 </html>

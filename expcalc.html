@@ -1,327 +1,503 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta http-equiv=Content-Type content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="favicon-expcalc.ico">
-    <link rel="apple-touch-icon" href="apple-touch-icon-expcalc.png">
-    <link rel="icon" type="image/png" href="android-chrome-144x144-expcalc.png">
-    <title>EXPスタンプ必要数計算</title> <!-- Created by じぇ -->
 
-    <style>
-        /* ページ全体のスタイル */
-        body {
-            margin: 20px;
-            background-color: #2A2A2A;
-            color: #eee;
-        }
+  <meta http-equiv=Content-Type content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="icon/favicon-expcalc.ico">
+  <link rel="apple-touch-icon" href="icon/apple-touch-icon-expcalc.png">
+  <link rel="icon" type="image/png" href="icon/android-chrome-144x144-expcalc.png">
+  <title>EXPスタンプ必要数計算</title> <!-- Created by じぇ -->
 
-        /* ラベルのスタイル */
-        label {
-            font-size: 32px;
-        }
+  <style>
 
-        /* 入力フィールドのスタイル */
-        input[type="number"] {
-            width: 214px;
-            font-size: 32px;
-            padding: 5px;
-            text-align: right;
-        }
+    /* ページ全体のスタイル */
+    body {
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+    }
 
-        #currentLv {
-            width: 70px;
-            font-size: 32px;
-            padding: 5px;
-            text-align: right;
-            background-color: #888;
-        }
+    /* ラベルのスタイル */
+    label {
+      font-size: 32px;
+    }
 
-        #nextLv {
-            width: 80px;
-            font-size: 32px;
-            padding: 5px;
-            text-align: right;
-            color: #137EFF;
-        }
+    /* 入力フィールドのスタイル */
+    input[type="number"] {
+      width: 214px;
+      font-size: 32px;
+      padding: 5px;
+      text-align: right;
+    }
 
-        /* エラーメッセージのスタイル */
-        #warning {
-            color: red;
-            height: 32px;
-            margin-top: 10px;
-        }
+    #currentLv {
+      width: 70px;
+      font-size: 32px;
+      padding: 5px;
+      text-align: right;
+      background-color: #888;
+    }
 
-        /* ボタンのスタイル */
-        input[type="button"] {
-            font-size: 28px;
-            padding: 5px 12px;
-        }
+    #nextLv {
+      width: 80px;
+      font-size: 32px;
+      padding: 5px;
+      text-align: right;
+      color: #137EFF;
+    }
 
-        /* コピー用ボタンのスタイル */
-        #copyButton {
-            font-size: 28px;
-            padding: 5px 20px;
-            display: none; /* 初期状態では非表示 */
-        }
+    /* エラーメッセージのスタイル */
+    #warning {
+      color: red;
+      height: 32px;
+      margin-top: 10px;
+    }
 
-        /* 結果表示のスタイル */
-        #result {
-            font-size: 32px;
-            margin-top: 20px;
-        }
+    /* ボタンのスタイル */
+    input[type="button"] {
+      font-size: 28px;
+      padding: 5px 12px;
+    }
 
-        .red {
-            color: red;
-        }
+    /* コピー用ボタンのスタイル */
+    #copyButton {
+      font-size: 28px;
+      padding: 5px 20px;
+      display: none;
+    }
 
-        .black {
-            color: #eee;
-        }
+    /* 結果表示のスタイル */
+    #result {
+      font-size: 32px;
+      margin-top: 20px;
+    }
 
-        /* フッターのスタイル */
-        footer {
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-            font-size: 16pt;
-            margin-top: 20px;
-        }
+    .red {
+      color: red;
+    }
 
-        /* リンクのスタイル */
-        a:link {
-            color: #1D9BF0;
-            text-decoration: underline;
-        }
+    .black {
+      color: #eee;
+    }
 
-        a:visited {
-            color: #7755FF;
-            text-decoration: underline;
-        }
+    /* フッターのスタイル */
+    footer {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      font-size: 16pt;
+      margin-top: 20px;
+    }
 
-        a:hover {
-            color: #0CFF57;
-        }
+    /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
 
-        a:active {
-             color: #FF0000;
-             text-decoration: underline;
-        }
-    </style>
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      font-size: 36px;
+      cursor: pointer;
+      margin-top: 10px;
+      margin-right: 10px;
+      user-select: none;
+      color: #eee;
+      transition: color 0.3s;
+    }
+
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 300px;
+      height: 100vh;
+      background-color: #1A1A1A;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: #2A99E6;
+    }
+
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: block;
+      padding: 12px 0;
+      color: #eee;
+      text-decoration: none;
+      border-bottom: 1px solid #333;
+      transition: color 0.3s;
+    }
+
+    .menu-item:hover {
+      color: #2A99E6;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
+  </style>
 
 </head>
 <body>
-    <form id="expForm">
-        <label for="consumption">消費：</label>
-        <input type="number" id="consumption" name="consumption" value="" min="0"><br><br>
-        <label for="possession">所持：</label>
-        <input type="number" id="possession" name="possession" value="0" min="0"><br><br>
-        <label for="currentLv"><font color="red"></font>ｽﾃｰｼﾞLv.</label>
-        <input type="number" id="currentLv" name="currentLv" value="" min="1" max="98">
-        <label for="nextLv">></label>
-        <select id="nextLv" name="nextLv">
-            <option value="" selected></option> <!-- 空のオプション -->
-            <!-- 2から99までのオプションを生成 -->
-            <script>
-                for (let i = 2; i <= 99; i++) {
-                    document.write('<option value="' + i + '">' + i + '</option>');
-                }
-            </script>
-        </select><br>
 
-        <div id="warning">※現在のLv=左側の数字を基に計算されます。</div><br>
+  <!-- サイドメニューオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-        <input type="button" value="計算する" onclick="calculateEXP()">
-        <input type="button" id="copyButton" value="コピーする" onclick="copyToClipboard()">
-    </form>
-    <p id="result"><font color="#1D9BF0">EXPスタンプ必要数: </font><span id="requiredExp" class="black">--</span>個</p>
+  <!-- サイドメニュー -->
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
+    <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
+    <div class="menu-spacer"></div>
+    <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
+    <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
+    <div class="menu-spacer"></div>
+    <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
+    <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
+  </div>
 
-    <footer>
-        ※使用は自己責任にて。<br>
-        ※必要数は進行度により多少誤差が出る場合があります。<br>
-        <br>
-        <a href="index.html">TOPへ戻る</a></br>
-    </footer>
+  <form id="expForm">
+    <label for="consumption">消費：</label>
+    <input type="number" id="consumption" name="consumption" value="" min="0"><br><br>
+    <label for="possession">所持：</label>
+    <input type="number" id="possession" name="possession" value="0" min="0"><br><br>
+    <label for="currentLv"><font color="red"></font>ｽﾃｰｼﾞLv.</label>
+    <input type="number" id="currentLv" name="currentLv" value="" min="1" max="98">
+    <label for="nextLv">></label>
 
-    <script>
-        const expData = {
-            // Example data, replace with actual values from your Excel file
-            1: 2000,
-            2: 1999,
-            3: 1997,
-            4: 1994,
-            5: 1990,
-            6: 1986,
-            7: 1981,
-            8: 1975,
-            9: 1968,
-            10: 1960,
-            11: 1952,
-            12: 1944,
-            13: 1936,
-            14: 1928,
-            15: 1920,
-            16: 1912,
-            17: 1904,
-            18: 1896,
-            19: 1888,
-            20: 1880,
-            21: 1871,
-            22: 1863,
-            23: 1855,
-            24: 1847,
-            25: 1839,
-            26: 1831,
-            27: 1823,
-            28: 1815,
-            29: 1807,
-            30: 1799,
-            31: 1790,
-            32: 1782,
-            33: 1774,
-            34: 1766,
-            35: 1758,
-            36: 1749,
-            37: 1741,
-            38: 1733,
-            39: 1725,
-            40: 1717,
-            41: 1708,
-            42: 1700,
-            43: 1692,
-            44: 1683,
-            45: 1675,
-            46: 1667,
-            47: 1658,
-            48: 1650,
-            49: 1642,
-            50: 1634,
-            51: 1625,
-            52: 1617,
-            53: 1608,
-            54: 1600,
-            55: 1592,
-            56: 1583,
-            57: 1575,
-            58: 1566,
-            59: 1558,
-            60: 1550,
-            61: 1541,
-            62: 1532,
-            63: 1522,
-            64: 1512,
-            65: 1502,
-            66: 1490,
-            67: 1478,
-            68: 1466,
-            69: 1452,
-            70: 1438,
-            71: 1422,
-            72: 1405,
-            73: 1387,
-            74: 1368,
-            75: 1348,
-            76: 1326,
-            77: 1302,
-            78: 1277,
-            79: 1250,
-            80: 1222,
-            81: 1191,
-            82: 1158,
-            83: 1122,
-            84: 1084,
-            85: 1044,
-            86: 1000,
-            87: 953,
-            88: 903,
-            89: 850,
-            90: 794,
-            91: 732,
-            92: 666,
-            93: 596,
-            94: 518,
-            95: 435,
-            96: 343,
-            97: 242,
-            98: 130,
-            99: 0,
-            // ... add all necessary levels and corresponding B column values
-        };
+    <select id="nextLv" name="nextLv">
+      <option value="" selected></option> <!-- 空のオプション -->
 
-        function calculateEXP() {
-            const currentLv = parseInt(document.getElementById('nextLv').value);
-            const consumption = parseInt(document.getElementById('consumption').value);
-            const possession = parseInt(document.getElementById('possession').value);
-
-            const baseExp = expData[currentLv];
-
-            if (baseExp === undefined) {
-                document.getElementById('warning').innerText = "※無効な現在のLvです。";
-                return;
-            }
-
-            if (isNaN(currentLv) || isNaN(consumption) || isNaN(possession)) {
-                document.getElementById('warning').innerText = "※すべての入力フィールドに数字を入力してください。";
-                return;
-            }
-
-            const requiredExp = baseExp + consumption - possession;
-            const requiredExpElement = document.getElementById('requiredExp');
-            requiredExpElement.innerText = requiredExp;
-            requiredExpElement.classList.remove('black');
-            requiredExpElement.classList.add('red');
-
-            // コピー用ボタンを表示
-            document.getElementById('warning').innerText = '';
-            document.getElementById('copyButton').value = 'コピーする';
-            document.getElementById('copyButton').style.display = 'inline-block';
+      <!-- 2から99までのオプションを生成 -->
+      <script>
+        for (let i = 2; i <= 99; i++) {
+          document.write('<option value="' + i + '">' + i + '</option>');
         }
+      </script>
 
-        function copyToClipboard() {
-            const requiredExp = document.getElementById('requiredExp').innerText;
-            const tempInput = document.createElement('input');
-            tempInput.value = requiredExp;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            try {
-                document.execCommand('copy');
-                document.getElementById('copyButton').value = 'コピーOK!!';
-            } catch (err) {
-                document.getElementById('warning').innerText = "※クリップボードにコピーできませんでした。";
-            }
-            document.body.removeChild(tempInput);
+    </select><br>
+
+    <div id="warning">※現在のLv=左側の数字を基に計算されます。</div><br>
+
+    <input type="button" value="計算する" onclick="calculateEXP()">
+    <input type="button" id="copyButton" value="コピーする" onclick="copyToClipboard()">
+  </form>
+
+  <p id="result">
+    <font color="#1D9BF0">EXPスタンプ必要数: </font><span id="requiredExp" class="black">--</span>個
+  </p>
+
+  <footer>
+    ※使用は自己責任にて。<br>
+    ※必要数は進行度により多少誤差が出る場合があります。<br>
+    <br>
+    <a href="index.html">INDEXへ戻る</a></br>
+  </footer>
+
+  <script>
+
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+
+      if (sideMenu.classList.contains('open')) {
+        closeMenu();
+      } else {
+        sideMenu.classList.add('open');
+        menuOverlay.classList.add('open');
+      }
+    }
+
+    function closeMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      const menuClose = document.getElementById('menuClose');
+
+      sideMenu.classList.remove('open');
+      menuOverlay.classList.remove('open');
+      menuClose.style.color = '#eee';
+    }
+
+    // フリックでメニュー開閉
+    let startX = 0;
+    let endX = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      startX = e.changedTouches[0].screenX;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      endX = e.changedTouches[0].screenX;
+      handleGesture();
+    }, false);
+
+    function handleGesture() {
+      let diffX = endX - startX;
+
+      if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
+        // かつ開始位置が30px以内なら右フリックと判定
+        if (diffX > 0 && startX < 30) {
+          // 右にフリック
+          toggleMenu();
+        } else {
+          // 左にフリック
+          closeMenu();
         }
+      }
+    }
 
-        // 数字入力のフォーカス時に全選択させる
-        document.getElementById('consumption').addEventListener('focus', function() {
-            this.select();
-        });
+    const expData = {
+      // Example data, replace with actual values from your Excel file
+      1: 2000,
+      2: 1999,
+      3: 1997,
+      4: 1994,
+      5: 1990,
+      6: 1986,
+      7: 1981,
+      8: 1975,
+      9: 1968,
+      10: 1960,
+      11: 1952,
+      12: 1944,
+      13: 1936,
+      14: 1928,
+      15: 1920,
+      16: 1912,
+      17: 1904,
+      18: 1896,
+      19: 1888,
+      20: 1880,
+      21: 1871,
+      22: 1863,
+      23: 1855,
+      24: 1847,
+      25: 1839,
+      26: 1831,
+      27: 1823,
+      28: 1815,
+      29: 1807,
+      30: 1799,
+      31: 1790,
+      32: 1782,
+      33: 1774,
+      34: 1766,
+      35: 1758,
+      36: 1749,
+      37: 1741,
+      38: 1733,
+      39: 1725,
+      40: 1717,
+      41: 1708,
+      42: 1700,
+      43: 1692,
+      44: 1683,
+      45: 1675,
+      46: 1667,
+      47: 1658,
+      48: 1650,
+      49: 1642,
+      50: 1634,
+      51: 1625,
+      52: 1617,
+      53: 1608,
+      54: 1600,
+      55: 1592,
+      56: 1583,
+      57: 1575,
+      58: 1566,
+      59: 1558,
+      60: 1550,
+      61: 1541,
+      62: 1532,
+      63: 1522,
+      64: 1512,
+      65: 1502,
+      66: 1490,
+      67: 1478,
+      68: 1466,
+      69: 1452,
+      70: 1438,
+      71: 1422,
+      72: 1405,
+      73: 1387,
+      74: 1368,
+      75: 1348,
+      76: 1326,
+      77: 1302,
+      78: 1277,
+      79: 1250,
+      80: 1222,
+      81: 1191,
+      82: 1158,
+      83: 1122,
+      84: 1084,
+      85: 1044,
+      86: 1000,
+      87: 953,
+      88: 903,
+      89: 850,
+      90: 794,
+      91: 732,
+      92: 666,
+      93: 596,
+      94: 518,
+      95: 435,
+      96: 343,
+      97: 242,
+      98: 130,
+      99: 0,
+      // ... add all necessary levels and corresponding B column values
+    };
 
-        document.getElementById('possession').addEventListener('focus', function() {
-            this.select();
-        });
+    function calculateEXP() {
+      const currentLv = parseInt(document.getElementById('nextLv').value);
+      const consumption = parseInt(document.getElementById('consumption').value);
+      const possession = parseInt(document.getElementById('possession').value);
 
-        document.getElementById('currentLv').addEventListener('focus', function() {
-            this.select();
-        });
+      const baseExp = expData[currentLv];
 
-        // それぞれのレベルを入力したら対になるレベルの数値を変化させる
-        document.getElementById('currentLv').addEventListener('input', function() {
-            const currentLv = parseInt(this.value);
-            if (!isNaN(currentLv) && currentLv >= 1 && currentLv < 99) {
-                document.getElementById('nextLv').value = currentLv + 1;
-            } else {
-                document.getElementById('nextLv').value = "";
-            }
-        });
+      if (baseExp === undefined) {
+        document.getElementById('warning').innerText = "※無効な現在のLvです。";
+        return;
+      }
 
-        document.getElementById('nextLv').addEventListener('change', function() {
-            const nextLv = parseInt(this.value);
-            if (!isNaN(nextLv) && nextLv > 1) {
-                document.getElementById('currentLv').value = nextLv - 1;
-            } else {
-                document.getElementById('currentLv').value = '';
-            }
-        });
-    </script>
+      if (isNaN(currentLv) || isNaN(consumption) || isNaN(possession)) {
+        document.getElementById('warning').innerText = "※すべての入力フィールドに数字を入力してください。";
+        return;
+      }
+
+      const requiredExp = baseExp + consumption - possession;
+      const requiredExpElement = document.getElementById('requiredExp');
+      requiredExpElement.innerText = requiredExp;
+      requiredExpElement.classList.remove('black');
+      requiredExpElement.classList.add('red');
+
+      // コピー用ボタンを表示
+      document.getElementById('warning').innerText = '';
+      document.getElementById('copyButton').value = 'コピーする';
+      document.getElementById('copyButton').style.display = 'inline-block';
+    }
+
+    function copyToClipboard() {
+      const requiredExp = document.getElementById('requiredExp').innerText;
+      const tempInput = document.createElement('input');
+      tempInput.value = requiredExp;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+        document.getElementById('copyButton').value = 'コピーOK!!';
+      } catch (err) {
+        document.getElementById('warning').innerText = "※クリップボードにコピーできませんでした。";
+      }
+      document.body.removeChild(tempInput);
+    }
+
+    // 数字入力のフォーカス時に全選択させる
+    document.getElementById('consumption').addEventListener('focus', function () {
+      this.select();
+    });
+
+    document.getElementById('possession').addEventListener('focus', function () {
+      this.select();
+    });
+
+    document.getElementById('currentLv').addEventListener('focus', function () {
+      this.select();
+    });
+
+    // それぞれのレベルを入力したら対になるレベルの数値を変化させる
+    document.getElementById('currentLv').addEventListener('input', function () {
+      const currentLv = parseInt(this.value);
+      if (!isNaN(currentLv) && currentLv >= 1 && currentLv < 99) {
+        document.getElementById('nextLv').value = currentLv + 1;
+      } else {
+        document.getElementById('nextLv').value = "";
+      }
+    });
+
+    document.getElementById('nextLv').addEventListener('change', function () {
+      const nextLv = parseInt(this.value);
+      if (!isNaN(nextLv) && nextLv > 1) {
+        document.getElementById('currentLv').value = nextLv - 1;
+      } else {
+        document.getElementById('currentLv').value = '';
+      }
+    });
+
+  </script>
+
 </body>
 </html>

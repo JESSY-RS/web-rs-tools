@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon-kiokucalc2.ico">
@@ -9,6 +10,7 @@
     <title>記憶再戦回数計算</title> <!-- Created by じぇ -->
 
     <style>
+
         /* ページ全体のスタイル */
         body {
             margin: 20px;
@@ -24,7 +26,7 @@
 
         .title {
             font-size: 36px;
-            font-weight:bold;
+            font-weight: bold;
             color: fuchsia;
             margin-right: 10px;
             margin-top: -10px;
@@ -33,7 +35,7 @@
 
         .subtitle {
             font-size: 24px;
-            font-weight:bold;
+            font-weight: bold;
             color: aqua;
             margin-top: 0px;
             margin-bottom: 20px;
@@ -102,7 +104,7 @@
             text-align: left;
             margin-top: 5px;
             margin-bottom: 15px;
-            display: none; /* 初期状態では非表示 */
+            display: none;
         }
 
         /* 24時間で計算ボタンのスタイル */
@@ -111,12 +113,12 @@
             padding: 5px 20px;
         }
 
-
         /* コピー用ボタンのスタイル */
         #copyButton {
             font-size: 28px;
             padding: 5px 20px;
-            display: none; /* 初期状態では非表示 */
+            display: none;
+            /* 初期状態では非表示 */
         }
 
         /* エラーメッセージのスタイル */
@@ -130,7 +132,7 @@
         /* 結果表示のスタイル */
         .result {
             font-size: 42px;
-            font-weight:bold;
+            font-weight: bold;
             margin-top: 5px;
         }
 
@@ -177,12 +179,127 @@
         }
 
         a:active {
-             color: #FF0000;
-             text-decoration: underline;
+            color: #FF0000;
+            text-decoration: underline;
         }
+
+        /* ハンバーガーメニューのスタイル */
+        .hamburger {
+            font-size: 36px;
+            cursor: pointer;
+            margin-top: 10px;
+            margin-right: 10px;
+            user-select: none;
+            color: #eee;
+            transition: color 0.3s;
+        }
+
+        .hamburger:hover {
+            color: #2A99E6;
+        }
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: #1A1A1A;
+            border-right: 1px solid #555;
+            transition: left 0.3s ease;
+            z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .side-menu.open {
+            left: 0;
+        }
+
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .menu-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .menu-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #eee;
+            user-select: none;
+        }
+
+        .menu-close:hover {
+            color: #ff6b6b;
+        }
+
+        .menu-title {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: left;
+            margin-bottom: 10px;
+            color: #2A99E6;
+        }
+
+        .menu-item {
+            font-size: 18px;
+            text-align: left;
+            display: block;
+            padding: 12px 0;
+            color: #eee;
+            text-decoration: none;
+            border-bottom: 1px solid #333;
+            transition: color 0.3s;
+        }
+
+        .menu-item:hover {
+            color: #2A99E6;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-spacer {
+            height: 30px;
+        }
+
     </style>
+
 </head>
 <body>
+
+    <!-- サイドメニューオーバーレイ -->
+    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+    <!-- サイドメニュー -->
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-title">リユニのWeb版いろいろ</div>
+        <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
+        <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
+        <div class="menu-spacer"></div>
+        <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
+        <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
+        <div class="menu-spacer"></div>
+        <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
+        <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
+    </div>
+
     <div class="container">
         <div class="header">
             <span class="title">記憶再戦</span>
@@ -191,9 +308,11 @@
 
         <div class="input-group1">
             <label for="input1-min">入力欄１</label>
-            <input type="number" id="input1-min" min="0" onfocus="this.select()" onkeydown="handleEnter(event, 'input1-sec')">
+            <input type="number" id="input1-min" min="0" onfocus="this.select()"
+                onkeydown="handleEnter(event, 'input1-sec')">
             <span class="separator">:</span>
-            <input type="number" id="input1-sec" min="0" onfocus="this.select()" onkeydown="handleEnter(event, 'total-time-hour')">
+            <input type="number" id="input1-sec" min="0" onfocus="this.select()"
+                onkeydown="handleEnter(event, 'total-time-hour')">
         </div>
 
         <div class="input-group2">
@@ -203,18 +322,20 @@
             <input type="number" id="input2-sec" min="0" onfocus="this.select()">
         </div>
 
-
         <div class="input-group3">
             <label for="total-time-hour">所要時間</label>
             <button id="reflect-button" onclick="reflectClipboard()">コピペ</button>
             <input type="button" id="c24hButton" value="24Ｈ" onclick="calclate24hour()">
 
-            <input type="text" id="manual-input" placeholder="手動で貼り付け" ><br>
-            <input type="number" id="total-time-hour" min="0" placeholder="時" onfocus="this.select()" onkeydown="handleEnter(event, 'total-time-min')">
+            <input type="text" id="manual-input" placeholder="手動で貼り付け"><br>
+            <input type="number" id="total-time-hour" min="0" placeholder="時" onfocus="this.select()"
+                onkeydown="handleEnter(event, 'total-time-min')">
             <span class="separator">:</span>
-            <input type="number" id="total-time-min" min="0" placeholder="分" onfocus="this.select()" onkeydown="handleEnter(event, 'total-time-sec')">
+            <input type="number" id="total-time-min" min="0" placeholder="分" onfocus="this.select()"
+                onkeydown="handleEnter(event, 'total-time-sec')">
             <span class="separator">:</span>
-            <input type="number" id="total-time-sec" min="0" placeholder="秒" onfocus="this.select()" onkeydown="handleEnter(event, 'calculate-button')">
+            <input type="number" id="total-time-sec" min="0" placeholder="秒" onfocus="this.select()"
+                onkeydown="handleEnter(event, 'calculate-button')">
         </div>
 
         <p id="warning"></p>
@@ -224,20 +345,74 @@
         <input type="button" id="copyButton" value="結果コピー" onclick="copyToClipboard()">
 
         <div class="result">
-            <span class="result-label">結果: </span><span id="result" class="result-time">--</span><span class="unit-str">回</span>
+            <span class="result-label">結果: </span><span id="result" class="result-time">--</span><span
+                class="unit-str">回</span>
         </div>
     </div>
 
-　　<div class="bottom"><a href="kiokucalc.html">所要時間を計算する</a></br></div>
+    <br>
+    <div class="bottom"><a href="kiokucalc.html">所要時間を計算する</a><br></div>
 
     <footer>
         ※使用は自己責任にて。<br>
         ※ページをリロードすると各項目が初期値に戻ります。<br>
         <br>
-        <a href="index.html">TOPへ戻る</a></br>
+        <a href="index.html">INDEXへ戻る</a></br>
     </footer>
 
     <script>
+
+        // ハンバーガーメニューの関数
+        function toggleMenu() {
+            const sideMenu = document.getElementById('sideMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+
+            if (sideMenu.classList.contains('open')) {
+                closeMenu();
+            } else {
+                sideMenu.classList.add('open');
+                menuOverlay.classList.add('open');
+            }
+        }
+
+        function closeMenu() {
+            const sideMenu = document.getElementById('sideMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const menuClose = document.getElementById('menuClose');
+
+            sideMenu.classList.remove('open');
+            menuOverlay.classList.remove('open');
+            menuClose.style.color = '#eee';
+        }
+
+        // フリックでメニュー開閉
+        let startX = 0;
+        let endX = 0;
+
+        document.addEventListener('touchstart', function (e) {
+            startX = e.changedTouches[0].screenX;
+        }, false);
+
+        document.addEventListener('touchend', function (e) {
+            endX = e.changedTouches[0].screenX;
+            handleGesture();
+        }, false);
+
+        function handleGesture() {
+            let diffX = endX - startX;
+
+            if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
+                // かつ開始位置が30px以内なら右フリックと判定
+                if (diffX > 0 && startX < 30) {
+                    // 右にフリック
+                    toggleMenu();
+                } else {
+                    // 左にフリック
+                    closeMenu();
+                }
+            }
+        }
+
         // 初期値の定義
         const initialValues = {
             input1Min: '',
@@ -313,13 +488,13 @@
 
             // 計算処理
             let totalRetryTime = parseTime(0, parseInt(input1Min.value), parseInt(input1Sec.value)) +
-                                 parseTime(0, parseInt(input2Min.value), parseInt(input2Sec.value));
-        
+                parseTime(0, parseInt(input2Min.value), parseInt(input2Sec.value));
+
             let totalTime = parseTime(parseInt(totalTimeHour.value), parseInt(totalTimeMin.value), parseInt(totalTimeSec.value));
             let count = Math.floor(totalTime / totalRetryTime);
 
             // エラーメッセージをクリア
-            document.getElementById('warning').innerText = ""; 
+            document.getElementById('warning').innerText = "";
             document.getElementById('result').innerText = count;
 
             // コピー用ボタンを表示
@@ -349,8 +524,8 @@
                     document.getElementById('reflect-button').style.display = 'none';
                     document.getElementById('manual-input-group').style.display = 'inline-block';
 
-                   // 24時間で計算ボタンを非表示
-                   document.getElementById('c24hButton').style.display = 'none';
+                    // 24時間で計算ボタンを非表示
+                    document.getElementById('c24hButton').style.display = 'none';
                 }
             } catch (error) {
                 document.getElementById('warning').innerText = "※反映出来ませんでした。お手数ですが手動で貼り付けてください。";
@@ -366,10 +541,10 @@
 
         //時間を24時間に設定して計算する
         function calclate24hour() {
-                // 時間を24時間に設定
-                document.getElementById('total-time-hour').value = 24;
-                document.getElementById('total-time-min').value = 0;
-                document.getElementById('total-time-sec').value = 0;
+            // 時間を24時間に設定
+            document.getElementById('total-time-hour').value = 24;
+            document.getElementById('total-time-min').value = 0;
+            document.getElementById('total-time-sec').value = 0;
         }
 
         // クリップボードに情報をコピーする
@@ -389,7 +564,7 @@
         }
 
         // ページをリロードしたら各項目を初期値に戻す
-        window.onload = function() {
+        window.onload = function () {
             document.getElementById('input1-min').value = initialValues.input1Min;
             document.getElementById('input1-sec').value = initialValues.input1Sec;
             document.getElementById('input2-min').value = initialValues.input2Min;
@@ -407,6 +582,8 @@
                 document.getElementById(nextElementId).focus();
             }
         }
+
     </script>
+
 </body>
 </html>

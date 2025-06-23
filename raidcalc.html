@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="favicon-raidcalc.ico">
-    <link rel="apple-touch-icon" href="apple-touch-icon-raidcalc.png">
-    <link rel="icon" type="image/png" href="android-chrome-144x144-raidcalc.png">
-    <title>6.5周年制圧戦・周回効率比較ツール</title> <!-- Created by じぇ -->
+
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="favicon-raidcalc.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-raidcalc.png">
+  <link rel="icon" type="image/png" href="android-chrome-144x144-raidcalc.png">
+  <title>6.5周年制圧戦・周回効率比較ツール</title> <!-- Created by じぇ -->
 
   <style>
-    body { 
+
+    body {
       margin: 20px;
-      background-color: #2A2A2A; 
-      color: #eee; 
+      background-color: #2A2A2A;
+      color: #eee;
     }
 
     #warning {
@@ -31,42 +33,45 @@
       margin-bottom: 10px;
     }
 
-    #result1, #result2 {
+    #result1,
+    #result2 {
       margin-top: 10px;
       margin-bottom: 0px;
     }
 
-    input, select { 
-      margin: 5px; 
-      padding: 5px; 
-      background-color: #fff; 
-      color: #000; 
+    input,
+    select {
+      margin: 5px;
+      padding: 5px;
+      background-color: #fff;
+      color: #000;
       border: 1px solid #555;
     }
 
-    .time-inputbox { 
+    .time-inputbox {
       width: 40px;
       text-align: right;
     }
 
-    button { 
-      margin: 5px; 
+    button {
+      margin: 5px;
       padding: 5px;
-      color: #fff; 
-      background-color: #2A99E6; 
+      color: #fff;
+      background-color: #2A99E6;
       border: 1px solid #555;
       cursor: pointer;
     }
 
-    .time-input { 
-      margin-bottom: 15px; 
+    .time-input {
+      margin-bottom: 15px;
     }
 
-    .block { 
-      border: 1px solid #fff; 
-      padding: 15px; 
-      margin-bottom: 20px; 
+    .block {
+      border: 1px solid #fff;
+      padding: 15px;
+      margin-bottom: 20px;
     }
+
     .error {
       color: #f00;
       margin-top: 5px;
@@ -118,7 +123,8 @@
       margin-top: 0;
     }
 
-    th, td {
+    th,
+    td {
       border: 1px solid white;
       padding: 8px 12px;
     }
@@ -133,7 +139,7 @@
       text-align: right;
     }
 
-     /* ハンバーガーメニューのスタイル */
+    /* ハンバーガーメニューのスタイル */
     .hamburger {
       font-size: 36px;
       cursor: pointer;
@@ -199,14 +205,16 @@
     }
 
     .menu-title {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: bold;
-      margin-bottom: 20px;
+      text-align: left;
+      margin-bottom: 10px;
       color: #2A99E6;
     }
 
     .menu-item {
       font-size: 18px;
+      text-align: left;
       display: block;
       padding: 12px 0;
       color: #eee;
@@ -228,94 +236,96 @@
     }
 
   </style>
+
 </head>
 <body>
 
-    <!-- サイドメニューオーバーレイ -->
-    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+  <!-- サイドメニューオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-    <!-- サイドメニュー -->
-    <div class="side-menu" id="sideMenu">
-      <div class="menu-title">リユニのWeb版いろいろ</div>
-      <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
-      <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
-      <div class="menu-spacer"></div>
-      <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
-      <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
-      <div class="menu-spacer"></div>
-      <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
-      <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
-    </div>
+  <!-- サイドメニュー -->
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
+    <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
+    <div class="menu-spacer"></div>
+    <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
+    <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
+    <div class="menu-spacer"></div>
+    <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
+    <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
+  </div>
 
   <h2>6.5周年制圧戦・周回効率比較ツール</h2>
   <div id="warning">※グレード毎１戦あたりの個数変動の可能性あり注意。</div>
+
   <div class="block">
     <h3>比較①</h3>
 
-  <div class="time-input" >
+    <div class="time-input">
       <label>1回の計測時間</label><br>
-      <input class="time-inputbox" type="number" placeholder="分" id="input1-min" min="0"> : 
+      <input class="time-inputbox" type="number" placeholder="分" id="input1-min" min="0"> :
       <input class="time-inputbox" type="number" placeholder="秒" id="input1-sec" min="0">（+00:13）<br>
       <button onclick="calculate24h(1)">24Hで回数セット</button><br>
-  </div>
+    </div>
 
-  <label>回数：</label>
-  <input type="number" id="countInput1" placeholder="回数を入力" /><br />
+    <label>回数：</label>
+    <input type="number" id="countInput1" placeholder="回数を入力" /><br />
 
-  <label>グレード選択：</label>
-  <select id="gradeSelect1" onchange="updateItemValue(1)">
-    <option value="0">グレード0</option>
-    <option value="6">グレード6</option>
-    <option value="7">グレード7</option>
-    <option value="8">グレード8</option>
-    <option value="9" selected>グレード9</option>
-    <option value="10">グレード10</option>
-  </select><br>
+    <label>グレード選択：</label>
+    <select id="gradeSelect1" onchange="updateItemValue(1)">
+      <option value="0">グレード0</option>
+      <option value="6">グレード6</option>
+      <option value="7">グレード7</option>
+      <option value="8">グレード8</option>
+      <option value="9" selected>グレード9</option>
+      <option value="10">グレード10</option>
+    </select><br>
 
-  <label>個数：</label>
-  <input type="number" id="itemPerGame1" value="92.8" step="0.1" /><br />
+    <label>個数：</label>
+    <input type="number" id="itemPerGame1" value="92.8" step="0.1" /><br />
 
-  <button onclick="calculateResult(1)">計算する</button>
+    <button onclick="calculateResult(1)">計算する</button>
 
-  <h3 id="result1">結果：-</h3>
-  <div class="error" id="error1" style="display:none;"></div>
+    <h3 id="result1">結果：-</h3>
+    <div class="error" id="error1" style="display:none;"></div>
   </div>
 
   <div class="block">
     <h3>比較②</h3>
 
-  <div class="time-input" >
-    <label>1回の計測時間</label><br>
-    <input class="time-inputbox" type="number" placeholder="分" id="input2-min" min="0"> : 
-    <input class="time-inputbox"type="number" placeholder="秒" id="input2-sec" min="0">（+00:13）<br>
-    <button onclick="calculate24h(2)">24Hで回数セット</button><br>
-  </div>
+    <div class="time-input">
+      <label>1回の計測時間</label><br>
+      <input class="time-inputbox" type="number" placeholder="分" id="input2-min" min="0"> :
+      <input class="time-inputbox" type="number" placeholder="秒" id="input2-sec" min="0">（+00:13）<br>
+      <button onclick="calculate24h(2)">24Hで回数セット</button><br>
+    </div>
 
-  <label>回数：</label>
-  <input type="number" id="countInput2" placeholder="回数を入力" /><br />
+    <label>回数：</label>
+    <input type="number" id="countInput2" placeholder="回数を入力" /><br />
 
-  <label>グレード選択：</label>
-  <select id="gradeSelect2" onchange="updateItemValue(2)">
-    <option value="0">グレード0</option>
-    <option value="6">グレード6</option>
-    <option value="7">グレード7</option>
-    <option value="8">グレード8</option>
-    <option value="9">グレード9</option>
-    <option value="10" selected>グレード10</option>
-  </select><br>
+    <label>グレード選択：</label>
+    <select id="gradeSelect2" onchange="updateItemValue(2)">
+      <option value="0">グレード0</option>
+      <option value="6">グレード6</option>
+      <option value="7">グレード7</option>
+      <option value="8">グレード8</option>
+      <option value="9">グレード9</option>
+      <option value="10" selected>グレード10</option>
+    </select><br>
 
-  <label>個数：</label>
-  <input type="number" id="itemPerGame2" value="365.4" step="0.1" /><br />
+    <label>個数：</label>
+    <input type="number" id="itemPerGame2" value="365.4" step="0.1" /><br />
 
-  <button onclick="calculateResult(2)">計算する</button>
+    <button onclick="calculateResult(2)">計算する</button>
 
-  <h3 id="result2">結果：-</h3>
-  <div class="error" id="error2" style="display:none;"></div>
+    <h3 id="result2">結果：-</h3>
+    <div class="error" id="error2" style="display:none;"></div>
   </div>
 
   <div class="block">
     <h3>目標個数から逆算</h3>
-  
+
     <button onclick="setTargetFromResult(1)">比較①の結果をセット</button>
     <button onclick="setTargetFromResult(2)">比較②の結果をセット</button>
     <br>
@@ -329,43 +339,66 @@
     <div class="reResult" id="reverseResult"></div>
     <div id="reverseMessage" style="margin-top:10px; font-weight:bold;"></div>
     <div class="error" id="error3" style="display:none;"></div>
-
   </div>
 
   <div class="container">
-  <div class="title-box">■グレード⇆ダメージ換算早見表 (単位：百万)</div>
+    <div class="title-box">■グレード⇆ダメージ換算早見表 (単位：百万)</div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Gr.</th>
-        <th>アレツ</th>
-        <th>シムメシュ</th>
-        <th>シャムマベル</th>
-        <th>老人</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">0</td>
-      </tr>
-      <tr>
-        <td class="num">6</td><td class="num">300</td><td class="num">500</td><td class="num">300</td><td class="num">300</td>
-      </tr>
-      <tr>
-        <td class="num">7</td><td class="num">500</td><td class="num">1,000</td><td class="num">400</td><td class="num">500</td>
-      </tr>
-      <tr>
-        <td class="num">8</td><td class="num">1,000</td><td class="num">2,000</td><td class="num">500</td><td class="num">1,000</td>
-      </tr>
-      <tr>
-        <td class="num">9</td><td class="num">2,000</td><td class="num">3,000</td><td class="num">750</td><td class="num">2,000</td>
-      </tr>
-      <tr>
-        <td class="num">10</td><td class="num">3,000</td><td class="num">5,000</td><td class="num">1,000</td><td class="num">4,000</td>
-      </tr>
-    </tbody>
-  </table>
+    <table>
+      <thead>
+        <tr>
+          <th>Gr.</th>
+          <th>アレツ</th>
+          <th>シムメシュ</th>
+          <th>シャムマベル</th>
+          <th>老人</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="num">0</td>
+          <td class="num">0</td>
+          <td class="num">0</td>
+          <td class="num">0</td>
+          <td class="num">0</td>
+        </tr>
+        <tr>
+          <td class="num">6</td>
+          <td class="num">300</td>
+          <td class="num">500</td>
+          <td class="num">300</td>
+          <td class="num">300</td>
+        </tr>
+        <tr>
+          <td class="num">7</td>
+          <td class="num">500</td>
+          <td class="num">1,000</td>
+          <td class="num">400</td>
+          <td class="num">500</td>
+        </tr>
+        <tr>
+          <td class="num">8</td>
+          <td class="num">1,000</td>
+          <td class="num">2,000</td>
+          <td class="num">500</td>
+          <td class="num">1,000</td>
+        </tr>
+        <tr>
+          <td class="num">9</td>
+          <td class="num">2,000</td>
+          <td class="num">3,000</td>
+          <td class="num">750</td>
+          <td class="num">2,000</td>
+        </tr>
+        <tr>
+          <td class="num">10</td>
+          <td class="num">3,000</td>
+          <td class="num">5,000</td>
+          <td class="num">1,000</td>
+          <td class="num">4,000</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <br>
@@ -380,18 +413,18 @@
     ※使用は自己責任にて。<br>
     ※ページをリロードすると各項目が初期値に戻ります。<br>
     <br>
-    <a href="index.html">TOPへ戻る</a><br>
+    <a href="index.html">INDEXへ戻る</a><br>
   </footer>
 
   <script>
 
     // 初期値の定義
     const initialValues = {
-        inputMin: '',
-        inputMinSec: '',
-        countInput: '',
-        itemPerGame1: '286.6',
-        itemPerGame2: '365.4',
+      inputMin: '',
+      inputMinSec: '',
+      countInput: '',
+      itemPerGame1: '286.6',
+      itemPerGame2: '365.4',
     };
 
     const gradeValues = {
@@ -425,7 +458,7 @@
 
     function calculate24h(number) {
       let resultCount = 0;
-    
+
       const min = parseInt(document.getElementById(`input${number}-min`).value) || 0;
       const sec = parseInt(document.getElementById(`input${number}-sec`).value) || 0;
       const oneTime = min * 60 + sec + 13; // 入力値 + 13秒
@@ -445,7 +478,7 @@
     }
 
     // ページをリロードしたら各項目を初期値に戻す
-    window.onload = function() {
+    window.onload = function () {
       document.getElementById('input1-min').value = initialValues.inputMin;
       document.getElementById('input1-sec').value = initialValues.inputSec;
       document.getElementById('input2-min').value = initialValues.inputMin;
@@ -506,7 +539,7 @@
 
       output += "</tbody></table>";
       resultDiv.innerHTML = output;
-　    document.getElementById("reverseMessage").textContent = "上記タイム未満で周回可能ならば報酬量は上回ります。";
+      document.getElementById("reverseMessage").textContent = "上記タイム未満で周回可能ならば報酬量は上回ります。";
 
     }
 
@@ -542,7 +575,7 @@
     function toggleMenu() {
       const sideMenu = document.getElementById('sideMenu');
       const menuOverlay = document.getElementById('menuOverlay');
-      
+
       if (sideMenu.classList.contains('open')) {
         closeMenu();
       } else {
@@ -555,7 +588,7 @@
       const sideMenu = document.getElementById('sideMenu');
       const menuOverlay = document.getElementById('menuOverlay');
       const menuClose = document.getElementById('menuClose');
-      
+
       sideMenu.classList.remove('open');
       menuOverlay.classList.remove('open');
       menuClose.style.color = '#eee';
@@ -565,11 +598,11 @@
     let startX = 0;
     let endX = 0;
 
-    document.addEventListener('touchstart', function(e) {
+    document.addEventListener('touchstart', function (e) {
       startX = e.changedTouches[0].screenX;
     }, false);
 
-    document.addEventListener('touchend', function(e) {
+    document.addEventListener('touchend', function (e) {
       endX = e.changedTouches[0].screenX;
       handleGesture();
     }, false);
