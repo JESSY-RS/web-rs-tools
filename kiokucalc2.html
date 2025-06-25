@@ -118,7 +118,6 @@
             font-size: 28px;
             padding: 5px 20px;
             display: none;
-            /* 初期状態では非表示 */
         }
 
         /* エラーメッセージのスタイル */
@@ -296,8 +295,8 @@
         <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
         <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
         <div class="menu-spacer"></div>
-        <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
-        <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
+        <a href="ikuseicalc.html" class="menu-item">育成効率比較ツール</a>
+        <a href="raidcalc.html" class="menu-item">レイド周回効率比較ツール</a>
     </div>
 
     <div class="container">
@@ -308,11 +307,9 @@
 
         <div class="input-group1">
             <label for="input1-min">入力欄１</label>
-            <input type="number" id="input1-min" min="0" onfocus="this.select()"
-                onkeydown="handleEnter(event, 'input1-sec')">
+            <input type="number" id="input1-min" min="0" onfocus="this.select()" onkeydown="handleEnter(event, 'input1-sec')">
             <span class="separator">:</span>
-            <input type="number" id="input1-sec" min="0" onfocus="this.select()"
-                onkeydown="handleEnter(event, 'total-time-hour')">
+            <input type="number" id="input1-sec" min="0" onfocus="this.select()" onkeydown="handleEnter(event, 'total-time-hour')">
         </div>
 
         <div class="input-group2">
@@ -328,14 +325,11 @@
             <input type="button" id="c24hButton" value="24Ｈ" onclick="calclate24hour()">
 
             <input type="text" id="manual-input" placeholder="手動で貼り付け"><br>
-            <input type="number" id="total-time-hour" min="0" placeholder="時" onfocus="this.select()"
-                onkeydown="handleEnter(event, 'total-time-min')">
+            <input type="number" id="total-time-hour" min="0" placeholder="時" onfocus="this.select()" onkeydown="handleEnter(event, 'total-time-min')">
             <span class="separator">:</span>
-            <input type="number" id="total-time-min" min="0" placeholder="分" onfocus="this.select()"
-                onkeydown="handleEnter(event, 'total-time-sec')">
+            <input type="number" id="total-time-min" min="0" placeholder="分" onfocus="this.select()" onkeydown="handleEnter(event, 'total-time-sec')">
             <span class="separator">:</span>
-            <input type="number" id="total-time-sec" min="0" placeholder="秒" onfocus="this.select()"
-                onkeydown="handleEnter(event, 'calculate-button')">
+            <input type="number" id="total-time-sec" min="0" placeholder="秒" onfocus="this.select()" onkeydown="handleEnter(event, 'calculate-button')">
         </div>
 
         <p id="warning"></p>
@@ -345,8 +339,7 @@
         <input type="button" id="copyButton" value="結果コピー" onclick="copyToClipboard()">
 
         <div class="result">
-            <span class="result-label">結果: </span><span id="result" class="result-time">--</span><span
-                class="unit-str">回</span>
+            <span class="result-label">結果: </span><span id="result" class="result-time">--</span><span class="unit-str">回</span>
         </div>
     </div>
 
@@ -357,7 +350,7 @@
         ※使用は自己責任にて。<br>
         ※ページをリロードすると各項目が初期値に戻ります。<br>
         <br>
-        <a href="index.html">INDEXへ戻る</a></br>
+        <a href="index.html">INDEXへ戻る</a><br>
     </footer>
 
     <script>
@@ -488,7 +481,7 @@
 
             // 計算処理
             let totalRetryTime = parseTime(0, parseInt(input1Min.value), parseInt(input1Sec.value)) +
-                parseTime(0, parseInt(input2Min.value), parseInt(input2Sec.value));
+                                 parseTime(0, parseInt(input2Min.value), parseInt(input2Sec.value));
 
             let totalTime = parseTime(parseInt(totalTimeHour.value), parseInt(totalTimeMin.value), parseInt(totalTimeSec.value));
             let count = Math.floor(totalTime / totalRetryTime);
