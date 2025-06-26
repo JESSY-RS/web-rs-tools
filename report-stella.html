@@ -22,7 +22,6 @@
       margin-bottom: 5px;
     }
 
-
 .pierce-group {
   display: grid;
   grid-template-columns: repeat(2, auto);
@@ -151,24 +150,17 @@
     }
 
     /* ハンバーガーメニューのスタイル */
-    .header {
-      position: relative;
-      display: flex;
-      align-items: center;
-      margin-top: -15px;
-      margin-bottom: -60px;
-    }
-
     .hamburger {
-      font-size: 36px;
+      font-size: 24px;
       cursor: pointer;
-      margin-top: 7px;
-      margin-right: 10px;
+      margin-left: -5px;
+      margin-right: 6px;
       user-select: none;
       color: #eee;
       transition: color 0.3s;
+      display: inline-block;
     }
-
+    
     .hamburger:hover {
       color: #2A99E6;
     }
@@ -281,15 +273,13 @@
 
   <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
-    <div class="hamburger" onclick="toggleMenu()">☰</div>
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> ステライヤリング・報告用</h1>
   </div>
 
   <div class="zoom-buttons">
     <button onclick="changeZoom(0.1)">＋</button>
     <button onclick="changeZoom(-0.1)">－</button>
   </div>
-
-  <h1>ステライヤリング・報告用</h1>
 
   <input type="file" id="importJson" accept=".json">
 
