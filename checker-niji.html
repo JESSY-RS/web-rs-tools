@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="favicon-shishi.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-shishi.png">
+  <link rel="icon" type="image/png" href="web-app-manifest-192x192-shishi.png">
+  <title>虹瑠璃の腕輪獲得チェッカー</title> <!-- Created by じぇ -->
+
+  <style>
+
+    body {
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .group-title {
+      font-size: 28px;
+      margin-top: 50px;
+      margin-bottom: 8px;
+    }
+
+    .stars {
+      display: inline-block;
+      margin-left: 5px;
+    }
+
+    .star {
+      font-size: 36px;
+      margin: 0 2px;
+      cursor: pointer;
+      color: darkgray;
+      user-select: none;
+    }
+
+    .star.on {
+      color: gold;
+    }
+
+    .line {
+      margin-bottom: 8px;
+    }
+
+    input[type="file"] {
+      font-size: 18px;
+    }
+
+    button {
+      padding: 5px 10px;
+      font-size: 18px;
+    }
+
+    .controls {
+      margin-bottom: 15px;
+    }
+
+    /* 大分類ごとの色指定 */
+    .M01 { color: hotpink; }
+    .M02 { color: red; }
+    .M03 { color: gray; }
+    .M04 { color: royalblue; }
+
+    /* 小分類ごとの色指定 */
+    .S01 { color: darkorchid; }
+    .S02 { color: dodgerblue; }
+    .S03 { color: dodgerblue; }
+    .S04 { color: dodgerblue; }
+    .S05 { color: lime; }
+    .S06 { color: lime; }
+    .S07 { color: lime; }
+    .S08 { color: yellow; }
+    .S09 { color: yellow; }
+    .S10 { color: yellow; }
+    .S11 { color: orangered; }
+
+    .S01, 
+    .S02, 
+    .S03, 
+    .S04, 
+    .S05, 
+    .S06, 
+    .S07, 
+    .S08, 
+    .S09,
+    .S10,
+    .S11 {
+      font-size: 30px;
+    }
+
+    .line {
+      display: flex;
+      align-items: center;
+    }
+
+    .line .name {
+      width: 150px;
+      text-align: right;
+      margin-right: 10px;
+    }
+
+    /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+    .bottom {
+      font-size: 16pt;
+      margin-top: 20px;
+    }
+
+    /* フッターのスタイル */
+    footer {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      font-size: 16pt;
+      margin-top: 20px;
+    }
+
+    /* スクロールボタンのスタイル */
+    .scroll-buttons {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .scroll-button {
+      background-color: #444;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .scroll-button:hover {
+      background-color: #666;
+    }
+
+    /* ハンバーガーメニューのスタイル */
+    .header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-top: -15px;
+      margin-bottom: 10px;
+    }
+
+    .hamburger {
+      font-size: 36px;
+      cursor: pointer;
+      margin-top: 7px;
+      margin-right: 10px;
+      user-select: none;
+      color: #eee;
+      transition: color 0.3s;
+    }
+
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 300px;
+      height: 100vh;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: #2A99E6;
+    }
+
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: block;
+      padding: 12px 0;
+      color: #eee;
+      text-decoration: none;
+      border-bottom: 1px solid #333;
+      transition: color 0.3s;
+    }
+
+    .menu-item:hover {
+      color: #2A99E6;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
+  </style>
+
+</head>
+<body>
+
+  <!-- サイドメニューオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <!-- サイドメニュー -->
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
+    <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
+    <div class="menu-spacer"></div>
+    <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
+    <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
+    <div class="menu-spacer"></div>
+    <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
+    <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
+    <div class="menu-spacer"></div>
+    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a>
+    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a>
+    <div class="menu-spacer"></div>
+  </div>
+
+  <!-- ハンバーガーメニューとヘッダー -->
+  <div class="header">
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
+    <h1>虹瑠璃の腕輪獲得チェッカー</h1>
+  </div>
+
+  <div class="controls">
+    <input type="file" id="fileInput" accept=".json"><br>
+  </div>
+
+  <div id="statusContainer"></div>
+
+  <div class="bottom">
+    <br>
+    <a href="report-niji.html">報告用ページへ</a>
+    <br><br>
+    <a href="checker-stella.html">ステライヤリングチェッカーへ</a>
+    <br>
+  </div>
+
+  <footer>
+    ※使用は自己責任にて。<br>
+    <br>
+    <a href="index.html">INDEXへ戻る</a><br>
+  </footer>
+
+  <script>
+
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+
+      if (sideMenu.classList.contains('open')) {
+        closeMenu();
+      } else {
+        sideMenu.classList.add('open');
+        menuOverlay.classList.add('open');
+      }
+    }
+
+    function closeMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      const menuClose = document.getElementById('menuClose');
+
+      sideMenu.classList.remove('open');
+      menuOverlay.classList.remove('open');
+      menuClose.style.color = '#eee';
+    }
+
+    // フリックでメニュー開閉
+    let startX = 0;
+    let endX = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      startX = e.changedTouches[0].screenX;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      endX = e.changedTouches[0].screenX;
+      handleGesture();
+    }, false);
+
+    function handleGesture() {
+      let diffX = endX - startX;
+
+      if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
+        // かつ開始位置が30px以内なら右フリックと判定
+        if (diffX > 0 && startX < 30) {
+          // 右にフリック
+          toggleMenu();
+        } else {
+          // 左にフリック
+          closeMenu();
+        }
+      }
+    }
+
+    const groups = [
+      { title: "虹瑠璃の腕輪", color: "M01" },
+    ];
+
+    const attributes = [
+      { name: "GBSaGa", class: "S01" },
+      { name: "RS1", class: "S02" },
+      { name: "RS2", class: "S03" },
+      { name: "RS3", class: "S04" },
+      { name: "SF1", class: "S05" },
+      { name: "SF2", class: "S06" },
+      { name: "US", class: "S07" },
+      { name: "ES&IS", class: "S08" },
+      { name: "SSG", class: "S09" },
+      { name: "SaGaEB", class: "S10" },
+      { name: "SaGaRS", class: "S11" }
+    ];
+
+    function init() {
+      const container = document.getElementById('statusContainer');
+      container.innerHTML = '';
+
+      groups.forEach(group => {
+        const groupTitle = document.createElement('div');
+        groupTitle.textContent = group.title;
+        groupTitle.className = `group-title ${group.color}`;
+        groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
+        container.appendChild(groupTitle);
+
+        attributes.forEach(attr => {
+          const line = document.createElement('div');
+          line.className = 'line';
+
+          const name = document.createElement('span');
+          name.textContent = attr.name;
+          name.className = `${attr.class} name`;
+
+          const stars = document.createElement('span');
+          stars.className = 'stars';
+          stars.dataset.key = `${group.title}_${attr.name}`;
+
+          for (let i = 0; i < 5; i++) {
+            const star = document.createElement('span');
+            star.textContent = '☆';
+            star.className = 'star';
+            star.dataset.index = i;
+            star.addEventListener('click', function () {
+              if (this.textContent === '☆') {
+                this.textContent = '★';
+                this.classList.add('on');
+              } else {
+                this.textContent = '☆';
+                this.classList.remove('on');
+              }
+            });
+            stars.appendChild(star);
+          }
+
+          line.appendChild(name);
+          line.appendChild(stars);
+          container.appendChild(line);
+        });
+
+        // グループごとのエクスポートボタン
+        const exportBtn = document.createElement('button');
+        exportBtn.textContent = '状態をエクスポート';
+        exportBtn.style.marginTop = '15px';
+        exportBtn.addEventListener('click', exportState);
+        container.appendChild(exportBtn);
+
+        container.appendChild(exportBtn);
+      });
+
+      setupScrollButtons();
+    }
+
+    function setupScrollButtons() {
+      const groupTitles = document.querySelectorAll('.group-title');
+      let currentGroupIndex = 0;
+
+      function scrollToGroup(index) {
+        if (index >= 0 && index < groupTitles.length) {
+          groupTitles[index].scrollIntoView({ behavior: 'instant', block: 'start' });
+          currentGroupIndex = index;
+        }
+      }
+
+      document.getElementById('scrollDown').addEventListener('click', () => {
+        if (currentGroupIndex < groupTitles.length - 1) {
+          scrollToGroup(currentGroupIndex + 1);
+        }
+      });
+
+      document.getElementById('scrollUp').addEventListener('click', () => {
+        if (currentGroupIndex > 0) {
+          scrollToGroup(currentGroupIndex - 1);
+        }
+      });
+    }
+
+    function exportState() {
+      const result = {};
+      const allStars = document.querySelectorAll('.stars');
+      allStars.forEach(stars => {
+        const key = stars.dataset.key;
+        const starElems = stars.querySelectorAll('.star');
+        let starString = '';
+        starElems.forEach(s => starString += s.textContent);
+        result[key] = starString;
+      });
+
+      const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "虹瑠璃の腕輪獲得状況.json";
+      link.click();
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        try {
+          const data = JSON.parse(event.target.result);
+          for (const key in data) {
+            const stars = document.querySelector(`.stars[data-key="${key}"]`);
+            if (stars) {
+              const starElems = stars.querySelectorAll('.star');
+              for (let i = 0; i < 5; i++) {
+                starElems[i].textContent = data[key][i] || '☆';
+                if (data[key][i] === '★') {
+                  starElems[i].classList.add('on');
+                } else {
+                  starElems[i].classList.remove('on');
+                }
+              }
+            }
+          }
+          //alert('状態を読み込みました。');
+        } catch (error) {
+          alert('ファイルの内容が不正です。');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // 初期化
+    init();
+
+  </script>
+
+</body>
+</html>

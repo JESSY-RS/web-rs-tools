@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="favicon-fue.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-fue.png">
+  <link rel="icon" type="image/png" href="web-app-manifest-192x192-fue.png">
+  <title>ステライヤリング・報告用</title> <!-- Created by じぇ -->
+
+  <style>
+    body {
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+
+.pierce-group {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 10px;
+  margin: 10px;
+  margin-top: 5px;
+  justify-content: center;
+}
+
+    .pierce-category {
+      border: 1px solid #ccc;
+      padding: 5px;
+    }
+
+    .pierce-category h2 {
+      font-size: 18px;
+      margin: 3px 0;
+    }
+
+
+/* 小分類と星の横並び中央寄せ */
+.attribute {
+      font-size: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5px;
+  margin-left: -38px;
+  margin-right: 24px;
+  margin-bottom: -16px;
+}
+
+/* 小分類（左側）は右揃え、幅固定 */
+.attribute span:first-child {
+  width: 100px;
+  text-align: right;
+  margin-right: 0px;
+
+}
+
+
+/* 星（右側）は左揃え */
+.attribute .stars {
+  text-align: left;
+}
+
+    .stars {
+      font-size: 26px;
+    }
+
+    input[type="file"] {
+      margin: 10px 0;
+      font-size: 12px;
+    }
+
+    /* 小分類ごとの色指定 */
+    .S01 { color: darkorange; }
+    .S03 { color: darkorange; }
+    .S05 { color: darkorange; }
+    .S07 { color: yellow; }
+    .S09 { color: yellow; }
+    .S11 { color: yellow; }
+    .S13 { color: yellow; }
+    .S15 { color: lime; }
+    .S17 { color: lime; }
+    .S19 { color: lime; }
+    .S21 { color: lime; }
+    .S23 { color: lime; }
+    .S25 { color: deepskyblue; }
+    .S02 { color: deepskyblue; }
+    .S04 { color: deepskyblue; }
+    .S06 { color: deepskyblue; }
+    .S08 { color: orangered; }
+    .S10 { color: orangered; }
+    .S12 { color: orangered; }
+    .S14 { color: darkgray; }
+    .S16 { color: darkgray; }
+    .S18 { color: darkgray; }
+    .S20 { color: darkgray; }
+    .S22 { color: dodgerblue; }
+    .S24 { color: dodgerblue; }
+    .S26 { color: darkorchid; }
+
+    /* 集計部分のスタイル */
+    #summary {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    /* 拡大縮小ボタンのスタイル */
+    .zoom-buttons {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+    /* ハンバーガーメニューのスタイル */
+    .header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-top: -15px;
+      margin-bottom: -60px;
+    }
+
+    .hamburger {
+      font-size: 36px;
+      cursor: pointer;
+      margin-top: 7px;
+      margin-right: 10px;
+      user-select: none;
+      color: #eee;
+      transition: color 0.3s;
+    }
+
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 300px;
+      height: 100vh;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: #2A99E6;
+    }
+
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: block;
+      padding: 12px 0;
+      color: #eee;
+      text-decoration: none;
+      border-bottom: 1px solid #333;
+      transition: color 0.3s;
+    }
+
+    .menu-item:hover {
+      color: #2A99E6;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
+  </style>
+
+</head>
+<body>
+
+  <!-- サイドメニューオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <!-- サイドメニュー -->
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
+    <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
+    <div class="menu-spacer"></div>
+    <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
+    <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
+    <div class="menu-spacer"></div>
+    <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
+    <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
+    <div class="menu-spacer"></div>
+    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a>
+    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a>
+    <div class="menu-spacer"></div>
+  </div>
+
+  <!-- ハンバーガーメニューとヘッダー -->
+  <div class="header">
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
+  </div>
+
+  <div class="zoom-buttons">
+    <button onclick="changeZoom(0.1)">＋</button>
+    <button onclick="changeZoom(-0.1)">－</button>
+  </div>
+
+  <h1>ステライヤリング・報告用</h1>
+
+  <input type="file" id="importJson" accept=".json">
+
+  <div class="pierce-group" id="pierceGroup"></div>
+
+  <div id="summary"></div>
+
+  <br><a href="checker-stella.html">チェッカーへ戻る</a><br>
+
+  <script>
+
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+
+      if (sideMenu.classList.contains('open')) {
+        closeMenu();
+      } else {
+        sideMenu.classList.add('open');
+        menuOverlay.classList.add('open');
+      }
+    }
+
+    function closeMenu() {
+      const sideMenu = document.getElementById('sideMenu');
+      const menuOverlay = document.getElementById('menuOverlay');
+      const menuClose = document.getElementById('menuClose');
+
+      sideMenu.classList.remove('open');
+      menuOverlay.classList.remove('open');
+      menuClose.style.color = '#eee';
+    }
+
+    // フリックでメニュー開閉
+    let startX = 0;
+    let endX = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      startX = e.changedTouches[0].screenX;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      endX = e.changedTouches[0].screenX;
+      handleGesture();
+    }, false);
+
+    function handleGesture() {
+      let diffX = endX - startX;
+
+      if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
+        // かつ開始位置が30px以内なら右フリックと判定
+        if (diffX > 0 && startX < 30) {
+          // 右にフリック
+          toggleMenu();
+        } else {
+          // 左にフリック
+          closeMenu();
+        }
+      }
+    }
+
+const pierceGroup = document.getElementById("pierceGroup");
+
+const attributes = [
+  { name: "人間", className: "S01" },
+  { name: "魚", className: "S02" },
+  { name: "男性", className: "S03" },
+  { name: "両棲類", className: "S04" },
+  { name: "女性", className: "S05" },
+  { name: "カエル", className: "S06" },
+  { name: "巨人", className: "S07" },
+  { name: "不死", className: "S08" },
+  { name: "メカ", className: "S09" },
+  { name: "骨", className: "S10" },
+  { name: "岩石", className: "S11" },
+  { name: "悪魔", className: "S12" },
+  { name: "獣人", className: "S13" },
+  { name: "火精", className: "S14" },
+  { name: "獣", className: "S15"},
+  { name: "水精", className: "S16" },
+  { name: "竜", className: "S17" },
+  { name: "風精", className: "S18" },
+  { name: "爬虫類", className: "S19" },
+  { name: "土精", className: "S20" },
+  { name: "植物", className: "S21" },
+  { name: "鳥", className: "S22" },
+  { name: "虫", className: "S23" },
+  { name: "浮遊", className: "S24" },
+  { name: "水棲", className: "S25" },
+  { name: "妖魔", className: "S26" }
+];
+
+// 初期表示
+attributes.forEach(attr => {
+  const div = document.createElement("div");
+  div.className = "attribute";
+  const id = `ステライヤリング_${attr.name}`;
+  div.innerHTML = `<span class="${attr.className}">${attr.name}</span>&nbsp;<span class="stars" id="${id}">${decorateStars("☆☆☆☆☆")}</span>`;
+  pierceGroup.appendChild(div);
+});
+
+function updateSummary() {
+  let completeCount = 0;
+  let totalStars = 0;
+  let minOneCount = 0;
+
+  const totalAttrs = attributes.length;
+  const maxTotalStars = totalAttrs * 5;
+
+  attributes.forEach(attr => {
+    const el = document.getElementById(`ステライヤリング_${attr.name}`);
+    const starText = el.textContent;
+
+    if (starText.includes("★")) {
+      minOneCount++;
+    }
+
+    if (starText === "★★★★★") {
+      completeCount++;
+    }
+
+    const starNum = (starText.match(/★/g) || []).length;
+    totalStars += starNum;
+  });
+
+  const compRate = ((completeCount / totalAttrs) * 100).toFixed(1);
+  const minOneRate = ((minOneCount / totalAttrs) * 100).toFixed(1);
+  const totalStarRate = ((totalStars / maxTotalStars) * 100).toFixed(1);
+
+  document.getElementById("summary").innerHTML = `
+    <div>トータル: ${totalStars} / ${maxTotalStars}</div>
+    <div>最低１個: ${minOneCount} / ${totalAttrs}</div>
+    <div>コンプ数: ${completeCount} / ${totalAttrs}</div>
+  `;
+}
+
+// 星装飾
+function decorateStars(text){
+  let result = "";
+  for (let char of text) {
+    result += char === "★" ? `<span style="color:gold;">★</span>` :
+              char === "☆" ? `<span style="color:gray;">☆</span>` : char;
+  }
+  return result;
+}
+
+// JSON読込
+document.getElementById("importJson").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = JSON.parse(e.target.result);
+    for (let key in data) {
+      const el = document.getElementById(key);
+      if (el) el.innerHTML = decorateStars(data[key]);
+    }
+    updateSummary();
+  };
+  reader.readAsText(file);
+});
+
+    // 初期表示の時点でも集計実行
+    updateSummary();
+
+    let zoomLevel = 1;
+
+    // 拡大縮小の関数
+    function changeZoom(delta) {
+      zoomLevel += delta;
+      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
+      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
+      document.body.style.zoom = zoomLevel;
+    }
+
+  </script>
+
+</body>
+</html>
