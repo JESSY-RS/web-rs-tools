@@ -18,11 +18,12 @@
     }
 
     h1 {
+      font-size: 26px;
       margin-bottom: 10px;
     }
 
     .group-title {
-      font-size: 28px;
+      font-size: 26px;
       margin-top: 50px;
       margin-bottom: 8px;
     }
@@ -142,15 +143,16 @@
 
     /* ハンバーガーメニューのスタイル */
     .hamburger {
-      font-size: 36px;
+      font-size: 32px;
       cursor: pointer;
-      margin-top: 10px;
-      margin-right: 10px;
+      margin-right: 6px;
       user-select: none;
       color: #eee;
       transition: color 0.3s;
+      display: inline-block;
+      vertical-align: middle;
     }
-
+    
     .hamburger:hover {
       color: #2A99E6;
     }
@@ -253,8 +255,8 @@
     <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
     <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
     <div class="menu-spacer"></div>
-    <a href="ikuseicalc.html" class="menu-item">育成効率比較ツール</a>
-    <a href="raidcalc.html" class="menu-item">レイド周回効率比較ツール</a>
+    <a href="raidcalc.html" class="menu-item">6.5周年効率比較ツール</a>
+    <a href="expcalc.html" class="menu-item">EXPスタンプ必要数計算</a>
     <div class="menu-spacer"></div>
     <div class="menu-spacer"></div>
     <div class="menu-title">ピアス種別ジャンプ</div>
@@ -265,7 +267,10 @@
     <div class="menu-spacer"></div>
   </div>
 
-  <h1>四元ピアス獲得チェッカー</h1>
+  <!-- ハンバーガーメニューとヘッダー -->
+  <div class="header">
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> 四元ピアス獲得チェッカー</h1>
+  </div>
 
   <div class="controls">
     <input type="file" id="fileInput" accept=".json"><br>

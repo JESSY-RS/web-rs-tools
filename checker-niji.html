@@ -18,12 +18,13 @@
     }
 
     h1 {
-      font-size: 28px;
+      font-size: 26px;
+      margin-bottom: 10px;
       margin-bottom: 10px;
     }
 
     .group-title {
-      font-size: 28px;
+      font-size: 26px;
       margin-top: 50px;
       margin-bottom: 8px;
     }
@@ -101,7 +102,7 @@
     }
 
     .line .name {
-      width: 150px;
+      width: 140px;
       text-align: right;
       margin-right: 10px;
     }
@@ -165,24 +166,17 @@
     }
 
     /* ハンバーガーメニューのスタイル */
-    .header {
-      position: relative;
-      display: flex;
-      align-items: center;
-      margin-top: -15px;
-      margin-bottom: 10px;
-    }
-
     .hamburger {
-      font-size: 36px;
+      font-size: 32px;
       cursor: pointer;
-      margin-top: 7px;
-      margin-right: 10px;
+      margin-right: 6px;
       user-select: none;
       color: #eee;
       transition: color 0.3s;
+      display: inline-block;
+      vertical-align: middle;
     }
-
+    
     .hamburger:hover {
       color: #2A99E6;
     }
@@ -295,8 +289,7 @@
 
   <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
-    <div class="hamburger" onclick="toggleMenu()">☰</div>
-    <h1>虹瑠璃の腕輪獲得チェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> 虹瑠璃の腕輪獲得チェッカー</h1>
   </div>
 
   <div class="controls">
