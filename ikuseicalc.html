@@ -677,7 +677,6 @@
       document.getElementById(`ボーナス倍率${number}`).value = gradeValues[grade];
     }
 
-
     function J式で計算する(number) {
       // 空欄なら0をセット
       const minutesField = document.getElementById(`戦闘分${number}`);
@@ -773,28 +772,27 @@
     function saveDefaultProfile() {
       const compareNum = [1, 2];
       compareNum.forEach(num => {
-    
-      const profile = {
-        計算式: document.querySelector(`input[name="計算方式${num}"]:checked`).value,
-        育成枠: document.getElementById(`育成枠${num}`).value,
-        戦闘時: document.getElementById(`戦闘時${num}`).value,
-        戦闘分: document.getElementById(`戦闘分${num}`).value,
-        戦闘秒: document.getElementById(`戦闘秒${num}`).value,
-        間隔時: document.getElementById(`間隔時${num}`).value,
-        間隔分: document.getElementById(`間隔分${num}`).value,
-        間隔秒: document.getElementById(`間隔秒${num}`).value,
-        所要時: document.getElementById(`所要時${num}`).value,
-        所要分: document.getElementById(`所要分${num}`).value,
-        所要秒: document.getElementById(`所要秒${num}`).value,
-        成長確率: document.getElementById(`成長確率${num}`).value,
-        成長判定回数: document.getElementById(`成長判定回数${num}`).value,
-        ボーナス倍率: document.getElementById(`ボーナス倍率${num}`).value,
-        gradeSelect: document.getElementById(`gradeSelect${num}`).value
-      };
-      localStorage.setItem(`profile${num}`, JSON.stringify(profile));
+        const profile = {
+          計算式: document.querySelector(`input[name="計算方式${num}"]:checked`).value,
+          育成枠: document.getElementById(`育成枠${num}`).value,
+          戦闘時: document.getElementById(`戦闘時${num}`).value,
+          戦闘分: document.getElementById(`戦闘分${num}`).value,
+          戦闘秒: document.getElementById(`戦闘秒${num}`).value,
+          間隔時: document.getElementById(`間隔時${num}`).value,
+          間隔分: document.getElementById(`間隔分${num}`).value,
+          間隔秒: document.getElementById(`間隔秒${num}`).value,
+          所要時: document.getElementById(`所要時${num}`).value,
+          所要分: document.getElementById(`所要分${num}`).value,
+          所要秒: document.getElementById(`所要秒${num}`).value,
+          成長確率: document.getElementById(`成長確率${num}`).value,
+          成長判定回数: document.getElementById(`成長判定回数${num}`).value,
+          ボーナス倍率: document.getElementById(`ボーナス倍率${num}`).value,
+          gradeSelect: document.getElementById(`gradeSelect${num}`).value
+        };
+        localStorage.setItem(`profile${num}`, JSON.stringify(profile));
       });
-    const warningDiv = document.getElementById('warning');
-          warningDiv.textContent = '※プロファイルに現在の状態を保存しました。';
+      const warningDiv = document.getElementById('warning');
+      warningDiv.textContent = '※プロファイルに現在の状態を保存しました。';
     }
 
     function deleteAllProfiles() {
@@ -802,8 +800,8 @@
       compareNum.forEach(num => {
         localStorage.removeItem(`profile${num}`);
       });
-    const warningDiv = document.getElementById('warning');
-          warningDiv.textContent = '※プロファイルの情報を削除しました。';
+      const warningDiv = document.getElementById('warning');
+      warningDiv.textContent = '※プロファイルの情報を削除しました。';
     }
 
     // ページをリロードしたら各項目を初期値に戻す
