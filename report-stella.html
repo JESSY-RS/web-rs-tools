@@ -4,12 +4,13 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="shortcut icon" href="favicon-fue.ico">
-  <link rel="apple-touch-icon" href="apple-touch-icon-fue.png">
-  <link rel="icon" type="image/png" href="web-app-manifest-192x192-fue.png">
+  <link rel="shortcut icon" href="favicon-Stella.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-Stella.png">
+  <link rel="icon" type="image/png" href="web-app-manifest-192x192-Stella.png">
   <title>ステライヤリング報告用</title> <!-- Created by じぇ -->
 
   <style>
+
     body {
       margin: 20px;
       background-color: #2A2A2A;
@@ -22,14 +23,14 @@
       margin-bottom: 5px;
     }
 
-.pierce-group {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: 10px;
-  margin: 10px;
-  margin-top: 5px;
-  justify-content: center;
-}
+    .pierce-group {
+      display: grid;
+      grid-template-columns: repeat(2, auto);
+      gap: 10px;
+      margin: 10px;
+      margin-top: 5px;
+      justify-content: center;
+    }
 
     .pierce-category {
       border: 1px solid #ccc;
@@ -42,31 +43,29 @@
     }
 
 
-/* 小分類と星の横並び中央寄せ */
-.attribute {
+    /* 小分類と星の横並び中央寄せ */
+    .attribute {
       font-size: 22px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 5px;
-  margin-left: -38px;
-  margin-right: 24px;
-  margin-bottom: -16px;
-}
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 5px;
+      margin-left: -26px;
+      margin-right: 14px;
+      margin-bottom: -16px;
+    }
 
-/* 小分類（左側）は右揃え、幅固定 */
-.attribute span:first-child {
-  width: 100px;
-  text-align: right;
-  margin-right: 0px;
+    /* 小分類（左側）は右揃え、幅固定 */
+    .attribute span:first-child {
+      width: 100px;
+      text-align: right;
+      margin-right: 0px;
+    }
 
-}
-
-
-/* 星（右側）は左揃え */
-.attribute .stars {
-  text-align: left;
-}
+    /* 星（右側）は左揃え */
+    .attribute .stars {
+      text-align: left;
+    }
 
     .stars {
       font-size: 26px;
@@ -154,7 +153,7 @@
       font-size: 24px;
       cursor: pointer;
       margin-left: -5px;
-      margin-right: 6px;
+      margin-right: 3px;
       user-select: none;
       color: #eee;
       transition: color 0.3s;
@@ -230,12 +229,10 @@
       padding: 12px 0;
       color: #eee;
       text-decoration: none;
-      border-bottom: 1px solid #333;
-      transition: color 0.3s;
     }
 
     .menu-item:hover {
-      color: #2A99E6;
+      color: #0CFF57;
     }
 
     .menu-item:last-child {
@@ -256,9 +253,7 @@
 
   <!-- サイドメニュー -->
   <div class="side-menu" id="sideMenu">
-    <div class="menu-title">リンクメニュー</div>
-    <a href="index.html" class="menu-item">インデックスページ</a>
-    <div class="menu-spacer"></div>
+    <div class="menu-title">チェッカー関連リンク</div>
     <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a>
     <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a>
     <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a>
@@ -266,6 +261,8 @@
     <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a>
     <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a>
     <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a>
+    <div class="menu-spacer"></div>
+    <a href="index.html" class="menu-item">インデックスページ</a>
     <div class="menu-spacer"></div>
   </div>
 

@@ -4,9 +4,12 @@
 
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="favicon-ikuseicalc.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-ikuseicalc.png">
+  <link rel="icon" type="image/png" href="web-app-manifest-192x192-ikuseicalc.png">
   <title>育成効率比較ツール</title>
 
-<style>
+  <style>
 
     body {
       margin: 20px;
@@ -24,70 +27,71 @@
       margin-bottom: 10px;
     }
 
-  .section {
-    border: 1px solid #ccc;
-    padding: 12px;
-    margin-bottom: 20px;
-  }
+    .section {
+      border: 1px solid #ccc;
+      padding: 12px;
+      margin-bottom: 20px;
+    }
 
-  .section h2 {
-    margin-top: 0;
-  }
+    .section h2 {
+      margin-top: 0;
+    }
 
-  .form-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 8px;
-  }
+    .form-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
 
-  .form-label {
-    width: 105px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    text-align: right;
-    margin-right: 8px;
-  }
+    .form-label {
+      width: 105px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      text-align: right;
+      margin-right: 8px;
+    }
 
-  .form-label input {
-    width: 50px;
-    margin: 0 4px;
-  }
+    .form-label input {
+      width: 50px;
+      margin: 0 4px;
+    }
 
-  .form-input input {
-  font-size: 16px;
-    width: 50px;
-    margin-left:-1px;
-    margin-right:2px;
-    padding-right: 1px;
-    text-align:right;
-    height: 28px;
-  }
+    .form-input input {
+      font-size: 16px;
+      width: 50px;
+      margin-left: -1px;
+      margin-right: 2px;
+      padding-right: 1px;
+      text-align: right;
+      height: 28px;
+    }
 
-  .radio-group {
-    margin: 10px 0;
-  }
+    .radio-group {
+      margin: 10px 0;
+    }
 
-  .radio-group label {
-    margin-right: 0px;
-  }
+    .radio-group label {
+      margin-right: 0px;
+    }
 
-  .radio-group input[type="radio"] {
-    margin-right: 10px;
-  }
+    .radio-group input[type="radio"] {
+      margin-right: 10px;
+    }
 
-  .time-input {
-    width: 50px;
-    margin-right: 4px;
-  }
+    .time-input {
+      width: 50px;
+      margin-right: 4px;
+    }
 
-select {
-  height: 30px;
-  font-size: 14px;
-}
-  .gray-bg {
-    background-color: #888;
-  }
+    select {
+      height: 30px;
+      font-size: 14px;
+    }
+
+    .gray-bg {
+      background-color: #888;
+    }
 
     button {
       margin: 5px;
@@ -98,32 +102,33 @@ select {
       cursor: pointer;
     }
 
-.updown-btn {
-  display: flex;
-  flex-direction: row;
-  margin-left: 5px;
-}
+    .updown-btn {
+      display: flex;
+      flex-direction: row;
+      margin-left: 5px;
+    }
 
-.updown-btn button {
-line-height: 0px;
-  margin: -2px 0px  0px 11px ;
-  width: 28px;
-  height: 28px;
-  font-size: 14px;
-  background-color: #444;
-  color: #fff;
-  border: 1px solid #666;
-  cursor: pointer;
-}
+    .updown-btn button {
+      line-height: 0px;
+      margin: -2px 0px 0px 11px;
+      width: 28px;
+      height: 28px;
+      font-size: 14px;
+      background-color: #444;
+      color: #fff;
+      border: 1px solid #666;
+      cursor: pointer;
+    }
 
-.updown-btn button:active {
-  background-color: #888;
-}
-  .result {
-    font-size: 20px;
-    margin-top: 8px;
-    font-weight: bold;
-  }
+    .updown-btn button:active {
+      background-color: #888;
+    }
+
+    .result {
+      font-size: 20px;
+      margin-top: 8px;
+      font-weight: bold;
+    }
 
     .block {
       border: 1px solid #fff;
@@ -134,16 +139,16 @@ line-height: 0px;
     .error {
       color: #f00;
       margin-top: 5px;
-  min-height: 1.5em;
-  display: block;
+      min-height: 1.5em;
+      display: block;
     }
 
     .method {
-    font-size: 14px;
-    color: dodgerblue;
+      font-size: 14px;
+      color: dodgerblue;
     }
 
-   /* フッターのスタイル */
+    /* フッターのスタイル */
     footer {
       border-top: 1px solid #eee;
       padding-top: 10px;
@@ -170,17 +175,37 @@ line-height: 0px;
       text-decoration: underline;
     }
 
-   /* ハンバーガーメニューのスタイル */
-    .hamburger {
-      font-size: 36px;
+    /* 拡大縮小ボタンのスタイル */
+    .zoom-buttons {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: row;
+      gap: 5px;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      color: #000;
+      background-color: #eee;
+      padding: 5px 10px;
+      font-size: 16px;
       cursor: pointer;
-      margin-top: 10px;
-      margin-right: 10px;
+      border-radius: 5px;
+    }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      font-size: 24px;
+      cursor: pointer;
+      margin-right: 3px;
       user-select: none;
       color: #eee;
       transition: color 0.3s;
+      display: inline-block;
     }
-
+    
     .hamburger:hover {
       color: #2A99E6;
     }
@@ -236,7 +261,7 @@ line-height: 0px;
     }
 
     .menu-title {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: bold;
       text-align: left;
       margin-bottom: 10px;
@@ -246,16 +271,14 @@ line-height: 0px;
     .menu-item {
       font-size: 18px;
       text-align: left;
-      display: block;
+      display: inline-block;
       padding: 12px 0;
       color: #eee;
       text-decoration: none;
-      border-bottom: 1px solid #333;
-      transition: color 0.3s;
     }
 
     .menu-item:hover {
-      color: #2A99E6;
+      color: #0CFF57;
     }
 
     .menu-item:last-child {
@@ -266,7 +289,63 @@ line-height: 0px;
       height: 30px;
     }
 
-</style>
+    .toggle-button {
+      cursor: pointer;
+      color: #7755FF;
+      text-decoration: underline;
+      font-size: 18px;
+      text-align: left;
+      display: block;
+      user-select: none;
+    }
+
+    .toggle-button:hover {
+      color: #0CFF57;
+      text-decoration: underline;
+    }
+
+    #linkList {
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList1 {
+      font-size: 18px;
+      text-align: left;
+      padding: 12px 0;
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList2 {
+      font-size: 18px;
+      text-align: left;
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList a {
+      display: inline-block;
+      text-decoration: none;
+      color: #7755FF;
+    }
+
+    #linkList a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    #linkList a:hover {
+      text-decoration: underline;
+      color: #0CFF57;
+    }
+
+    #linkList a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+  </style>
 
 </head>
 <body>
@@ -277,210 +356,236 @@ line-height: 0px;
   <!-- サイドメニュー -->
   <div class="side-menu" id="sideMenu">
     <div class="menu-title">リユニのWeb版いろいろ</div>
-    <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
-    <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
-    <div class="menu-spacer"></div>
-    <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
-    <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
-    <div class="menu-spacer"></div>
-    <a href="ikuseicalc.html" class="menu-item">育成効率比較ツール</a>
-    <a href="raidcalc.html" class="menu-item">レイド周回効率比較ツール</a>
-  </div>
-
-
-  <h1>育成効率比較ツール</h1>
-
-<div class="section">
-
-<div class="form-row">
-  <div class="form-label" style="justify-content: flex-start;"><h2>比較①</h2></div>
-  <div class="radio-group">
-    <label><input type="radio" name="計算方式1" id="計算式1" value="J" checked>J式で計算</label>
-    <label><input type="radio" name="計算方式1" value="M">M式で計算</label>
-  </div>
-</div>
-  
-  <div class="form-row">
-    <div class="form-label">育成枠</div>
-    <div class="form-input"><input type="number" id="育成枠1" value="4">名</div>
-<div class="updown-btn">
-    <button type="button" onclick="changeValue('育成枠1', -1)">↓</button>
-    <button type="button" onclick="changeValue('育成枠1', 1)">↑</button>
-  </div>
-  </div>
-
-  <div class="form-row">
-    <div class="form-label">1戦あたり</div>
-    <div class="form-input">
-      <input type="number" class="time-input gray-bg" id="戦闘時1" value="0">時
-      <input type="number" class="time-input" id="戦闘分1" value="0">分
-      <input type="number" class="time-input" id="戦闘秒1" value="0">秒
+    <a class="menu-item" href="kiokucalc.html">記憶再戦時間計算</a><br>
+    <a class="menu-item" href="kiokucalc2.html">記憶再戦回数計算</a><br>
+    </br>
+    <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
+    <a class="menu-item" href="raidcalc.html">レイド周回効率比較ツール</a><br>
+    </br></br>
+    <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
+    <div id="linkList1">
+      ├ <a class="menu-item" href="checker-4gen.html">四元像ピアスチェッカー</a></br>
+      ├ <a class="menu-item" href="checker-stella.html">ステライヤリングチェッカー</a></br>
+      └ <a class="menu-item" href="checker-niji.html">虹瑠璃の腕輪チェッカー</a></br>
     </div>
-  </div>
-
-  <div class="form-row">
-    <div class="form-label">インターバル</div>
-    <div class="form-input">
-      <input type="number" class="time-input gray-bg" id="間隔時1" value="0">時
-      <input type="number" class="time-input gray-bg" id="間隔分1" value="0">分
-      <input type="number" class="time-input gray-bg" id="間隔秒1" value="13">秒
+    </br>
+    <span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span>
+    <div id="linkList2">
+      ├ <a class="menu-item" href="report-4gen.html">四元像ピアス報告用</a></br>
+      ├ <a class="menu-item" href="report-stella.html">ステライヤリング報告用</a></br>
+      └ <a class="menu-item" href="report-niji.html">虹瑠璃の腕輪報告用</a></br>
     </div>
+    </br>
+    </br>
+    <a class="menu-item" href="expcalc.html">EXPスタンプ必要数計算</a><br>
+    <a class="menu-item" href="https://jessy-rs.github.io/Multi-Stage-Slash/">多段斬りアプリ</a><br>
+    </br>
+    <a class="menu-item" href="index.html">インデックスページ</a><br>
+    </br>
   </div>
 
-  <div class="form-row">
-    <div class="form-label">所要時間</div>
-    <div class="form-input">
-      <input type="number" class="time-input" id="所要時1" value="24">時
-      <input type="number" class="time-input" id="所要分1" value="0">分
-      <input type="number" class="time-input" id="所要秒1" value="0">秒
+  <!-- ハンバーガーメニューとヘッダー -->
+  <div class="header">
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> 育成効率比較ツール</h1>
+  </div>
+
+  <div class="zoom-buttons">
+    <button onclick="changeZoom(-0.1)">－</button>
+    <button onclick="changeZoom(0.1)">＋</button>
+  </div>
+
+  <div class="section">
+
+    <div class="form-row">
+      <div class="form-label" style="justify-content: flex-start;"><h2>比較①</h2></div>
+      <div class="radio-group">
+        <label><input type="radio" name="計算方式1" id="計算式1" value="J" checked>J式で計算</label>
+        <label><input type="radio" name="計算方式1" value="M">M式で計算</label>
+      </div>
     </div>
-  </div>
 
-  <div class="form-row">
-    <div class="form-label">成長確率</div>
-    <div class="form-input"><input type="number" class="time-input gray-bg" id="成長確率1" value="10">％</div>
-  </div>
-
-  <div class="form-row">
-    <div class="form-label">成長判定回数</div>
-    <div class="form-input"><input type="number" id="成長判定回数1" value="1">回</div>
-<div class="updown-btn">
-    <button type="button" onclick="changeValue('成長判定回数1', -1)">↓</button>
-    <button type="button" onclick="changeValue('成長判定回数1', 1)">↑</button>
-  </div>
-  </div>
-
-  <div class="form-row">
-    <div class="form-label">ボーナス倍率</div>
-    <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" value="1.0">倍　</div>
-    <select id="gradeSelect1" onchange="updateItemValue(1)">
-      <option value="0" selected>【grade 0】1.00倍</option>
-      <option value="1">【grade 1】1.01倍</option>
-      <option value="2">【grade 2】1.11倍</option>
-      <option value="3">【grade 3】1.15倍</option>
-      <option value="4">【grade 4】1.36倍</option>
-      <option value="5">【grade 5】2.20倍</option>
-      <option value="6">【grade 6】2.90倍</option>
-      <option value="7">【grade 7】3.60倍</option>
-      <option value="8">【grade 8】4.35倍</option>
-      <option value="9">【grade 9】7.00倍</option>
-      <option value="10">【grade X】9.30倍</option>
-    </select><br>
-  </div>
-
-  <div class="form-row">
-    <div class="form-label"><button onclick="計算する(1)">期待値を計算</button></div>
-    <div class="form-input"><div class="result" id="結果1"></div></div>
-
-  </div>
-
-<div class="error" id="error1"></div>
-
-</div>
-
-<div class="section">
-
-<div class="form-row">
-  <div class="form-label" style="justify-content: flex-start;"><h2>比較②</h2></div>
-  <div class="radio-group">
-    <label><input type="radio" name="計算方式2" id="計算式2" value="J" checked>J式で計算　</label>
-    <label><input type="radio" name="計算方式2" value="M">M式で計算</label>
-  </div>
-</div>
-
-  <div class="form-row">
-    <div class="form-label">育成枠</div>
-    <div class="form-input"><input type="number" id="育成枠2" value="4">名</div>
-<div class="updown-btn">
-    <button type="button" onclick="changeValue('育成枠2', -1)">↓</button>
-    <button type="button" onclick="changeValue('育成枠2', 1)">↑</button>
-  </div>
-  </div>
-
-  <div class="form-row">
-    <div class="form-label">1戦あたり</div>
-    <div class="form-input">
-      <input type="number" class="time-input gray-bg" id="戦闘時2" value="0">時
-      <input type="number" class="time-input" id="戦闘分2" value="0">分
-      <input type="number" class="time-input" id="戦闘秒2" value="0">秒
+    <div class="form-row">
+      <div class="form-label">育成枠</div>
+      <div class="form-input"><input type="number" id="育成枠1" onfocus="this.select()" min="1" value="4">名</div>
+      <div class="updown-btn">
+        <button type="button" onclick="changeValue('育成枠1', -1)">↓</button>
+        <button type="button" onclick="changeValue('育成枠1', 1)">↑</button>
+      </div>
     </div>
-  </div>
 
-  <div class="form-row">
-    <div class="form-label">インターバル</div>
-    <div class="form-input">
-      <input type="number" class="time-input gray-bg" id="間隔時2" value="0">時
-      <input type="number" class="time-input gray-bg" id="間隔分2" value="0">分
-      <input type="number" class="time-input gray-bg" id="間隔秒2" value="13">秒
+    <div class="form-row">
+      <div class="form-label">1戦あたり</div>
+      <div class="form-input">
+        <input type="number" class="time-input gray-bg" id="戦闘時1" onfocus="this.select()" min="0" value="0">時
+        <input type="number" class="time-input" id="戦闘分1" onfocus="this.select()" min="0" value="0">分
+        <input type="number" class="time-input" id="戦闘秒1" onfocus="this.select()" min="0" value="0">秒
+      </div>
     </div>
-  </div>
 
-  <div class="form-row">
-    <div class="form-label">所要時間</div>
-    <div class="form-input">
-      <input type="number" class="time-input" id="所要時2" value="24">時
-      <input type="number" class="time-input" id="所要分2" value="0">分
-      <input type="number" class="time-input" id="所要秒2" value="0">秒
+    <div class="form-row">
+      <div class="form-label">インターバル</div>
+      <div class="form-input">
+        <input type="number" class="time-input gray-bg" id="間隔時1" onfocus="this.select()" min="0" value="0">時
+        <input type="number" class="time-input gray-bg" id="間隔分1" onfocus="this.select()" min="0" value="0">分
+        <input type="number" class="time-input gray-bg" id="間隔秒1" onfocus="this.select()" min="0" value="13">秒
+      </div>
     </div>
+
+    <div class="form-row">
+      <div class="form-label">所要時間</div>
+      <div class="form-input">
+        <input type="number" class="time-input" id="所要時1" onfocus="this.select()" min="0" value="24">時
+        <input type="number" class="time-input" id="所要分1" onfocus="this.select()" min="0" value="0">分
+        <input type="number" class="time-input" id="所要秒1" onfocus="this.select()" min="0" value="0">秒
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">成長確率</div>
+      <div class="form-input"><input type="number" class="time-input gray-bg" id="成長確率1" onfocus="this.select()" min="1" value="10">％</div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">成長判定回数</div>
+      <div class="form-input"><input type="number" id="成長判定回数1" onfocus="this.select()" min="1" value="1">回</div>
+      <div class="updown-btn">
+        <button type="button" onclick="changeValue('成長判定回数1', -1)">↓</button>
+        <button type="button" onclick="changeValue('成長判定回数1', 1)">↑</button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">ボーナス倍率</div>
+      <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" onfocus="this.select()" min="1" value="1">倍　</div>
+      <select id="gradeSelect1" onchange="updateItemValue(1)">
+        <option value="0" selected>【grade 0】1.00倍</option>
+        <option value="1">【grade 1】1.01倍</option>
+        <option value="2">【grade 2】1.11倍</option>
+        <option value="3">【grade 3】1.15倍</option>
+        <option value="4">【grade 4】1.36倍</option>
+        <option value="5">【grade 5】2.20倍</option>
+        <option value="6">【grade 6】2.90倍</option>
+        <option value="7">【grade 7】3.60倍</option>
+        <option value="8">【grade 8】4.35倍</option>
+        <option value="9">【grade 9】7.00倍</option>
+        <option value="10">【grade X】9.30倍</option>
+      </select><br>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label"><button onclick="計算する(1)">期待値を計算</button></div>
+      <div class="form-input"><div class="result" id="結果1"></div></div>
+    </div>
+
+    <div class="error" id="error1"></div>
+
   </div>
 
-  <div class="form-row">
-    <div class="form-label">成長確率</div>
-    <div class="form-input"><input type="number" class="time-input gray-bg" id="成長確率2" value="10">％</div>
-  </div>
+  <div class="section">
 
-  <div class="form-row">
-    <div class="form-label">成長判定回数</div>
-    <div class="form-input"><input type="number" id="成長判定回数2" value="1">回</div>
-<div class="updown-btn">
-    <button type="button" onclick="changeValue('成長判定回数2', -1)">↓</button>
-    <button type="button" onclick="changeValue('成長判定回数2', 1)">↑</button>
-  </div>
-  </div>
+    <div class="form-row">
+      <div class="form-label" style="justify-content: flex-start;"><h2>比較②</h2></div>
+      <div class="radio-group">
+        <label><input type="radio" name="計算方式2" id="計算式2" value="J" checked>J式で計算　</label>
+        <label><input type="radio" name="計算方式2" value="M">M式で計算</label>
+      </div>
+    </div>
 
-  <div class="form-row">
-    <div class="form-label">ボーナス倍率</div>
-    <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率2" value="3.6">倍　</div>
+    <div class="form-row">
+      <div class="form-label">育成枠</div>
+      <div class="form-input"><input type="number" id="育成枠2" onfocus="this.select()" min="1" value="4">名</div>
+      <div class="updown-btn">
+        <button type="button" onclick="changeValue('育成枠2', -1)">↓</button>
+        <button type="button" onclick="changeValue('育成枠2', 1)">↑</button>
+      </div>
+    </div>
 
-    <select id="gradeSelect2" onchange="updateItemValue(2)">
-      <option value="0">【grade 0】1.00倍</option>
-      <option value="1">【grade 1】1.01倍</option>
-      <option value="2">【grade 2】1.11倍</option>
-      <option value="3">【grade 3】1.15倍</option>
-      <option value="4">【grade 4】1.36倍</option>
-      <option value="5">【grade 5】2.20倍</option>
-      <option value="6">【grade 6】2.90倍</option>
-      <option value="7" selected>【grade 7】3.60倍</option>
-      <option value="8">【grade 8】4.35倍</option>
-      <option value="9">【grade 9】7.00倍</option>
-      <option value="10">【grade X】9.30倍</option>
-    </select><br>
-  </div>
+    <div class="form-row">
+      <div class="form-label">1戦あたり</div>
+      <div class="form-input">
+        <input type="number" class="time-input gray-bg" id="戦闘時2" onfocus="this.select()" min="0" value="0">時
+        <input type="number" class="time-input" id="戦闘分2" onfocus="this.select()" min="0" value="0">分
+        <input type="number" class="time-input" id="戦闘秒2" onfocus="this.select()" min="0" value="0">秒
+      </div>
+    </div>
 
-  <div class="form-row">
-    <div class="form-label"><button onclick="計算する(2)">期待値を計算</button></div>
-    <div class="form-input"><div class="result" id="結果2"></div></div>
-  </div>
+    <div class="form-row">
+      <div class="form-label">インターバル</div>
+      <div class="form-input">
+        <input type="number" class="time-input gray-bg" id="間隔時2" onfocus="this.select()" min="0" value="0">時
+        <input type="number" class="time-input gray-bg" id="間隔分2" onfocus="this.select()" min="0" value="0">分
+        <input type="number" class="time-input gray-bg" id="間隔秒2" onfocus="this.select()" min="0" value="13">秒
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">所要時間</div>
+      <div class="form-input">
+        <input type="number" class="time-input" id="所要時2" onfocus="this.select()" min="0" value="24">時
+        <input type="number" class="time-input" id="所要分2" onfocus="this.select()" min="0" value="0">分
+        <input type="number" class="time-input" id="所要秒2" onfocus="this.select()" min="0" value="0">秒
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">成長確率</div>
+      <div class="form-input"><input type="number" class="time-input gray-bg" id="成長確率2" onfocus="this.select()" min="1" value="10">％</div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">成長判定回数</div>
+      <div class="form-input"><input type="number" id="成長判定回数2" onfocus="this.select()" min="1" value="1">回</div>
+      <div class="updown-btn">
+        <button type="button" onclick="changeValue('成長判定回数2', -1)">↓</button>
+        <button type="button" onclick="changeValue('成長判定回数2', 1)">↑</button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label">ボーナス倍率</div>
+      <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率2" onfocus="this.select()" min="1" value="3.6">倍　</div>
+
+      <select id="gradeSelect2" onchange="updateItemValue(2)">
+        <option value="0">【grade 0】1.00倍</option>
+        <option value="1">【grade 1】1.01倍</option>
+        <option value="2">【grade 2】1.11倍</option>
+        <option value="3">【grade 3】1.15倍</option>
+        <option value="4">【grade 4】1.36倍</option>
+        <option value="5">【grade 5】2.20倍</option>
+        <option value="6">【grade 6】2.90倍</option>
+        <option value="7" selected>【grade 7】3.60倍</option>
+        <option value="8">【grade 8】4.35倍</option>
+        <option value="9">【grade 9】7.00倍</option>
+        <option value="10">【grade X】9.30倍</option>
+      </select><br>
+    </div>
+
+    <div class="form-row">
+      <div class="form-label"><button onclick="計算する(2)">期待値を計算</button></div>
+      <div class="form-input"><div class="result" id="結果2"></div></div>
+    </div>
 
     <div class="error" id="error2"></div>
 
-</div>
+  </div>
 
-<br>
+  <button onclick="saveDefaultProfile(1)">現在の状態をデフォルトに設定</button>
+  <button onclick="deleteAllProfiles()">プロファイル削除</button><br>
+  <div id="warning">※現在の状態をプロファイルに保存し初期値に設定できます。</div><br><br>
 
-<div class="method">
-【J式計算方法】<br>
-所要時間 / {(戦闘時間 / 成長判定回数) + 間隔時間} = 可能回数<br>
-可能回数 / 100(100戦ごとに入れ替え想定) * 育成枠数 = 可能人数<br>
-可能人数 * (成長確率 / 100) * ボーナス倍率 = 期待値<br>
-<br>
-【M式計算方法】まこさん <a href="https://x.com/mima_ma_">@mima_ma_</a> 感謝<br>
-(戦闘時間 + 間隔時間) / 育成枠数 / 成長判定回数 / ボーナス倍率 = 期待値<br>
-<br>
-■関連記事<br>
-  <a href="https://x.com/jessy_romasaga/status/1937498966339596381">https://x.com/jessy_romasaga/status/1937498966339596381</a><br>
-<a href="https://x.com/mima_ma_/status/1937511702293282952">https://x.com/mima_ma_/status/1937511702293282952</a><br>
-</div>
+  <div class="method">
+    【J式計算方法】<br>
+    所要時間 / {(戦闘時間 / 成長判定回数) + 間隔時間} = 可能回数<br>
+    可能回数 / 100(100戦ごとに入れ替え想定) * 育成枠数 = 可能人数<br>
+    可能人数 * (成長確率 / 100) * ボーナス倍率 = 期待値<br>
+    <br>
+    【M式計算方法】まこさん <a href="https://x.com/mima_ma_">@mima_ma_</a> 感謝<br>
+    (戦闘時間 + 間隔時間) / 育成枠数 / 成長判定回数 / ボーナス倍率 = 期待値<br>
+    <br>
+    ■関連記事<br>
+    <a href="https://x.com/jessy_romasaga/status/1937498966339596381">https://x.com/jessy_romasaga/status/1937498966339596381</a><br>
+    <a href="https://x.com/mima_ma_/status/1937511702293282952">https://x.com/mima_ma_/status/1937511702293282952</a><br>
+  </div>
 
   <footer>
     ※使用は自己責任にて。<br>
@@ -490,9 +595,9 @@ line-height: 0px;
     <a href="index.html">INDEXへ戻る</a><br>
   </footer>
 
-<script>
+  <script>
 
-   // ハンバーガーメニューの関数
+    // ハンバーガーメニューの関数
     function toggleMenu() {
       const sideMenu = document.getElementById('sideMenu');
       const menuOverlay = document.getElementById('menuOverlay');
@@ -527,6 +632,16 @@ line-height: 0px;
       endX = e.changedTouches[0].screenX;
       handleGesture();
     }, false);
+
+    // 拡大縮小の関数
+    let zoomLevel = 1;
+
+    function changeZoom(delta) {
+      zoomLevel += delta;
+      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
+      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
+      document.body.style.zoom = zoomLevel;
+    }
 
     function handleGesture() {
       let diffX = endX - startX;
@@ -563,92 +678,137 @@ line-height: 0px;
     }
 
 
-function J式で計算する(number) {
+    function J式で計算する(number) {
+      // 空欄なら0をセット
+      const minutesField = document.getElementById(`戦闘分${number}`);
+      const secondsField = document.getElementById(`戦闘秒${number}`);
 
-  const minutesField = document.getElementById(`戦闘分${number}`);
-  const secondsField = document.getElementById(`戦闘秒${number}`);
+      if (minutesField.value === "") {
+        minutesField.value = 0;
+      }
+      if (secondsField.value === "") {
+        secondsField.value = 0;
+      }
 
-  // 空欄なら0をセット
-  if (minutesField.value === "") {
-    minutesField.value = 0;
-  }
-  if (secondsField.value === "") {
-    secondsField.value = 0;
-  }
+      const 育成枠数 = Number(document.getElementById(`育成枠${number}`).value);
 
-  const 育成枠数 = Number(document.getElementById(`育成枠${number}`).value);
+      const 戦闘時間 = (Number(document.getElementById(`戦闘時${number}`).value) * 3600 +
+                        Number(document.getElementById(`戦闘分${number}`).value) * 60 +
+                        Number(document.getElementById(`戦闘秒${number}`).value));
 
-  const 戦闘時間 = (Number(document.getElementById(`戦闘時${number}`).value) * 3600 +
-                 Number(document.getElementById(`戦闘分${number}`).value) * 60 +
-                 Number(document.getElementById(`戦闘秒${number}`).value));
+      const 間隔時間 = (Number(document.getElementById(`間隔時${number}`).value) * 3600 +
+                        Number(document.getElementById(`間隔分${number}`).value) * 60 +
+                        Number(document.getElementById(`間隔秒${number}`).value));
 
-  const 間隔時間 = (Number(document.getElementById(`間隔時${number}`).value) * 3600 +
-                         Number(document.getElementById(`間隔分${number}`).value) * 60 +
-                         Number(document.getElementById(`間隔秒${number}`).value));
+      const 所要時間 = (Number(document.getElementById(`所要時${number}`).value) * 3600 +
+                        Number(document.getElementById(`所要分${number}`).value) * 60 +
+                        Number(document.getElementById(`所要秒${number}`).value));
 
-  const 所要時間 = (Number(document.getElementById(`所要時${number}`).value) * 3600 +
-                         Number(document.getElementById(`所要分${number}`).value) * 60 +
-                         Number(document.getElementById(`所要秒${number}`).value));
+      const 成長判定回数 = Number(document.getElementById(`成長判定回数${number}`).value);
+      const 成長確率 = Number(document.getElementById(`成長確率${number}`).value);
+      const ボーナス倍率 = Number(document.getElementById(`ボーナス倍率${number}`).value);
 
-  const 成長判定回数 = Number(document.getElementById(`成長判定回数${number}`).value);
-  const 成長確率 = Number(document.getElementById(`成長確率${number}`).value);
-  const ボーナス倍率 = Number(document.getElementById(`ボーナス倍率${number}`).value);
+      const 可能回数 = 所要時間 / (戦闘時間 / 成長判定回数 + 間隔時間);
+      const 可能人数 = 可能回数 / 100 * 育成枠数;
+      const 期待値 = 可能人数 * (成長確率 / 100) * ボーナス倍率;
 
-  const 可能回数 = 所要時間 / (戦闘時間 / 成長判定回数 + 間隔時間);
-  const 可能人数 = 可能回数 / 100 * 育成枠数;
-  const 期待値 = 可能人数 * (成長確率 / 100) * ボーナス倍率;
+      document.getElementById(`結果${number}`).textContent = `${期待値.toFixed(2)} J`;
 
-  document.getElementById(`結果${number}`).textContent = `${期待値.toFixed(2)} J`;
+      const errorDiv = document.getElementById(`error${number}`);
+      errorDiv.textContent = '※J式の場合は値が大きい方が期待度が高くなります。';
+      errorDiv.style.display = 'block';
+    }
 
-  const errorDiv = document.getElementById(`error${number}`);
-  errorDiv.textContent = '※J式の場合は値が大きい方が期待値が高くなります。';
-  errorDiv.style.display = 'block';
+    function M式で計算する(number) {
+      // 空欄なら0をセット
+      const minutesField = document.getElementById(`戦闘分${number}`);
+      const secondsField = document.getElementById(`戦闘秒${number}`);
+
+      if (minutesField.value === "") {
+        minutesField.value = 0;
+      }
+      if (secondsField.value === "") {
+        secondsField.value = 0;
+      }
+
+      const 育成枠数 = Number(document.getElementById(`育成枠${number}`).value);
+
+      const 戦闘時間 = (Number(document.getElementById(`戦闘時${number}`).value) * 3600 +
+                        Number(document.getElementById(`戦闘分${number}`).value) * 60 +
+                        Number(document.getElementById(`戦闘秒${number}`).value));
+
+      const 間隔時間 = (Number(document.getElementById(`間隔時${number}`).value) * 3600 +
+                        Number(document.getElementById(`間隔分${number}`).value) * 60 +
+                        Number(document.getElementById(`間隔秒${number}`).value));
+
+      const 成長判定回数 = Number(document.getElementById(`成長判定回数${number}`).value);
+      const ボーナス倍率 = Number(document.getElementById(`ボーナス倍率${number}`).value);
+
+      const 期待値 = (戦闘時間 + 間隔時間) / 育成枠数 / 成長判定回数 / ボーナス倍率;
+
+      document.getElementById(`結果${number}`).textContent = `${期待値.toFixed(2)} M`;
+
+      const errorDiv = document.getElementById('warning');
+      errorDiv.textContent = '※M式の場合は値が小さい方が期待度が高くなります。';
+    }
+
+    function 計算する(number) {
+      const selectedMethod = document.querySelector(`input[name="計算方式${number}"]:checked`).value;
+      if (selectedMethod === "J") {
+        J式で計算する(number);
+      } else if (selectedMethod === "M") {
+        M式で計算する(number);
+      }
+    }
+
+    function changeValue(id, delta) {
+      const input = document.getElementById(id);
+      let value = parseInt(input.value, 10) || 0;
+      value += delta;
+      if (value < 1) value = 1;
+      if (value > 5) value = 5;
+      input.value = value;
+    }
+
+function saveDefaultProfile() {
+  const compareNum = [1, 2]; // 必要ならここを増やす
+  compareNum.forEach(num => {
+
+  const profile = {
+    計算式: document.querySelector(`input[name="計算方式${num}"]:checked`).value,
+    育成枠: document.getElementById(`育成枠${num}`).value,
+    戦闘時: document.getElementById(`戦闘時${num}`).value,
+    戦闘分: document.getElementById(`戦闘分${num}`).value,
+    戦闘秒: document.getElementById(`戦闘秒${num}`).value,
+    間隔時: document.getElementById(`間隔時${num}`).value,
+    間隔分: document.getElementById(`間隔分${num}`).value,
+    間隔秒: document.getElementById(`間隔秒${num}`).value,
+    所要時: document.getElementById(`所要時${num}`).value,
+    所要分: document.getElementById(`所要分${num}`).value,
+    所要秒: document.getElementById(`所要秒${num}`).value,
+    成長確率: document.getElementById(`成長確率${num}`).value,
+    成長判定回数: document.getElementById(`成長判定回数${num}`).value,
+    ボーナス倍率: document.getElementById(`ボーナス倍率${num}`).value,
+    gradeSelect: document.getElementById(`gradeSelect${num}`).value
+  };
+  localStorage.setItem(`profile${num}`, JSON.stringify(profile));
+  });
+const warningDiv = document.getElementById('warning');
+      warningDiv.textContent = '※プロファイルに現在の状態を保存しました。';
 }
 
-function M式で計算する(number) {
-  const 育成枠数 = Number(document.getElementById(`育成枠${number}`).value);
-
-  const 戦闘時間 = (Number(document.getElementById(`戦闘時${number}`).value) * 3600 +
-                 Number(document.getElementById(`戦闘分${number}`).value) * 60 +
-                 Number(document.getElementById(`戦闘秒${number}`).value));
-
-  const 間隔時間 = (Number(document.getElementById(`間隔時${number}`).value) * 3600 +
-                         Number(document.getElementById(`間隔分${number}`).value) * 60 +
-                         Number(document.getElementById(`間隔秒${number}`).value));
-
-  const 成長判定回数 = Number(document.getElementById(`成長判定回数${number}`).value);
-  const ボーナス倍率 = Number(document.getElementById(`ボーナス倍率${number}`).value);
-
-  const 期待値 = (戦闘時間 + 間隔時間) / 育成枠数 / 成長判定回数 / ボーナス倍率 ;
-
-  document.getElementById(`結果${number}`).textContent = `${期待値.toFixed(2)} M`;
-
-  const errorDiv = document.getElementById(`error${number}`);
-  errorDiv.textContent = '※M式の場合は値が小さい方が期待値が高くなります。';
-  errorDiv.style.display = 'block';
-}
-
-function 計算する(number) {
-  const selectedMethod = document.querySelector(`input[name="計算方式${number}"]:checked`).value;
-  if (selectedMethod === "J") {
-    J式で計算する(number);
-  } else if (selectedMethod === "M") {
-    M式で計算する(number);
-  }
-}
-
-function changeValue(id, delta) {
-  const input = document.getElementById(id);
-  let value = parseInt(input.value, 10) || 0;
-  value += delta;
-  if (value < 1) value = 1;
-  if (value > 5) value = 5;
-  input.value = value;
+function deleteAllProfiles() {
+  const compareNum = [1, 2]; // 必要ならここを増やす
+  compareNum.forEach(num => {
+    localStorage.removeItem(`profile${num}`);
+  });
+const warningDiv = document.getElementById('warning');
+      warningDiv.textContent = '※プロファイルの情報を削除しました。';
 }
 
     // ページをリロードしたら各項目を初期値に戻す
     window.onload = function () {
- document.getElementById("計算式1").checked = true;
+      document.getElementById("計算式1").checked = true;
       document.getElementById('育成枠1').value = "4";
       document.getElementById('戦闘時1').value = "0";
       document.getElementById('戦闘分1').value = "";
@@ -664,7 +824,7 @@ function changeValue(id, delta) {
       document.getElementById('ボーナス倍率1').value = "1";
       document.getElementById('gradeSelect1').value = "0";
 
- document.getElementById("計算式2").checked = true;
+      document.getElementById("計算式2").checked = true;
       document.getElementById('育成枠2').value = "3";
       document.getElementById('戦闘時2').value = "0";
       document.getElementById('戦闘分2').value = "";
@@ -679,9 +839,59 @@ function changeValue(id, delta) {
       document.getElementById('成長判定回数2').value = "3";
       document.getElementById('ボーナス倍率2').value = "3.6";
       document.getElementById('gradeSelect2').value = "7";
-    }
 
-</script>
+  // 比較枠の数（必要なら2以外も対応できる）
+  const compareNum = [1, 2];
+
+  compareNum.forEach(num => {
+    const profileStr = localStorage.getItem(`profile${num}`);
+    if (profileStr) {
+      const profile = JSON.parse(profileStr);
+
+      // 計算式のラジオボタン選択
+      const radio = document.querySelector(`input[name="計算方式${num}"][value="${profile.計算式}"]`);
+      if (radio) radio.checked = true;
+
+      // その他の値のセット
+      document.getElementById(`育成枠${num}`).value = profile.育成枠;
+      document.getElementById(`戦闘時${num}`).value = profile.戦闘時;
+      document.getElementById(`戦闘分${num}`).value = profile.戦闘分;
+      document.getElementById(`戦闘秒${num}`).value = profile.戦闘秒;
+      document.getElementById(`間隔時${num}`).value = profile.間隔時;
+      document.getElementById(`間隔分${num}`).value = profile.間隔分;
+      document.getElementById(`間隔秒${num}`).value = profile.間隔秒;
+      document.getElementById(`所要時${num}`).value = profile.所要時;
+      document.getElementById(`所要分${num}`).value = profile.所要分;
+      document.getElementById(`所要秒${num}`).value = profile.所要秒;
+      document.getElementById(`成長確率${num}`).value = profile.成長確率;
+      document.getElementById(`成長判定回数${num}`).value = profile.成長判定回数;
+      document.getElementById(`ボーナス倍率${num}`).value = profile.ボーナス倍率;
+      document.getElementById(`gradeSelect${num}`).value = profile.gradeSelect;
+    }
+  });
+
+    };
+
+    document.addEventListener("DOMContentLoaded", function(){
+      var toggleButtons = document.querySelectorAll(".toggle-button");
+
+      toggleButtons.forEach(function(button) {
+        var targetId = button.getAttribute("data-target");
+        var list = document.getElementById(targetId);
+        list.style.display = "none";
+
+        button.addEventListener("click", function(){
+          if (list.style.display === "block") {
+            list.style.display = "none";
+          } else {
+            list.style.display = "block";
+          }
+        });
+      });
+    });
+
+
+  </script>
 
 </body>
 </html>

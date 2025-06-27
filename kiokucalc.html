@@ -28,7 +28,7 @@
             font-size: 36px;
             font-weight: bold;
             color: #00ff00;
-            margin-right: 10px;
+            margin-right: 8px;
             margin-top: -10px;
             margin-bottom: 15px;
         }
@@ -168,102 +168,155 @@
             text-decoration: underline;
         }
 
-        /* ハンバーガーメニューのスタイル */
-        .hamburger {
-            font-size: 36px;
-            cursor: pointer;
-            margin-top: 10px;
-            margin-right: 10px;
-            user-select: none;
-            color: #eee;
-            transition: color 0.3s;
-        }
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      font-size: 36px;
+      cursor: pointer;
+      margin-right: 10px;
+      user-select: none;
+      color: #eee;
+      transition: color 0.3s;
+      display: inline-block;
+    }
+    
+    .hamburger:hover {
+      color: #2A99E6;
+    }
 
-        .hamburger:hover {
-            color: #2A99E6;
-        }
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 300px;
+      height: 100vh;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      padding: 20px;
+      box-sizing: border-box;
+    }
 
-        .side-menu {
-            position: fixed;
-            top: 0;
-            left: -300px;
-            width: 300px;
-            height: 100vh;
-            background-color: #242424;
-            border-right: 1px solid #555;
-            transition: left 0.3s ease;
-            z-index: 1000;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+    .side-menu.open {
+      left: 0;
+    }
 
-        .side-menu.open {
-            left: 0;
-        }
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
 
-        .menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-        }
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
 
-        .menu-overlay.open {
-            opacity: 1;
-            visibility: visible;
-        }
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
 
-        .menu-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #eee;
-            user-select: none;
-        }
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
 
-        .menu-close:hover {
-            color: #ff6b6b;
-        }
+    .menu-title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: #2A99E6;
+    }
 
-        .menu-title {
-            font-size: 18px;
-            font-weight: bold;
-            text-align: left;
-            margin-bottom: 10px;
-            color: #2A99E6;
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: inline-block;
+      padding: 12px 0;
+      color: #eee;
+      text-decoration: none;
+    }
 
-        }
+    .menu-item:hover {
+      color: #0CFF57;
+    }
 
-        .menu-item {
-            font-size: 18px;
-            text-align: left;
-            display: block;
-            padding: 12px 0;
-            color: #eee;
-            text-decoration: none;
-            border-bottom: 1px solid #333;
-            transition: color 0.3s;
-        }
+    .menu-item:last-child {
+      border-bottom: none;
+    }
 
-        .menu-item:hover {
-            color: #2A99E6;
-        }
+    .menu-spacer {
+      height: 30px;
+    }
 
-        .menu-item:last-child {
-            border-bottom: none;
-        }
+    .toggle-button {
+      cursor: pointer;
+      color: #7755FF;
+      text-decoration: underline;
+      font-size: 18px;
+      text-align: left;
+      display: block;
+      user-select: none;
+    }
 
-        .menu-spacer {
-            height: 30px;
-        }
+    .toggle-button:hover {
+      color: #0CFF57;
+      text-decoration: underline;
+    }
+
+    #linkList {
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList1 {
+      font-size: 18px;
+      text-align: left;
+      padding: 12px 0;
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList2 {
+      font-size: 18px;
+      text-align: left;
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList a {
+      display: inline-block;
+      text-decoration: none;
+      color: #7755FF;
+    }
+
+    #linkList a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    #linkList a:hover {
+      text-decoration: underline;
+      color: #0CFF57;
+    }
+
+    #linkList a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
 
     </style>
 
@@ -273,22 +326,40 @@
     <!-- サイドメニューオーバーレイ -->
     <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-    <!-- サイドメニュー -->
-    <div class="side-menu" id="sideMenu">
-        <div class="menu-title">リユニのWeb版いろいろ</div>
-        <a href="kiokucalc.html" class="menu-item">記憶再戦時間計算</a>
-        <a href="kiokucalc2.html" class="menu-item">記憶再戦回数計算</a>
-        <div class="menu-spacer"></div>
-        <a href="checker-4gen.html" class="menu-item">四元ピアス獲得チェッカー</a>
-        <a href="report-4gen.html" class="menu-item">四元ピアス獲得報告用</a>
-        <div class="menu-spacer"></div>
-        <a href="ikuseicalc.html" class="menu-item">育成効率比較ツール</a>
-        <a href="raidcalc.html" class="menu-item">レイド周回効率比較ツール</a>
+  <!-- サイドメニュー -->
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a class="menu-item" href="kiokucalc.html">記憶再戦時間計算</a><br>
+    <a class="menu-item" href="kiokucalc2.html">記憶再戦回数計算</a><br>
+    </br>
+    <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
+    <a class="menu-item" href="raidcalc.html">レイド周回効率比較ツール</a><br>
+    </br></br>
+    <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
+    <div id="linkList1">
+      ├ <a class="menu-item" href="checker-4gen.html">四元像ピアスチェッカー</a></br>
+      ├ <a class="menu-item" href="checker-stella.html">ステライヤリングチェッカー</a></br>
+      └ <a class="menu-item" href="checker-niji.html">虹瑠璃の腕輪チェッカー</a></br>
     </div>
+    </br>
+    <span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span>
+    <div id="linkList2">
+      ├ <a class="menu-item" href="report-4gen.html">四元像ピアス報告用</a></br>
+      ├ <a class="menu-item" href="report-stella.html">ステライヤリング報告用</a></br>
+      └ <a class="menu-item" href="report-niji.html">虹瑠璃の腕輪報告用</a></br>
+    </div>
+    </br>
+    </br>
+    <a class="menu-item" href="expcalc.html">EXPスタンプ必要数計算</a><br>
+    <a class="menu-item" href="https://jessy-rs.github.io/Multi-Stage-Slash/">多段斬りアプリ</a><br>
+    </br>
+    <a class="menu-item" href="index.html">インデックスページ</a><br>
+    </br>
+  </div>
 
     <div class="container">
         <div class="header">
-            <span class="title">記憶再戦</span>
+            <span class="title"><span class="hamburger" onclick="toggleMenu()">☰</span>記憶再戦</span>
             <span class="subtitle">⏰時間計算</span>
         </div>
 
@@ -483,6 +554,24 @@
                 document.getElementById(nextElementId).focus();
             }
         }
+
+    document.addEventListener("DOMContentLoaded", function(){
+      var toggleButtons = document.querySelectorAll(".toggle-button");
+
+      toggleButtons.forEach(function(button) {
+        var targetId = button.getAttribute("data-target");
+        var list = document.getElementById(targetId);
+        list.style.display = "none";
+
+        button.addEventListener("click", function(){
+          if (list.style.display === "block") {
+            list.style.display = "none";
+          } else {
+            list.style.display = "block";
+          }
+        });
+      });
+    });
 
     </script>
 

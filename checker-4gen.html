@@ -7,7 +7,7 @@
   <link rel="shortcut icon" href="favicon-shishi.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-shishi.png">
   <link rel="icon" type="image/png" href="web-app-manifest-192x192-shishi.png">
-  <title>四元像ピアス獲得チェッカー</title> <!-- Created by じぇ -->
+  <title>四元像ピアスチェッカー</title> <!-- Created by じぇ -->
 
   <style>
 
@@ -145,7 +145,7 @@
     .hamburger {
       font-size: 26px;
       cursor: pointer;
-      margin-right: 6px;
+      margin-right: 3px;
       user-select: none;
       color: #eee;
       transition: color 0.3s;
@@ -172,6 +172,15 @@
 
     .side-menu.open {
       left: 0;
+    }
+
+    .marker {
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .marker:hover {
+      color: #eee;
     }
 
     .menu-overlay {
@@ -221,12 +230,10 @@
       padding: 12px 0;
       color: #eee;
       text-decoration: none;
-      border-bottom: 1px solid #333;
-      transition: color 0.3s;
     }
 
     .menu-item:hover {
-      color: #2A99E6;
+      color: #0CFF57;
     }
 
     .menu-item:last-child {
@@ -247,9 +254,7 @@
 
   <!-- サイドメニュー -->
   <div class="side-menu" id="sideMenu">
-    <div class="menu-title">リンクメニュー</div>
-    <a href="index.html" class="menu-item">インデックスページ</a>
-    <div class="menu-spacer"></div>
+    <div class="menu-title">チェッカー関連リンク</div>
     <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a>
     <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a>
     <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a>
@@ -263,11 +268,13 @@
     <a href="#濡羽Anchor" class="menu-item" onclick="closeMenu()">◆濡羽のピアス</a>
     <a href="#瑠璃紺Anchor" class="menu-item" onclick="closeMenu()">◆瑠璃紺のピアス</a>
     <div class="menu-spacer"></div>
+    <a href="index.html" class="menu-item">インデックスページ</a>
+    <div class="menu-spacer"></div>
   </div>
 
   <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> 四元像ピアス獲得チェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> 四元像ピアスチェッカー</h1>
   </div>
 
   <div class="controls">
@@ -276,10 +283,15 @@
 
   <div id="statusContainer"></div>
 
-  <div class="bottom"><br><a href="report-4gen.html">報告用ページへ</a><br></div>
+  <div class="bottom">
+    <br>
+    <a href="report-4gen.html">報告用ページへ</a>
+    <br>
+  </div>
 
   <footer>
     ※使用は自己責任にて。<br>
+    ※画面左端から右にフリックでサイドメニューが開きます。また、◆クリックでもサイドメニューが開きます。<br>
     <br>
     <a href="index.html">INDEXへ戻る</a><br>
   </footer>
@@ -364,26 +376,40 @@
     function init() {
       const container = document.getElementById('statusContainer');
       container.innerHTML = '';
-
+    
       groups.forEach(group => {
         const groupTitle = document.createElement('div');
-        groupTitle.textContent = group.title;
         groupTitle.className = `group-title ${group.color}`;
         groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
-        container.appendChild(groupTitle);
+    
+        // ◆用のspan
+        const markerSpan = document.createElement('span');
+        markerSpan.textContent = '◆';
+        markerSpan.className = 'marker';
+        markerSpan.addEventListener('click', function (e) {
+          e.stopPropagation();
+          toggleMenu();
+        });
 
+        // ◆以外のテキスト
+        const titleText = document.createTextNode(group.title.replace('◆', ''));
+    
+        groupTitle.appendChild(markerSpan);
+        groupTitle.appendChild(titleText);
+        container.appendChild(groupTitle);
+    
         attributes.forEach(attr => {
           const line = document.createElement('div');
           line.className = 'line';
-
+    
           const name = document.createElement('span');
           name.textContent = attr.name;
           name.className = attr.class;
-
+    
           const stars = document.createElement('span');
           stars.className = 'stars';
           stars.dataset.key = `${group.title}_${attr.name}`;
-
+    
           for (let i = 0; i < 5; i++) {
             const star = document.createElement('span');
             star.textContent = '☆';
@@ -400,22 +426,19 @@
             });
             stars.appendChild(star);
           }
-
+    
           line.appendChild(name);
           line.appendChild(stars);
           container.appendChild(line);
         });
-
-        // グループごとのエクスポートボタン
+    
         const exportBtn = document.createElement('button');
         exportBtn.textContent = '状態をエクスポート';
         exportBtn.style.marginTop = '15px';
         exportBtn.addEventListener('click', exportState);
         container.appendChild(exportBtn);
-
-        container.appendChild(exportBtn);
       });
-
+    
       setupScrollButtons();
     }
 
