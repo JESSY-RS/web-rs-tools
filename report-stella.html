@@ -170,6 +170,7 @@
       left: -300px;
       width: 300px;
       height: 100vh;
+      text-align: left;
       background-color: #242424;
       border-right: 1px solid #555;
       transition: left 0.3s ease;
@@ -225,7 +226,7 @@
     .menu-item {
       font-size: 18px;
       text-align: left;
-      display: block;
+      display: inline-block;
       padding: 12px 0;
       color: #eee;
       text-decoration: none;
@@ -254,15 +255,15 @@
   <!-- サイドメニュー -->
   <div class="side-menu" id="sideMenu">
     <div class="menu-title">チェッカー関連リンク</div>
-    <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a>
-    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a>
-    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a>
+    <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a><br>
+    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a><br>
+    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a><br>
     <div class="menu-spacer"></div>
-    <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a>
-    <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a>
-    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a>
+    <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a><br>
+    <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a><br>
+    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a><br>
     <div class="menu-spacer"></div>
-    <a href="index.html" class="menu-item">インデックスページ</a>
+    <a href="index.html" class="menu-item">インデックスページ</a><br>
     <div class="menu-spacer"></div>
   </div>
 
@@ -337,106 +338,106 @@
       }
     }
 
-const pierceGroup = document.getElementById("pierceGroup");
+    const pierceGroup = document.getElementById("pierceGroup");
+    
+    const attributes = [
+      { name: "人間", className: "S01" },
+      { name: "魚", className: "S02" },
+      { name: "男性", className: "S03" },
+      { name: "両棲類", className: "S04" },
+      { name: "女性", className: "S05" },
+      { name: "カエル", className: "S06" },
+      { name: "巨人", className: "S07" },
+      { name: "不死", className: "S08" },
+      { name: "メカ", className: "S09" },
+      { name: "骨", className: "S10" },
+      { name: "岩石", className: "S11" },
+      { name: "悪魔", className: "S12" },
+      { name: "獣人", className: "S13" },
+      { name: "火精", className: "S14" },
+      { name: "獣", className: "S15"},
+      { name: "水精", className: "S16" },
+      { name: "竜", className: "S17" },
+      { name: "風精", className: "S18" },
+      { name: "爬虫類", className: "S19" },
+      { name: "土精", className: "S20" },
+      { name: "植物", className: "S21" },
+      { name: "鳥", className: "S22" },
+      { name: "虫", className: "S23" },
+      { name: "浮遊", className: "S24" },
+      { name: "水棲", className: "S25" },
+      { name: "妖魔", className: "S26" }
+    ];
 
-const attributes = [
-  { name: "人間", className: "S01" },
-  { name: "魚", className: "S02" },
-  { name: "男性", className: "S03" },
-  { name: "両棲類", className: "S04" },
-  { name: "女性", className: "S05" },
-  { name: "カエル", className: "S06" },
-  { name: "巨人", className: "S07" },
-  { name: "不死", className: "S08" },
-  { name: "メカ", className: "S09" },
-  { name: "骨", className: "S10" },
-  { name: "岩石", className: "S11" },
-  { name: "悪魔", className: "S12" },
-  { name: "獣人", className: "S13" },
-  { name: "火精", className: "S14" },
-  { name: "獣", className: "S15"},
-  { name: "水精", className: "S16" },
-  { name: "竜", className: "S17" },
-  { name: "風精", className: "S18" },
-  { name: "爬虫類", className: "S19" },
-  { name: "土精", className: "S20" },
-  { name: "植物", className: "S21" },
-  { name: "鳥", className: "S22" },
-  { name: "虫", className: "S23" },
-  { name: "浮遊", className: "S24" },
-  { name: "水棲", className: "S25" },
-  { name: "妖魔", className: "S26" }
-];
+    // 初期表示
+    attributes.forEach(attr => {
+      const div = document.createElement("div");
+      div.className = "attribute";
+      const id = `ステライヤリング_${attr.name}`;
+      div.innerHTML = `<span class="${attr.className}">${attr.name}</span>&nbsp;<span class="stars" id="${id}">${decorateStars("☆☆☆☆☆")}</span>`;
+      pierceGroup.appendChild(div);
+    });
 
-// 初期表示
-attributes.forEach(attr => {
-  const div = document.createElement("div");
-  div.className = "attribute";
-  const id = `ステライヤリング_${attr.name}`;
-  div.innerHTML = `<span class="${attr.className}">${attr.name}</span>&nbsp;<span class="stars" id="${id}">${decorateStars("☆☆☆☆☆")}</span>`;
-  pierceGroup.appendChild(div);
-});
-
-function updateSummary() {
-  let completeCount = 0;
-  let totalStars = 0;
-  let minOneCount = 0;
-
-  const totalAttrs = attributes.length;
-  const maxTotalStars = totalAttrs * 5;
-
-  attributes.forEach(attr => {
-    const el = document.getElementById(`ステライヤリング_${attr.name}`);
-    const starText = el.textContent;
-
-    if (starText.includes("★")) {
-      minOneCount++;
+    function updateSummary() {
+      let completeCount = 0;
+      let totalStars = 0;
+      let minOneCount = 0;
+    
+      const totalAttrs = attributes.length;
+      const maxTotalStars = totalAttrs * 5;
+    
+      attributes.forEach(attr => {
+        const el = document.getElementById(`ステライヤリング_${attr.name}`);
+        const starText = el.textContent;
+    
+        if (starText.includes("★")) {
+          minOneCount++;
+        }
+    
+        if (starText === "★★★★★") {
+          completeCount++;
+        }
+    
+        const starNum = (starText.match(/★/g) || []).length;
+        totalStars += starNum;
+      });
+    
+      const compRate = ((completeCount / totalAttrs) * 100).toFixed(1);
+      const minOneRate = ((minOneCount / totalAttrs) * 100).toFixed(1);
+      const totalStarRate = ((totalStars / maxTotalStars) * 100).toFixed(1);
+    
+      document.getElementById("summary").innerHTML = `
+        <div>トータル: ${totalStars} / ${maxTotalStars}</div>
+        <div>最低１個: ${minOneCount} / ${totalAttrs}</div>
+        <div>コンプ数: ${completeCount} / ${totalAttrs}</div>
+      `;
     }
 
-    if (starText === "★★★★★") {
-      completeCount++;
+    // 星装飾
+    function decorateStars(text){
+      let result = "";
+      for (let char of text) {
+        result += char === "★" ? `<span style="color:gold;">★</span>` :
+                  char === "☆" ? `<span style="color:gray;">☆</span>` : char;
+      }
+      return result;
     }
 
-    const starNum = (starText.match(/★/g) || []).length;
-    totalStars += starNum;
-  });
-
-  const compRate = ((completeCount / totalAttrs) * 100).toFixed(1);
-  const minOneRate = ((minOneCount / totalAttrs) * 100).toFixed(1);
-  const totalStarRate = ((totalStars / maxTotalStars) * 100).toFixed(1);
-
-  document.getElementById("summary").innerHTML = `
-    <div>トータル: ${totalStars} / ${maxTotalStars}</div>
-    <div>最低１個: ${minOneCount} / ${totalAttrs}</div>
-    <div>コンプ数: ${completeCount} / ${totalAttrs}</div>
-  `;
-}
-
-// 星装飾
-function decorateStars(text){
-  let result = "";
-  for (let char of text) {
-    result += char === "★" ? `<span style="color:gold;">★</span>` :
-              char === "☆" ? `<span style="color:gray;">☆</span>` : char;
-  }
-  return result;
-}
-
-// JSON読込
-document.getElementById("importJson").addEventListener("change", e => {
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const data = JSON.parse(e.target.result);
-    for (let key in data) {
-      const el = document.getElementById(key);
-      if (el) el.innerHTML = decorateStars(data[key]);
-    }
-    updateSummary();
-  };
-  reader.readAsText(file);
-});
+    // JSON読込
+    document.getElementById("importJson").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const data = JSON.parse(e.target.result);
+        for (let key in data) {
+          const el = document.getElementById(key);
+          if (el) el.innerHTML = decorateStars(data[key]);
+        }
+        updateSummary();
+      };
+      reader.readAsText(file);
+    });
 
     // 初期表示の時点でも集計実行
     updateSummary();

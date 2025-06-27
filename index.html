@@ -1,163 +1,165 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta http-equiv=Content-Type content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="favicon.ico">
-    <title>ロマサガRS・Webツール</title>
 
-    <style>
-        /* ページ全体のスタイル */
-        body {
-            margin: 20px;
-            text-align: left;
-            font-size: 24px;
-            background-color: #2A2A2A;
-            color: #eee;
-        }
+  <meta http-equiv=Content-Type content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="favicon.ico">
+  <title>ロマサガRS・Webツール</title>
 
-        /* ヘッダーのスタイル */
-        header {
-            text-align: left;
-            font-size: 36px;
-            color: #FF6E3D;
-        }
+  <style>
 
-        /* フッターのスタイル */
-        footer {
-            border-top: 1px solid #999;
-            padding-top: 10px;
-            font-size: 12pt;
-            margin-top: 20px;
-            color: #999;
-        }
+    /* ページ全体のスタイル */
+    body {
+      margin: 20px;
+      text-align: left;
+      font-size: 24px;
+      background-color: #2A2A2A;
+      color: #eee;
+    }
 
-        /* リンクのスタイル */
-        a:link {
-            color: #1D9BF0;
-            text-decoration: underline;
-        }
+    /* ヘッダーのスタイル */
+    header {
+      text-align: left;
+      font-size: 36px;
+      color: #FF6E3D;
+    }
 
-        a:visited {
-            color: #7755FF;
-            text-decoration: underline;
-        }
+    /* フッターのスタイル */
+    footer {
+      border-top: 1px solid #999;
+      padding-top: 10px;
+      font-size: 12pt;
+      margin-top: 20px;
+      color: #999;
+    }
 
-        a:hover {
-            color: #0CFF57;
-        }
+    /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
 
-        a:active {
-             color: #FF0000;
-             text-decoration: underline;
-        }
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
 
-  #linkList {
-    display: none;
-    color: #7755FF;
-  }
+    a:hover {
+      color: #0CFF57;
+    }
 
-  #linkList1 {
-    display: none;
-    color: #7755FF;
-  }
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
 
-  #linkList2 {
-    display: none;
-    color: #7755FF;
-  }
+    #linkList {
+      display: none;
+      color: #7755FF;
+    }
+  
+    #linkList1 {
+      display: none;
+      color: #7755FF;
+    }
+  
+    #linkList2 {
+      display: none;
+      color: #7755FF;
+    }
+  
+    #linkList a {
+      display: inline;
+      margin: 5px 0;
+      text-decoration: none;
+      color: #7755FF;
+    }
+  
+    #linkList a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
 
-  #linkList a {
-    display: inline;
-    margin: 5px 0;
-    text-decoration: none;
-    color: #7755FF;
-  }
+    #linkList a:hover {
+      text-decoration: underline;
+      color: #0CFF57;
+    }
 
-  #linkList a:visited {
-            color: #7755FF;
-            text-decoration: underline;
-        }
+    #linkList a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
 
-  #linkList a:hover {
-    text-decoration: underline;
-    color: #0CFF57;
-  }
-
-  #linkList a:active {
-             color: #FF0000;
-             text-decoration: underline;
-        }
-
-.toggle-button {
-  cursor: pointer;
-  color: #7755FF;
-  text-decoration: underline;
+    .toggle-button {
+      cursor: pointer;
+      color: #7755FF;
+      text-decoration: underline;
       user-select: none;
-}
+    }
+  
+    .toggle-button:hover {
+      color: #0CFF57;
+      text-decoration: underline;
+    }
 
-.toggle-button:hover {
-  color: #0CFF57;
-  text-decoration: underline;
-}
-
-    </style>
+  </style>
 
 </head>
 <body>
 
-<header>リユニのWeb版いろいろ</header>
+  <header>リユニのWeb版いろいろ</header><br>
+  
+  <a href="kiokucalc.html">記憶再戦時間計算</a><br>
+  <a href="kiokucalc2.html">記憶再戦回数計算</a><br>
+  <br>
+  <a href="ikuseicalc.html">育成効率比較ツール</a><br>
+  <a href="raidcalc.html">レイド周回効率比較ツール</a><br>
+  <br>
+  <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
+  <div id="linkList1">
+    ├ <a href="checker-4gen.html">四元像ピアスチェッカー</a><br>
+    ├ <a href="checker-stella.html">ステライヤリングチェッカー</a><br>
+    └ <a href="checker-niji.html">虹瑠璃の腕輪チェッカー</a><br>
+  </div>
+  <br>
+  <span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span>
+  <div id="linkList2">
+    ├ <a href="report-4gen.html">四元像ピアス報告用</a><br>
+    ├ <a href="report-stella.html">ステライヤリング報告用</a><br>
+    └ <a href="report-niji.html">虹瑠璃の腕輪報告用</a><br>
+  </div>
+  <br>
+  <br>
+  <a href="expcalc.html">EXPスタンプ必要数計算</a><br>
+  <a href="https://jessy-rs.github.io/Multi-Stage-Slash/">多段斬りアプリ</a><br>
+  <br>
 
-</br>
-<a href="kiokucalc.html">記憶再戦時間計算</a></br>
-<a href="kiokucalc2.html">記憶再戦回数計算</a></br>
-</br>
-<a href="ikuseicalc.html">育成効率比較ツール</a></br>
-<a href="raidcalc.html">レイド周回効率比較ツール</a></br>
-</br>
-<span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
-<div id="linkList1">
-├ <a href="checker-4gen.html">四元像ピアスチェッカー</a></br>
-├ <a href="checker-stella.html">ステライヤリングチェッカー</a></br>
-└ <a href="checker-niji.html">虹瑠璃の腕輪チェッカー</a></br>
-</div>
-</br>
-<span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span>
-<div id="linkList2">
-├ <a href="report-4gen.html">四元像ピアス報告用</a></br>
-├ <a href="report-stella.html">ステライヤリング報告用</a></br>
-└ <a href="report-niji.html">虹瑠璃の腕輪報告用</a></br>
-</div>
-</br>
-</br>
-<a href="expcalc.html">EXPスタンプ必要数計算</a></br>
-<a href="https://jessy-rs.github.io/Multi-Stage-Slash/">多段斬りアプリ</a></br>
-</br>
+  <footer>
+  Created by じぇ
+  </footer>
 
-<footer>
-Created by じぇ
-</footer>
-
-<script>
-document.addEventListener("DOMContentLoaded", function(){
-  var toggleButtons = document.querySelectorAll(".toggle-button");
-
-  toggleButtons.forEach(function(button) {
-    var targetId = button.getAttribute("data-target");
-    var list = document.getElementById(targetId);
-    list.style.display = "none";
-
-    button.addEventListener("click", function(){
-      if (list.style.display === "block") {
+  <script>
+    
+    document.addEventListener("DOMContentLoaded", function(){
+      var toggleButtons = document.querySelectorAll(".toggle-button");
+    
+      toggleButtons.forEach(function(button) {
+        var targetId = button.getAttribute("data-target");
+        var list = document.getElementById(targetId);
         list.style.display = "none";
-      } else {
-        list.style.display = "block";
-      }
+    
+        button.addEventListener("click", function(){
+          if (list.style.display === "block") {
+            list.style.display = "none";
+          } else {
+            list.style.display = "block";
+          }
+        });
+      });
     });
-  });
-});
-
-</script>
-
+    
+  </script>
+  
 </body>
 </html>

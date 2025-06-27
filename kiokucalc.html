@@ -2,171 +2,171 @@
 <html lang="ja">
 <head>
 
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="favicon-kiokucalc.ico">
-    <link rel="apple-touch-icon" href="apple-touch-icon-kiokucalc.png">
-    <link rel="icon" type="image/png" href="android-chrome-144x144-kiokucalc.png">
-    <title>記憶再戦時間計算</title> <!-- Created by じぇ -->
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="favicon-kiokucalc.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-kiokucalc.png">
+  <link rel="icon" type="image/png" href="android-chrome-144x144-kiokucalc.png">
+  <title>記憶再戦時間計算</title> <!-- Created by じぇ -->
 
-    <style>
+  <style>
 
-        /* ページ全体のスタイル */
-        body {
-            margin: 20px;
-            background-color: #2A2A2A;
-            color: #eee;
-        }
+    /* ページ全体のスタイル */
+    body {
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+    }
 
-        /* 見出しのスタイル */
-        .header {
-            display: flex;
-            align-items: flex-end;
-        }
+    /* 見出しのスタイル */
+    .header {
+      display: flex;
+      align-items: flex-end;
+    }
 
-        .title {
-            font-size: 36px;
-            font-weight: bold;
-            color: #00ff00;
-            margin-right: 8px;
-            margin-top: -10px;
-            margin-bottom: 15px;
-        }
+    .title {
+      font-size: 36px;
+      font-weight: bold;
+      color: #00ff00;
+      margin-right: 8px;
+      margin-top: -10px;
+      margin-bottom: 15px;
+    }
 
-        .subtitle {
-            font-size: 24px;
-            font-weight: bold;
-            color: orange;
-            margin-top: 0px;
-            margin-bottom: 20px;
-        }
+    .subtitle {
+      font-size: 24px;
+      font-weight: bold;
+      color: orange;
+      margin-top: 0px;
+      margin-bottom: 20px;
+    }
 
-        /* 入力フィールドのスタイル */
-        input[type="number"] {
-            width: 70px;
-            font-size: 32px;
-            padding: 5px;
-            text-align: right;
-        }
+    /* 入力フィールドのスタイル */
+    input[type="number"] {
+      width: 70px;
+      font-size: 32px;
+      padding: 5px;
+      text-align: right;
+    }
 
-        #count {
-            width: 180px;
-        }
+    #count {
+      width: 180px;
+    }
 
-        .input-group1 label {
-            font-size: 20px;
-            margin-right: 5px;
-        }
+    .input-group1 label {
+      font-size: 20px;
+      margin-right: 5px;
+    }
 
-        .input-group1 {
-            margin-bottom: 10px;
-        }
+    .input-group1 {
+      margin-bottom: 10px;
+    }
 
-        .input-group2 label {
-            font-size: 20px;
-            margin-right: 5px;
-        }
+    .input-group2 label {
+      font-size: 20px;
+      margin-right: 5px;
+    }
 
-        .input-group2 {
-            margin-bottom: 20px;
-        }
+    .input-group2 {
+      margin-bottom: 20px;
+    }
 
-        .input-group3 label {
-            font-size: 20px;
-            margin-right: 5px;
-        }
+    .input-group3 label {
+      font-size: 20px;
+      margin-right: 5px;
+    }
 
-        .input-group3 {
-            margin-bottom: 10px;
-        }
+    .input-group3 {
+      margin-bottom: 10px;
+    }
 
-        /* コロン部分のスタイル */
-        .separator {
-            font-size: 32px;
-            margin-left: 1px;
-            margin-right: 1px;
-        }
+    /* コロン部分のスタイル */
+    .separator {
+      font-size: 32px;
+      margin-left: 1px;
+      margin-right: 1px;
+    }
 
-        /* 入力欄２の背景色 */
-        #input2-min, #input2-sec {
-            background-color: #888;
-        }
+    /* 入力欄２の背景色 */
+    #input2-min, #input2-sec {
+      background-color: #888;
+    }
 
-        /* エラーメッセージのスタイル */
-        #warning {
-            color: red;
-            height: 32px;
-            margin-top: 5px;
-            margin-bottom: 20px;
-        }
+    /* エラーメッセージのスタイル */
+    #warning {
+      color: red;
+      height: 32px;
+      margin-top: 5px;
+      margin-bottom: 20px;
+    }
 
-        /* ボタンのスタイル */
-        button {
-            font-size: 28px;
-            padding: 5px 12px;
-            margin-top: 5px;
-            margin-bottom: 20px;
-        }
+    /* ボタンのスタイル */
+    button {
+      font-size: 28px;
+      padding: 5px 12px;
+      margin-top: 5px;
+      margin-bottom: 20px;
+    }
 
-        /* コピー用ボタンのスタイル */
-        #copyButton {
-            font-size: 28px;
-            padding: 5px 20px;
-            display: none;
-        }
+    /* コピー用ボタンのスタイル */
+    #copyButton {
+      font-size: 28px;
+      padding: 5px 20px;
+      display: none;
+    }
 
-        /* 結果表示のスタイル */
-        .result {
-            font-size: 42px;
-            font-weight: bold;
-        }
+    /* 結果表示のスタイル */
+    .result {
+      font-size: 42px;
+      font-weight: bold;
+    }
 
-        .result-label {
-            color: #1D9BF0;
-        }
+    .result-label {
+      color: #1D9BF0;
+    }
 
-        .result-time {
-            color: #eee;
-        }
+    .result-time {
+      color: #eee;
+    }
 
-        /* ボトムのスタイル */
-        .bottom {
-            font-size: 16pt;
-            margin-top: 0px;
-        }
+    /* ボトムのスタイル */
+    .bottom {
+      font-size: 16pt;
+      margin-top: 0px;
+    }
 
-        /* フッターのスタイル */
-        link {
-            font-size: 16pt;
-        }
+    /* フッターのスタイル */
+    link {
+      font-size: 16pt;
+    }
 
-        /* フッターのスタイル */
-        footer {
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-            font-size: 16pt;
-            margin-top: 20px;
-        }
+    /* フッターのスタイル */
+    footer {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      font-size: 16pt;
+      margin-top: 20px;
+    }
 
-        /* リンクのスタイル */
-        a:link {
-            color: #1D9BF0;
-            text-decoration: underline;
-        }
+    /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
 
-        a:visited {
-            color: #7755FF;
-            text-decoration: underline;
-        }
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
 
-        a:hover {
-            color: #0CFF57;
-        }
+    a:hover {
+      color: #0CFF57;
+    }
 
-        a:active {
-            color: #FF0000;
-            text-decoration: underline;
-        }
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
 
     /* ハンバーガーメニューのスタイル */
     .hamburger {
@@ -318,13 +318,13 @@
       text-decoration: underline;
     }
 
-    </style>
+  </style>
 
 </head>
 <body>
 
-    <!-- サイドメニューオーバーレイ -->
-    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+  <!-- サイドメニューオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
   <!-- サイドメニュー -->
   <div class="side-menu" id="sideMenu">
@@ -357,203 +357,203 @@
     </br>
   </div>
 
-    <div class="container">
-        <div class="header">
-            <span class="title"><span class="hamburger" onclick="toggleMenu()">☰</span>記憶再戦</span>
-            <span class="subtitle">⏰時間計算</span>
-        </div>
-
-        <div class="input-group1">
-            <label for="input1-min">入力欄１</label>
-            <input type="number" id="input1-min" min="0" onfocus="this.select()" onkeydown="handleEnter(event, 'input1-sec')">
-            <span class="separator">:</span>
-            <input type="number" id="input1-sec" min="0" onfocus="this.select()" onkeydown="handleEnter(event, 'count')">
-        </div>
-
-        <div class="input-group2">
-            <label for="input2-min">入力欄２</label>
-            <input type="number" id="input2-min" min="0" onfocus="this.select()">
-            <span class="separator">:</span>
-            <input type="number" id="input2-sec" min="0" onfocus="this.select()">
-        </div>
-
-        <div class="input-group3">
-            <label for="count">再戦回数</label>
-            <input type="number" id="count" min="1" onfocus="this.select()" onkeydown="handleEnter(event, 'calculate-button')">
-        </div>
-
-        <p id="warning"></p>
-
-        <button id="calculate-button" onclick="calculateTotalTime()">計算する</button>
-        <input type="button" id="copyButton" value="結果コピー" onclick="copyToClipboard()">
-
-        <div class="result">
-            <span class="result-label">結果: </span><span id="result" class="result-time">00:00:00</span>
-        </div>
+  <div class="container">
+    <div class="header">
+      <span class="title"><span class="hamburger" onclick="toggleMenu()">☰</span>記憶再戦</span>
+      <span class="subtitle">⏰時間計算</span>
     </div>
 
+    <div class="input-group1">
+      <label for="input1-min">入力欄１</label>
+      <input type="number" id="input1-min" min="0" onfocus="this.select()" onkeydown="handleEnter(event, 'input1-sec')">
+      <span class="separator">:</span>
+      <input type="number" id="input1-sec" min="0" onfocus="this.select()" onkeydown="handleEnter(event, 'count')">
+    </div>
+
+    <div class="input-group2">
+      <label for="input2-min">入力欄２</label>
+      <input type="number" id="input2-min" min="0" onfocus="this.select()">
+      <span class="separator">:</span>
+      <input type="number" id="input2-sec" min="0" onfocus="this.select()">
+    </div>
+
+    <div class="input-group3">
+      <label for="count">再戦回数</label>
+      <input type="number" id="count" min="1" onfocus="this.select()" onkeydown="handleEnter(event, 'calculate-button')">
+    </div>
+
+    <p id="warning"></p>
+
+    <button id="calculate-button" onclick="calculateTotalTime()">計算する</button>
+    <input type="button" id="copyButton" value="結果コピー" onclick="copyToClipboard()">
+
+    <div class="result">
+      <span class="result-label">結果: </span><span id="result" class="result-time">00:00:00</span>
+    </div>
+  </div>
+
+  <br>
+  <div class="bottom"><a href="kiokucalc2.html">再戦回数を計算する</a><br></div>
+
+  <footer>
+    ※使用は自己責任にて。<br>
+    ※ページをリロードすると各項目が初期値に戻ります。<br>
     <br>
-    <div class="bottom"><a href="kiokucalc2.html">再戦回数を計算する</a><br></div>
+    <a href="index.html">INDEXへ戻る</a><br>
+  </footer>
 
-    <footer>
-        ※使用は自己責任にて。<br>
-        ※ページをリロードすると各項目が初期値に戻ります。<br>
-        <br>
-        <a href="index.html">INDEXへ戻る</a><br>
-    </footer>
+  <script>
 
-    <script>
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
 
-        // ハンバーガーメニューの関数
-        function toggleMenu() {
-            const sideMenu = document.getElementById('sideMenu');
-            const menuOverlay = document.getElementById('menuOverlay');
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        }
+    }
 
-            if (sideMenu.classList.contains('open')) {
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const menuClose = document.getElementById('menuClose');
+
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+        menuClose.style.color = '#eee';
+    }
+
+    // フリックでメニュー開閉
+    let startX = 0;
+    let endX = 0;
+
+    document.addEventListener('touchstart', function (e) {
+        startX = e.changedTouches[0].screenX;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+        endX = e.changedTouches[0].screenX;
+        handleGesture();
+    }, false);
+
+    function handleGesture() {
+        let diffX = endX - startX;
+
+        if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
+            // かつ開始位置が30px以内なら右フリックと判定
+            if (diffX > 0 && startX < 30) {
+                // 右にフリック
+                toggleMenu();
+            } else {
+                // 左にフリック
                 closeMenu();
-            } else {
-                sideMenu.classList.add('open');
-                menuOverlay.classList.add('open');
             }
         }
+    }
 
-        function closeMenu() {
-            const sideMenu = document.getElementById('sideMenu');
-            const menuOverlay = document.getElementById('menuOverlay');
-            const menuClose = document.getElementById('menuClose');
+    // 初期値の定義
+    const initialValues = {
+        input1Min: '',
+        input1Sec: '',
+        input2Min: '0',
+        input2Sec: '13',
+        count: ''
+    };
 
-            sideMenu.classList.remove('open');
-            menuOverlay.classList.remove('open');
-            menuClose.style.color = '#eee';
+    // 時間を計算する
+    function parseTime(minutes, seconds) {
+        return (minutes * 60) + parseInt(seconds);
+    }
+
+    function formatTime(totalSeconds) {
+        let hours = Math.floor(totalSeconds / 3600);
+        let minutes = Math.floor((totalSeconds % 3600) / 60);
+        let seconds = totalSeconds % 60;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    // 結果を表示させる
+    function calculateTotalTime() {
+        let input1Min = document.getElementById('input1-min').value;
+        let input1Sec = document.getElementById('input1-sec').value;
+        let input2Min = document.getElementById('input2-min').value;
+        let input2Sec = document.getElementById('input2-sec').value;
+        let count = document.getElementById('count').value;
+
+        // 入力欄1の分が空の場合、0に設定
+        if (input1Sec !== '' && input1Min === '') {
+            input1Min = '0';
+            document.getElementById('input1-min').value = '0'; // フィールドも更新
         }
 
-        // フリックでメニュー開閉
-        let startX = 0;
-        let endX = 0;
+        let emptyFields = [];
 
-        document.addEventListener('touchstart', function (e) {
-            startX = e.changedTouches[0].screenX;
-        }, false);
-
-        document.addEventListener('touchend', function (e) {
-            endX = e.changedTouches[0].screenX;
-            handleGesture();
-        }, false);
-
-        function handleGesture() {
-            let diffX = endX - startX;
-
-            if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
-                // かつ開始位置が30px以内なら右フリックと判定
-                if (diffX > 0 && startX < 30) {
-                    // 右にフリック
-                    toggleMenu();
-                } else {
-                    // 左にフリック
-                    closeMenu();
-                }
-            }
+        if (input1Min === '' || input1Sec === '') {
+            emptyFields.push('入力欄１');
+        }
+        if (input2Min === '' || input2Sec === '') {
+            emptyFields.push('入力欄２');
+        }
+        if (count === '') {
+            emptyFields.push('再戦回数');
         }
 
-        // 初期値の定義
-        const initialValues = {
-            input1Min: '',
-            input1Sec: '',
-            input2Min: '0',
-            input2Sec: '13',
-            count: ''
-        };
-
-        // 時間を計算する
-        function parseTime(minutes, seconds) {
-            return (minutes * 60) + parseInt(seconds);
+        // 入力項目に不足がある場合は警告文を表示させる
+        if (emptyFields.length > 0) {
+            document.getElementById('warning').innerText = `※${emptyFields.join('・')}に数値を入力してください。`;
+            document.getElementById('result').innerText = '00:00:00';
+            return;
+        } else {
+            document.getElementById('warning').innerText = '';
         }
 
-        function formatTime(totalSeconds) {
-            let hours = Math.floor(totalSeconds / 3600);
-            let minutes = Math.floor((totalSeconds % 3600) / 60);
-            let seconds = totalSeconds % 60;
-            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        let time1 = parseTime(parseInt(input1Min), parseInt(input1Sec));
+        let time2 = parseTime(parseInt(input2Min), parseInt(input2Sec));
+        let totalTime = (time1 + time2) * parseInt(count);
+        document.getElementById('result').innerText = formatTime(totalTime);
+        document.getElementById('result').style.color = '#eee'; // 計算後にフォント色変更
+
+        // コピー用ボタンを表示
+        document.getElementById('copyButton').value = '結果コピー';
+        document.getElementById('copyButton').style.display = 'inline-block';
+    }
+
+    // クリップボードに情報をコピーする
+    function copyToClipboard() {
+        const requiredExp = document.getElementById('result').innerText;
+        const tempInput = document.createElement('input');
+        tempInput.value = requiredExp;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        try {
+            document.execCommand('copy');
+            document.getElementById('copyButton').value = 'コピー完了';
+        } catch (err) {
+            alert('クリップボードにコピーできませんでした: ' + err);
         }
+        document.body.removeChild(tempInput);
+    }
 
-        // 結果を表示させる
-        function calculateTotalTime() {
-            let input1Min = document.getElementById('input1-min').value;
-            let input1Sec = document.getElementById('input1-sec').value;
-            let input2Min = document.getElementById('input2-min').value;
-            let input2Sec = document.getElementById('input2-sec').value;
-            let count = document.getElementById('count').value;
+    // ページをリロードしたら各項目を初期値に戻す
+    window.onload = function () {
+        document.getElementById('input1-min').value = initialValues.input1Min;
+        document.getElementById('input1-sec').value = initialValues.input1Sec;
+        document.getElementById('input2-min').value = initialValues.input2Min;
+        document.getElementById('input2-sec').value = initialValues.input2Sec;
+        document.getElementById('count').value = initialValues.count;
+    }
 
-            // 入力欄1の分が空の場合、0に設定
-            if (input1Sec !== '' && input1Min === '') {
-                input1Min = '0';
-                document.getElementById('input1-min').value = '0'; // フィールドも更新
-            }
-
-            let emptyFields = [];
-
-            if (input1Min === '' || input1Sec === '') {
-                emptyFields.push('入力欄１');
-            }
-            if (input2Min === '' || input2Sec === '') {
-                emptyFields.push('入力欄２');
-            }
-            if (count === '') {
-                emptyFields.push('再戦回数');
-            }
-
-            // 入力項目に不足がある場合は警告文を表示させる
-            if (emptyFields.length > 0) {
-                document.getElementById('warning').innerText = `※${emptyFields.join('・')}に数値を入力してください。`;
-                document.getElementById('result').innerText = '00:00:00';
-                return;
-            } else {
-                document.getElementById('warning').innerText = '';
-            }
-
-            let time1 = parseTime(parseInt(input1Min), parseInt(input1Sec));
-            let time2 = parseTime(parseInt(input2Min), parseInt(input2Sec));
-            let totalTime = (time1 + time2) * parseInt(count);
-            document.getElementById('result').innerText = formatTime(totalTime);
-            document.getElementById('result').style.color = '#eee'; // 計算後にフォント色変更
-
-            // コピー用ボタンを表示
-            document.getElementById('copyButton').value = '結果コピー';
-            document.getElementById('copyButton').style.display = 'inline-block';
+    // Enterキー押下時にフォーカスを移動させる関数
+    function handleEnter(event, nextElementId) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            document.getElementById(nextElementId).focus();
         }
-
-        // クリップボードに情報をコピーする
-        function copyToClipboard() {
-            const requiredExp = document.getElementById('result').innerText;
-            const tempInput = document.createElement('input');
-            tempInput.value = requiredExp;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            try {
-                document.execCommand('copy');
-                document.getElementById('copyButton').value = 'コピー完了';
-            } catch (err) {
-                alert('クリップボードにコピーできませんでした: ' + err);
-            }
-            document.body.removeChild(tempInput);
-        }
-
-        // ページをリロードしたら各項目を初期値に戻す
-        window.onload = function () {
-            document.getElementById('input1-min').value = initialValues.input1Min;
-            document.getElementById('input1-sec').value = initialValues.input1Sec;
-            document.getElementById('input2-min').value = initialValues.input2Min;
-            document.getElementById('input2-sec').value = initialValues.input2Sec;
-            document.getElementById('count').value = initialValues.count;
-        }
-
-        // Enterキー押下時にフォーカスを移動させる関数
-        function handleEnter(event, nextElementId) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                document.getElementById(nextElementId).focus();
-            }
-        }
+    }
 
     document.addEventListener("DOMContentLoaded", function(){
       var toggleButtons = document.querySelectorAll(".toggle-button");
@@ -573,7 +573,7 @@
       });
     });
 
-    </script>
+  </script>
 
 </body>
 </html>

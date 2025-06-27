@@ -10,6 +10,7 @@
   <title>虹瑠璃の腕輪報告用</title> <!-- Created by じぇ -->
 
   <style>
+
     body {
       margin: 20px;
       background-color: #2A2A2A;
@@ -26,28 +27,26 @@
       margin-top: 10px;
     }
 
-/* 小分類と星の横並び中央寄せ */
-.attribute {
+    /* 小分類と星の横並び中央寄せ */
+    .attribute {
       font-size: 22px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 5px 10;
-}
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 5px 10;
+    }
 
-/* 小分類（左側）は右揃え、幅固定 */
-.attribute span:first-child {
-  width: 100px;
-  text-align: right;
-  margin-right: 0px;
-
-}
-
-
-/* 星（右側）は左揃え */
-.attribute .stars {
-  text-align: left;
-}
+    /* 小分類（左側）は右揃え、幅固定 */
+    .attribute span:first-child {
+      width: 100px;
+      text-align: right;
+      margin-right: 0px;
+    }
+    
+    /* 星（右側）は左揃え */
+    .attribute .stars {
+      text-align: left;
+    }
 
     .stars {
       font-size: 26px;
@@ -130,12 +129,14 @@
     .hamburger:hover {
       color: #2A99E6;
     }
+
     .side-menu {
       position: fixed;
       top: 0;
       left: -300px;
       width: 300px;
       height: 100vh;
+      text-align: left;
       background-color: #242424;
       border-right: 1px solid #555;
       transition: left 0.3s ease;
@@ -191,7 +192,7 @@
     .menu-item {
       font-size: 18px;
       text-align: left;
-      display: block;
+      display: inline-block;
       padding: 12px 0;
       color: #eee;
       text-decoration: none;
@@ -220,15 +221,15 @@
   <!-- サイドメニュー -->
   <div class="side-menu" id="sideMenu">
     <div class="menu-title">チェッカー関連リンク</div>
-    <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a>
-    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a>
-    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a>
+    <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a><br>
+    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a><br>
+    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a><br>
     <div class="menu-spacer"></div>
-    <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a>
-    <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a>
-    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a>
+    <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a><br>
+    <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a><br>
+    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a><br>
     <div class="menu-spacer"></div>
-    <a href="index.html" class="menu-item">インデックスページ</a>
+    <a href="index.html" class="menu-item">インデックスページ</a><br>
     <div class="menu-spacer"></div>
   </div>
 
@@ -303,76 +304,76 @@
       }
     }
 
-const pierceGroup = document.getElementById("pierceGroup");
+    const pierceGroup = document.getElementById("pierceGroup");
+    
+    const attributes = [
+      { name: "GBSaGa", className: "S01" },
+      { name: "RS1", className: "S02" },
+      { name: "RS2", className: "S03" },
+      { name: "RS3", className: "S04" },
+      { name: "SF1", className: "S05" },
+      { name: "SF2", className: "S06" },
+      { name: "US", className: "S07" },
+      { name: "ES&IS", className: "S08" },
+      { name: "SSG", className: "S09" },
+      { name: "SaGaEB", className: "S10" },
+      { name: "SaGaRS", className: "S11" }
+    ];
 
-const attributes = [
-  { name: "GBSaGa", className: "S01" },
-  { name: "RS1", className: "S02" },
-  { name: "RS2", className: "S03" },
-  { name: "RS3", className: "S04" },
-  { name: "SF1", className: "S05" },
-  { name: "SF2", className: "S06" },
-  { name: "US", className: "S07" },
-  { name: "ES&IS", className: "S08" },
-  { name: "SSG", className: "S09" },
-  { name: "SaGaEB", className: "S10" },
-  { name: "SaGaRS", className: "S11" }
-];
-
-// 初期表示
-attributes.forEach(attr => {
-  const div = document.createElement("div");
-  div.className = "attribute";
-  const id = `虹瑠璃の腕輪_${attr.name}`;
-  div.innerHTML = `<span class="${attr.className}">${attr.name}</span>&nbsp;<span class="stars" id="${id}">${decorateStars("☆☆☆☆☆")}</span>`;
-  pierceGroup.appendChild(div);
-});
-
-// 集計
-function updateSummary(){
-  let completeCount = 0;
-  let totalStars = 0;
-  const totalAttrs = attributes.length;
-  attributes.forEach(attr => {
-    const el = document.getElementById(`虹瑠璃の腕輪_${attr.name}`);
-    if (!el) return;
-    const starCount = (el.textContent.match(/★/g) || []).length;
-    totalStars += starCount;
-    if (starCount === 5) completeCount++;
-  });
-
-  const totalPossibleStars = totalAttrs * 5;
-  document.getElementById("summary").innerHTML = `
-    トータル：${totalStars} / ${totalPossibleStars}<br>
-    コンプ数：${completeCount} / ${totalAttrs}<br>
-  `;
-}
-
-// 星装飾
-function decorateStars(text){
-  let result = "";
-  for (let char of text) {
-    result += char === "★" ? `<span style="color:gold;">★</span>` :
-              char === "☆" ? `<span style="color:gray;">☆</span>` : char;
-  }
-  return result;
-}
-
-// JSON読込
-document.getElementById("importJson").addEventListener("change", e => {
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const data = JSON.parse(e.target.result);
-    for (let key in data) {
-      const el = document.getElementById(key);
-      if (el) el.innerHTML = decorateStars(data[key]);
+    // 初期表示
+    attributes.forEach(attr => {
+      const div = document.createElement("div");
+      div.className = "attribute";
+      const id = `虹瑠璃の腕輪_${attr.name}`;
+      div.innerHTML = `<span class="${attr.className}">${attr.name}</span>&nbsp;<span class="stars" id="${id}">${decorateStars("☆☆☆☆☆")}</span>`;
+      pierceGroup.appendChild(div);
+    });
+    
+    // 集計
+    function updateSummary(){
+      let completeCount = 0;
+      let totalStars = 0;
+      const totalAttrs = attributes.length;
+      attributes.forEach(attr => {
+        const el = document.getElementById(`虹瑠璃の腕輪_${attr.name}`);
+        if (!el) return;
+        const starCount = (el.textContent.match(/★/g) || []).length;
+        totalStars += starCount;
+        if (starCount === 5) completeCount++;
+      });
+    
+      const totalPossibleStars = totalAttrs * 5;
+      document.getElementById("summary").innerHTML = `
+        トータル：${totalStars} / ${totalPossibleStars}<br>
+        コンプ数：${completeCount} / ${totalAttrs}<br>
+      `;
     }
-    updateSummary();
-  };
-  reader.readAsText(file);
-});
+
+    // 星装飾
+    function decorateStars(text){
+      let result = "";
+      for (let char of text) {
+        result += char === "★" ? `<span style="color:gold;">★</span>` :
+                  char === "☆" ? `<span style="color:gray;">☆</span>` : char;
+      }
+      return result;
+    }
+    
+    // JSON読込
+    document.getElementById("importJson").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const data = JSON.parse(e.target.result);
+        for (let key in data) {
+          const el = document.getElementById(key);
+          if (el) el.innerHTML = decorateStars(data[key]);
+        }
+        updateSummary();
+      };
+      reader.readAsText(file);
+    });
 
     // 初期表示の時点でも集計実行
     updateSummary();
