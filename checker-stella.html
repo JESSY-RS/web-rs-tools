@@ -26,6 +26,10 @@
       font-size: 26px;
       margin-top: 40px;
       margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      min-width: 0; /* flex-shrinkを有効にするため */
     }
 
     .stars {
@@ -166,29 +170,59 @@
       margin-top: 20px;
     }
 
-    /* スクロールボタンのスタイル */
-    .scroll-buttons {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 9999;
+    /* 列切り替えボタンのスタイル */
+    .column-buttons {
       display: flex;
-      flex-direction: column;
       gap: 10px;
+      flex-shrink: 0;
     }
 
-    .scroll-button {
+    .column-button {
       background-color: #444;
       color: #fff;
       border: none;
       padding: 8px 16px;
-      font-size: 20px;
+      font-size: 16px;
       cursor: pointer;
       border-radius: 4px;
+      white-space: nowrap;
     }
 
-    .scroll-button:hover {
+    .column-button:hover {
       background-color: #666;
+    }
+
+    .column-button.active {
+      background-color: #2A99E6;
+    }
+
+    /* ２列表示のスタイル */
+    .attributes-container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .attributes-container.two-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 0px;
+      row-gap: 0px;
+      max-width: 650px;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(13, auto);
+    }
+
+    .attributes-container.two-columns .line:nth-child(n+14) {
+      margin-left: 20px;
+    }
+
+    .attributes-container.two-columns .line {
+      margin-bottom: 8px;
+    }
+
+    .column-button {
+      padding: 6px 12px;
+      font-size: 14px;
     }
 
     /* ハンバーガーメニューのスタイル */
@@ -354,7 +388,7 @@
 
       sideMenu.classList.remove('open');
       menuOverlay.classList.remove('open');
-      menuClose.style.color = '#eee';
+      if (menuClose) menuClose.style.color = '#eee';
     }
 
     // フリックでメニュー開閉
@@ -382,6 +416,23 @@
           // 左にフリック
           closeMenu();
         }
+      }
+    }
+
+    // 列切り替え機能
+    function setColumns(columns) {
+      const container = document.querySelector('.attributes-container');
+      const oneBtn = document.getElementById('oneColumnBtn');
+      const twoBtn = document.getElementById('twoColumnsBtn');
+      
+      if (columns === 1) {
+        container.classList.remove('two-columns');
+        oneBtn.classList.add('active');
+        twoBtn.classList.remove('active');
+      } else {
+        container.classList.add('two-columns');
+        oneBtn.classList.remove('active');
+        twoBtn.classList.add('active');
       }
     }
 
@@ -424,11 +475,27 @@
 
       groups.forEach(group => {
         const groupTitle = document.createElement('div');
-        groupTitle.textContent = group.title;
         groupTitle.className = `group-title ${group.color}`;
         groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
+        
+        const titleText = document.createElement('span');
+        titleText.textContent = group.title;
+        
+        const columnButtons = document.createElement('div');
+        columnButtons.className = 'column-buttons';
+        columnButtons.innerHTML = `
+          <button class="column-button" id="oneColumnBtn" onclick="setColumns(1)">１列</button>
+          <button class="column-button active" id="twoColumnsBtn" onclick="setColumns(2)">２列</button>
+        `;
+        
+        groupTitle.appendChild(titleText);
+        groupTitle.appendChild(columnButtons);
         container.appendChild(groupTitle);
 
+        // attributes用のコンテナを作成
+        const attributesContainer = document.createElement('div');
+        attributesContainer.className = 'attributes-container two-columns'; // デフォルトは２列
+        
         attributes.forEach(attr => {
           const line = document.createElement('div');
           line.className = 'line';
@@ -460,8 +527,10 @@
 
           line.appendChild(name);
           line.appendChild(stars);
-          container.appendChild(line);
+          attributesContainer.appendChild(line);
         });
+
+        container.appendChild(attributesContainer);
 
         // グループごとのエクスポートボタン
         const exportBtn = document.createElement('button');
@@ -469,34 +538,6 @@
         exportBtn.style.marginTop = '15px';
         exportBtn.addEventListener('click', exportState);
         container.appendChild(exportBtn);
-
-        container.appendChild(exportBtn);
-      });
-
-      setupScrollButtons();
-    }
-
-    function setupScrollButtons() {
-      const groupTitles = document.querySelectorAll('.group-title');
-      let currentGroupIndex = 0;
-
-      function scrollToGroup(index) {
-        if (index >= 0 && index < groupTitles.length) {
-          groupTitles[index].scrollIntoView({ behavior: 'instant', block: 'start' });
-          currentGroupIndex = index;
-        }
-      }
-
-      document.getElementById('scrollDown').addEventListener('click', () => {
-        if (currentGroupIndex < groupTitles.length - 1) {
-          scrollToGroup(currentGroupIndex + 1);
-        }
-      });
-
-      document.getElementById('scrollUp').addEventListener('click', () => {
-        if (currentGroupIndex > 0) {
-          scrollToGroup(currentGroupIndex - 1);
-        }
       });
     }
 
