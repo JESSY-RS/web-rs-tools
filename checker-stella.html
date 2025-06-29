@@ -484,8 +484,8 @@
         const columnButtons = document.createElement('div');
         columnButtons.className = 'column-buttons';
         columnButtons.innerHTML = `
-          <button class="column-button" id="oneColumnBtn" onclick="setColumns(1)">１列</button>
-          <button class="column-button active" id="twoColumnsBtn" onclick="setColumns(2)">２列</button>
+          <button class="column-button active" id="oneColumnBtn" onclick="setColumns(1)">１列</button>
+          <button class="column-button" id="twoColumnsBtn" onclick="setColumns(2)">２列</button>
         `;
         
         groupTitle.appendChild(titleText);
@@ -494,7 +494,7 @@
 
         // attributes用のコンテナを作成
         const attributesContainer = document.createElement('div');
-        attributesContainer.className = 'attributes-container two-columns'; // デフォルトは２列
+        attributesContainer.className = 'attributes-container'; // デフォルトは１列
         
         attributes.forEach(attr => {
           const line = document.createElement('div');
