@@ -24,8 +24,14 @@
 
     .group-title {
       font-size: 26px;
-      margin-top: 50px;
+      margin-top: 40px;
       margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      row-gap: 10px;
+      column-gap: 20px;
+      flex-wrap: wrap;
+      min-width: 0; /* flex-shrinkを有効にするため */
     }
 
     .stars {
@@ -141,6 +147,40 @@
       background-color: #666;
     }
 
+    /* 拡大縮小ボタンのスタイル */
+    .zoom-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      flex-shrink: 0;
+      margin-right: -5px;
+    }
+
+    .zoom-buttons button {
+      color: #000;
+      background-color: #eee;
+      padding: 6px 12px;
+      font-size: 14px;
+      height: 32px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: none;
+      box-sizing: border-box;
+    }
+
+    .zoom-buttons button:hover {
+      background-color: #ccc;
+    }
+
+    .zoom-controls {
+      display: none;
+    }
+
+    .zoom-controls.show {
+      display: flex;
+      gap: 8px;
+    }
+
     /* ハンバーガーメニューのスタイル */
     .hamburger {
       font-size: 28px;
@@ -161,34 +201,30 @@
       top: 0;
       left: -300px;
       width: 300px;
-      height: 100vh;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
       background-color: #242424;
       border-right: 1px solid #555;
       transition: left 0.3s ease;
       z-index: 1000;
       padding: 20px;
       box-sizing: border-box;
+      overflow-y: auto;
     }
 
     .side-menu.open {
       left: 0;
     }
 
-    .marker {
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-
-    .marker:hover {
-      color: #eee;
-    }
-
     .menu-overlay {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
       background-color: rgba(0, 0, 0, 0.5);
       z-index: 999;
       opacity: 0;
@@ -244,6 +280,16 @@
       height: 30px;
     }
 
+    .marker {
+margin-right: -20px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .marker:hover {
+      color: #eee;
+    }
+
   </style>
 
 </head>
@@ -269,7 +315,6 @@
     <a href="#瑠璃紺Anchor" class="menu-item" onclick="closeMenu()">◆瑠璃紺のピアス</a><br>
     <div class="menu-spacer"></div>
     <a href="index.html" class="menu-item">インデックスページ</a><br>
-    <div class="menu-spacer"></div>
   </div>
 
   <!-- ハンバーガーメニューとヘッダー -->
@@ -354,6 +399,32 @@
       }
     }
 
+    // 拡大縮小の関数
+    let zoomLevel = 1;
+    let zoomControlsVisible = false;
+
+    function toggleZoomControls() {
+      const zoomControls = document.getElementById('zoomControls');
+      const zoomToggle = document.getElementById('zoomToggle');
+      
+      zoomControlsVisible = !zoomControlsVisible;
+      
+      if (zoomControlsVisible) {
+        zoomControls.classList.add('show');
+        zoomToggle.style.display = 'none';
+      } else {
+        zoomControls.classList.remove('show');
+        zoomToggle.style.display = 'block';
+      }
+    }
+
+    function changeZoom(delta) {
+      zoomLevel += delta;
+      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
+      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
+      document.body.style.zoom = zoomLevel;
+    }
+
     const groups = [
       { title: "◆緋のピアス", color: "緋" },
       { title: "◆憲法のピアス", color: "憲" },
@@ -393,9 +464,20 @@
 
         // ◆以外のテキスト
         const titleText = document.createTextNode(group.title.replace('◆', ''));
-    
+
+        const zoomButtons = document.createElement('div');
+        zoomButtons.className = 'zoom-buttons';
+        zoomButtons.innerHTML = `
+          <button id="zoomToggle" onclick="toggleZoomControls()">±</button>
+          <div id="zoomControls" class="zoom-controls">
+            <button onclick="changeZoom(-0.1)">－</button>
+            <button onclick="changeZoom(0.1)">＋</button>
+          </div>
+        `;
+
         groupTitle.appendChild(markerSpan);
         groupTitle.appendChild(titleText);
+        groupTitle.appendChild(zoomButtons);
         container.appendChild(groupTitle);
     
         attributes.forEach(attr => {
