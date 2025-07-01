@@ -281,7 +281,7 @@
     }
 
     .marker {
-margin-right: -20px;
+      margin-right: -20px;
       cursor: pointer;
       transition: color 0.2s;
     }
@@ -368,7 +368,6 @@ margin-right: -20px;
 
       sideMenu.classList.remove('open');
       menuOverlay.classList.remove('open');
-      menuClose.style.color = '#eee';
     }
 
     // フリックでメニュー開閉
@@ -401,20 +400,18 @@ margin-right: -20px;
 
     // 拡大縮小の関数
     let zoomLevel = 1;
-    let zoomControlsVisible = false;
 
-    function toggleZoomControls() {
-      const zoomControls = document.getElementById('zoomControls');
-      const zoomToggle = document.getElementById('zoomToggle');
+    function toggleZoomControls(buttonElement) {
+      const zoomButtons = buttonElement.parentElement;
+      const zoomToggle = zoomButtons.querySelector('.zoom-toggle');
+      const zoomControls = zoomButtons.querySelector('.zoom-controls');
       
-      zoomControlsVisible = !zoomControlsVisible;
-      
-      if (zoomControlsVisible) {
-        zoomControls.classList.add('show');
-        zoomToggle.style.display = 'none';
-      } else {
+      if (zoomControls.classList.contains('show')) {
         zoomControls.classList.remove('show');
         zoomToggle.style.display = 'block';
+      } else {
+        zoomControls.classList.add('show');
+        zoomToggle.style.display = 'none';
       }
     }
 
@@ -448,7 +445,7 @@ margin-right: -20px;
       const container = document.getElementById('statusContainer');
       container.innerHTML = '';
     
-      groups.forEach(group => {
+      groups.forEach((group, groupIndex) => {
         const groupTitle = document.createElement('div');
         groupTitle.className = `group-title ${group.color}`;
         groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
@@ -468,8 +465,8 @@ margin-right: -20px;
         const zoomButtons = document.createElement('div');
         zoomButtons.className = 'zoom-buttons';
         zoomButtons.innerHTML = `
-          <button id="zoomToggle" onclick="toggleZoomControls()">±</button>
-          <div id="zoomControls" class="zoom-controls">
+          <button class="zoom-toggle" onclick="toggleZoomControls(this)">±</button>
+          <div class="zoom-controls">
             <button onclick="changeZoom(-0.1)">－</button>
             <button onclick="changeZoom(0.1)">＋</button>
           </div>
@@ -587,7 +584,6 @@ margin-right: -20px;
               }
             }
           }
-          //alert('状態を読み込みました。');
         } catch (error) {
           alert('ファイルの内容が不正です。');
         }
