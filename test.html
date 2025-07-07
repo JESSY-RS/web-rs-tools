@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>防具組み合わせ分析ツール</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const ArmorCombinationAnalyzer = () => {
+          const [mainArmor, setMainArmor] = useState([]);
+          const [subArmor, setSubArmor] = useState([]);
+          const [decorations, setDecorations] = useState([]);
+          const [combinations, setCombinations] = useState([]);
+          const [loading, setLoading] = useState(true);
+          const [error, setError] = useState('');
+          
+          // データファイルのパス設定
+          const dataFiles = {
+            mainArmor: './data/main_armor.csv',
+            subArmor: './data/sub_armor.csv',
+            decorations: './data/decorations.csv'
+          };
+          
+          // 8種類の属性の最小値条件
+          const [conditions, setConditions] = useState({
+            斬: 0,
+            打: 0,
+            突: 0,
+            熱: 0,
+            冷: 0,
+            雷: 0,
+            陽: 0,
+            陰: 0
+          });
+
+          useEffect(() => {
+            loadData();
+          }, []);
+
+          const loadCSVFile = async (url) => {
+            try {
+              const response = await fetch(url);
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              const text = await response.text();
+              const parsed = Papa.parse(text, { 
+                header: true, 
+                skipEmptyLines: true,
+                dynamicTyping: true,
+                transformHeader: (header) => header.trim() // ヘッダーの空白を除去
+              });
+              
+              if (parsed.errors.length > 0) {
+                console.warn(`CSV parsing warnings for ${url}:`, parsed.errors);
+              }
+              
+              return parsed.data;
+            } catch (error) {
+              throw new Error(`Failed to load ${url}: ${error.message}`);
+            }
+          };
+
+          const loadData = async () => {
+            setLoading(true);
+            setError('');
+            try {
+              // 並列でCSVファイルを読み込み
+              const [mainArmorData, subArmorData, decorationData] = await Promise.all([
+                loadCSVFile(dataFiles.mainArmor),
+                loadCSVFile(dataFiles.subArmor),
+                loadCSVFile(dataFiles.decorations)
+              ]);
+              
+              setMainArmor(mainArmorData);
+              setSubArmor(subArmorData);
+              setDecorations(decorationData);
+              
+              console.log('データ読み込み完了:', {
+                mainArmor: mainArmorData.length,
+                subArmor: subArmorData.length,
+                decorations: decorationData.length
+              });
+              
+            } catch (error) {
+              setError(`データの読み込みエラー: ${error.message}`);
+              console.error('Load error:', error);
+            } finally {
+              setLoading(false);
+            }
+          };
+
+          const calculateCombinations = () => {
+            if (mainArmor.length === 0 || subArmor.length === 0 || decorations.length === 0) {
+              return;
+            }
+
+            const results = [];
+            const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
+            
+            // 全ての組み合わせを計算
+            mainArmor.forEach(main => {
+              subArmor.forEach(sub => {
+                decorations.forEach(decoration => {
+                  const totals = {};
+                  let meetsConditions = true;
+                  
+                  // 各属性の合計値を計算
+                  attributes.forEach(attr => {
+                    const mainValue = parseInt(main[attr] || 0);
+                    const subValue = parseInt(sub[attr] || 0);
+                    const decorationValue = parseInt(decoration[attr] || 0);
+                    
+                    totals[attr] = mainValue + subValue + decorationValue;
+                    
+                    // 条件チェック
+                    if (totals[attr] < conditions[attr]) {
+                      meetsConditions = false;
+                    }
+                  });
+                  
+                  if (meetsConditions) {
+                    results.push({
+                      mainArmor: main['名称'] || main[Object.keys(main)[0]],
+                      subArmor: sub['名称'] || sub[Object.keys(sub)[0]],
+                      decoration: decoration['名称'] || decoration[Object.keys(decoration)[0]],
+                      totals
+                    });
+                  }
+                });
+              });
+            });
+
+            // 斬属性の高い順にソート
+            results.sort((a, b) => b.totals['斬'] - a.totals['斬']);
+            setCombinations(results);
+          };
+
+          useEffect(() => {
+            if (!loading && mainArmor.length > 0) {
+              calculateCombinations();
+            }
+          }, [mainArmor, subArmor, decorations, conditions, loading]);
+
+          const handleConditionChange = (attr, value) => {
+            setConditions(prev => ({
+              ...prev,
+              [attr]: parseInt(value) || 0
+            }));
+          };
+
+          const resetConditions = () => {
+            setConditions({
+              斬: 0,
+              打: 0,
+              突: 0,
+              熱: 0,
+              冷: 0,
+              雷: 0,
+              陽: 0,
+              陰: 0
+            });
+          };
+
+          const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
+
+          return (
+            <div className="max-w-7xl mx-auto p-6">
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h1 className="text-2xl font-bold mb-6 text-gray-800">防具組み合わせ分析ツール</h1>
+                
+                {/* 読み込み状態の表示 */}
+                {loading && (
+                  <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                      <span className="text-blue-600">データを読み込み中...</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* エラー表示 */}
+                {error && (
+                  <div className="mb-6 p-4 bg-red-50 rounded-lg">
+                    <div className="text-red-600 mb-2">{error}</div>
+                    <div className="text-sm text-red-500 mb-3">
+                      以下のファイルが必要です：
+                      <ul className="list-disc list-inside mt-1 ml-4">
+                        <li>./data/main_armor.csv（主防具データ）</li>
+                        <li>./data/sub_armor.csv（副防具データ）</li>
+                        <li>./data/decorations.csv（装飾品データ）</li>
+                      </ul>
+                    </div>
+                    <button
+                      onClick={loadData}
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition-colors"
+                    >
+                      再試行
+                    </button>
+                  </div>
+                )}
+
+                {/* 条件設定 */}
+                {!loading && !error && (
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-semibold">条件設定</h2>
+                      <button
+                        onClick={resetConditions}
+                        className="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded transition-colors"
+                      >
+                        リセット
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {attributes.map(attr => (
+                        <div key={attr} className="flex items-center gap-2">
+                          <label className="font-medium w-8">{attr}:</label>
+                          <input
+                            type="number"
+                            value={conditions[attr]}
+                            onChange={(e) => handleConditionChange(attr, e.target.value)}
+                            className="border border-gray-300 rounded px-2 py-1 w-16 text-center"
+                            min="0"
+                          />
+                          <span className="text-sm text-gray-600">以上</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 統計情報 */}
+                {mainArmor.length > 0 && (
+                  <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <div className="text-sm text-blue-600">主防具</div>
+                      <div className="text-xl font-bold text-blue-800">{mainArmor.length}</div>
+                    </div>
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <div className="text-sm text-green-600">副防具</div>
+                      <div className="text-xl font-bold text-green-800">{subArmor.length}</div>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded-lg">
+                      <div className="text-sm text-purple-600">装飾品</div>
+                      <div className="text-xl font-bold text-purple-800">{decorations.length}</div>
+                    </div>
+                    <div className="bg-red-50 p-3 rounded-lg">
+                      <div className="text-sm text-red-600">適合組み合わせ</div>
+                      <div className="text-xl font-bold text-red-800">{combinations.length}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 結果表示 */}
+                {mainArmor.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <h2 className="text-lg font-semibold mb-4">
+                      条件を満たす組み合わせ ({combinations.length}件)
+                    </h2>
+                    
+                    {combinations.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        条件を満たす組み合わせが見つかりませんでした。
+                      </div>
+                    ) : (
+                      <table className="min-w-full bg-white border border-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">主防具</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">副防具</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">装飾品</th>
+                            {attributes.map(attr => (
+                              <th key={attr} className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                                {attr}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {combinations.slice(0, 100).map((combo, index) => (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-4 py-2 text-sm text-gray-900">{combo.mainArmor}</td>
+                              <td className="px-4 py-2 text-sm text-gray-900">{combo.subArmor}</td>
+                              <td className="px-4 py-2 text-sm text-gray-900">{combo.decoration}</td>
+                              {attributes.map(attr => (
+                                <td key={attr} className={`px-4 py-2 text-sm text-center ${
+                                  combo.totals[attr] >= conditions[attr] ? 'text-green-600 font-medium' : 'text-gray-500'
+                                }`}>
+                                  {combo.totals[attr]}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                    
+                    {combinations.length > 100 && (
+                      <div className="mt-4 text-sm text-gray-600 text-center">
+                        上位100件を表示しています。全{combinations.length}件の組み合わせがあります。
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<ArmorCombinationAnalyzer />, document.getElementById('root'));
+    </script>
+</body>
+</html>
