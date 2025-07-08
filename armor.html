@@ -243,9 +243,9 @@
               const statusAilmentSetting = statusAilmentSettings[characterName];
               
               // 全ての組み合わせを計算
-              mainList.forEach(main => {
-                subArmor.forEach(sub => {
-                  decorations.forEach(decoration => {
+            mainList.forEach(main => {
+              subList.forEach(sub => {
+                decoList.forEach(decoration => {
                     const totals = {};
                     let meetsConditions = true;
                     
@@ -458,7 +458,7 @@
           return (
             <div className="max-w-7xl mx-auto p-6">
               <div className="bg-white rounded-lg shadow-lg p-6">
-                <h1 className="text-2xl font-bold mb-6 text-gray-800">装備候補検索ツール ver.2025/07/08</h1>
+                <h1 className="text-2xl font-bold mb-6 text-gray-800">装備候補検索ツール ver.2025/07/08　</h1>※使用は自己責任にて。
                 
                 {/* 読み込み状態の表示 */}
                 {loading && (
