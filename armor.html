@@ -13,6 +13,16 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
+
+    /* フッターのスタイル */
+    footer {
+      border-top: 1px solid #eee;
+color: #888;
+      font-size: 12pt;
+
+      margin: -20px 30px 30px 30px;
+    }
+
     </style>
 </head>
 <body>
@@ -713,7 +723,7 @@ const handlePresetSelect = (presetName) => {
       </div>
     </div>
     
-    <div className="grid grid-cols-2 md:grid-cols-8 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-4">
       {attributes.map(attr => (
         <div key={attr} className="flex items-center gap-2">
           <label className="font-medium w-8 text-blue-700">{attr}:</label>
@@ -972,7 +982,7 @@ onFocus={(e) => e.target.select()}
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-8 gap-4 mb-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-4">
                         {attributes.map(attr => (
                           <div key={attr} className="flex items-center gap-2">
                             <label className={`font-medium w-8 ${characterColors[activeTab].text}`}>{attr}:</label>
@@ -1213,5 +1223,10 @@ onFocus={(e) => e.target.select()}
         };
         ReactDOM.render(<ArmorCombinationAnalyzer />, document.getElementById('root'));
     </script>
+
+  <footer>
+    ※使用は自己責任にて。<br>
+  </footer>
+
 </body>
 </html>
