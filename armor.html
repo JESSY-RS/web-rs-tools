@@ -823,7 +823,7 @@ onFocus={(e) => e.target.select()}
                         <select
                           value={selectedCharacters[activeTab]}
                           onChange={(e) => handleCharacterSelect(activeTab, e.target.value)}
-                          className={`flex-1 border rounded px-3 py-2 ${
+                          className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
                             selectedCharacters[activeTab] === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
                           }`}
                         >
@@ -912,7 +912,7 @@ onFocus={(e) => e.target.select()}
                                 [activeTab]: { ...prev[activeTab], main: e.target.value }
                               }))
                             }
-                            className={`w-full border rounded px-3 py-2 ${
+                            className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
                               fixedEquipments[activeTab].main === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
                             }`}
                           >
@@ -932,7 +932,7 @@ onFocus={(e) => e.target.select()}
                                 [activeTab]: { ...prev[activeTab], sub: e.target.value }
                               }))
                             }
-                            className={`w-full border rounded px-3 py-2 ${
+                            className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
                               fixedEquipments[activeTab].sub === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
                             }`}
                           >
@@ -952,7 +952,7 @@ onFocus={(e) => e.target.select()}
                                 [activeTab]: { ...prev[activeTab], deco: e.target.value }
                               }))
                             }
-                            className={`w-full border rounded px-3 py-2 ${
+                            className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
                               fixedEquipments[activeTab].deco === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
                             }`}
                           >
@@ -993,7 +993,7 @@ onFocus={(e) => e.target.select()}
                                 ...prev,
                                 [activeTab]: { ...prev[activeTab], priority1: e.target.value }
                               }))}
-                              className={`flex-1 border rounded px-3 py-2 text-sm ${
+                              className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] text-sm ${
                                 sortSettings[activeTab].priority1 === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
                               }`}
                             >
@@ -1008,7 +1008,7 @@ onFocus={(e) => e.target.select()}
                                 ...prev,
                                 [activeTab]: { ...prev[activeTab], order1: e.target.value }
                               }))}
-                              className="w-20 border border-green-300 rounded px-3 py-2 text-sm"
+                              className="w-20 border border-green-300 rounded px-3 py-2 h-10 min-h-[2.5rem] text-sm"
                               className={`w-20 border rounded px-3 py-2 text-sm ${
                                 sortSettings[activeTab].priority1 === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
                               }`}
@@ -1026,7 +1026,7 @@ onFocus={(e) => e.target.select()}
                                 ...prev,
                                 [activeTab]: { ...prev[activeTab], priority2: e.target.value }
                               }))}
-                              className={`flex-1 border rounded px-3 py-2 text-sm ${
+                              className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] text-sm ${
                                 sortSettings[activeTab].priority2 === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
                               }`}
                             >
@@ -1041,7 +1041,7 @@ onFocus={(e) => e.target.select()}
                                 ...prev,
                                 [activeTab]: { ...prev[activeTab], order2: e.target.value }
                               }))}
-                              className={`w-20 border rounded px-3 py-2 text-sm ${
+                              className={`w-20 border rounded px-3 py-2 h-10 min-h-[2.5rem] text-sm ${
                                 sortSettings[activeTab].priority2 === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
                               }`}
                             >
@@ -1059,7 +1059,7 @@ onFocus={(e) => e.target.select()}
                                 ...prev,
                                 [activeTab]: { ...prev[activeTab], priority3: e.target.value }
                               }))}
-                              className={`flex-1 border rounded px-3 py-2 text-sm ${
+                              className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] text-sm ${
                                 sortSettings[activeTab].priority3 === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
                               }`}
                             >
@@ -1074,7 +1074,7 @@ onFocus={(e) => e.target.select()}
                                 ...prev,
                                 [activeTab]: { ...prev[activeTab], order3: e.target.value }
                               }))}
-                              className={`w-20 border rounded px-3 py-2 text-sm ${
+                              className={`w-20 border rounded px-3 py-2 h-10 min-h-[2.5rem] text-sm ${
                                 sortSettings[activeTab].priority3 === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
                               }`}
                             >
