@@ -124,109 +124,105 @@
             陰: 0
           });
 
-const [excludeSettings, setExcludeSettings] = useState({
-  main: [],
-  sub: [],
-  deco: [],
-  showMain: false,
-  showSub: false,
-  showDeco: false
-});
+          const [excludeSettings, setExcludeSettings] = useState({
+            main: [],
+            sub: [],
+            deco: [],
+            showMain: false,
+            showSub: false,
+            showDeco: false
+          });
+          
+          const excludeDropdownRefs = useRef({
+            main: null,
+            sub: null,
+            deco: null
+          });
+          
+          const [excludeSaving, setExcludeSaving] = useState({
+            main: false,
+            sub: false,
+            deco: false
+          });
+          
+          const [excludeDeleting, setExcludeDeleting] = useState({
+            main: false,
+            sub: false,
+            deco: false
+          });
+          
+          const saveExcludeProfile = (type) => {
+            let key = '';
+            let data = [];
+            let category = '';
+          
+            if (type === '主防具') {
+              key = 'exclude_main';
+              data = [...excludeSettings.main];
+              category = 'main';
+            } else if (type === '副防具') {
+              key = 'exclude_sub';
+              data = [...excludeSettings.sub];
+              category = 'sub';
+            } else if (type === '装飾品') {
+              key = 'exclude_deco';
+              data = [...excludeSettings.deco];
+              category = 'deco';
+            }
+          
+            setExcludeSaving(prev => ({ ...prev, [category]: true }));
+          
+            try {
+              localStorage.setItem(key, JSON.stringify(data));
+              //alert(`${type}除外設定を保存しました`);
+            } catch (e) {
+              //alert(`${type}除外設定の保存に失敗しました`);
+            } finally {
+              setTimeout(() => {
+                setExcludeSaving(prev => ({ ...prev, [category]: false }));
+              }, 800); // 0.8秒後に元に戻す
+            }
+          };
 
-const excludeDropdownRefs = useRef({
-  main: null,
-  sub: null,
-  deco: null
-});
-
-const [excludeSaving, setExcludeSaving] = useState({
-  main: false,
-  sub: false,
-  deco: false
-});
-
-const [excludeDeleting, setExcludeDeleting] = useState({
-  main: false,
-  sub: false,
-  deco: false
-});
-
-
-const saveExcludeProfile = (type) => {
-  let key = '';
-  let data = [];
-  let category = '';
-
-  if (type === '主防具') {
-    key = 'exclude_main';
-    data = [...excludeSettings.main];
-    category = 'main';
-  } else if (type === '副防具') {
-    key = 'exclude_sub';
-    data = [...excludeSettings.sub];
-    category = 'sub';
-  } else if (type === '装飾品') {
-    key = 'exclude_deco';
-    data = [...excludeSettings.deco];
-    category = 'deco';
-  }
-
-  setExcludeSaving(prev => ({ ...prev, [category]: true }));
-
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-    //alert(`${type}除外設定を保存しました`);
-  } catch (e) {
-    //alert(`${type}除外設定の保存に失敗しました`);
-  } finally {
-    setTimeout(() => {
-      setExcludeSaving(prev => ({ ...prev, [category]: false }));
-    }, 800); // 0.8秒後に元に戻す
-  }
-};
-
-
-// 除外設定の削除
-const deleteExcludeProfile = (type) => {
-  let key = '';
-  let category = '';
-
-  if (type === '主防具') {
-    key = 'exclude_main';
-    category = 'main';
-  } else if (type === '副防具') {
-    key = 'exclude_sub';
-    category = 'sub';
-  } else if (type === '装飾品') {
-    key = 'exclude_deco';
-    category = 'deco';
-  }
-
-  // ボタンをグレーに
-  setExcludeDeleting(prev => ({ ...prev, [category]: true }));
-
-  // UI の表示だけ初期化（プルダウンの開閉は維持）
-  setExcludeSettings(prev => ({
-    ...prev,
-    [category]: []
-  }));
-
-  // プロファイルから完全削除
-  try {
-    localStorage.removeItem(key);
-    //alert(`${type}除外設定を削除しました`);
-  } catch (e) {
-    console.error(`${type}除外設定の削除に失敗`, e);
-    //alert(`${type}除外設定の削除に失敗しました`);
-  } finally {
-    // 一定時間後にボタンを元に戻す
-    setTimeout(() => {
-      setExcludeDeleting(prev => ({ ...prev, [category]: false }));
-    }, 800); // 0.8秒後
-  }
-};
-
-
+          // 除外設定の削除
+          const deleteExcludeProfile = (type) => {
+            let key = '';
+            let category = '';
+          
+            if (type === '主防具') {
+              key = 'exclude_main';
+              category = 'main';
+            } else if (type === '副防具') {
+              key = 'exclude_sub';
+              category = 'sub';
+            } else if (type === '装飾品') {
+              key = 'exclude_deco';
+              category = 'deco';
+            }
+          
+            // ボタンをグレーに
+            setExcludeDeleting(prev => ({ ...prev, [category]: true }));
+          
+            // UI の表示だけ初期化（プルダウンの開閉は維持）
+            setExcludeSettings(prev => ({
+              ...prev,
+              [category]: []
+            }));
+          
+            // プロファイルから完全削除
+            try {
+              localStorage.removeItem(key);
+              //alert(`${type}除外設定を削除しました`);
+            } catch (e) {
+              console.error(`${type}除外設定の削除に失敗`, e);
+              //alert(`${type}除外設定の削除に失敗しました`);
+            } finally {
+              // 一定時間後にボタンを元に戻す
+              setTimeout(() => {
+                setExcludeDeleting(prev => ({ ...prev, [category]: false }));
+              }, 800); // 0.8秒後
+            }
+          };
 
           // コンポーネントの状態管理に追加
           const [profileName, setProfileName] = useState('');
@@ -252,38 +248,37 @@ const deleteExcludeProfile = (type) => {
           };
           
           // プロファイル削除機能
-const handleDeleteProfile = () => {
-  const trimmedName = profileName.trim();
-  if (!trimmedName) return;
-
-  if (!savedProfiles[trimmedName]) {
-    return;
-  }
-
-  const updatedProfiles = { ...savedProfiles };
-  delete updatedProfiles[trimmedName];
-
-  // 空のキーが残っている場合も削除（念のため）
-  if (updatedProfiles[""]) {
-    delete updatedProfiles[""];
-  }
-
-  // localStorageに空でないときだけ保存、それ以外は削除
-  if (Object.keys(updatedProfiles).length > 0) {
-    localStorage.setItem('profiles', JSON.stringify(updatedProfiles));
-  } else {
-    localStorage.removeItem('profiles');
-  }
-
-  setSavedProfiles(updatedProfiles);
-  setProfileName('');
-
-  if (selectedPreset === trimmedName) {
-    setSelectedPreset('');
-  }
-};
-
+          const handleDeleteProfile = () => {
+            const trimmedName = profileName.trim();
+            if (!trimmedName) return;
           
+            if (!savedProfiles[trimmedName]) {
+              return;
+            }
+          
+            const updatedProfiles = { ...savedProfiles };
+            delete updatedProfiles[trimmedName];
+          
+            // 空のキーが残っている場合も削除（念のため）
+            if (updatedProfiles[""]) {
+              delete updatedProfiles[""];
+            }
+          
+            // localStorageに空でないときだけ保存、それ以外は削除
+            if (Object.keys(updatedProfiles).length > 0) {
+              localStorage.setItem('profiles', JSON.stringify(updatedProfiles));
+            } else {
+              localStorage.removeItem('profiles');
+            }
+          
+            setSavedProfiles(updatedProfiles);
+            setProfileName('');
+          
+            if (selectedPreset === trimmedName) {
+              setSelectedPreset('');
+            }
+          };
+
           // 既存のhandlePresetSelect関数を拡張
           const handlePresetSelect = (presetName) => {
             if (presetName === "All Resist") {
@@ -306,6 +301,15 @@ const handleDeleteProfile = () => {
             'キャラ３': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
             'キャラ４': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
             'キャラ５': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 }
+          });
+
+          // 各キャラの目標値個別修正設定
+          const [characterAdjustmentValues, setCharacterAdjustmentValues] = useState({
+            'キャラ１': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
+            'キャラ２': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
+            'キャラ３': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
+            'キャラ４': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
+            'キャラ５': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
           });
 
           // ソート設定の状態管理
@@ -378,73 +382,70 @@ const handleDeleteProfile = () => {
             loadData();
           }, []);
 
+          useEffect(() => {
+            const main = JSON.parse(localStorage.getItem('exclude_main') || '[]');
+            const sub = JSON.parse(localStorage.getItem('exclude_sub') || '[]');
+            const deco = JSON.parse(localStorage.getItem('exclude_deco') || '[]');
+          
+            setExcludeSettings(prev => ({
+              ...prev,
+              main,
+              sub,
+              deco
+            }));
+          }, []);
 
-
-useEffect(() => {
-  const main = JSON.parse(localStorage.getItem('exclude_main') || '[]');
-  const sub = JSON.parse(localStorage.getItem('exclude_sub') || '[]');
-  const deco = JSON.parse(localStorage.getItem('exclude_deco') || '[]');
-
-  setExcludeSettings(prev => ({
-    ...prev,
-    main,
-    sub,
-    deco
-  }));
-}, []);
-
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    // 状態異常耐性のドロップダウン
-    if (
-      statusAilmentSettings[activeTab].showDropdown &&
-      dropdownRefs.current[activeTab] &&
-      !dropdownRefs.current[activeTab].contains(event.target)
-    ) {
-      setStatusAilmentSettings(prev => ({
-        ...prev,
-        [activeTab]: {
-          ...prev[activeTab],
-          showDropdown: false
-        }
-      }));
-    }
-
-    // 主防具
-    if (
-      excludeSettings.showMain &&
-      excludeDropdownRefs.current.main &&
-      !excludeDropdownRefs.current.main.contains(event.target)
-    ) {
-      setExcludeSettings(prev => ({ ...prev, showMain: false }));
-    }
-
-    // 副防具
-    if (
-      excludeSettings.showsub &&
-      excludeDropdownRefs.current.sub &&
-      !excludeDropdownRefs.current.sub.contains(event.target)
-    ) {
-      setExcludeSettings(prev => ({ ...prev, showsub: false }));
-    }
-
-    // 装飾品
-    if (
-      excludeSettings.showdeco &&
-      excludeDropdownRefs.current.deco &&
-      !excludeDropdownRefs.current.deco.contains(event.target)
-    ) {
-      setExcludeSettings(prev => ({ ...prev, showdeco: false }));
-    }
-  };
-
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, [activeTab, statusAilmentSettings, excludeSettings]);
-
-
+          useEffect(() => {
+            const handleClickOutside = (event) => {
+              // 状態異常耐性のドロップダウン
+              if (
+                statusAilmentSettings[activeTab].showDropdown &&
+                dropdownRefs.current[activeTab] &&
+                !dropdownRefs.current[activeTab].contains(event.target)
+              ) {
+                setStatusAilmentSettings(prev => ({
+                  ...prev,
+                  [activeTab]: {
+                    ...prev[activeTab],
+                    showDropdown: false
+                  }
+                }));
+              }
+          
+              // 主防具
+              if (
+                excludeSettings.showMain &&
+                excludeDropdownRefs.current.main &&
+                !excludeDropdownRefs.current.main.contains(event.target)
+              ) {
+                setExcludeSettings(prev => ({ ...prev, showMain: false }));
+              }
+          
+              // 副防具
+              if (
+                excludeSettings.showsub &&
+                excludeDropdownRefs.current.sub &&
+                !excludeDropdownRefs.current.sub.contains(event.target)
+              ) {
+                setExcludeSettings(prev => ({ ...prev, showsub: false }));
+              }
+          
+              // 装飾品
+              if (
+                excludeSettings.showdeco &&
+                excludeDropdownRefs.current.deco &&
+                !excludeDropdownRefs.current.deco.contains(event.target)
+              ) {
+                setExcludeSettings(prev => ({ ...prev, showdeco: false }));
+              }
+            };
+          
+            document.addEventListener("mousedown", handleClickOutside);
+            return () => {
+              document.removeEventListener("mousedown", handleClickOutside);
+            };
+          }, [activeTab, statusAilmentSettings, excludeSettings]);
+          
           const loadCSVFile = async (url) => {
             try {
               const response = await fetch(url);
@@ -534,23 +535,23 @@ useEffect(() => {
             
             // 少し遅延を入れて検索中の表示を見えるようにする
             const fixed = fixedEquipments[characterName];
-const mainList = fixed.main 
-  ? mainArmor.filter(a => a['名称'] === fixed.main)
-  : mainArmor.filter(a => !excludeSettings.main.includes(a['名称']));
-
-const subList = fixed.sub 
-  ? subArmor.filter(a => a['名称'] === fixed.sub)
-  : subArmor.filter(a => !excludeSettings.sub.includes(a['名称']));
-
-const decoList = fixed.deco 
-  ? decorations.filter(a => a['名称'] === fixed.deco)
-  : decorations.filter(a => !excludeSettings.deco.includes(a['名称']));
-
-            setTimeout(() => {
-              const results = [];
-              const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
-              const currentCharValues = characterValues[characterName];
-              const statusAilmentSetting = statusAilmentSettings[characterName];
+              const mainList = fixed.main 
+                ? mainArmor.filter(a => a['名称'] === fixed.main)
+                : mainArmor.filter(a => !excludeSettings.main.includes(a['名称']));
+              
+              const subList = fixed.sub 
+                ? subArmor.filter(a => a['名称'] === fixed.sub)
+                : subArmor.filter(a => !excludeSettings.sub.includes(a['名称']));
+              
+              const decoList = fixed.deco 
+                ? decorations.filter(a => a['名称'] === fixed.deco)
+                : decorations.filter(a => !excludeSettings.deco.includes(a['名称']));
+              
+              setTimeout(() => {
+                const results = [];
+                const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
+                const currentCharValues = characterValues[characterName];
+                const statusAilmentSetting = statusAilmentSettings[characterName];
               
                     // 全ての組み合わせを計算
                     mainList.forEach(main => {
@@ -565,12 +566,16 @@ const decoList = fixed.deco
                       const subValue = parseInt(sub[attr] || 0);
                       const decorationValue = parseInt(decoration[attr] || 0);
                       
-                      totals[attr] = mainValue + subValue + decorationValue + currentCharValues[attr];
+                      totals[attr] = mainValue + subValue + decorationValue + currentCharValues[attr] - characterAdjustmentValues[characterName][attr];
                       
                       // 条件チェック（目標値に達しているか）
                       if (totals[attr] < targetValues[attr]) {
                         meetsConditions = false;
                       }
+
+                      // 結果の合計値を装備の合計のみで表記させるため再計算
+                      totals[attr] = mainValue + subValue + decorationValue;
+                      
                     });
                     
                     // 追加属性の合計値を計算（条件チェックなし）
@@ -657,6 +662,16 @@ const decoList = fixed.deco
 
           const handleCharacterValueChange = (characterName, attr, value) => {
             setCharacterValues(prev => ({
+              ...prev,
+              [characterName]: {
+                ...prev[characterName],
+                [attr]: parseInt(value) || 0
+              }
+            }));
+          };
+          
+          const handleAdjustmentValueChange = (characterName, attr, value) => {
+            setCharacterAdjustmentValues(prev => ({
               ...prev,
               [characterName]: {
                 ...prev[characterName],
@@ -764,59 +779,58 @@ const decoList = fixed.deco
 
           const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
 
-const [statusCopyActive, setStatusCopyActive] = useState(false);
+          const [statusCopyActive, setStatusCopyActive] = useState(false);
+          
+          // 全斬基本・全打基本・全突基本反映用関数
+          const applySelectedBaseResistanceToAll = (baseName) => {
+            const baseData = characterResistances.find(char => char['登録名'] === baseName);
+            if (!baseData) {
+              alert(`${baseName} がキャラクター選択欄に見つかりません`);
+              return;
+            }
+          
+            const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
+          
+            // 耐性値の更新
+            const newCharacterValues = { ...characterValues };
+            characterNames.forEach(charName => {
+              newCharacterValues[charName] = {};
+              attributes.forEach(attr => {
+                newCharacterValues[charName][attr] = parseInt(baseData[attr] || 0);
+              });
+            });
+            setCharacterValues(newCharacterValues);
+          
+            // キャラクター選択欄の登録名も更新（登録名で）
+            const newCharacterSelections = { ...selectedCharacters };
+            characterNames.forEach(charName => {
+              newCharacterSelections[charName] = baseName;
+            });
+            setSelectedCharacters(newCharacterSelections);
+          };
 
-// 全斬基本・全打基本・全突基本反映用関数
-const applySelectedBaseResistanceToAll = (baseName) => {
-  const baseData = characterResistances.find(char => char['登録名'] === baseName);
-  if (!baseData) {
-    alert(`${baseName} がキャラクター選択欄に見つかりません`);
-    return;
-  }
-
-  const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
-
-  // 耐性値の更新
-  const newCharacterValues = { ...characterValues };
-  characterNames.forEach(charName => {
-    newCharacterValues[charName] = {};
-    attributes.forEach(attr => {
-      newCharacterValues[charName][attr] = parseInt(baseData[attr] || 0);
-    });
-  });
-  setCharacterValues(newCharacterValues);
-
-  // キャラクター選択欄の登録名も更新（登録名で）
-  const newCharacterSelections = { ...selectedCharacters };
-  characterNames.forEach(charName => {
-    newCharacterSelections[charName] = baseName;
-  });
-  setSelectedCharacters(newCharacterSelections);
-};
-
-
-// 全状態異常反映用関数
-const copyStatusAilmentsToAll = () => {
-  const currentStatus = statusAilmentSettings[activeTab];
-
-  const newStatusSettings = { ...statusAilmentSettings };
-  characterNames.forEach(charName => {
-    if (charName !== activeTab) {
-      newStatusSettings[charName] = {
-        selectedTypes: [...currentStatus.selectedTypes],
-        value: currentStatus.value,
-        showDropdown: false
-      };
-    }
-  });
-
-  setStatusAilmentSettings(newStatusSettings);
-};
+          // 全状態異常反映用関数
+          const copyStatusAilmentsToAll = () => {
+            const currentStatus = statusAilmentSettings[activeTab];
+          
+            const newStatusSettings = { ...statusAilmentSettings };
+            characterNames.forEach(charName => {
+              if (charName !== activeTab) {
+                newStatusSettings[charName] = {
+                  selectedTypes: [...currentStatus.selectedTypes],
+                  value: currentStatus.value,
+                  showDropdown: false
+                };
+              }
+            });
+          
+            setStatusAilmentSettings(newStatusSettings);
+          };
 
           return (
             <div className="max-w-8xl mx-auto p-0">
               <div className="bg-[#fff] p-6">
-                <h1 className="text-2xl font-bold mb-6 text-gray-800">装備候補検索ツール ver.2025/07/10</h1>
+                <h1 className="text-2xl font-bold mb-6 text-gray-800">装備候補検索ツール ver.2025/07/11</h1>
                 
                 {/* 読み込み状態の表示 */}
                 {loading && (
@@ -873,27 +887,26 @@ const copyStatusAilmentsToAll = () => {
                         ))}
                       </select>
                       <div className="ml-auto">
-<button
-  onClick={() => {
-    if (window.confirm("リセットしてよろしいですか？")) {
-      setTargetValues({
-        斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0
-      });
-      setSelectedPreset("");
-
-      setExcludeSettings(prev => ({
-        ...prev,
-        main: [],
-        sub: [],
-        deco: []
-      }));
-    }
-  }}
-  className="text-sm bg-blue-200 hover:bg-blue-300 px-4 py-2 rounded transition-colors"
->
-  リセット
-</button>
-
+                        <button
+                          onClick={() => {
+                            if (window.confirm("リセットしてよろしいですか？")) {
+                              setTargetValues({
+                                斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0
+                              });
+                              setSelectedPreset("");
+                        
+                              setExcludeSettings(prev => ({
+                                ...prev,
+                                main: [],
+                                sub: [],
+                                deco: []
+                              }));
+                            }
+                          }}
+                          className="text-sm bg-blue-200 hover:bg-blue-300 px-4 py-2 rounded transition-colors"
+                        >
+                          リセット
+                        </button>
                       </div>
                     </div>
                     
@@ -911,9 +924,6 @@ const copyStatusAilmentsToAll = () => {
                         </div>
                       ))}
                     </div>
-
-
-
 
                     {/* プロファイル保存・削除セクション */}
                     <div className="mt-4 p-3 bg-white rounded border border-blue-200">
@@ -942,286 +952,283 @@ const copyStatusAilmentsToAll = () => {
                       </div>
                     </div>
 
-<div className="grid mb-6"></div>
+                    <div className="grid mb-6"></div>
 
-<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-    {/* 主防具除外 */}
-    <div className="relative">
-      <label className="text-sm text-blue-700 mb-1 block">主防具 除外:</label>
-<button
-  onClick={(e) => {
-    setExcludeSettings(prev => ({ ...prev, showMain: !prev.showMain }));
-  }}
-  className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
-    excludeSettings.main.length === 0 ? 'border-gray-300 bg-gray-200' : 'border-blue-300 bg-white'
-  }`}
->
-  <span>
-    {excludeSettings.main.length === 0
-      ? '(未指定)'
-      : excludeSettings.main.length === 1
-      ? excludeSettings.main[0]
-      : `${excludeSettings.main.length}個選択`}
-  </span>
-  <span className="text-gray-500">▼</span>
-</button>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* 主防具除外 */}
+                        <div className="relative">
+                          <label className="text-sm text-blue-700 mb-1 block">主防具 除外:</label>
+                          <button
+                            onClick={(e) => {
+                              setExcludeSettings(prev => ({ ...prev, showMain: !prev.showMain }));
+                            }}
+                            className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
+                              excludeSettings.main.length === 0 ? 'border-gray-300 bg-gray-200' : 'border-blue-300 bg-white'
+                            }`}
+                          >
+                            <span>
+                              {excludeSettings.main.length === 0
+                                ? '(未指定)'
+                                : excludeSettings.main.length === 1
+                                ? excludeSettings.main[0]
+                                : `${excludeSettings.main.length}個選択`}
+                            </span>
+                            <span className="text-gray-500">▼</span>
+                          </button>
+                    
+                          {excludeSettings.showMain && (
+                            <div 
+                              className="absolute z-10 mt-1 bg-white border border-blue-300 rounded shadow-lg max-h-80 overflow-y-auto w-full" 
+                              ref={(el) => (excludeDropdownRefs.current.main = el)}
+                            >
+                              <div className="p-2 border-b border-gray-200 flex gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExcludeSettings(prev => ({
+                                      ...prev,
+                                      main: []
+                                    }));
+                                  }}
+                                  className="text-sm text-blue-600 hover:underline"
+                                >
+                                  すべて選択解除
+                                </button>
+                              </div>
+                          
+                              <div className="p-2">
+                                {mainArmor.map((item, idx) => (
+                                  <label key={idx} className="flex items-center gap-2 py-1 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={excludeSettings.main.includes(item['名称'])}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setExcludeSettings(prev => ({
+                                          ...prev,
+                                          main: checked
+                                            ? [...prev.main, item['名称']]
+                                            : prev.main.filter(v => v !== item['名称'])
+                                        }));
+                                      }}
+                                    />
+                                    {item['名称']}
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                    
+                        {/* 副防具除外 */}
+                        <div className="relative">
+                          <label className="text-sm text-blue-700 mb-1 block">副防具 除外:</label>
+                          <button
+                            onClick={(e) => {
+                              setExcludeSettings(prev => ({ ...prev, showsub: !prev.showsub }));
+                            }}
+                            className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
+                              excludeSettings.sub.length === 0 ? 'border-gray-300 bg-gray-200' : 'border-blue-300 bg-white'
+                            }`}
+                          >
+                            <span>
+                              {excludeSettings.sub.length === 0
+                                ? '(未指定)'
+                                : excludeSettings.sub.length === 1
+                                ? excludeSettings.sub[0]
+                                : `${excludeSettings.sub.length}個選択`}
+                            </span>
+                            <span className="text-gray-500">▼</span>
+                          </button>
 
-{excludeSettings.showMain && (
-  <div 
-    className="absolute z-10 mt-1 bg-white border border-blue-300 rounded shadow-lg max-h-80 overflow-y-auto w-full" 
-    ref={(el) => (excludeDropdownRefs.current.main = el)}
-  >
-    <div className="p-2 border-b border-gray-200 flex gap-2">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setExcludeSettings(prev => ({
-            ...prev,
-            main: []
-          }));
-        }}
-        className="text-sm text-blue-600 hover:underline"
-      >
-        すべて選択解除
-      </button>
-    </div>
+                          {excludeSettings.showsub && (
+                            <div 
+                              className="absolute z-10 mt-1 bg-white border border-blue-300 rounded shadow-lg max-h-80 overflow-y-auto w-full"
+                              ref={(el) => (excludeDropdownRefs.current.sub = el)}
+                            >
+                              <div className="p-2 border-b border-gray-200 flex gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExcludeSettings(prev => ({
+                                      ...prev,
+                                      sub: []
+                                    }));
+                                  }}
+                                  className="text-sm text-blue-600 hover:underline"
+                                >
+                                  すべて選択解除
+                                </button>
+                              </div>
+                          
+                              <div className="p-2">
+                                {subArmor.map((item, idx) => (
+                                  <label key={idx} className="flex items-center gap-2 py-1 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={excludeSettings.sub.includes(item['名称'])}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setExcludeSettings(prev => ({
+                                          ...prev,
+                                          sub: checked
+                                            ? [...prev.sub, item['名称']]
+                                            : prev.sub.filter(v => v !== item['名称'])
+                                        }));
+                                      }}
+                                    />
+                                    {item['名称']}
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                    
+                        {/* 装飾品除外 */}
+                        <div className="relative">
+                          <label className="text-sm text-blue-700 mb-1 block">装飾品 除外:</label>
+                          <button
+                            onClick={(e) => {
+                              setExcludeSettings(prev => ({ ...prev, showdeco: !prev.showdeco }));
+                            }}
+                            className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
+                              excludeSettings.deco.length === 0 ? 'border-gray-300 bg-gray-200' : 'border-blue-300 bg-white'
+                            }`}
+                          >
+                            <span>
+                              {excludeSettings.deco.length === 0
+                                ? '(未指定)'
+                                : excludeSettings.deco.length === 1
+                                ? excludeSettings.deco[0]
+                                : `${excludeSettings.deco.length}個選択`}
+                            </span>
+                            <span className="text-gray-500">▼</span>
+                          </button>
 
-    <div className="p-2">
-      {mainArmor.map((item, idx) => (
-        <label key={idx} className="flex items-center gap-2 py-1 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={excludeSettings.main.includes(item['名称'])}
-            onChange={(e) => {
-              const checked = e.target.checked;
-              setExcludeSettings(prev => ({
-                ...prev,
-                main: checked
-                  ? [...prev.main, item['名称']]
-                  : prev.main.filter(v => v !== item['名称'])
-              }));
-            }}
-          />
-          {item['名称']}
-        </label>
-      ))}
-    </div>
-  </div>
-)}
+                          {excludeSettings.showdeco && (
+                            <div 
+                              className="absolute z-10 mt-1 bg-white border border-blue-300 rounded shadow-lg max-h-80 overflow-y-auto w-full"
+                              ref={(el) => (excludeDropdownRefs.current.deco = el)}
+                            >
+                              <div className="p-2 border-b border-gray-200 flex gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExcludeSettings(prev => ({
+                                      ...prev,
+                                      deco: []
+                                    }));
+                                  }}
+                                  className="text-sm text-blue-600 hover:underline"
+                                >
+                                  すべて選択解除
+                                </button>
+                              </div>
+                          
+                              <div className="p-2">
+                                {decorations.map((item, idx) => (
+                                  <label key={idx} className="flex items-center gap-2 py-1 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={excludeSettings.deco.includes(item['名称'])}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setExcludeSettings(prev => ({
+                                          ...prev,
+                                          deco: checked
+                                            ? [...prev.deco, item['名称']]
+                                            : prev.deco.filter(v => v !== item['名称'])
+                                        }));
+                                      }}
+                                    />
+                                    {item['名称']}
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
-    </div>
-
-    {/* 副防具除外 */}
-    <div className="relative">
-      <label className="text-sm text-blue-700 mb-1 block">副防具 除外:</label>
-<button
-  onClick={(e) => {
-    setExcludeSettings(prev => ({ ...prev, showsub: !prev.showsub }));
-  }}
-  className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
-    excludeSettings.sub.length === 0 ? 'border-gray-300 bg-gray-200' : 'border-blue-300 bg-white'
-  }`}
->
-  <span>
-    {excludeSettings.sub.length === 0
-      ? '(未指定)'
-      : excludeSettings.sub.length === 1
-      ? excludeSettings.sub[0]
-      : `${excludeSettings.sub.length}個選択`}
-  </span>
-  <span className="text-gray-500">▼</span>
-</button>
-{excludeSettings.showsub && (
-  <div 
-    className="absolute z-10 mt-1 bg-white border border-blue-300 rounded shadow-lg max-h-80 overflow-y-auto w-full"
-    ref={(el) => (excludeDropdownRefs.current.sub = el)}
-  >
-    <div className="p-2 border-b border-gray-200 flex gap-2">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setExcludeSettings(prev => ({
-            ...prev,
-            sub: []
-          }));
-        }}
-        className="text-sm text-blue-600 hover:underline"
-      >
-        すべて選択解除
-      </button>
-    </div>
-
-    <div className="p-2">
-      {subArmor.map((item, idx) => (
-        <label key={idx} className="flex items-center gap-2 py-1 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={excludeSettings.sub.includes(item['名称'])}
-            onChange={(e) => {
-              const checked = e.target.checked;
-              setExcludeSettings(prev => ({
-                ...prev,
-                sub: checked
-                  ? [...prev.sub, item['名称']]
-                  : prev.sub.filter(v => v !== item['名称'])
-              }));
-            }}
-          />
-          {item['名称']}
-        </label>
-      ))}
-    </div>
-  </div>
-)}
-    </div>
-
-    {/* 装飾品除外 */}
-    <div className="relative">
-      <label className="text-sm text-blue-700 mb-1 block">装飾品 除外:</label>
-<button
-  onClick={(e) => {
-    setExcludeSettings(prev => ({ ...prev, showdeco: !prev.showdeco }));
-  }}
-  className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
-    excludeSettings.deco.length === 0 ? 'border-gray-300 bg-gray-200' : 'border-blue-300 bg-white'
-  }`}
->
-  <span>
-    {excludeSettings.deco.length === 0
-      ? '(未指定)'
-      : excludeSettings.deco.length === 1
-      ? excludeSettings.deco[0]
-      : `${excludeSettings.deco.length}個選択`}
-  </span>
-  <span className="text-gray-500">▼</span>
-</button>
-{excludeSettings.showdeco && (
-  <div 
-    className="absolute z-10 mt-1 bg-white border border-blue-300 rounded shadow-lg max-h-80 overflow-y-auto w-full"
-    ref={(el) => (excludeDropdownRefs.current.deco = el)}
-  >
-    <div className="p-2 border-b border-gray-200 flex gap-2">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setExcludeSettings(prev => ({
-            ...prev,
-            deco: []
-          }));
-        }}
-        className="text-sm text-blue-600 hover:underline"
-      >
-        すべて選択解除
-      </button>
-    </div>
-
-    <div className="p-2">
-      {decorations.map((item, idx) => (
-        <label key={idx} className="flex items-center gap-2 py-1 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={excludeSettings.deco.includes(item['名称'])}
-            onChange={(e) => {
-              const checked = e.target.checked;
-              setExcludeSettings(prev => ({
-                ...prev,
-                deco: checked
-                  ? [...prev.deco, item['名称']]
-                  : prev.deco.filter(v => v !== item['名称'])
-              }));
-            }}
-          />
-          {item['名称']}
-        </label>
-      ))}
-    </div>
-  </div>
-)}
-
-
-    </div>
-
-<div className="flex gap-2 p-2">
-<button
-  onClick={() => saveExcludeProfile('主防具')}
-  disabled={excludeSaving.main || excludeSettings.main.length === 0}
-  className={`w-full px-4 py-2 rounded ${
-    excludeSaving.main || excludeSettings.main.length === 0
-      ? 'bg-gray-400 text-white'
-      : 'bg-blue-500 hover:bg-blue-600 text-white'
-  }`}
->
-  主防具 除外を保存
-</button>
-
-<button
-  onClick={() => deleteExcludeProfile('主防具')}
-  disabled={excludeSaving.main || excludeSettings.main.length === 0}
-  className={`w-full px-4 py-2 rounded ${
-    excludeDeleting.main || excludeSettings.main.length === 0
-      ? 'bg-gray-400 text-white'
-      : 'bg-red-500 hover:bg-red-600 text-white'
-  }`}
->
-  主防具 除外を削除
-</button>
-
-</div>
-
-<div className="flex gap-2 p-2">
-<button
-  onClick={() => saveExcludeProfile('副防具')}
-  disabled={excludeSaving.sub || excludeSettings.sub.length === 0}
-  className={`w-full px-4 py-2 rounded ${
-    excludeSaving.sub || excludeSettings.sub.length === 0
-      ? 'bg-gray-400 text-white'
-      : 'bg-blue-500 hover:bg-blue-600 text-white'
-  }`}
->
-  副防具 除外を保存
-</button>
-
-<button
-  onClick={() => deleteExcludeProfile('副防具')}
-  disabled={excludeSaving.sub || excludeSettings.sub.length === 0}
-  className={`w-full px-4 py-21 rounded ${
-    excludeDeleting.sub || excludeSettings.sub.length === 0
-      ? 'bg-gray-400 text-white'
-      : 'bg-red-500 hover:bg-red-600 text-white'
-  }`}
->
-  副防具 除外を削除
-</button>
-</div>
-
-<div className="w-full flex gap-2 p-2">
-<button
-  onClick={() => saveExcludeProfile('装飾品')}
-  disabled={excludeSaving.deco || excludeSettings.deco.length === 0}
-  className={`w-full px-4 py-2 rounded ${
-    excludeSaving.deco || excludeSettings.deco.length === 0
-      ? 'bg-gray-400 text-white'
-      : 'bg-blue-500 hover:bg-blue-600 text-white'
-  }`}
->
-  装飾品 除外を保存
-</button>
-
-<button
-  onClick={() => deleteExcludeProfile('装飾品')}
-  disabled={excludeSaving.deco || excludeSettings.deco.length === 0}
-  className={`w-full px-4 py-2 rounded ${
-    excludeDeleting.deco || excludeSettings.deco.length === 0
-      ? 'bg-gray-400 text-white'
-      : 'bg-red-500 hover:bg-red-600 text-white'
-  }`}
->
-  装飾品 除外を削除
-</button>
-</div>
-
-  </div>
-
+                        <div className="flex gap-2 p-2">
+                          <button
+                            onClick={() => saveExcludeProfile('主防具')}
+                            disabled={excludeSaving.main || excludeSettings.main.length === 0}
+                            className={`w-full px-4 py-2 rounded ${
+                              excludeSaving.main || excludeSettings.main.length === 0
+                                ? 'bg-gray-400 text-white'
+                                : 'bg-blue-500 hover:bg-blue-600 text-white'
+                            }`}
+                          >
+                            主防具 除外を保存
+                          </button>
+                        
+                          <button
+                            onClick={() => deleteExcludeProfile('主防具')}
+                            disabled={excludeSaving.main || excludeSettings.main.length === 0}
+                            className={`w-full px-4 py-2 rounded ${
+                              excludeDeleting.main || excludeSettings.main.length === 0
+                                ? 'bg-gray-400 text-white'
+                                : 'bg-red-500 hover:bg-red-600 text-white'
+                            }`}
+                          >
+                            主防具 除外を削除
+                          </button>
+                        
+                        </div>
+                        
+                        <div className="flex gap-2 p-2">
+                          <button
+                            onClick={() => saveExcludeProfile('副防具')}
+                            disabled={excludeSaving.sub || excludeSettings.sub.length === 0}
+                            className={`w-full px-4 py-2 rounded ${
+                              excludeSaving.sub || excludeSettings.sub.length === 0
+                                ? 'bg-gray-400 text-white'
+                                : 'bg-blue-500 hover:bg-blue-600 text-white'
+                            }`}
+                          >
+                            副防具 除外を保存
+                          </button>
+                        
+                          <button
+                            onClick={() => deleteExcludeProfile('副防具')}
+                            disabled={excludeSaving.sub || excludeSettings.sub.length === 0}
+                            className={`w-full px-4 py-21 rounded ${
+                              excludeDeleting.sub || excludeSettings.sub.length === 0
+                                ? 'bg-gray-400 text-white'
+                                : 'bg-red-500 hover:bg-red-600 text-white'
+                            }`}
+                          >
+                            副防具 除外を削除
+                          </button>
+                        </div>
+                        
+                        <div className="w-full flex gap-2 p-2">
+                          <button
+                            onClick={() => saveExcludeProfile('装飾品')}
+                            disabled={excludeSaving.deco || excludeSettings.deco.length === 0}
+                            className={`w-full px-4 py-2 rounded ${
+                              excludeSaving.deco || excludeSettings.deco.length === 0
+                                ? 'bg-gray-400 text-white'
+                                : 'bg-blue-500 hover:bg-blue-600 text-white'
+                            }`}
+                          >
+                            装飾品 除外を保存
+                          </button>
+                        
+                          <button
+                            onClick={() => deleteExcludeProfile('装飾品')}
+                            disabled={excludeSaving.deco || excludeSettings.deco.length === 0}
+                            className={`w-full px-4 py-2 rounded ${
+                              excludeDeleting.deco || excludeSettings.deco.length === 0
+                                ? 'bg-gray-400 text-white'
+                                : 'bg-red-500 hover:bg-red-600 text-white'
+                            }`}
+                          >
+                            装飾品 除外を削除
+                          </button>
+                        </div>
+                    </div>
                   </div>
                 )}
 
@@ -1259,7 +1266,14 @@ const copyStatusAilmentsToAll = () => {
                                 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0
                               }
                             }));
-                          
+
+                            setCharacterAdjustmentValues(prev => ({
+                              ...prev,
+                              [activeTab]: {
+                                斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0
+                              }
+                            }));
+                      
                             setSelectedCharacters(prev => ({
                               ...prev,
                               [activeTab]: ''
@@ -1290,7 +1304,7 @@ const copyStatusAilmentsToAll = () => {
                         </button>
                       </div>
                      
-<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div className="flex items-center gap-2">
                           <label className={`w-120 text-sm ${characterColors[activeTab].text}`}>キャラクター選択:</label>
                           <select
@@ -1372,49 +1386,48 @@ const copyStatusAilmentsToAll = () => {
                             </div>
                         </div>
 
-<div className="flex items-center gap-1">
-  <button
-    onClick={() => applySelectedBaseResistanceToAll('斬基本')}
-    className="flex-1 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-  >
-    全斬基本
-  </button>
-  <button
-    onClick={() => applySelectedBaseResistanceToAll('打基本')}
-    className="flex-1 px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-  >
-    全打基本
-  </button>
-  <button
-    onClick={() => applySelectedBaseResistanceToAll('突基本')}
-    className="flex-1 px-3 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-  >
-    全突基本
-  </button>
-<button
-  onClick={() => {
-    copyStatusAilmentsToAll();
-    setStatusCopyActive(true);
-    setTimeout(() => setStatusCopyActive(false), 100);  // 0.3秒後に戻す
-  }}
-  disabled={statusAilmentSettings[activeTab].selectedTypes.length === 0}
-  className={`flex-1 px-3 py-2 text-white rounded transition ${
-    statusAilmentSettings[activeTab].selectedTypes.length === 0
-      ? 'bg-gray-400'
-      : statusCopyActive
-      ? 'bg-orange-500'
-      : 'bg-red-500 hover:bg-red-600'
-  }`}
->
-  全異反映
-</button>
-
-</div>
-
-
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => applySelectedBaseResistanceToAll('斬基本')}
+                            className="flex-1 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                          >
+                            全斬基本
+                          </button>
+                          <button
+                            onClick={() => applySelectedBaseResistanceToAll('打基本')}
+                            className="flex-1 px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                          >
+                            全打基本
+                          </button>
+                          <button
+                            onClick={() => applySelectedBaseResistanceToAll('突基本')}
+                            className="flex-1 px-3 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                          >
+                            全突基本
+                          </button>
+                          <button
+                            onClick={() => {
+                              copyStatusAilmentsToAll();
+                              setStatusCopyActive(true);
+                              setTimeout(() => setStatusCopyActive(false), 100);  // 0.3秒後に戻す
+                            }}
+                            disabled={statusAilmentSettings[activeTab].selectedTypes.length === 0}
+                            className={`flex-1 px-3 py-2 text-white rounded transition ${
+                              statusAilmentSettings[activeTab].selectedTypes.length === 0
+                                ? 'bg-gray-400'
+                                : statusCopyActive
+                                ? 'bg-orange-500'
+                                : 'bg-red-500 hover:bg-red-600'
+                            }`}
+                          >
+                            全異反映
+                          </button>
+                        </div>
                       </div>
 
-                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-4">
+                      <div className={`${characterColors[activeTab].text}`}>[スタイル耐性値]</div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-4">
                         {attributes.map(attr => (
                           <div key={attr} className="flex items-center gap-2">
                             <label className={`font-medium w-8 ${characterColors[activeTab].text}`}>{attr}:</label>
@@ -1422,6 +1435,23 @@ const copyStatusAilmentsToAll = () => {
                               type="number"
                               value={characterValues[activeTab][attr]}
                               onChange={(e) => handleCharacterValueChange(activeTab, attr, e.target.value)}
+                              onFocus={(e) => e.target.select()}
+                              className={`border ${characterColors[activeTab].border} rounded px-3 py-2 w-20 text-center`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className={`${characterColors[activeTab].text}`}>[目標値個別修正] ※目標値に対し増減したい数を入力</div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-4">
+                        {attributes.map(attr => (
+                          <div key={attr} className="flex items-center gap-2">
+                            <label className={`font-medium w-8 ${characterColors[activeTab].text}`}>{attr}:</label>
+                            <input
+                              type="number"
+                              value={characterAdjustmentValues[activeTab][attr]}
+                              onChange={(e) => handleAdjustmentValueChange(activeTab, attr, e.target.value)}
                               onFocus={(e) => e.target.select()}
                               className={`border ${characterColors[activeTab].border} rounded px-3 py-2 w-20 text-center`}
                             />
@@ -1722,14 +1752,14 @@ const copyStatusAilmentsToAll = () => {
           );
         };
         ReactDOM.render(<ArmorCombinationAnalyzer />, document.getElementById('root'));
-
-const footer = document.createElement('footer');
-footer.innerHTML = `
-  ※使用は自己責任にて。<br>
-  ※装飾品は基本的には耐性値が全項目ゼロのものはリストから除外しています。<br>
-`;
-document.body.appendChild(footer);
-
+        
+        const footer = document.createElement('footer');
+        footer.innerHTML = `
+          ※使用は自己責任にて。<br>
+          ※装飾品は基本的には耐性値が全項目ゼロのものはリストから除外しています。<br>
+        `;
+        document.body.appendChild(footer);
+        
     </script>
 
 </body>
