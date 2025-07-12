@@ -28,6 +28,23 @@
           margin: -20px 30px 30px 30px;
         }
 
+    /* リンクのスタイル */
+    a:link {
+      color: dodgerblue;
+    }
+
+    a:visited {
+      color: dodgerblue;
+    }
+
+    a:hover {
+      color: lime;
+    }
+
+    a:active {
+      color: orangered;
+    }
+
     </style>
 
 </head>
@@ -830,7 +847,7 @@
           return (
             <div className="max-w-8xl mx-auto p-0">
               <div className="bg-[#fff] p-6">
-                <h1 className="text-2xl font-bold mb-6 text-gray-800">装備候補検索ツール ver.2025/07/11</h1>
+                <h1 className="text-2xl font-bold mb-6 text-gray-800"><a href="armor5.html">装備候補検索ツール</a> ver.2025/07/12</h1>
                 
                 {/* 読み込み状態の表示 */}
                 {loading && (
