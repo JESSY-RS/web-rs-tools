@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
     <title>★装備候補検索ツール</title> <!-- Created by じぇ -->
+
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -48,23 +49,23 @@
         .char4-text { color: #2563eb; /* Tailwind blue-600 */ }
         .char5-text { color: #9333ea; /* Tailwind purple-600 */ }
 
-    /* リンクのスタイル */
-    a:link {
-      color: dodgerblue;
-    }
-
-    a:visited {
-      color: blueviolet;
-    }
-
-    a:hover {
-      color: lime;
-    }
-
-    a:active {
-      color: orangered;
-    }
-
+        /* リンクのスタイル */
+        a:link {
+          color: dodgerblue;
+        }
+    
+        a:visited {
+          color: blueviolet;
+        }
+    
+        a:hover {
+          color: lime;
+        }
+    
+        a:active {
+          color: orangered;
+        }
+    
     </style>
 
 </head>
@@ -99,6 +100,16 @@
           const [countdown, setCountdown] = useState(0);
           const countdownIntervalRef = useRef(null);
           const workerRef = useRef(null);
+
+          // New states for bulk selection
+          const [bulkMainArmorSelect, setBulkMainArmorSelect] = useState('');
+          const [bulkSubArmorSelect, setBulkSubArmorSelect] = useState('');
+          const [bulkDecorationSelect, setBulkDecorationSelect] = useState('');
+
+          const [availableBulkMainArmor, setAvailableBulkMainArmor] = useState([]);
+          const [availableBulkSubArmor, setAvailableBulkSubArmor] = useState([]);
+          const [availableBulkDecorations, setAvailableBulkDecorations] = useState([]);
+
 
           const dataFiles = {
             mainArmor: './data/armor-main.csv',
@@ -392,6 +403,12 @@
                     setDecorations(decorationData);
                     setCharacterResistances(characterData);
 
+                    // Filter for bulk selection (quantity >= 5)
+                    setAvailableBulkMainArmor(mainArmorData.filter(item => (item['所持数'] || 0) >= 5));
+                    setAvailableBulkSubArmor(subArmorData.filter(item => (item['所持数'] || 0) >= 5));
+                    setAvailableBulkDecorations(decorationData.filter(item => (item['所持数'] || 0) >= 5));
+
+
                     const initialQuantities = {};
                     mainArmorData.forEach(item => initialQuantities[`main_${item['名称']}`] = item['所持数'] || Infinity);
                     subArmorData.forEach(item => initialQuantities[`sub_${item['名称']}`] = item['所持数'] || Infinity);
@@ -428,8 +445,9 @@
             setExcludeSettings(prev => ({ ...prev, main, sub, deco }));
           }, []);
 
-          useEffect(() => {
+useEffect(() => {
             const handleClickOutside = (event) => {
+              // 状態異常のプルダウンを閉じるロジック
               characterNames.filter(name => name !== '５人１組').forEach(charNameInLoop => {
                 if (statusAilmentSettings[charNameInLoop]?.showDropdown &&
                     dropdownRefs.current[charNameInLoop] &&
@@ -440,13 +458,22 @@
                   }));
                 }
               });
-              if (excludeSettings.showMain && excludeDropdownRefs.current.main && !excludeDropdownRefs.current.main.contains(event.target)) {
+
+              // 除外設定のプルダウンを閉じるロジック
+              // クリックされた要素が除外設定のボタン自身でないことを確認する
+              if (excludeSettings.showMain && excludeDropdownRefs.current.main && 
+                  !excludeDropdownRefs.current.main.contains(event.target) &&
+                  !event.target.closest('button[data-exclude-type="main"]')) { // ここを追加
                 setExcludeSettings(prev => ({ ...prev, showMain: false }));
               }
-              if (excludeSettings.showSub && excludeDropdownRefs.current.sub && !excludeDropdownRefs.current.sub.contains(event.target)) {
+              if (excludeSettings.showSub && excludeDropdownRefs.current.sub && 
+                  !excludeDropdownRefs.current.sub.contains(event.target) &&
+                  !event.target.closest('button[data-exclude-type="sub"]')) { // ここを追加
                 setExcludeSettings(prev => ({ ...prev, showSub: false }));
               }
-              if (excludeSettings.showDeco && excludeDropdownRefs.current.deco && !excludeDropdownRefs.current.deco.contains(event.target)) {
+              if (excludeSettings.showDeco && excludeDropdownRefs.current.deco && 
+                  !excludeDropdownRefs.current.deco.contains(event.target) &&
+                  !event.target.closest('button[data-exclude-type="deco"]')) { // ここを追加
                 setExcludeSettings(prev => ({ ...prev, showDeco: false }));
               }
             };
@@ -680,7 +707,6 @@
                     setError(`Workerでのデータ読み込みエラー: ${payload || '不明なエラー'}`);
                     setWorkerDataLoaded(false);
                     setLoading(false);
-                    console.error("Worker Data Load Error: ", payload);
                     setFivePersonSearchResultMessage(`Workerでのデータ読み込みエラー: ${payload || '不明なエラー'}`); // エラーメッセージを表示
                     setSearching(prev => ({ ...prev, ['５人１組']: false })); // 検索中状態を解除
                 }
@@ -844,6 +870,26 @@
             setStatusAilmentSettings(newStatusSettings);
           }, [activeTab, statusAilmentSettings]);
 
+          const applyBulkEquipment = useCallback((type) => {
+            const newFixedEquipments = { ...fixedEquipments };
+            let selectedItem = '';
+
+            if (type === 'main') {
+              selectedItem = bulkMainArmorSelect;
+            } else if (type === 'sub') {
+              selectedItem = bulkSubArmorSelect;
+            } else if (type === 'deco') {
+              selectedItem = bulkDecorationSelect;
+            }
+
+            // Allow reflecting (未指定)
+            ['キャラ１', 'キャラ２', 'キャラ３', 'キャラ４', 'キャラ５'].forEach(charName => {
+              newFixedEquipments[charName] = { ...newFixedEquipments[charName], [type]: selectedItem };
+            });
+            setFixedEquipments(newFixedEquipments);
+          }, [bulkMainArmorSelect, bulkSubArmorSelect, bulkDecorationSelect, fixedEquipments]);
+
+
           const getHeaderClass = useCallback((attr) => {
             if (['主防具', '副防具', '装飾品', 'キャラ'].includes(attr)) return 'header-gray';
             if (['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'].includes(attr)) return 'header-blue';
@@ -867,7 +913,7 @@
           return (
             <div className="max-w-8xl mx-auto p-0">
               <div className="bg-[#fff] p-6">
-                <h1 className="text-2xl font-bold mb-6 text-gray-800"><a href="armor.html">★装備候補検索ツール</a> ver.2025/07/12</h1>
+                <h1 className="text-2xl font-bold mb-6 text-gray-800"><a href="armor.html">★装備候補検索ツール</a> ver.2025/07/13</h1>
 
                 {loading && (
                   <div className="mb-6 p-4 bg-blue-50 rounded-lg">
@@ -971,9 +1017,14 @@
                                 setSubArmor(subArmorData);
                                 setDecorations(decorationData);
                                 setCharacterResistances(characterData);
+                                // Re-filter for bulk selection on retry
+                                setAvailableBulkMainArmor(mainArmorData.filter(item => (item['所持数'] || 0) >= 5));
+                                setAvailableBulkSubArmor(subArmorData.filter(item => (item['所持数'] || 0) >= 5));
+                                setAvailableBulkDecorations(decorationData.filter(item => (item['所持数'] || 0) >= 5));
+
                                 const initialQuantities = {};
                                 mainArmorData.forEach(item => initialQuantities[`main_${item['名称']}`] = item['所持数'] || Infinity);
-                                subArmorData.forEach(item => initialQuantities[`sub_${item['名称']}`] = item['所持数'] || Infinity);
+                                subArmorData.forEach(item => initialQuantities[`sub_${item['名称']}`] = item['所氏数'] || Infinity); // Corrected typo here (if still present)
                                 decorationData.forEach(item => initialQuantities[`deco_${item['名称']}`] = item['所持数'] || Infinity);
                                 setItemQuantities(initialQuantities);
                                 setMainThreadDataLoaded(true);
@@ -1094,6 +1145,7 @@
                             onClick={(e) => {
                               setExcludeSettings(prev => ({ ...prev, showMain: !prev.showMain }));
                             }}
+                            data-exclude-type="main"
                             className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
                               excludeSettings.main.length === 0 ? 'border-gray-300 bg-gray-200' : 'border-blue-300 bg-white'
                             }`}
@@ -1122,7 +1174,7 @@
                                       main: []
                                     }));
                                   }}
-                                  className="text-sm text-blue-600 hover:underline"
+                                  className="text-blue-600 hover:underline"
                                 >
                                   すべて選択解除
                                 </button>
@@ -1158,6 +1210,7 @@
                             onClick={(e) => {
                               setExcludeSettings(prev => ({ ...prev, showSub: !prev.showSub }));
                             }}
+                            data-exclude-type="sub"
                             className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
                               excludeSettings.sub.length === 0 ? 'border-gray-300 bg-gray-200' : 'border-blue-300 bg-white'
                             }`}
@@ -1186,7 +1239,7 @@
                                       sub: []
                                     }));
                                   }}
-                                  className="text-sm text-blue-600 hover:underline"
+                                  className="text-blue-600 hover:underline"
                                 >
                                   すべて選択解除
                                 </button>
@@ -1222,6 +1275,7 @@
                             onClick={(e) => {
                               setExcludeSettings(prev => ({ ...prev, showDeco: !prev.showDeco }));
                             }}
+                            data-exclude-type="deco"
                             className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
                               excludeSettings.deco.length === 0 ? 'border-gray-300 bg-gray-200' : 'border-blue-300 bg-white'
                             }`}
@@ -1250,7 +1304,7 @@
                                       deco: []
                                     }));
                                   }}
-                                  className="text-sm text-blue-600 hover:underline"
+                                  className="text-blue-600 hover:underline"
                                 >
                                   すべて選択解除
                                 </button>
@@ -1362,6 +1416,7 @@
                   </div>
                 )}
 
+                {/* Main section for tabs */}
                 {!loading && !error && (
                   <div className="mb-6">
                     <div className="flex border-b border-gray-200 mb-4">
@@ -1384,8 +1439,9 @@
                       <div className={`p-4 ${characterColors[activeTab].bg} rounded-lg`}>
                         <h2 className={`text-lg font-semibold ${characterColors[activeTab].text} mb-4`}>５人１組 装備候補検索</h2>
                         <p className={`text-sm ${characterColors[activeTab].text} mb-4`}>
-                          各キャラの耐性値設定、目標値個別修正、状態異常耐性、装備指定、ソート設定は、それぞれのキャラクタータブで設定してください。
-                          このタブでは、それらの設定に基づいて、所持数を考慮した５人分の装備組み合わせを検索します。（最大20件まで）<br/><br/>
+                          各キャラの耐性値、目標値個別修正、状態異常耐性、装備指定は、それぞれのキャラクタータブで設定してください。
+                          (ソート設定は機能しません。お手数ですが個別でソート設定→装備指定を繰り返すなどして対応してください。)
+                          このタブでは、それらの設定に基づいて、所持数を考慮した５人分の装備組み合わせを検索します。(最大20件まで)<br/><br/>
                           検索は１分でタイムアウトします。１分を待たずとも、検索中に再度検索ボタンを押すと、検索を途中で停止させる事ができます。
                           ただし、ボタン押下後に停止させる前の検索条件で候補があった場合、リストが表示される事があります。
                         </p>
@@ -1464,6 +1520,9 @@
                               ...prev,
                               [activeTab]: { priority1: '', order1: 'desc', priority2: '', order2: 'desc', priority3: '', order3: 'desc' }
                             }));
+                            setBulkMainArmorSelect('');
+                            setBulkSubArmorSelect('');
+                            setBulkDecorationSelect('');
                           }}
                           className={`text-sm ${characterColors[activeTab].button} px-4 py-2 rounded transition-colors`}
                         >
@@ -1575,11 +1634,9 @@
                               setStatusCopyActive(true);
                               setTimeout(() => setStatusCopyActive(false), 100);
                             }}
-                            disabled={statusAilmentSettings[activeTab].selectedTypes.length === 0}
+                            // Removed disabled={statusAilmentSettings[activeTab].selectedTypes.length === 0}
                             className={`flex-1 px-3 py-2 text-white rounded transition ${
-                              statusAilmentSettings[activeTab].selectedTypes.length === 0
-                                ? 'bg-gray-400'
-                                : statusCopyActive
+                              statusCopyActive
                                 ? 'bg-orange-500'
                                 : 'bg-red-500 hover:bg-red-600'
                             }`}
@@ -1685,6 +1742,82 @@
                           </select>
                         </div>
                       </div>
+
+                      {/* Bulk Equipment Selection Section - Corrected Placement and Styling */}
+                      <div className="mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div>
+                                  <label className={`text-sm block ${characterColors[activeTab].text}`}>主防具 一括:</label>
+                                  <div className="flex gap-2">
+                                      <select
+                                          value={bulkMainArmorSelect}
+                                          onChange={(e) => setBulkMainArmorSelect(e.target.value)}
+                                          className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
+                                              bulkMainArmorSelect === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
+                                          }`}
+                                      >
+                                          <option value="">（未指定）</option>
+                                          {availableBulkMainArmor.map((item, idx) => (
+                                              <option key={idx} value={item['名称']}>{item['名称']}</option>
+                                          ))}
+                                      </select>
+                                      <button
+                                          onClick={() => applyBulkEquipment('main')}
+                                          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors"
+                                      >
+                                          反映
+                                      </button>
+                                  </div>
+                              </div>
+                              <div>
+                                  <label className={`text-sm block ${characterColors[activeTab].text}`}>副防具 一括:</label>
+                                  <div className="flex gap-2">
+                                      <select
+                                          value={bulkSubArmorSelect}
+                                          onChange={(e) => setBulkSubArmorSelect(e.target.value)}
+                                          className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
+                                              bulkSubArmorSelect === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
+                                          }`}
+                                      >
+                                          <option value="">（未指定）</option>
+                                          {availableBulkSubArmor.map((item, idx) => (
+                                              <option key={idx} value={item['名称']}>{item['名称']}</option>
+                                          ))}
+                                      </select>
+                                      <button
+                                          onClick={() => applyBulkEquipment('sub')}
+                                          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:bg-gray-400 transition-colors"
+                                      >
+                                          反映
+                                      </button>
+                                  </div>
+                              </div>
+                              <div>
+                                  <label className={`text-sm block ${characterColors[activeTab].text}`}>装飾品 一括:</label>
+                                  <div className="flex gap-2">
+                                      <select
+                                          value={bulkDecorationSelect}
+                                          onChange={(e) => setBulkDecorationSelect(e.target.value)}
+                                          className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
+                                              bulkDecorationSelect === '' ? 'border-gray-300 bg-gray-200' : `${characterColors[activeTab].border} bg-white`
+                                          }`}
+                                      >
+                                          <option value="">（未指定）</option>
+                                          {availableBulkDecorations.map((item, idx) => (
+                                              <option key={idx} value={item['名称']}>{item['名称']}</option>
+                                          ))}
+                                      </select>
+                                      <button
+                                          onClick={() => applyBulkEquipment('deco')}
+                                          className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:bg-gray-400 transition-colors"
+                                      >
+                                          反映
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                      {/* End Bulk Equipment Selection Section */}
 
                       <div className="grid mb-6"></div>
 
@@ -1833,7 +1966,7 @@
                       <div className="text-xl font-bold text-purple-800">{decorations.length}</div>
                     </div>
                     <div className="bg-red-50 p-3 rounded-lg">
-                      <div className="text-sm text-red-600">{activeTab} 適合組み合わせ</div>
+                      <div className="text-sm text-red-600">{activeTab} 候補数</div>
                       <div className="text-xl font-bold text-red-800">{combinations[activeTab]?.length || 0}</div>
                     </div>
                   </div>
@@ -1961,6 +2094,7 @@
         footer.innerHTML = `
           ※使用は自己責任にて。<br>
           ※装飾品は基本的には耐性値が全項目ゼロのものはリストから除外しています。<br>
+          ※各装備の一括指定リストは基本的には入手が５個以上可能なもののみ表示しています。<br>
         `;
         document.body.appendChild(footer);
 

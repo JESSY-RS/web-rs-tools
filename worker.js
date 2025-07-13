@@ -85,9 +85,11 @@ self.onmessage = async function(e) {
             return;
         }
 
-        const availableMain = mainArmor.filter(a => !excludeSettings.main.includes(a['名称']));
-        const availableSub = subArmor.filter(a => !excludeSettings.sub.includes(a['名称']));
-        const availableDeco = decorations.filter(a => !excludeSettings.deco.includes(a['名称']));
+        // これらのavailableリストは、固定装備が設定されていない場合にのみ使用される。
+        // 固定装備が設定されている場合は、全体データから直接フィルタリングする。
+        const availableMainFromExclusion = mainArmor.filter(a => !excludeSettings.main.includes(a['名称']));
+        const availableSubFromExclusion = subArmor.filter(a => !excludeSettings.sub.includes(a['名称']));
+        const availableDecoFromExclusion = decorations.filter(a => !excludeSettings.deco.includes(a['名称']));
 
         let iterationCounter = 0;
         const REPORT_INTERVAL = 10000;
@@ -112,15 +114,27 @@ self.onmessage = async function(e) {
             const currentStatusAilmentSetting = statusAilmentSettings[currentCharName];
             const fixed = fixedEquipments[currentCharName];
 
-            const charMainList = fixed.main
-                ? availableMain.filter(a => a['名称'] === fixed.main)
-                : availableMain;
-            const charSubList = fixed.sub
-                ? availableSub.filter(a => a['名称'] === fixed.sub)
-                : availableSub;
-            const charDecoList = fixed.deco
-                ? availableDeco.filter(a => a['名称'] === fixed.deco)
-                : availableDeco;
+            let charMainList;
+            if (fixed.main) {
+                charMainList = mainArmor.filter(a => a['名称'] === fixed.main);
+            } else {
+                charMainList = availableMainFromExclusion;
+            }
+
+            let charSubList;
+            if (fixed.sub) {
+                charSubList = subArmor.filter(a => a['名称'] === fixed.sub);
+            } else {
+                charSubList = availableSubFromExclusion;
+            }
+
+            let charDecoList;
+            if (fixed.deco) {
+                charDecoList = decorations.filter(a => a['名称'] === fixed.deco);
+            } else {
+                charDecoList = availableDecoFromExclusion;
+            }
+
 
             for (const main of charMainList) {
                 if (timeoutSignaled) return;
