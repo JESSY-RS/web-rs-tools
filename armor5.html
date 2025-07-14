@@ -5,8 +5,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>★装備候補検索ツール</title> <!-- Created by じぇ -->
 
+    <title>★装備候補検索ツール</title> <!-- Created by じぇ -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -225,7 +225,11 @@
 
           const handleSaveProfile = () => {
             if (!profileName.trim()) return;
-            const newProfile = { ...targetValues };
+            // Save targetValues and statusAilmentSettings for 'キャラ１'
+            const newProfile = {
+              ...targetValues,
+              statusAilment: statusAilmentSettings['キャラ１']
+            };
             const updatedProfiles = { ...savedProfiles, [profileName.trim()]: newProfile };
             setSavedProfiles(updatedProfiles);
             setProfileName('');
@@ -248,8 +252,31 @@
           const handlePresetSelect = (presetName) => {
             if (presetName === "All Resist") {
               setTargetValues({ 斬: 35, 打: 35, 突: 35, 熱: 35, 冷: 35, 雷: 35, 陽: 35,陰: 35 });
+              // Set status ailment settings to (未指定) and value to 20 for all characters
+              const newStatusAilmentSettings = { ...statusAilmentSettings };
+              characterNames.filter(name => name !== '５人１組').forEach(charName => {
+                newStatusAilmentSettings[charName] = {
+                  selectedTypes: [], // (未指定)
+                  value: 20,
+                  showDropdown: false
+                };
+              });
+              setStatusAilmentSettings(newStatusAilmentSettings);
             } else if (savedProfiles[presetName]) {
-              setTargetValues(savedProfiles[presetName]);
+              const loadedProfile = savedProfiles[presetName];
+              setTargetValues(loadedProfile);
+
+              if (loadedProfile.statusAilment) {
+                const newStatusAilmentSettings = { ...statusAilmentSettings };
+                characterNames.filter(name => name !== '５人１組').forEach(charName => {
+                  newStatusAilmentSettings[charName] = {
+                    selectedTypes: loadedProfile.statusAilment.selectedTypes || [],
+                    value: loadedProfile.statusAilment.value || 20,
+                    showDropdown: false // Ensure dropdown is closed on load
+                  };
+                });
+                setStatusAilmentSettings(newStatusAilmentSettings);
+              }
             }
           };
 
@@ -556,6 +583,9 @@ useEffect(() => {
 
             if (charName !== '５人１組') {
               const fixed = fixedEquipments[charName];
+              
+              // Corrected logic for filtering main/sub/deco lists
+              // If fixed equipment is specified, use only that item, otherwise filter by exclude settings.
               const mainList = fixed.main
                 ? mainArmor.filter(a => a['名称'] === fixed.main)
                 : mainArmor.filter(a => !excludeSettings.main.includes(a['名称']));
@@ -567,7 +597,7 @@ useEffect(() => {
               const decoList = fixed.deco
                 ? decorations.filter(a => a['名称'] === fixed.deco)
                 : decorations.filter(a => !excludeSettings.deco.includes(a['名称']));
-
+              
               setTimeout(() => {
                 const results = [];
                 const currentCharValues = characterValues[charName];
@@ -585,12 +615,13 @@ useEffect(() => {
                         const decorationValue = parseInt(decoration[attr] || 0);
                         totals[attr] = mainValue + subValue + decorationValue + currentCharValues[attr] - characterAdjustmentValues[charName][attr];
                         if (totals[attr] < targetValues[attr]) { meetsConditions = false; }
-                        totals[attr] = mainValue + subValue + decorationValue;
+                        // Store raw sum for display after checking condition
+                        totals[attr] = mainValue + subValue + decorationValue; 
                       });
 
                       additionalAttributes.forEach(attr => {
                         const mainValue = parseInt(main[attr] || 0);
-                        const subValue = parseInt(sub[attr] || 0);
+                        const subValue = parseInt(sub[attr] || 0); // Corrected this line
                         const decorationValue = parseInt(decoration[attr] || 0);
                         totals[attr] = mainValue + subValue + decorationValue;
                       });
@@ -850,7 +881,7 @@ useEffect(() => {
             const newCharacterValues = { ...characterValues };
             ['キャラ１', 'キャラ２', 'キャラ３', 'キャラ４', 'キャラ５'].forEach(charName => {
               newCharacterValues[charName] = {};
-              attributes.forEach(attr => { newCharacterValues[charName][attr] = parseInt(baseData[attr] || 0); });
+              attributes.forEach(attr => { newCharacterValues[charName][attr] = parseInt(baseData[attr] || 0); }); // Corrected line
             });
             setCharacterValues(newCharacterValues);
 
@@ -913,7 +944,7 @@ useEffect(() => {
           return (
             <div className="max-w-8xl mx-auto p-0">
               <div className="bg-[#fff] p-6">
-                <h1 className="text-2xl font-bold mb-6 text-gray-800"><a href="armor.html">★装備候補検索ツール</a> ver.2025/07/13</h1>
+                <h1 className="text-2xl font-bold mb-6 text-gray-800"><a href="armor.html">★装備候補検索ツール</a> ver.2025/07/14</h1>
 
                 {loading && (
                   <div className="mb-6 p-4 bg-blue-50 rounded-lg">
@@ -1024,7 +1055,7 @@ useEffect(() => {
 
                                 const initialQuantities = {};
                                 mainArmorData.forEach(item => initialQuantities[`main_${item['名称']}`] = item['所持数'] || Infinity);
-                                subArmorData.forEach(item => initialQuantities[`sub_${item['名称']}`] = item['所氏数'] || Infinity); // Corrected typo here (if still present)
+                                subArmorData.forEach(item => initialQuantities[`sub_${item['名称']}`] = item['所持数'] || Infinity); // Corrected typo here (if still present)
                                 decorationData.forEach(item => initialQuantities[`deco_${item['名称']}`] = item['所持数'] || Infinity);
                                 setItemQuantities(initialQuantities);
                                 setMainThreadDataLoaded(true);
@@ -1042,13 +1073,6 @@ useEffect(() => {
                       再試行
                     </button>
                   </div>
-                )}
-
-                {/* 検索結果メッセージの表示 (ファイルロードエラーと区別) */}
-                {searchResultMessage && !error && activeTab !== '５人１組' && (
-                    <div className="mb-6 p-4 bg-red-50 rounded-lg">
-                        <div className="text-red-600 mb-2">{searchResultMessage}</div>
-                    </div>
                 )}
 
                 {!loading && !error && (
@@ -1134,6 +1158,7 @@ useEffect(() => {
                           削除
                         </button>
                       </div>
+<label className="text-sm text-blue-700">※状態異常耐性の情報も保存できますので、必要なら先にキャラ１タブで設定してください。</label>
                     </div>
 
                     <div className="grid mb-6"></div>
