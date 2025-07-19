@@ -18,7 +18,7 @@
         /* 全体のスタイル */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            transition: background-color 0.3s ease; /* Smooth transition for theme change */
+            transition: background-color; /* Smooth transition for theme change */
         }
 
         /* フッターのスタイル */
@@ -83,246 +83,246 @@
 
           const themes = {
             light: {
-            titleTxt: 'text-gray-800',
-            wholeTxt: 'text-black',
-            wholeBak: 'bg-white',
-            errorTxt: 'text-red-600',
-            errorBak: 'bg-red-50',
-            retryTxt: 'text-white',
-            retryBak: 'bg-red-500 hover:bg-red-600',
-            basicTxt: 'text-blue-700',
-            basicBak: 'bg-blue-50',
-            basicBdr: 'border-blue-300',
-            unspeBdr: 'border-gray-300',
-            pullmTxt: 'text-black',
-            pullmBak: 'bg-white',
-            resetTxt: 'text-black',
-            resetBak: 'bg-blue-200 hover:bg-blue-300',
-            inputTxt: 'text-black',
-            inputBak: 'bg-white',
-            presetIn: 'bg-white',
-            presetBg: 'bg-white',
-            btnsdTxt: 'text-white',
-            btnsdDis: 'disabled:bg-gray-400',
-            pullmHov: 'hover:bg-gray-100',
-            pullmTri: 'text-gray-500',
-            pullmDis: 'bg-gray-200',
-            pullNone: 'text-blue-600',
-            pullSepa: 'border-gray-200',
-            btSavBak: 'bg-blue-500 hover:bg-blue-600',
-            btDelBak: 'bg-red-500 hover:bg-red-600',
-            indexTxt: 'text-gray-500',
-            indexHov: 'hover:text-gray-700',
-            indexBdr: 'border-gray-200',
-            char1Tab: 'text-red-600',
-            char1Und: 'border-red-500',
-            char1Txt: 'text-red-700',
-            char1Bak: 'bg-red-50',
-            char1Bdr: 'border-red-300',
-            char1Res: 'bg-red-200 hover:bg-red-300',
-            char1Btn: 'bg-red-500 hover:bg-red-600',
-            char2Tab: 'text-orange-600',
-            char2Und: 'border-orange-500',
-            char2Txt: 'text-orange-700',
-            char2Bak: 'bg-orange-50',
-            char2Bdr: 'border-orange-300',
-            char2Res: 'bg-orange-200 hover:bg-orange-300',
-            char2Btn: 'bg-orange-500 hover:bg-orange-600',
-            char3Tab: 'text-green-600',
-            char3Und: 'border-green-500',
-            char3Txt: 'text-green-700',
-            char3Bak: 'bg-green-50',
-            char3Bdr: 'border-green-300',
-            char3Res: 'bg-green-200 hover:bg-green-300',
-            char3Btn: 'bg-green-500 hover:bg-green-600',
-            char4Tab: 'text-blue-600',
-            char4Und: 'border-blue-500',
-            char4Txt: 'text-blue-700',
-            char4Bak: 'bg-blue-50',
-            char4Bdr: 'border-blue-300',
-            char4Res: 'bg-blue-200 hover:bg-blue-300',
-            char4Btn: 'bg-blue-500 hover:bg-blue-600',
-            char5Tab: 'text-purple-600',
-            char5Und: 'border-purple-500',
-            char5Txt: 'text-purple-700',
-            char5Bak: 'bg-purple-50',
-            char5Bdr: 'border-purple-300',
-            char5Res: 'bg-purple-200 hover:bg-purple-300',
-            char5Btn: 'bg-purple-500 hover:bg-purple-600',
-            five1Tab: 'text-gray-700',
-            five1Und: 'border-gray-600',
-            five1Txt: 'text-gray-800',
-            five1Bak: 'bg-gray-100',
-            five1Bdr: 'border-gray-400',
-            five1Btn: 'bg-gray-600 hover:bg-gray-700',
-            btn4cTxt: 'text-white',
-            btn4bBak: 'bg-blue-500 hover:bg-blue-600',
-            btn4gBak: 'bg-green-500 hover:bg-green-600',
-            btn4pBak: 'bg-purple-500 hover:bg-purple-600',
-            btn4rBak: 'bg-red-500 hover:bg-red-600',
-            btn4rAct: 'bg-orange-500',
-            busy1Txt: 'text-white',
-            busy5Txt: 'text-gray-600',
-            busy5Bak: 'bg-gray-400',
-            spiningB: 'border-blue-600',
-            spiningW: 'border-white',
-            alertTxt: 'text-red-600',
-            alertBak: 'bg-red-100',
-            reg4bTxt: 'text-blue-600',
-            reg4bBld: 'text-blue-800',
-            reg4bBak: 'bg-blue-50',
-            reg4gTxt: 'text-green-600',
-            reg4gBld: 'text-green-800',
-            reg4gBak: 'bg-green-50',
-            reg4pTxt: 'text-purple-600',
-            reg4pBld: 'text-purple-800',
-            reg4pBak: 'bg-purple-50',
-            reg4rTxt: 'text-red-600',
-            reg4rBld: 'text-red-800',
-            reg4rBak: 'bg-red-50',
-            headText: 'text-gray-800',
-            headGray: 'bg-gray-50',
-            headBlue: 'bg-blue-50',
-            headRose: 'bg-red-50',
-            headLime: 'bg-green-50',
-            itemText: 'text-gray-900',
-            itemBack: 'bg-white',
-            itemLine: 'divide-gray-200',
-            itemSepa: 'border-gray-200',
-            itemOver: 'hover:bg-gray-100',
-            valueHig: 'text-blue-600',
-            valueZer: 'text-gray-500',
-            valueLow: 'text-red-500',
-            stripedL: 'bg-[#e0f2fe]',
-            stripedD: 'bg-white',
-            listInfo: 'text-gray-600',
-            underTxt: 'text-gray-700',
-            underBdr: 'border-gray-200',
-            linkTagN: 'text-[dodgerblue]',
-            linkTagV: 'visited:text-[blueviolet]',
-            linkTagH: 'hover:text-[lime]',
-            linkTagA: 'active:text-[orangered]'
+              titleTxt: 'text-gray-800',
+              wholeTxt: 'text-black',
+              wholeBak: 'bg-white',
+              errorTxt: 'text-red-600',
+              errorBak: 'bg-red-50',
+              retryTxt: 'text-white',
+              retryBak: 'bg-red-500 hover:bg-red-600',
+              basicTxt: 'text-blue-700',
+              basicBak: 'bg-blue-50',
+              basicBdr: 'border-blue-300',
+              unspeBdr: 'border-gray-300',
+              pullmTxt: 'text-black',
+              pullmBak: 'bg-white',
+              resetTxt: 'text-black',
+              resetBak: 'bg-blue-200 hover:bg-blue-300',
+              inputTxt: 'text-black',
+              inputBak: 'bg-white',
+              presetIn: 'bg-white',
+              presetBg: 'bg-white',
+              btnsdTxt: 'text-white',
+              btnsdDis: 'disabled:bg-gray-400',
+              pullmHov: 'hover:bg-gray-100',
+              pullmTri: 'text-gray-500',
+              pullmDis: 'bg-gray-200',
+              pullNone: 'text-blue-600',
+              pullSepa: 'border-gray-200',
+              btSavBak: 'bg-blue-500 hover:bg-blue-600',
+              btDelBak: 'bg-red-500 hover:bg-red-600',
+              indexTxt: 'text-gray-500',
+              indexHov: 'hover:text-gray-700',
+              indexBdr: 'border-gray-200',
+              char1Tab: 'text-red-600',
+              char1Und: 'border-red-500',
+              char1Txt: 'text-red-700',
+              char1Bak: 'bg-red-50',
+              char1Bdr: 'border-red-300',
+              char1Res: 'bg-red-200 hover:bg-red-300',
+              char1Btn: 'bg-red-500 hover:bg-red-600',
+              char2Tab: 'text-orange-600',
+              char2Und: 'border-orange-500',
+              char2Txt: 'text-orange-700',
+              char2Bak: 'bg-orange-50',
+              char2Bdr: 'border-orange-300',
+              char2Res: 'bg-orange-200 hover:bg-orange-300',
+              char2Btn: 'bg-orange-500 hover:bg-orange-600',
+              char3Tab: 'text-green-600',
+              char3Und: 'border-green-500',
+              char3Txt: 'text-green-700',
+              char3Bak: 'bg-green-50',
+              char3Bdr: 'border-green-300',
+              char3Res: 'bg-green-200 hover:bg-green-300',
+              char3Btn: 'bg-green-500 hover:bg-green-600',
+              char4Tab: 'text-blue-600',
+              char4Und: 'border-blue-500',
+              char4Txt: 'text-blue-700',
+              char4Bak: 'bg-blue-50',
+              char4Bdr: 'border-blue-300',
+              char4Res: 'bg-blue-200 hover:bg-blue-300',
+              char4Btn: 'bg-blue-500 hover:bg-blue-600',
+              char5Tab: 'text-purple-600',
+              char5Und: 'border-purple-500',
+              char5Txt: 'text-purple-700',
+              char5Bak: 'bg-purple-50',
+              char5Bdr: 'border-purple-300',
+              char5Res: 'bg-purple-200 hover:bg-purple-300',
+              char5Btn: 'bg-purple-500 hover:bg-purple-600',
+              five1Tab: 'text-gray-700',
+              five1Und: 'border-gray-600',
+              five1Txt: 'text-gray-800',
+              five1Bak: 'bg-gray-100',
+              five1Bdr: 'border-gray-400',
+              five1Btn: 'bg-gray-600 hover:bg-gray-700',
+              btn4cTxt: 'text-white',
+              btn4bBak: 'bg-blue-500 hover:bg-blue-600',
+              btn4gBak: 'bg-green-500 hover:bg-green-600',
+              btn4pBak: 'bg-purple-500 hover:bg-purple-600',
+              btn4rBak: 'bg-red-500 hover:bg-red-600',
+              btn4rAct: 'bg-orange-500',
+              busy1Txt: 'text-white',
+              busy5Txt: 'text-gray-600',
+              busy5Bak: 'bg-gray-400',
+              spiningB: 'border-blue-600',
+              spiningW: 'border-white',
+              alertTxt: 'text-red-600',
+              alertBak: 'bg-red-100',
+              reg4bTxt: 'text-blue-600',
+              reg4bBld: 'text-blue-800',
+              reg4bBak: 'bg-blue-50',
+              reg4gTxt: 'text-green-600',
+              reg4gBld: 'text-green-800',
+              reg4gBak: 'bg-green-50',
+              reg4pTxt: 'text-purple-600',
+              reg4pBld: 'text-purple-800',
+              reg4pBak: 'bg-purple-50',
+              reg4rTxt: 'text-red-600',
+              reg4rBld: 'text-red-800',
+              reg4rBak: 'bg-red-50',
+              headText: 'text-gray-800',
+              headGray: 'bg-gray-50',
+              headBlue: 'bg-blue-50',
+              headRose: 'bg-red-50',
+              headLime: 'bg-green-50',
+              itemText: 'text-gray-900',
+              itemBack: 'bg-white',
+              itemLine: 'divide-gray-200',
+              itemSepa: 'border-gray-200',
+              itemOver: 'hover:bg-gray-100',
+              valueHig: 'text-blue-600',
+              valueZer: 'text-gray-500',
+              valueLow: 'text-red-500',
+              stripedL: 'bg-[#e0f2fe]',
+              stripedD: 'bg-white',
+              listInfo: 'text-gray-600',
+              underTxt: 'text-gray-700',
+              underBdr: 'border-gray-200',
+              linkTagN: 'text-[dodgerblue]',
+              linkTagV: 'visited:text-[blueviolet]',
+              linkTagH: 'hover:text-[lime]',
+              linkTagA: 'active:text-[orangered]'
             },
             dark: {
-            titleTxt: 'text-gray-400',
-            wholeTxt: 'text-[#f2f2f2]',
-            wholeBak: 'bg-[#2A2A2A]',
-            errorTxt: 'text-red-500',
-            errorBak: 'bg-[#4a2a2a]',
-            retryTxt: 'text-white',
-            retryBak: 'bg-red-600 hover:bg-red-700',
-            basicTxt: 'text-blue-400',
-            basicBak: 'bg-[#2a2a4a]',
-            basicBdr: 'border-blue-900',
-            unspeBdr: 'border-gray-700',
-            pullmTxt: 'text-white',
-            pullmBak: 'bg-gray-600',
-            resetTxt: 'text-[#f2f2f2]',
-            resetBak: 'bg-blue-800 hover:bg-blue-900',
-            inputTxt: 'text-white',
-            inputBak: 'bg-gray-600',
-            presetIn: 'bg-gray-600',
-            presetBg: 'bg-[#2A2A2A]',
-            btnsdTxt: 'text-white',
-            btnsdDis: 'disabled:bg-gray-500',
-            pullmHov: 'hover:bg-gray-500',
-            pullmTri: 'text-gray-500',
-            pullmDis: 'bg-gray-800',
-            pullNone: 'text-blue-400',
-            pullSepa: 'border-gray-200',
-            btSavBak: 'bg-blue-600 hover:bg-blue-700',
-            btDelBak: 'bg-red-600 hover:bg-red-700',
-            indexTxt: 'text-gray-400',
-            indexHov: 'hover:text-gray-500',
-            indexBdr: 'border-gray-600',
-            char1Tab: 'text-red-600',
-            char1Und: 'border-red-500',
-            char1Txt: 'text-red-500',
-            char1Bak: 'bg-[#4a2a2a]',
-            char1Bdr: 'border-red-900',
-            char1Res: 'bg-red-700 hover:bg-red-800',
-            char1Btn: 'bg-red-600 hover:bg-red-700',
-            char2Tab: 'text-orange-600',
-            char2Und: 'border-orange-500',
-            char2Txt: 'text-orange-500',
-            char2Bak: 'bg-[#522b1c]',
-            char2Bdr: 'border-orange-900',
-            char2Res: 'bg-orange-700 hover:bg-orange-800',
-            char2Btn: 'bg-orange-600 hover:bg-orange-700',
-            char3Tab: 'text-green-600',
-            char3Und: 'border-green-500',
-            char3Txt: 'text-green-500',
-            char3Bak: 'bg-[#2a382a]',
-            char3Bdr: 'border-green-900',
-            char3Res: 'bg-green-700 hover:bg-green-800',
-            char3Btn: 'bg-green-600 hover:bg-green-700',
-            char4Tab: 'text-blue-600',
-            char4Und: 'border-blue-500',
-            char4Txt: 'text-blue-400',
-            char4Bak: 'bg-[#2a2a4a]',
-            char4Bdr: 'border-blue-900',
-            char4Res: 'bg-blue-700 hover:bg-blue-800',
-            char4Btn: 'bg-blue-600 hover:bg-blue-700',
-            char5Tab: 'text-purple-600',
-            char5Und: 'border-purple-500',
-            char5Txt: 'text-purple-400',
-            char5Bak: 'bg-[#4a2a4a]',
-            char5Bdr: 'border-purple-900',
-            char5Res: 'bg-purple-700 hover:bg-purple-800',
-            char5Btn: 'bg-purple-600 hover:bg-purple-700',
-            five1Tab: 'text-gray-500',
-            five1Und: 'border-gray-400',
-            five1Txt: 'text-gray-300',
-            five1Bak: 'bg-gray-700',
-            five1Bdr: 'border-gray-400',
-            five1Btn: 'bg-gray-500 hover:bg-gray-600',
-            btn4cTxt: 'text-white',
-            btn4bBak: 'bg-blue-600 hover:bg-blue-700',
-            btn4gBak: 'bg-green-600 hover:bg-green-700',
-            btn4pBak: 'bg-purple-600 hover:bg-purple-700',
-            btn4rBak: 'bg-red-600 hover:bg-red-700',
-            btn4rAct: 'bg-orange-500',
-            busy1Txt: 'text-white',
-            busy5Txt: 'text-gray-700',
-            busy5Bak: 'bg-gray-500',
-            spiningB: 'border-blue-600',
-            spiningW: 'border-white',
-            alertTxt: 'text-red-300',
-            alertBak: 'bg-red-900',
-            reg4bTxt: 'text-blue-400',
-            reg4bBld: 'text-blue-600',
-            reg4bBak: 'bg-[#2a2a4a]',
-            reg4gTxt: 'text-green-500',
-            reg4gBld: 'text-green-600',
-            reg4gBak: 'bg-[#2a382a]',
-            reg4pTxt: 'text-purple-400',
-            reg4pBld: 'text-purple-600',
-            reg4pBak: 'bg-[#4a2a4a]',
-            reg4rTxt: 'text-red-500',
-            reg4rBld: 'text-red-600',
-            reg4rBak: 'bg-[#4a2a2a]',
-            headText: 'text-gray-300',
-            headGray: 'bg-gray-700',
-            headBlue: 'bg-[#2a2a5a]',
-            headRose: 'bg-[#5a2a2a]',
-            headLime: 'bg-[#2a4a2a]',
-            itemText: 'text-gray-300',
-            itemBack: 'bg-[#2A2A2A]',
-            itemLine: 'divide-gray-600',
-            itemSepa: 'border-gray-600',
-            itemOver: 'hover:bg-gray-700',
-            valueHig: 'text-blue-600',
-            valueZer: 'text-gray-400',
-            valueLow: 'text-red-600',
-            stripedL: 'bg-[#0f3755]',
-            stripedD: 'bg-[#2a2a2a]',
-            listInfo: 'text-gray-300',
-            underTxt: 'text-gray-400',
-            underBdr: 'border-gray-600',
-            linkTagN: 'text-[#1D9BF0]',
-            linkTagV: 'visited:text-[#7755FF]',
-            linkTagH: 'hover:text-[#0CFF57]',
-            linkTagA: 'active:text-[#FF0000]'
+              titleTxt: 'text-gray-400',
+              wholeTxt: 'text-[#f2f2f2]',
+              wholeBak: 'bg-[#2A2A2A]',
+              errorTxt: 'text-red-500',
+              errorBak: 'bg-[#4a2a2a]',
+              retryTxt: 'text-white',
+              retryBak: 'bg-red-600 hover:bg-red-700',
+              basicTxt: 'text-blue-400',
+              basicBak: 'bg-[#2a2a4a]',
+              basicBdr: 'border-blue-900',
+              unspeBdr: 'border-gray-700',
+              pullmTxt: 'text-white',
+              pullmBak: 'bg-gray-600',
+              resetTxt: 'text-[#f2f2f2]',
+              resetBak: 'bg-blue-800 hover:bg-blue-900',
+              inputTxt: 'text-white',
+              inputBak: 'bg-gray-600',
+              presetIn: 'bg-gray-600',
+              presetBg: 'bg-[#2A2A2A]',
+              btnsdTxt: 'text-white',
+              btnsdDis: 'disabled:bg-gray-500',
+              pullmHov: 'hover:bg-gray-500',
+              pullmTri: 'text-gray-500',
+              pullmDis: 'bg-gray-800',
+              pullNone: 'text-blue-400',
+              pullSepa: 'border-gray-200',
+              btSavBak: 'bg-blue-600 hover:bg-blue-700',
+              btDelBak: 'bg-red-600 hover:bg-red-700',
+              indexTxt: 'text-gray-400',
+              indexHov: 'hover:text-gray-500',
+              indexBdr: 'border-gray-600',
+              char1Tab: 'text-red-600',
+              char1Und: 'border-red-500',
+              char1Txt: 'text-red-500',
+              char1Bak: 'bg-[#4a2a2a]',
+              char1Bdr: 'border-red-900',
+              char1Res: 'bg-red-700 hover:bg-red-800',
+              char1Btn: 'bg-red-600 hover:bg-red-700',
+              char2Tab: 'text-orange-600',
+              char2Und: 'border-orange-500',
+              char2Txt: 'text-orange-500',
+              char2Bak: 'bg-[#522b1c]',
+              char2Bdr: 'border-orange-900',
+              char2Res: 'bg-orange-700 hover:bg-orange-800',
+              char2Btn: 'bg-orange-600 hover:bg-orange-700',
+              char3Tab: 'text-green-600',
+              char3Und: 'border-green-500',
+              char3Txt: 'text-green-500',
+              char3Bak: 'bg-[#2a382a]',
+              char3Bdr: 'border-green-900',
+              char3Res: 'bg-green-700 hover:bg-green-800',
+              char3Btn: 'bg-green-600 hover:bg-green-700',
+              char4Tab: 'text-blue-600',
+              char4Und: 'border-blue-500',
+              char4Txt: 'text-blue-400',
+              char4Bak: 'bg-[#2a2a4a]',
+              char4Bdr: 'border-blue-900',
+              char4Res: 'bg-blue-700 hover:bg-blue-800',
+              char4Btn: 'bg-blue-600 hover:bg-blue-700',
+              char5Tab: 'text-purple-600',
+              char5Und: 'border-purple-500',
+              char5Txt: 'text-purple-400',
+              char5Bak: 'bg-[#4a2a4a]',
+              char5Bdr: 'border-purple-900',
+              char5Res: 'bg-purple-700 hover:bg-purple-800',
+              char5Btn: 'bg-purple-600 hover:bg-purple-700',
+              five1Tab: 'text-gray-500',
+              five1Und: 'border-gray-400',
+              five1Txt: 'text-gray-300',
+              five1Bak: 'bg-gray-700',
+              five1Bdr: 'border-gray-400',
+              five1Btn: 'bg-gray-500 hover:bg-gray-600',
+              btn4cTxt: 'text-white',
+              btn4bBak: 'bg-blue-600 hover:bg-blue-700',
+              btn4gBak: 'bg-green-600 hover:bg-green-700',
+              btn4pBak: 'bg-purple-600 hover:bg-purple-700',
+              btn4rBak: 'bg-red-600 hover:bg-red-700',
+              btn4rAct: 'bg-orange-500',
+              busy1Txt: 'text-white',
+              busy5Txt: 'text-gray-700',
+              busy5Bak: 'bg-gray-500',
+              spiningB: 'border-blue-600',
+              spiningW: 'border-white',
+              alertTxt: 'text-red-300',
+              alertBak: 'bg-red-900',
+              reg4bTxt: 'text-blue-400',
+              reg4bBld: 'text-blue-600',
+              reg4bBak: 'bg-[#2a2a4a]',
+              reg4gTxt: 'text-green-500',
+              reg4gBld: 'text-green-600',
+              reg4gBak: 'bg-[#2a382a]',
+              reg4pTxt: 'text-purple-400',
+              reg4pBld: 'text-purple-600',
+              reg4pBak: 'bg-[#4a2a4a]',
+              reg4rTxt: 'text-red-500',
+              reg4rBld: 'text-red-600',
+              reg4rBak: 'bg-[#4a2a2a]',
+              headText: 'text-gray-300',
+              headGray: 'bg-gray-700',
+              headBlue: 'bg-[#2a2a5a]',
+              headRose: 'bg-[#5a2a2a]',
+              headLime: 'bg-[#2a4a2a]',
+              itemText: 'text-gray-300',
+              itemBack: 'bg-[#2A2A2A]',
+              itemLine: 'divide-gray-600',
+              itemSepa: 'border-gray-600',
+              itemOver: 'hover:bg-gray-700',
+              valueHig: 'text-blue-600',
+              valueZer: 'text-gray-400',
+              valueLow: 'text-red-600',
+              stripedL: 'bg-[#0f3755]',
+              stripedD: 'bg-[#2a2a2a]',
+              listInfo: 'text-gray-300',
+              underTxt: 'text-gray-400',
+              underBdr: 'border-gray-600',
+              linkTagN: 'text-[#1D9BF0]',
+              linkTagV: 'visited:text-[#7755FF]',
+              linkTagH: 'hover:text-[#0CFF57]',
+              linkTagA: 'active:text-[#FF0000]'
             }
           };
 
@@ -354,7 +354,6 @@
               return () => mediaQuery.removeEventListener('change', handleChange);
             }
           }, [theme, themes]);
-
 
           const dataFiles = {
             mainArmor: './data/armor-main.csv',
@@ -738,7 +737,7 @@
             setExcludeSettings(prev => ({ ...prev, main, sub, deco }));
           }, []);
 
-useEffect(() => {
+          useEffect(() => {
             const handleClickOutside = (event) => {
               // 状態異常のプルダウンを閉じるロジック
               characterNames.filter(name => name !== '５人１組').forEach(charNameInLoop => {
@@ -813,7 +812,6 @@ useEffect(() => {
             console.log('User stopped 5-person search.');
           }, []);
 
-
           const calculateCombinations = (charName) => {
             setError('');
             // Clear only searchResultMessage for individual tabs, not 5-person
@@ -841,7 +839,6 @@ useEffect(() => {
                  setError("Web Workersが利用できません。ブラウザをご確認ください。");
                  return;
             }
-
 
             setSearching(prev => ({ ...prev, [charName]: true }));
             setCombinations(prev => ({ ...prev, [charName]: [] }));
@@ -1047,7 +1044,6 @@ useEffect(() => {
                   return prev - 1;
                 });
               }, 1000);
-
               // ここでは startSearch を直接呼ばない。dataLoaded コールバックで呼ぶ
             }
           };
@@ -1186,12 +1182,11 @@ useEffect(() => {
             setFixedEquipments(newFixedEquipments);
           }, [bulkMainArmorSelect, bulkSubArmorSelect, bulkDecorationSelect, fixedEquipments]);
 
-
           const getHeaderClass = useCallback((attr) => {
-            if (['主防具', '副防具', '装飾品', 'キャラ'].includes(attr)) return currentThemeColors.headGray; // Use currentThemeColors
-            if (['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'].includes(attr)) return currentThemeColors.headBlue; // Use currentThemeColors
-            if (['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶'].includes(attr)) return currentThemeColors.headRose; // Use currentThemeColors
-            if (['腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'].includes(attr)) return currentThemeColors.headLime; // Use currentThemeColors
+            if (['主防具', '副防具', '装飾品', 'キャラ'].includes(attr)) return currentThemeColors.headGray;
+            if (['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'].includes(attr)) return currentThemeColors.headBlue;
+            if (['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶'].includes(attr)) return currentThemeColors.headRose;
+            if (['腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'].includes(attr)) return currentThemeColors.headLime;
             return '';
           }, [currentThemeColors]); // Add currentThemeColors to dependency array
 
@@ -1211,14 +1206,14 @@ useEffect(() => {
             <div className={`max-w-8xl mx-auto p-0`}>
               <div className={`${currentThemeColors.wholeTxt} p-6`}>
                 <h1 className={`text-2xl font-bold mb-6 ${currentThemeColors.titleTxt} relative`}>
-                  装備候補検索ツール ver.2025/07/18 
                   <span
                     id="title-star"
-                    className="cursor-pointer text-yellow-500 text-2xl ml-1"
+                    className="cursor-pointer text-yellow-500 text-2xl"
                     onClick={() => setShowThemeOptions(!showThemeOptions)}
                   >
-                    ★
+                  ★
                   </span>
+                  装備候補検索ツール ver.2025/07/18
                   {showThemeOptions && (
                     <div ref={themeOptionsRef} className={`absolute left-0 mt-2 p-4 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded-lg shadow-lg z-20`}>
                       <div className="flex flex-col space-y-2">
@@ -1345,7 +1340,6 @@ useEffect(() => {
                                 setCountdown(0);
                                 console.error("Worker Error Event:", error);
                             };
-
                             newWorkerForRetry.postMessage({ type: 'init', payload: { dataFiles: dataFiles } }); // newWorkerForRetryを使用
                         }
 
@@ -1472,7 +1466,7 @@ useEffect(() => {
                           削除
                         </button>
                       </div>
-<label className={`text-sm ${currentThemeColors.basicTxt}`}>※状態異常耐性の情報も保存できますので、必要なら先にキャラ１タブで設定してください。</label>
+                      <label className={`text-sm ${currentThemeColors.basicTxt}`}>※状態異常耐性の情報も保存できますので、必要なら先にキャラ１タブで設定してください。</label>
                     </div>
 
                     <div className="grid mb-6"></div>
@@ -1539,7 +1533,6 @@ useEffect(() => {
                                   </label>
                                 </div>
                               ))}
-
                             </div>
                           )}
                         </div>
@@ -1605,7 +1598,6 @@ useEffect(() => {
                                   </label>
                                 </div>
                               ))}
-
                             </div>
                           )}
                         </div>
@@ -1671,7 +1663,6 @@ useEffect(() => {
                                   </label>
                                 </div>
                               ))}
-
                             </div>
                           )}
                         </div>
