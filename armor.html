@@ -1888,7 +1888,7 @@
                               {showCharacterDropdown && (
                                   <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}>
                                       <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
-                                          <input type="text" placeholder="検索..." value={characterSearch} onChange={e => { e.stopPropagation(); setCharacterSearch(e.target.value); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                          <input type="text" placeholder="検索..." value={characterSearch} onChange={e => { e.stopPropagation(); setCharacterSearch(e.target.value); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                       </div>
                                       <div className="overflow-y-auto">
                                           <div onClick={() => { handleCharacterSelect(activeTab, ''); setShowCharacterDropdown(false); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>(未指定)</div>
@@ -2062,7 +2062,7 @@
                               ref={(el) => (fixedDropdownRefs.current.main = el)}
                             >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
-                                    <input type="text" placeholder="検索..." value={fixedSearch.main} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                    <input type="text" placeholder="検索..." value={fixedSearch.main} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                 </div>
                                 <div className="overflow-y-auto">
                                     <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: '' }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
@@ -2092,7 +2092,7 @@
                               ref={(el) => (fixedDropdownRefs.current.sub = el)}
                             >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
-                                    <input type="text" placeholder="検索..." value={fixedSearch.sub} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                    <input type="text" placeholder="検索..." value={fixedSearch.sub} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                 </div>
                                 <div className="overflow-y-auto">
                                     <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: '' }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
@@ -2122,7 +2122,7 @@
                               ref={(el) => (fixedDropdownRefs.current.deco = el)}
                             >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
-                                    <input type="text" placeholder="検索..." value={fixedSearch.deco} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                    <input type="text" placeholder="検索..." value={fixedSearch.deco} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                 </div>
                                 <div className="overflow-y-auto">
                                     <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: '' }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
@@ -2154,7 +2154,7 @@
                                           {showBulkDropdown.main && (
                                               <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.main = el)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
-                                                      <input type="text" placeholder="検索..." value={bulkSearch.main} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                                      <input type="text" placeholder="検索..." value={bulkSearch.main} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                   </div>
                                                   <div className="overflow-y-auto">
                                                       <div onClick={() => { setBulkMainArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
@@ -2184,7 +2184,7 @@
                                           {showBulkDropdown.sub && (
                                               <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.sub = el)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
-                                                      <input type="text" placeholder="検索..." value={bulkSearch.sub} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                                      <input type="text" placeholder="検索..." value={bulkSearch.sub} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                   </div>
                                                   <div className="overflow-y-auto">
                                                       <div onClick={() => { setBulkSubArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
@@ -2214,7 +2214,7 @@
                                           {showBulkDropdown.deco && (
                                               <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.deco = el)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
-                                                      <input type="text" placeholder="検索..." value={bulkSearch.deco} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                                      <input type="text" placeholder="検索..." value={bulkSearch.deco} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                   </div>
                                                   <div className="overflow-y-auto">
                                                       <div onClick={() => { setBulkDecorationSelect(''); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
