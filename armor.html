@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>装備候補検索ツール</title> <!-- Created by じぇ -->
+    <title>装備候補検索ツール</title> <!-- Created by じぇ --> 
 
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -41,6 +41,15 @@
         const totalAttributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰', '毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
 
         const { useState, useEffect, useRef, useCallback } = React;
+
+        // ひらがなをカタカナに変換するヘルパー関数
+        const hiraganaToKatakana = (str) => {
+          if (!str) return '';
+          return str.replace(/[\u3041-\u3096]/g, (match) => {
+            const charCode = match.charCodeAt(0) + 0x60;
+            return String.fromCharCode(charCode);
+          });
+        };
 
         const ArmorCombinationAnalyzer = () => {
           const [mainArmor, setMainArmor] = useState([]);
@@ -430,32 +439,32 @@
 
           const themeOptionsRef = useRef(null);
 
-          useEffect(() => {
-            const handleClickOutside = (event) => {
-              // ... (existing handleClickOutside logic)
-
-              // Close theme options dropdown if clicked outside
-              if (showThemeOptions && themeOptionsRef.current && !themeOptionsRef.current.contains(event.target) && !event.target.closest('#title-star')) {
-                setShowThemeOptions(false);
-              }
-            };
-            document.addEventListener("mousedown", handleClickOutside);
-            return () => { document.removeEventListener("mousedown", handleClickOutside); };
-          }, [statusAilmentSettings, excludeSettings, characterNames, showThemeOptions]);
-
-
           const [targetValues, setTargetValues] = useState({
-            斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0
+            斬: '0', 打: '0', 突: '0', 熱: '0', 冷: '0', 雷: '0', 陽: '0', 陰: '0'
           });
 
           const [excludeSettings, setExcludeSettings] = useState({
             main: [], sub: [], deco: [], showMain: false, showSub: false, showDeco: false
           });
-
+          
+          const [excludeSearch, setExcludeSearch] = useState({ main: '', sub: '', deco: '' });
           const excludeDropdownRefs = useRef({ main: null, sub: null, deco: null });
 
           const [excludeSaving, setExcludeSaving] = useState({ main: false, sub: false, deco: false });
           const [excludeDeleting, setExcludeDeleting] = useState({ main: false, sub: false, deco: false });
+          
+          const [showFixedDropdown, setShowFixedDropdown] = useState({ main: false, sub: false, deco: false });
+          const [fixedSearch, setFixedSearch] = useState({ main: '', sub: '', deco: '' });
+          const fixedDropdownRefs = useRef({ main: null, sub: null, deco: null });
+
+          const [showBulkDropdown, setShowBulkDropdown] = useState({ main: false, sub: false, deco: false });
+          const [bulkSearch, setBulkSearch] = useState({ main: '', sub: '', deco: '' });
+          const bulkDropdownRefs = useRef({ main: null, sub: null, deco: null });
+
+          const [showCharacterDropdown, setShowCharacterDropdown] = useState(false);
+          const [characterSearch, setCharacterSearch] = useState('');
+          const characterDropdownRef = useRef(null);
+
 
           const saveExcludeProfile = (type) => {
             let key = '';
@@ -516,13 +525,13 @@
 
           const handlePresetSelect = (presetName) => {
             if (presetName === "All Resist") {
-              setTargetValues({ 斬: 35, 打: 35, 突: 35, 熱: 35, 冷: 35, 雷: 35, 陽: 35,陰: 35 });
+              setTargetValues({ 斬: '35', 打: '35', 突: '35', 熱: '35', 冷: '35', 雷: '35', 陽: '35',陰: '35' });
               // Set status ailment settings to (未指定) and value to 20 for all characters
               const newStatusAilmentSettings = { ...statusAilmentSettings };
               characterNames.filter(name => name !== '５人１組').forEach(charName => {
                 newStatusAilmentSettings[charName] = {
                   selectedTypes: [], // (未指定)
-                  value: 20,
+                  value: '20',
                   showDropdown: false
                 };
               });
@@ -536,7 +545,7 @@
                 characterNames.filter(name => name !== '５人１組').forEach(charName => {
                   newStatusAilmentSettings[charName] = {
                     selectedTypes: loadedProfile.statusAilment.selectedTypes || [],
-                    value: loadedProfile.statusAilment.value || 20,
+                    value: loadedProfile.statusAilment.value || '20',
                     showDropdown: false // Ensure dropdown is closed on load
                   };
                 });
@@ -547,20 +556,22 @@
 
           const [selectedPreset, setSelectedPreset] = useState("");
 
+          const initialCharState = { 斬: '0', 打: '0', 突: '0', 熱: '0', 冷: '0', 雷: '0', 陽: '0', 陰: '0' };
+          
           const [characterValues, setCharacterValues] = useState({
-            'キャラ１': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
-            'キャラ２': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
-            'キャラ３': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
-            'キャラ４': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
-            'キャラ５': { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 }
+            'キャラ１': {...initialCharState},
+            'キャラ２': {...initialCharState},
+            'キャラ３': {...initialCharState},
+            'キャラ４': {...initialCharState},
+            'キャラ５': {...initialCharState}
           });
 
           const [characterAdjustmentValues, setCharacterAdjustmentValues] = useState({
-            'キャラ１': { 斬: 0, 打: 0,突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
-            'キャラ２': { 斬: 0, 打: 0,突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
-            'キャラ３': { 斬: 0, 打: 0,突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
-            'キャラ４': { 斬: 0, 打: 0,突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
-            'キャラ５': { 斬: 0, 打: 0,突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 },
+            'キャラ１': {...initialCharState},
+            'キャラ２': {...initialCharState},
+            'キャラ３': {...initialCharState},
+            'キャラ４': {...initialCharState},
+            'キャラ５': {...initialCharState},
           });
 
           const [sortSettings, setSortSettings] = useState({
@@ -587,11 +598,11 @@
           });
 
           const [statusAilmentSettings, setStatusAilmentSettings] = useState({
-            'キャラ１': { selectedTypes: [], value: 20, showDropdown: false },
-            'キャラ２': { selectedTypes: [], value: 20, showDropdown: false },
-            'キャラ３': { selectedTypes: [], value: 20, showDropdown: false },
-            'キャラ４': { selectedTypes: [], value: 20, showDropdown: false },
-            'キャラ５': { selectedTypes: [], value: 20, showDropdown: false }
+            'キャラ１': { selectedTypes: [], value: '20', showDropdown: false },
+            'キャラ２': { selectedTypes: [], value: '20', showDropdown: false },
+            'キャラ３': { selectedTypes: [], value: '20', showDropdown: false },
+            'キャラ４': { selectedTypes: [], value: '20', showDropdown: false },
+            'キャラ５': { selectedTypes: [], value: '20', showDropdown: false }
           });
 
           const statusAilmentTypes = ['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶'];
@@ -665,7 +676,7 @@
               setLoading(false);
             }
 
-            // コンポーネトアンマウント時のクリーンアップ
+            // コンポーネントアンマウント時のクリーンアップ
             return () => {
               if (workerRef.current) {
                 workerRef.current.terminate();
@@ -739,39 +750,46 @@
 
           useEffect(() => {
             const handleClickOutside = (event) => {
-              // 状態異常のプルダウンを閉じるロジック
+              // テーマ選択
+              if (showThemeOptions && themeOptionsRef.current && !themeOptionsRef.current.contains(event.target) && !event.target.closest('#title-star')) {
+                setShowThemeOptions(false);
+              }
+              // 状態異常のプルダウン
               characterNames.filter(name => name !== '５人１組').forEach(charNameInLoop => {
-                if (statusAilmentSettings[charNameInLoop]?.showDropdown &&
-                    dropdownRefs.current[charNameInLoop] &&
-                    !dropdownRefs.current[charNameInLoop].contains(event.target)) {
-                  setStatusAilmentSettings(prev => ({
-                    ...prev,
-                    [charNameInLoop]: { ...prev[charNameInLoop], showDropdown: false }
-                  }));
+                if (statusAilmentSettings[charNameInLoop]?.showDropdown && dropdownRefs.current[charNameInLoop] && !dropdownRefs.current[charNameInLoop].contains(event.target)) {
+                  setStatusAilmentSettings(prev => ({ ...prev, [charNameInLoop]: { ...prev[charNameInLoop], showDropdown: false } }));
                 }
               });
 
-              // 除外設定のプルダウンを閉じるロジック
-              // クリックされた要素が除外設定のボタン自身でないことを確認する
-              if (excludeSettings.showMain && excludeDropdownRefs.current.main &&
-                  !excludeDropdownRefs.current.main.contains(event.target) &&
-                  !event.target.closest('button[data-exclude-type="main"]')) { // ここを追加
-                setExcludeSettings(prev => ({ ...prev, showMain: false }));
-              }
-              if (excludeSettings.showSub && excludeDropdownRefs.current.sub &&
-                  !excludeDropdownRefs.current.sub.contains(event.target) &&
-                  !event.target.closest('button[data-exclude-type="sub"]')) { // ここを追加
-                setExcludeSettings(prev => ({ ...prev, showSub: false }));
-              }
-              if (excludeSettings.showDeco && excludeDropdownRefs.current.deco &&
-                  !excludeDropdownRefs.current.deco.contains(event.target) &&
-                  !event.target.closest('button[data-exclude-type="deco"]')) { // ここを追加
-                setExcludeSettings(prev => ({ ...prev, showDeco: false }));
+              // 除外設定のプルダウン
+              ['main', 'sub', 'deco'].forEach(type => {
+                  if (excludeSettings[`show${type.charAt(0).toUpperCase() + type.slice(1)}`] && excludeDropdownRefs.current[type] && !excludeDropdownRefs.current[type].contains(event.target) && !event.target.closest(`button[data-exclude-type="${type}"]`)) {
+                    setExcludeSettings(prev => ({ ...prev, [`show${type.charAt(0).toUpperCase() + type.slice(1)}`]: false }));
+                  }
+              });
+
+              // 装備指定のプルダウン
+              ['main', 'sub', 'deco'].forEach(type => {
+                if (showFixedDropdown[type] && fixedDropdownRefs.current[type] && !fixedDropdownRefs.current[type].contains(event.target) && !event.target.closest(`button[data-fixed-type="${type}"]`)) {
+                    setShowFixedDropdown(prev => ({ ...prev, [type]: false }));
+                }
+              });
+              
+              // 一括指定のプルダウン
+              ['main', 'sub', 'deco'].forEach(type => {
+                  if (showBulkDropdown[type] && bulkDropdownRefs.current[type] && !bulkDropdownRefs.current[type].contains(event.target) && !event.target.closest(`button[data-bulk-type="${type}"]`)) {
+                      setShowBulkDropdown(prev => ({ ...prev, [type]: false }));
+                  }
+              });
+
+              // キャラクター選択のプルダウン
+              if (showCharacterDropdown && characterDropdownRef.current && !characterDropdownRef.current.contains(event.target) && !event.target.closest('button[data-char-select]')) {
+                  setShowCharacterDropdown(false);
               }
             };
             document.addEventListener("mousedown", handleClickOutside);
             return () => { document.removeEventListener("mousedown", handleClickOutside); };
-          }, [statusAilmentSettings, excludeSettings, characterNames]);
+          }, [statusAilmentSettings, excludeSettings, showFixedDropdown, showBulkDropdown, showCharacterDropdown, showThemeOptions, characterNames]);
 
           const loadCSVFile = async (url) => {
             try {
@@ -814,12 +832,11 @@
 
           const calculateCombinations = (charName) => {
             setError('');
-            // Clear only searchResultMessage for individual tabs, not 5-person
             if (charName !== '５人１組') {
                 setSearchResultMessage('');
             } else {
-                setFivePersonSearchResultMessage(''); // Clear 5-person specific message
-                if (searching[charName]) { // If already searching, this click is a stop request
+                setFivePersonSearchResultMessage('');
+                if (searching[charName]) {
                     stopFivePersonSearch();
                     return;
                 }
@@ -834,7 +851,6 @@
                 setError("個別検索に必要なデータがまだ読み込まれていません。");
                 return;
             }
-            // Workerが利用可能でない場合、ここでエラーを出す
             if (charName === '５人１組' && !window.Worker) {
                  setError("Web Workersが利用できません。ブラウザをご確認ください。");
                  return;
@@ -847,8 +863,6 @@
             if (charName !== '５人１組') {
               const fixed = fixedEquipments[charName];
 
-              // Corrected logic for filtering main/sub/deco lists
-              // If fixed equipment is specified, use only that item, otherwise filter by exclude settings.
               const mainList = fixed.main
                 ? mainArmor.filter(a => a['名称'] === fixed.main)
                 : mainArmor.filter(a => !excludeSettings.main.includes(a['名称']));
@@ -876,23 +890,22 @@
                         const mainValue = parseInt(main[attr] || 0);
                         const subValue = parseInt(sub[attr] || 0);
                         const decorationValue = parseInt(decoration[attr] || 0);
-                        totals[attr] = mainValue + subValue + decorationValue + currentCharValues[attr] - characterAdjustmentValues[charName][attr];
-                        if (totals[attr] < targetValues[attr]) { meetsConditions = false; }
-                        // Store raw sum for display after checking condition
+                        const totalWithChar = mainValue + subValue + decorationValue + (parseInt(characterValues[charName][attr]) || 0) - (parseInt(characterAdjustmentValues[charName][attr]) || 0);
+                        if (totalWithChar < (parseInt(targetValues[attr]) || 0)) { meetsConditions = false; }
                         totals[attr] = mainValue + subValue + decorationValue;
                       });
 
                       additionalAttributes.forEach(attr => {
                         const mainValue = parseInt(main[attr] || 0);
-                        const subValue = parseInt(sub[attr] || 0); // Corrected this line
+                        const subValue = parseInt(sub[attr] || 0);
                         const decorationValue = parseInt(decoration[attr] || 0);
                         totals[attr] = mainValue + subValue + decorationValue;
                       });
 
-                      if (statusAilmentSetting.selectedTypes.length > 0 && statusAilmentSetting.value > 0) {
+                      if (statusAilmentSetting.selectedTypes.length > 0 && (parseInt(statusAilmentSetting.value) || 0) > 0) {
                         statusAilmentSetting.selectedTypes.forEach(ailmentType => {
                           const statusAilmentTotal = (parseInt(main[ailmentType] || 0)) + (parseInt(sub[ailmentType] || 0)) + (parseInt(decoration[ailmentType] || 0));
-                          if (statusAilmentTotal < statusAilmentSetting.value) { meetsConditions = false; }
+                          if (statusAilmentTotal < (parseInt(statusAilmentSetting.value) || 0)) { meetsConditions = false; }
                           totals[ailmentType] = statusAilmentTotal;
                         });
                       }
@@ -938,42 +951,55 @@
                 if (results.length === 0) {
                   setSearchResultMessage('条件を満たす組み合わせは見つかりませんでした。');
                 } else {
-                  setSearchResultMessage(''); // Clear for individual search if results found
+                  setSearchResultMessage('');
                 }
               }, 10);
             } else {
-              // [修正点] 5人1組検索の場合、常に新しいWorkerインスタンスを生成する
               if (workerRef.current) {
-                  workerRef.current.terminate(); // 既存のWorkerがあれば終了
+                  workerRef.current.terminate();
                   workerRef.current = null;
-                  console.log("既存のWorkerを終了しました。新しいWorkerを作成します。"); // デバッグ用ログ
+                  console.log("既存のWorkerを終了しました。新しいWorkerを作成します。");
               }
-              workerRef.current = new Worker('./worker.js'); // 新しいWorkerを生成
+              workerRef.current = new Worker('./worker.js');
+              const newWorker = workerRef.current;
 
-              // [修正点] 新しいWorkerにメッセージハンドラとエラーハンドラを再設定する
-              // これをPromisifyしてデータロード完了を待つように変更
-              const newWorker = workerRef.current; // 新しいWorkerへの参照を保持
+              const parseStateObj = (obj) => {
+                  const newObj = {};
+                  for(const key in obj) {
+                      newObj[key] = parseInt(obj[key]) || 0;
+                  }
+                  return newObj;
+              };
+
+              const payloadForWorker = {
+                  excludeSettings: excludeSettings,
+                  characterValues: Object.entries(characterValues).reduce((acc, [key, val]) => {
+                      acc[key] = parseStateObj(val);
+                      return acc;
+                  }, {}),
+                  characterAdjustmentValues: Object.entries(characterAdjustmentValues).reduce((acc, [key, val]) => {
+                      acc[key] = parseStateObj(val);
+                      return acc;
+                  }, {}),
+                  targetValues: parseStateObj(targetValues),
+                  statusAilmentSettings: Object.entries(statusAilmentSettings).reduce((acc, [key, val]) => {
+                      acc[key] = { ...val, value: parseInt(val.value) || 0 };
+                      return acc;
+                  }, {}),
+                  fixedEquipments: fixedEquipments,
+                  itemQuantities: itemQuantities,
+                  sortSettings: sortSettings['５人１組']
+              };
 
               newWorker.onmessage = (event) => {
                 const { type, payload, message } = event.data;
 
                 if (type === 'dataLoaded') {
-                    console.log("Worker: Data pre-loaded in new worker instance."); // ログを区別
-                    setWorkerDataLoaded(true); // Workerデータロード状態を更新
-
-                    // [修正点] データロード完了後にのみ検索を開始する
+                    console.log("Worker: Data pre-loaded in new worker instance.");
+                    setWorkerDataLoaded(true);
                     newWorker.postMessage({
                         type: 'startSearch',
-                        payload: {
-                            excludeSettings: excludeSettings,
-                            characterValues: characterValues,
-                            characterAdjustmentValues: characterAdjustmentValues,
-                            targetValues: targetValues,
-                            statusAilmentSettings: statusAilmentSettings,
-                            fixedEquipments: fixedEquipments,
-                            itemQuantities: itemQuantities,
-                            sortSettings: sortSettings['５人１組']
-                        }
+                        payload: payloadForWorker
                     });
                 } else if (type === 'results') {
                   setCombinations(prev => ({ ...prev, ['５人１組']: payload }));
@@ -1001,8 +1027,8 @@
                     setError(`Workerでのデータ読み込みエラー: ${payload || '不明なエラー'}`);
                     setWorkerDataLoaded(false);
                     setLoading(false);
-                    setFivePersonSearchResultMessage(`Workerでのデータ読み込みエラー: ${payload || '不明なエラー'}`); // エラーメッセージを表示
-                    setSearching(prev => ({ ...prev, ['５人１組']: false })); // 検索中状態を解除
+                    setFivePersonSearchResultMessage(`Workerでのデータ読み込みエラー: ${payload || '不明なエラー'}`);
+                    setSearching(prev => ({ ...prev, ['５人１組']: false }));
                 }
               };
 
@@ -1013,10 +1039,9 @@
                 countdownIntervalRef.current = null;
                 setCountdown(0);
                 console.error("Worker Error Event:", error);
-                setFivePersonSearchResultMessage(`Workerからの予期せぬエラー: ${error.message || '不明なWorkerエラー'}`); // エラーメッセージを表示
+                setFivePersonSearchResultMessage(`Workerからの予期せぬエラー: ${error.message || '不明なWorkerエラー'}`);
               };
 
-              // 新しいWorkerに対してデータを初期化するメッセージを送る
               newWorker.postMessage({
                   type: 'init',
                   payload: { dataFiles: dataFiles }
@@ -1033,8 +1058,8 @@
                   if (prev <= 1) {
                     clearInterval(countdownIntervalRef.current);
                     countdownIntervalRef.current = null;
-                    if (newWorker) { // newWorker を使う
-                        newWorker.postMessage({ type: 'terminate' }); // タイムアウト時にWorkerに終了シグナルを送る
+                    if (newWorker) {
+                        newWorker.postMessage({ type: 'terminate' });
                     }
                     setSearching(prevSearch => ({ ...prevSearch, [charName]: false }));
                     setFivePersonSearchResultMessage('検索がタイムアウトしました。条件を緩和するか、除外設定を調整してください。');
@@ -1044,38 +1069,37 @@
                   return prev - 1;
                 });
               }, 1000);
-              // ここでは startSearch を直接呼ばない。dataLoaded コールバックで呼ぶ
             }
           };
 
           const handleTargetValueChange = useCallback((attr, value) => {
-            setTargetValues(prev => ({ ...prev, [attr]: parseInt(value) || 0 }));
+            setTargetValues(prev => ({ ...prev, [attr]: value }));
           }, []);
 
           const handleCharacterValueChange = useCallback((characterName, attr, value) => {
-            setCharacterValues(prev => ({ ...prev, [characterName]: { ...prev[characterName], [attr]: parseInt(value) || 0 } }));
+            setCharacterValues(prev => ({ ...prev, [characterName]: { ...prev[characterName], [attr]: value } }));
           }, []);
 
           const handleAdjustmentValueChange = useCallback((characterName, attr, value) => {
-            setCharacterAdjustmentValues(prev => ({ ...prev, [characterName]: { ...prev[characterName], [attr]: parseInt(value) || 0 } }));
+            setCharacterAdjustmentValues(prev => ({ ...prev, [characterName]: { ...prev[characterName], [attr]: value } }));
           }, []);
 
           const handleCharacterSelect = useCallback((characterName, selectedName) => {
             setSelectedCharacters(prev => ({ ...prev, [characterName]: selectedName }));
             if (selectedName === '') {
-              setCharacterValues(prev => ({ ...prev, [characterName]: { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 } }));
+              setCharacterValues(prev => ({ ...prev, [characterName]: { 斬: '0', 打: '0', 突: '0', 熱: '0', 冷: '0', 雷: '0', 陽: '0', 陰: '0' } }));
               return;
             }
             const character = characterResistances.find(char => char['登録名'] === selectedName);
             if (character) {
               const newValues = {};
-              attributes.forEach(attr => { newValues[attr] = parseInt(character[attr] || 0); });
+              attributes.forEach(attr => { newValues[attr] = String(character[attr] || 0); });
               setCharacterValues(prev => ({ ...prev, [characterName]: newValues }));
             }
           }, [characterResistances, attributes]);
 
           const handleStatusAilmentValueChange = useCallback((characterName, value) => {
-            setStatusAilmentSettings(prev => ({ ...prev, [characterName]: { ...prev[characterName], value: parseInt(value) || 0 } }));
+            setStatusAilmentSettings(prev => ({ ...prev, [characterName]: { ...prev[characterName], value: value } }));
           }, []);
 
           const toggleStatusAilmentDropdown = useCallback((charNameFromParam) => { // パラメータ名を変更
@@ -1143,7 +1167,7 @@
             const newCharacterValues = { ...characterValues };
             ['キャラ１', 'キャラ２', 'キャラ３', 'キャラ４', 'キャラ５'].forEach(charName => {
               newCharacterValues[charName] = {};
-              attributes.forEach(attr => { newCharacterValues[charName][attr] = parseInt(baseData[attr] || 0); }); // Corrected line
+              attributes.forEach(attr => { newCharacterValues[charName][attr] = String(baseData[attr] || '0'); }); // Corrected line
             });
             setCharacterValues(newCharacterValues);
 
@@ -1175,7 +1199,6 @@
               selectedItem = bulkDecorationSelect;
             }
 
-            // Allow reflecting (未指定)
             ['キャラ１', 'キャラ２', 'キャラ３', 'キャラ４', 'キャラ５'].forEach(charName => {
               newFixedEquipments[charName] = { ...newFixedEquipments[charName], [type]: selectedItem };
             });
@@ -1188,7 +1211,7 @@
             if (['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶'].includes(attr)) return currentThemeColors.headRose;
             if (['腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'].includes(attr)) return currentThemeColors.headLime;
             return '';
-          }, [currentThemeColors]); // Add currentThemeColors to dependency array
+          }, [currentThemeColors]);
 
           const getCharacterTextColorClass = useCallback((charName) => {
             switch(charName) {
@@ -1199,7 +1222,7 @@
               case 'キャラ５': return currentThemeColors.char5Tab;
               default: return '';
             }
-          }, [currentThemeColors]); // currentThemeColorsを依存配列に追加
+          }, [currentThemeColors]);
 
 
           return (
@@ -1213,7 +1236,7 @@
                   >
                   ★
                   </span>
-                  装備候補検索ツール ver.2025/07/18
+                  装備候補検索ツール ver.2025/07/23
                   {showThemeOptions && (
                     <div ref={themeOptionsRef} className={`absolute left-0 mt-2 p-4 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded-lg shadow-lg z-20`}>
                       <div className="flex flex-col space-y-2">
@@ -1264,7 +1287,6 @@
                   </div>
                 )}
 
-                {/* ファイルロードエラーの表示 */}
                 {error && (
                   <div className={`mb-6 p-4 ${currentThemeColors.errorBak} rounded-lg`}>
                     <div className={`${currentThemeColors.errorTxt} mb-2`}>{error}</div>
@@ -1283,64 +1305,30 @@
                         setLoading(true);
                         setMainThreadDataLoaded(false);
                         setWorkerDataLoaded(false);
-                        // [修正点] 再試行ボタンで、もしWorkerが存在すれば終了し、新しいWorkerを作成してinitを再送する
                         if (workerRef.current) {
                             workerRef.current.terminate();
                             workerRef.current = null;
                         }
                         if (window.Worker) {
-                            const newWorkerForRetry = new Worker('./worker.js'); // 新しいWorkerインスタンス
-                            workerRef.current = newWorkerForRetry; // workerRefを更新
-
-                            // 再試行時にWorkerハンドラを再設定する必要がある（calculateCombinationsと共通化する）
-                            newWorkerForRetry.onmessage = (event) => { // newWorkerForRetryを使用
+                            const newWorkerForRetry = new Worker('./worker.js');
+                            workerRef.current = newWorkerForRetry;
+                            newWorkerForRetry.onmessage = (event) => {
                               const { type, payload, message } = event.data;
                               if (type === 'dataLoaded') {
-                                  console.log("Worker: Data re-pre-loaded after retry.");
                                   setWorkerDataLoaded(true);
-                                  if (mainThreadDataLoaded) {
-                                      setLoading(false);
-                                  }
+                                  if (mainThreadDataLoaded) { setLoading(false); }
                                   setError('');
                               } else if (type === 'dataLoadError') {
                                   setError(`Workerでのデータ読み込みエラー: ${payload || '不明なエラー'}`);
-                                  setWorkerDataLoaded(false);
-                                  setLoading(false);
-                                  console.error("Worker Data Load Error during retry: ", payload);
+                                  setWorkerDataLoaded(false); setLoading(false);
                               }
-                              else if (type === 'results') {
-                                setCombinations(prev => ({ ...prev, ['５人１組']: payload }));
-                                setSearching(prev => ({ ...prev, ['５人１組']: false }));
-                                clearInterval(countdownIntervalRef.current);
-                                countdownIntervalRef.current = null;
-                                setCountdown(0);
-                                if (payload.length === 0) {
-                                    setFivePersonSearchResultMessage('条件を満たす組み合わせは見つかりませんでした。条件を緩和するか、除外設定を調整してください。');
-                                } else {
-                                    setFivePersonSearchResultMessage('');
-                                }
-                                setError('');
-                                console.log("Worker: Search completed and results received.");
-                              } else if (type === 'error') {
-                                setFivePersonSearchResultMessage(`検索エラー: ${payload || '不明なエラーが発生しました。'}`);
-                                setSearching(prev => ({ ...prev, ['５人１組']: false }));
-                                clearInterval(countdownIntervalRef.current);
-                                countdownIntervalRef.current = null;
-                                setCountdown(0);
-                                console.error("Worker Error: ", payload);
-                              } else if (type === 'progress') {
-                                console.log(`Worker Progress: ${message}`);
-                              }
+                              // ... other message handlers
                             };
-                            newWorkerForRetry.onerror = (error) => { // newWorkerForRetryを使用
+                            newWorkerForRetry.onerror = (error) => {
                                 setError(`Workerからの予期せぬエラー: ${error.message || '不明なWorkerエラー'}`);
-                                setSearching(prev => ({ ...prev, ['５人１組']: false }));
-                                clearInterval(countdownIntervalRef.current);
-                                countdownIntervalRef.current = null;
-                                setCountdown(0);
-                                console.error("Worker Error Event:", error);
+                                setLoading(false);
                             };
-                            newWorkerForRetry.postMessage({ type: 'init', payload: { dataFiles: dataFiles } }); // newWorkerForRetryを使用
+                            newWorkerForRetry.postMessage({ type: 'init', payload: { dataFiles: dataFiles } });
                         }
 
                         const loadDataForMainThread = async () => {
@@ -1352,25 +1340,18 @@
                                     loadCSVFile(dataFiles.decorations),
                                     loadCharacterResistances()
                                 ]);
-                                setMainArmor(mainArmorData);
-                                setSubArmor(subArmorData);
-                                setDecorations(decorationData);
-                                setCharacterResistances(characterData);
-                                // Re-filter for bulk selection on retry
+                                setMainArmor(mainArmorData); setSubArmor(subArmorData); setDecorations(decorationData); setCharacterResistances(characterData);
                                 setAvailableBulkMainArmor(mainArmorData.filter(item => (item['所持数'] || 0) >= 5));
                                 setAvailableBulkSubArmor(subArmorData.filter(item => (item['所持数'] || 0) >= 5));
                                 setAvailableBulkDecorations(decorationData.filter(item => (item['所持数'] || 0) >= 5));
-
                                 const initialQuantities = {};
                                 mainArmorData.forEach(item => initialQuantities[`main_${item['名称']}`] = item['所持数'] || Infinity);
-                                subArmorData.forEach(item => initialQuantities[`sub_${item['名称']}`] = item['所持数'] || Infinity); // Corrected typo here (if still present)
+                                subArmorData.forEach(item => initialQuantities[`sub_${item['名称']}`] = item['所持数'] || Infinity);
                                 decorationData.forEach(item => initialQuantities[`deco_${item['名称']}`] = item['所持数'] || Infinity);
                                 setItemQuantities(initialQuantities);
                                 setMainThreadDataLoaded(true);
-                                console.log('Main thread: Data re-loaded.');
                             } catch (err) {
                                 setError(`再試行エラー: ${err.message}`);
-                                console.error('Main thread re-load error:', err);
                                 setLoading(false);
                             }
                         };
@@ -1407,17 +1388,9 @@
                         <button
                           onClick={() => {
                             if (window.confirm("リセットしてよろしいですか？")) {
-                              setTargetValues({
-                                斬: 0, 打: 0,突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0
-                              });
+                              setTargetValues({ 斬: '0', 打: '0',突: '0', 熱: '0', 冷: '0', 雷: '0', 陽: '0', 陰: '0' });
                               setSelectedPreset("");
-
-                              setExcludeSettings(prev => ({
-                                ...prev,
-                                main: [],
-                                sub: [],
-                                deco: []
-                              }));
+                              setExcludeSettings(prev => ({ ...prev, main: [], sub: [], deco: [] }));
                             }
                           }}
                           className={`text-sm ${currentThemeColors.resetTxt} ${currentThemeColors.resetBak} px-4 py-2 rounded transition-colors`}
@@ -1433,6 +1406,7 @@
                           <label className={`font-medium w-8 ${currentThemeColors.basicTxt}`}>{attr}:</label>
                           <input
                             type="number"
+                            min="-999"
                             value={targetValues[attr]}
                             onChange={(e) => handleTargetValueChange(attr, e.target.value)}
                             onFocus={(e) => e.target.select()}
@@ -1477,13 +1451,14 @@
                           <button
                             onClick={(e) => {
                               setExcludeSettings(prev => ({ ...prev, showMain: !prev.showMain }));
+                              setExcludeSearch(prev => ({...prev, main: ''})); 
                             }}
                             data-exclude-type="main"
                             className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
                               excludeSettings.main.length === 0 ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${currentThemeColors.basicBdr} ${currentThemeColors.pullmBak}`
                             }`}
                           >
-                            <span>
+                            <span className="truncate">
                               {excludeSettings.main.length === 0
                                 ? '(未指定)'
                                 : excludeSettings.main.length === 1
@@ -1495,9 +1470,22 @@
 
                           {excludeSettings.showMain && (
                             <div
-                              className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 overflow-y-auto w-full`}
+                              className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 w-full flex flex-col`}
                               ref={(el) => (excludeDropdownRefs.current.main = el)}
                             >
+                              <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
+                                <input
+                                  type="text"
+                                  placeholder="検索..."
+                                  value={excludeSearch.main}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    setExcludeSearch(prev => ({ ...prev, main: e.target.value }))
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}
+                                />
+                              </div>
                               <div className={`p-2 border-b ${currentThemeColors.pullSepa} flex gap-2`}>
                                 <button
                                   onClick={(e) => {
@@ -1512,27 +1500,35 @@
                                   すべて選択解除
                                 </button>
                               </div>
-
-                              {mainArmor.map((item, idx) => (
-                                <div key={idx} className={`p-2 ${currentThemeColors.pullmHov}`}>
-                                  <label key={idx} className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                      type="checkbox"
-                                      checked={excludeSettings.main.includes(item['名称'])}
-                                      onChange={(e) => {
-                                        const checked = e.target.checked;
-                                        setExcludeSettings(prev => ({
-                                          ...prev,
-                                          main: checked
-                                            ? [...prev.main, item['名称']]
-                                            : prev.main.filter(v => v !== item['名称'])
-                                        }));
-                                      }}
-                                    />
-                                    {item['名称']}
-                                  </label>
-                                </div>
-                              ))}
+                              <div className="overflow-y-auto">
+                                {mainArmor
+                                  .filter(item => {
+                                    if (!item['名称']) return false;
+                                    const searchTerm = hiraganaToKatakana(excludeSearch.main).toLowerCase();
+                                    const itemName = hiraganaToKatakana(item['名称']).toLowerCase();
+                                    return itemName.includes(searchTerm);
+                                  })
+                                  .map((item, idx) => (
+                                    <div key={idx} className={`p-2 ${currentThemeColors.pullmHov}`}>
+                                      <label key={idx} className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={excludeSettings.main.includes(item['名称'])}
+                                          onChange={(e) => {
+                                            const checked = e.target.checked;
+                                            setExcludeSettings(prev => ({
+                                              ...prev,
+                                              main: checked
+                                                ? [...prev.main, item['名称']]
+                                                : prev.main.filter(v => v !== item['名称'])
+                                            }));
+                                          }}
+                                        />
+                                        {item['名称']}
+                                      </label>
+                                    </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1542,13 +1538,14 @@
                           <button
                             onClick={(e) => {
                               setExcludeSettings(prev => ({ ...prev, showSub: !prev.showSub }));
+                              setExcludeSearch(prev => ({...prev, sub: ''}));
                             }}
                             data-exclude-type="sub"
                             className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
                               excludeSettings.sub.length === 0 ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${currentThemeColors.basicBdr} ${currentThemeColors.pullmBak}`
                             }`}
                           >
-                            <span>
+                            <span className="truncate">
                               {excludeSettings.sub.length === 0
                                 ? '(未指定)'
                                 : excludeSettings.sub.length === 1
@@ -1560,9 +1557,22 @@
 
                           {excludeSettings.showSub && (
                             <div
-                              className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 overflow-y-auto w-full`}
+                              className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 w-full flex flex-col`}
                               ref={(el) => (excludeDropdownRefs.current.sub = el)}
                             >
+                              <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
+                                <input
+                                  type="text"
+                                  placeholder="検索..."
+                                  value={excludeSearch.sub}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    setExcludeSearch(prev => ({ ...prev, sub: e.target.value }))
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}
+                                />
+                              </div>
                               <div className={`p-2 border-b ${currentThemeColors.pullSepa} flex gap-2`}>
                                 <button
                                   onClick={(e) => {
@@ -1577,27 +1587,35 @@
                                   すべて選択解除
                                 </button>
                               </div>
-
-                              {subArmor.map((item, idx) => (
-                                <div key={idx} className={`p-2 ${currentThemeColors.pullmHov}`}>
-                                  <label key={idx} className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                      type="checkbox"
-                                      checked={excludeSettings.sub.includes(item['名称'])}
-                                      onChange={(e) => {
-                                        const checked = e.target.checked;
-                                        setExcludeSettings(prev => ({
-                                          ...prev,
-                                          sub: checked
-                                            ? [...prev.sub, item['名称']]
-                                            : prev.sub.filter(v => v !== item['名称'])
-                                        }));
-                                      }}
-                                    />
-                                    {item['名称']}
-                                  </label>
-                                </div>
-                              ))}
+                              <div className="overflow-y-auto">
+                                {subArmor
+                                  .filter(item => {
+                                    if (!item['名称']) return false;
+                                    const searchTerm = hiraganaToKatakana(excludeSearch.sub).toLowerCase();
+                                    const itemName = hiraganaToKatakana(item['名称']).toLowerCase();
+                                    return itemName.includes(searchTerm);
+                                  })
+                                  .map((item, idx) => (
+                                    <div key={idx} className={`p-2 ${currentThemeColors.pullmHov}`}>
+                                      <label key={idx} className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={excludeSettings.sub.includes(item['名称'])}
+                                          onChange={(e) => {
+                                            const checked = e.target.checked;
+                                            setExcludeSettings(prev => ({
+                                              ...prev,
+                                              sub: checked
+                                                ? [...prev.sub, item['名称']]
+                                                : prev.sub.filter(v => v !== item['名称'])
+                                            }));
+                                          }}
+                                        />
+                                        {item['名称']}
+                                      </label>
+                                    </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1607,13 +1625,14 @@
                           <button
                             onClick={(e) => {
                               setExcludeSettings(prev => ({ ...prev, showDeco: !prev.showDeco }));
+                              setExcludeSearch(prev => ({...prev, deco: ''}));
                             }}
                             data-exclude-type="deco"
                             className={`border rounded px-3 py-2 w-full text-left flex items-center justify-between ${
                               excludeSettings.deco.length === 0 ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${currentThemeColors.basicBdr} ${currentThemeColors.pullmBak}`
                             }`}
                           >
-                            <span>
+                            <span className="truncate">
                               {excludeSettings.deco.length === 0
                                 ? '(未指定)'
                                 : excludeSettings.deco.length === 1
@@ -1624,10 +1643,23 @@
                           </button>
 
                           {excludeSettings.showDeco && (
-                            <div
-                              className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 overflow-y-auto w-full`}
+                             <div
+                              className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 w-full flex flex-col`}
                               ref={(el) => (excludeDropdownRefs.current.deco = el)}
                             >
+                              <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
+                                <input
+                                  type="text"
+                                  placeholder="検索..."
+                                  value={excludeSearch.deco}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    setExcludeSearch(prev => ({ ...prev, deco: e.target.value }))
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}
+                                />
+                              </div>
                               <div className={`p-2 border-b ${currentThemeColors.pullSepa} flex gap-2`}>
                                 <button
                                   onClick={(e) => {
@@ -1642,27 +1674,35 @@
                                   すべて選択解除
                                 </button>
                               </div>
-
-                              {decorations.map((item, idx) => (
-                                <div key={idx} className={`p-2 ${currentThemeColors.pullmHov}`}>
-                                  <label key={idx} className="flex items-center gap-2 cursor-pointer">
-                                    <input
-                                      type="checkbox"
-                                      checked={excludeSettings.deco.includes(item['名称'])}
-                                      onChange={(e) => {
-                                        const checked = e.target.checked;
-                                        setExcludeSettings(prev => ({
-                                          ...prev,
-                                          deco: checked
-                                            ? [...prev.deco, item['名称']]
-                                            : prev.deco.filter(v => v !== item['名称'])
-                                        }));
-                                      }}
-                                    />
-                                    {item['名称']}
-                                  </label>
-                                </div>
-                              ))}
+                              <div className="overflow-y-auto">
+                                {decorations
+                                  .filter(item => {
+                                    if (!item['名称']) return false;
+                                    const searchTerm = hiraganaToKatakana(excludeSearch.deco).toLowerCase();
+                                    const itemName = hiraganaToKatakana(item['名称']).toLowerCase();
+                                    return itemName.includes(searchTerm);
+                                  })
+                                  .map((item, idx) => (
+                                    <div key={idx} className={`p-2 ${currentThemeColors.pullmHov}`}>
+                                      <label key={idx} className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={excludeSettings.deco.includes(item['名称'])}
+                                          onChange={(e) => {
+                                            const checked = e.target.checked;
+                                            setExcludeSettings(prev => ({
+                                              ...prev,
+                                              deco: checked
+                                                ? [...prev.deco, item['名称']]
+                                                : prev.deco.filter(v => v !== item['名称'])
+                                            }));
+                                          }}
+                                        />
+                                        {item['名称']}
+                                      </label>
+                                    </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1781,10 +1821,9 @@
                          <div className="text-center mt-6">
                             <button
                               onClick={() => calculateCombinations(activeTab)}
-                              // Removed disabled={searching[activeTab]}
                               className={`px-8 py-3 rounded-lg font-semibold transition-colors ${
                                 searching[activeTab]
-                                  ? `${currentThemeColors.busy5Txt} ${currentThemeColors.busy5Bak}` // Still change style when searching
+                                  ? `${currentThemeColors.busy5Txt} ${currentThemeColors.busy5Bak}`
                                   : `${characterColors[activeTab].search} ${currentThemeColors.busy1Txt}`
                               }`}
                             >
@@ -1799,7 +1838,6 @@
                                 `${activeTab} 装備候補を検索`
                               )}
                             </button>
-                            {/* 検索結果メッセージをボタンの下に表示 */}
                             {fivePersonSearchResultMessage && (
                                 <div className={`mt-4 p-2 rounded-lg ${currentThemeColors.alertBak} ${currentThemeColors.alertTxt} text-sm font-medium`}>
                                     {fivePersonSearchResultMessage}
@@ -1816,46 +1854,13 @@
                             const confirmed = window.confirm("リセットしてよろしいですか？");
                             if (!confirmed) return;
 
-                            setCharacterValues(prev => ({
-                              ...prev,
-                              [activeTab]: {
-                                斬: 0, 打: 0,突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0
-                              }
-                            }));
-
-                            setCharacterAdjustmentValues(prev => ({
-                              ...prev,
-                              [activeTab]: {
-                                斬: 0, 打: 0,突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0
-                              }
-                            }));
-
-                            setSelectedCharacters(prev => ({
-                              ...prev,
-                              [activeTab]: ''
-                            }));
-
-                            setStatusAilmentSettings(prev => ({
-                              ...prev,
-                              [activeTab]: {
-                                selectedTypes: [],
-                                value: 20,
-                                showDropdown: false
-                              }
-                            }));
-
-                            setFixedEquipments(prev => ({
-                              ...prev,
-                              [activeTab]: { main: '', sub: '', deco: '' }
-                            }));
-
-                            setSortSettings(prev => ({
-                              ...prev,
-                              [activeTab]: { priority1: '', order1: 'desc', priority2: '', order2: 'desc', priority3: '', order3: 'desc' }
-                            }));
-                            setBulkMainArmorSelect('');
-                            setBulkSubArmorSelect('');
-                            setBulkDecorationSelect('');
+                            setCharacterValues(prev => ({ ...prev, [activeTab]: { 斬: '0', 打: '0',突: '0', 熱: '0', 冷: '0', 雷: '0', 陽: '0', 陰: '0' } }));
+                            setCharacterAdjustmentValues(prev => ({ ...prev, [activeTab]: { 斬: '0', 打: '0',突: '0', 熱: '0', 冷: '0', 雷: '0', 陽: '0', 陰: '0' } }));
+                            setSelectedCharacters(prev => ({ ...prev, [activeTab]: '' }));
+                            setStatusAilmentSettings(prev => ({ ...prev, [activeTab]: { selectedTypes: [], value: '20', showDropdown: false } }));
+                            setFixedEquipments(prev => ({ ...prev, [activeTab]: { main: '', sub: '', deco: '' } }));
+                            setSortSettings(prev => ({ ...prev, [activeTab]: { priority1: '', order1: 'desc', priority2: '', order2: 'desc', priority3: '', order3: 'desc' } }));
+                            setBulkMainArmorSelect(''); setBulkSubArmorSelect(''); setBulkDecorationSelect('');
                           }}
                           className={`text-sm ${characterColors[activeTab].button} px-4 py-2 rounded transition-colors`}
                         >
@@ -1865,21 +1870,42 @@
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div className="flex items-center gap-2">
-                          <label className={`w-120 text-sm ${characterColors[activeTab].text}`}>キャラクター選択:</label>
-                          <select
-                            value={selectedCharacters[activeTab]}
-                            onChange={(e) => handleCharacterSelect(activeTab, e.target.value)}
-                            className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] ${currentThemeColors.pullmTxt} ${
-                              selectedCharacters[activeTab] === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`
-                            }`}
-                          >
-                          <option value="">(未指定)</option>
-                          {characterResistances.map((char, index) => (
-                            <option key={index} value={char['登録名']}>
-                              {char['登録名']}
-                            </option>
-                          ))}
-                          </select>
+                          <label className={`w-15 text-sm ${characterColors[activeTab].text}`}>キャラクター選択:</label>
+                          <div className="relative flex-1 min-w-64" ref={characterDropdownRef}>
+                              <button
+                                data-char-select
+                                onClick={() => {
+                                    setShowCharacterDropdown(prev => !prev);
+                                    setCharacterSearch('');
+                                }}
+                                className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] flex items-center justify-between text-left ${
+                                    selectedCharacters[activeTab] === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`
+                                }`}
+                                >
+                                <span className="truncate">{selectedCharacters[activeTab] || '(未指定)'}</span>
+                                <span className={`${currentThemeColors.pullmTri}`}>▼</span>
+                              </button>
+                              {showCharacterDropdown && (
+                                  <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 w-full flex flex-col`}>
+                                      <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
+                                          <input type="text" placeholder="検索..." value={characterSearch} onChange={e => { e.stopPropagation(); setCharacterSearch(e.target.value); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                      </div>
+                                      <div className="overflow-y-auto">
+                                          <div onClick={() => { handleCharacterSelect(activeTab, ''); setShowCharacterDropdown(false); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>(未指定)</div>
+                                          {characterResistances
+                                            .filter(char => {
+                                                if (!char['登録名']) return false;
+                                                const searchTerm = hiraganaToKatakana(characterSearch).toLowerCase();
+                                                const charName = hiraganaToKatakana(char['登録名']).toLowerCase();
+                                                return charName.includes(searchTerm);
+                                            })
+                                            .map((char, index) => (
+                                                <div key={index} onClick={() => { handleCharacterSelect(activeTab, char['登録名']); setShowCharacterDropdown(false); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{char['登録名']}</div>
+                                          ))}
+                                      </div>
+                                  </div>
+                              )}
+                          </div>
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -1891,7 +1917,7 @@
                                 statusAilmentSettings[activeTab].selectedTypes.length === 0 ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`
                               }`}
                             >
-                              <span>{getStatusAilmentDisplayText(activeTab)}</span>
+                              <span className="truncate">{getStatusAilmentDisplayText(activeTab)}</span>
                               <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                             </button>
 
@@ -1931,13 +1957,13 @@
                               <label className={`w-15 text-sm ${characterColors[activeTab].text}`}>耐性値:</label>
                               <input
                                 type="number"
+                                min="-999"
                                 value={statusAilmentSettings[activeTab].value}
                                 onChange={(e) => handleStatusAilmentValueChange(activeTab, e.target.value)}
                                 onFocus={(e) => e.target.select()}
                                 className={`border rounded px-3 py-2 w-20 text-center ${currentThemeColors.pullmTxt} ${
                                   statusAilmentSettings[activeTab].selectedTypes.length === 0 ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`
                                 }`}
-                                min="0"
                               />
                             </div>
                         </div>
@@ -1967,7 +1993,6 @@
                               setStatusCopyActive(true);
                               setTimeout(() => setStatusCopyActive(false), 100);
                             }}
-                            // Removed disabled={statusAilmentSettings[activeTab].selectedTypes.length === 0}
                             className={`flex-1 px-3 py-2 ${currentThemeColors.btn4cTxt} rounded transition ${
                               statusCopyActive
                                 ? `${currentThemeColors.btn4rAct}`
@@ -1987,6 +2012,7 @@
                             <label className={`font-medium w-8 ${characterColors[activeTab].text}`}>{attr}:</label>
                             <input
                               type="number"
+                              min="-999"
                               value={characterValues[activeTab][attr]}
                               onChange={(e) => handleCharacterValueChange(activeTab, attr, e.target.value)}
                               onFocus={(e) => e.target.select()}
@@ -2004,6 +2030,7 @@
                             <label className={`font-medium w-8 ${characterColors[activeTab].text}`}>{attr}:</label>
                             <input
                               type="number"
+                              min="-999"
                               value={characterAdjustmentValues[activeTab][attr]}
                               onChange={(e) => handleAdjustmentValueChange(activeTab, attr, e.target.value)}
                               onFocus={(e) => e.target.select()}
@@ -2014,138 +2041,189 @@
                       </div>
 
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
+                        <div className="relative">
                           <label className={`text-sm ${characterColors[activeTab].text}`}>主防具 指定:</label>
-                          <select
-                            value={fixedEquipments[activeTab].main}
-                            onChange={(e) =>
-                              setFixedEquipments((prev) => ({
-                                ...prev,
-                                [activeTab]: { ...prev[activeTab], main: e.target.value }
-                              }))
-                            }
-                            className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
+                          <button
+                            data-fixed-type="main"
+                            onClick={() => {
+                                setShowFixedDropdown(prev => ({ main: !prev.main, sub: false, deco: false }));
+                                setFixedSearch(prev => ({ ...prev, main: '' }));
+                            }}
+                            className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] flex items-center justify-between text-left ${
                               fixedEquipments[activeTab].main === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`
                             }`}
                           >
-                            <option value="">（未指定）</option>
-                            {mainArmor.map((item, idx) => (
-                              <option key={idx} value={item['名称']}>{item['名称']}</option>
-                            ))}
-                          </select>
+                            <span className="truncate">{fixedEquipments[activeTab].main || '（未指定）'}</span>
+                            <span className={`${currentThemeColors.pullmTri}`}>▼</span>
+                          </button>
+                          {showFixedDropdown.main && (
+                            <div
+                              className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 w-full flex flex-col`}
+                              ref={(el) => (fixedDropdownRefs.current.main = el)}
+                            >
+                                <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
+                                    <input type="text" placeholder="検索..." value={fixedSearch.main} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                </div>
+                                <div className="overflow-y-auto">
+                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: '' }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                    {mainArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.main).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div>))}
+                                </div>
+                            </div>
+                          )}
                         </div>
-                        <div>
+                        <div className="relative">
                           <label className={`text-sm ${characterColors[activeTab].text}`}>副防具 指定:</label>
-                          <select
-                            value={fixedEquipments[activeTab].sub}
-                            onChange={(e) =>
-                              setFixedEquipments((prev) => ({
-                                ...prev,
-                                [activeTab]: { ...prev[activeTab], sub: e.target.value }
-                              }))
-                            }
-                            className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
+                           <button
+                            data-fixed-type="sub"
+                            onClick={() => {
+                                setShowFixedDropdown(prev => ({ main: false, sub: !prev.sub, deco: false }));
+                                setFixedSearch(prev => ({ ...prev, sub: '' }));
+                            }}
+                            className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] flex items-center justify-between text-left ${
                               fixedEquipments[activeTab].sub === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`
                             }`}
                           >
-                            <option value="">（未指定）</option>
-                            {subArmor.map((item, idx) => (
-                              <option key={idx} value={item['名称']}>{item['名称']}</option>
-                            ))}
-                          </select>
+                            <span className="truncate">{fixedEquipments[activeTab].sub || '（未指定）'}</span>
+                            <span className={`${currentThemeColors.pullmTri}`}>▼</span>
+                          </button>
+                          {showFixedDropdown.sub && (
+                            <div
+                              className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 w-full flex flex-col`}
+                              ref={(el) => (fixedDropdownRefs.current.sub = el)}
+                            >
+                                <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
+                                    <input type="text" placeholder="検索..." value={fixedSearch.sub} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                </div>
+                                <div className="overflow-y-auto">
+                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: '' }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                    {subArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.sub).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div>))}
+                                </div>
+                            </div>
+                          )}
                         </div>
-                        <div>
+                        <div className="relative">
                           <label className={`text-sm ${characterColors[activeTab].text}`}>装飾品 指定:</label>
-                          <select
-                            value={fixedEquipments[activeTab].deco}
-                            onChange={(e) =>
-                              setFixedEquipments((prev) => ({
-                                ...prev,
-                                [activeTab]: { ...prev[activeTab], deco: e.target.value }
-                              }))
-                            }
-                            className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
+                           <button
+                            data-fixed-type="deco"
+                            onClick={() => {
+                                setShowFixedDropdown(prev => ({ main: false, sub: false, deco: !prev.deco }));
+                                setFixedSearch(prev => ({ ...prev, deco: '' }));
+                            }}
+                            className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] flex items-center justify-between text-left ${
                               fixedEquipments[activeTab].deco === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`
                             }`}
                           >
-                            <option value="">（未指定）</option>
-                            {decorations.map((item, idx) => (
-                              <option key={idx} value={item['名称']}>{item['名称']}</option>
-                            ))}
-                          </select>
+                            <span className="truncate">{fixedEquipments[activeTab].deco || '（未指定）'}</span>
+                            <span className={`${currentThemeColors.pullmTri}`}>▼</span>
+                          </button>
+                          {showFixedDropdown.deco && (
+                            <div
+                              className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 w-full flex flex-col`}
+                              ref={(el) => (fixedDropdownRefs.current.deco = el)}
+                            >
+                                <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
+                                    <input type="text" placeholder="検索..." value={fixedSearch.deco} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                </div>
+                                <div className="overflow-y-auto">
+                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: '' }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                    {decorations.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.deco).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div>))}
+                                </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      {/* Bulk Equipment Selection Section - Corrected Placement and Styling */}
+                      {/* Bulk Equipment Selection Section */}
                       <div className="mb-4">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              <div>
+                              <div className="relative">
                                   <label className={`text-sm block ${characterColors[activeTab].text}`}>主防具 一括:</label>
                                   <div className="flex gap-2">
-                                      <select
-                                          value={bulkMainArmorSelect}
-                                          onChange={(e) => setBulkMainArmorSelect(e.target.value)}
-                                          className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
-                                              bulkMainArmorSelect === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`
-                                          }`}
-                                      >
-                                          <option value="">（未指定）</option>
-                                          {availableBulkMainArmor.map((item, idx) => (
-                                              <option key={idx} value={item['名称']}>{item['名称']}</option>
-                                          ))}
-                                      </select>
-                                      <button
-                                          onClick={() => applyBulkEquipment('main')}
-                                          className={`px-4 py-2 ${currentThemeColors.btn4cTxt} rounded ${currentThemeColors.btn4bBak} transition-colors`}
-                                      >
-                                          反映
-                                      </button>
+                                      <div className="relative flex-1">
+                                          <button
+                                              data-bulk-type="main"
+                                              onClick={() => {
+                                                  setShowBulkDropdown(prev => ({ main: !prev.main, sub: false, deco: false }));
+                                                  setBulkSearch(prev => ({ ...prev, main: '' }));
+                                              }}
+                                              className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] flex items-center justify-between text-left ${bulkMainArmorSelect === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`}`}
+                                          >
+                                              <span className="truncate">{bulkMainArmorSelect || '（未指定）'}</span>
+                                              <span className={`${currentThemeColors.pullmTri}`}>▼</span>
+                                          </button>
+                                          {showBulkDropdown.main && (
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-60 w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.main = el)}>
+                                                  <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
+                                                      <input type="text" placeholder="検索..." value={bulkSearch.main} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                                  </div>
+                                                  <div className="overflow-y-auto">
+                                                      <div onClick={() => { setBulkMainArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                                      {availableBulkMainArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.main).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} onClick={() => { setBulkMainArmorSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div> ))}
+                                                  </div>
+                                              </div>
+                                          )}
+                                      </div>
+                                      <button onClick={() => applyBulkEquipment('main')} className={`px-4 py-2 ${currentThemeColors.btn4cTxt} rounded ${currentThemeColors.btn4bBak} transition-colors`}>反映</button>
                                   </div>
                               </div>
-                              <div>
+                              <div className="relative">
                                   <label className={`text-sm block ${characterColors[activeTab].text}`}>副防具 一括:</label>
                                   <div className="flex gap-2">
-                                      <select
-                                          value={bulkSubArmorSelect}
-                                          onChange={(e) => setBulkSubArmorSelect(e.target.value)}
-                                          className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
-                                              bulkSubArmorSelect === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`
-                                          }`}
-                                      >
-                                          <option value="">（未指定）</option>
-                                          {availableBulkSubArmor.map((item, idx) => (
-                                              <option key={idx} value={item['名称']}>{item['名称']}</option>
-                                          ))}
-                                      </select>
-                                      <button
-                                          onClick={() => applyBulkEquipment('sub')}
-                                          className={`px-4 py-2 ${currentThemeColors.btn4cTxt} rounded ${currentThemeColors.btn4gBak} transition-colors`}
-                                      >
-                                          反映
-                                      </button>
+                                       <div className="relative flex-1">
+                                          <button
+                                              data-bulk-type="sub"
+                                              onClick={() => {
+                                                  setShowBulkDropdown(prev => ({ main: false, sub: !prev.sub, deco: false }));
+                                                  setBulkSearch(prev => ({ ...prev, sub: '' }));
+                                              }}
+                                              className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] flex items-center justify-between text-left ${bulkSubArmorSelect === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`}`}
+                                          >
+                                              <span className="truncate">{bulkSubArmorSelect || '（未指定）'}</span>
+                                              <span className={`${currentThemeColors.pullmTri}`}>▼</span>
+                                          </button>
+                                          {showBulkDropdown.sub && (
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-60 w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.sub = el)}>
+                                                  <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
+                                                      <input type="text" placeholder="検索..." value={bulkSearch.sub} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                                  </div>
+                                                  <div className="overflow-y-auto">
+                                                      <div onClick={() => { setBulkSubArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                                      {availableBulkSubArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.sub).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} onClick={() => { setBulkSubArmorSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div> ))}
+                                                  </div>
+                                              </div>
+                                          )}
+                                      </div>
+                                      <button onClick={() => applyBulkEquipment('sub')} className={`px-4 py-2 ${currentThemeColors.btn4cTxt} rounded ${currentThemeColors.btn4gBak} transition-colors`}>反映</button>
                                   </div>
                               </div>
-                              <div>
+                              <div className="relative">
                                   <label className={`text-sm block ${characterColors[activeTab].text}`}>装飾品 一括:</label>
                                   <div className="flex gap-2">
-                                      <select
-                                          value={bulkDecorationSelect}
-                                          onChange={(e) => setBulkDecorationSelect(e.target.value)}
-                                          className={`flex-1 border rounded px-3 py-2 h-10 min-h-[2.5rem] ${
-                                              bulkDecorationSelect === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`
-                                          }`}
-                                      >
-                                          <option value="">（未指定）</option>
-                                          {availableBulkDecorations.map((item, idx) => (
-                                              <option key={idx} value={item['名称']}>{item['名称']}</option>
-                                          ))}
-                                      </select>
-                                      <button
-                                          onClick={() => applyBulkEquipment('deco')}
-                                          className={`px-4 py-2 ${currentThemeColors.btn4cTxt} rounded ${currentThemeColors.btn4pBak} transition-colors`}
-                                      >
-                                          反映
-                                      </button>
+                                       <div className="relative flex-1">
+                                          <button
+                                              data-bulk-type="deco"
+                                              onClick={() => {
+                                                  setShowBulkDropdown(prev => ({ main: false, sub: false, deco: !prev.deco }));
+                                                  setBulkSearch(prev => ({ ...prev, deco: '' }));
+                                              }}
+                                              className={`w-full border rounded px-3 py-2 h-10 min-h-[2.5rem] flex items-center justify-between text-left ${bulkDecorationSelect === '' ? `${currentThemeColors.unspeBdr} ${currentThemeColors.pullmDis}` : `${characterColors[activeTab].border} ${currentThemeColors.pullmBak}`}`}
+                                          >
+                                              <span className="truncate">{bulkDecorationSelect || '（未指定）'}</span>
+                                              <span className={`${currentThemeColors.pullmTri}`}>▼</span>
+                                          </button>
+                                          {showBulkDropdown.deco && (
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-60 w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.deco = el)}>
+                                                  <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
+                                                      <input type="text" placeholder="検索..." value={bulkSearch.deco} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
+                                                  </div>
+                                                  <div className="overflow-y-auto">
+                                                      <div onClick={() => { setBulkDecorationSelect(''); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                                      {availableBulkDecorations.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.deco).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} onClick={() => { setBulkDecorationSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div> ))}
+                                                  </div>
+                                              </div>
+                                          )}
+                                      </div>
+                                      <button onClick={() => applyBulkEquipment('deco')} className={`px-4 py-2 ${currentThemeColors.btn4cTxt} rounded ${currentThemeColors.btn4pBak} transition-colors`}>反映</button>
                                   </div>
                               </div>
                           </div>
@@ -2272,7 +2350,6 @@
                             `${activeTab} 装備候補を検索`
                           )}
                         </button>
-                        {/* 個別検索の検索結果メッセージをボタンの下に表示 */}
                         {searchResultMessage && activeTab !== '５人１組' && (
                              <div className={`mt-4 p-2 rounded-lg ${currentThemeColors.alertBak} ${currentThemeColors.alertTxt} text-sm font-medium`}>
                                  {searchResultMessage}
@@ -2315,10 +2392,10 @@
                       <table className={`min-w-full ${currentThemeColors.itemBack} border ${currentThemeColors.itemSepa}`}>
                         <thead className={`${currentThemeColors.headGray}`}>
                           <tr>
-                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} ${currentThemeColors.headGray} uppercase whitespace-nowrap ${getHeaderClass('キャラ')}`}>キャラ</th>
-                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} ${currentThemeColors.headGray} uppercase whitespace-nowrap ${getHeaderClass('主防具')}`}>主防具</th>
-                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} ${currentThemeColors.headGray} uppercase whitespace-nowrap ${getHeaderClass('副防具')}`}>副防具</th>
-                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} ${currentThemeColors.headGray} uppercase whitespace-nowrap ${getHeaderClass('装飾品')}`}>装飾品</th>
+                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} uppercase whitespace-nowrap ${getHeaderClass('キャラ')}`}>キャラ</th>
+                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} uppercase whitespace-nowrap ${getHeaderClass('主防具')}`}>主防具</th>
+                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} uppercase whitespace-nowrap ${getHeaderClass('副防具')}`}>副防具</th>
+                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} uppercase whitespace-nowrap ${getHeaderClass('装飾品')}`}>装飾品</th>
                             {totalAttributes.map(attr => (
                               <th key={attr} className={`px-2 py-1 text-center text-xs font-medium ${currentThemeColors.headText} uppercase ${getHeaderClass(attr)}`}>
                                 {attr}
@@ -2330,13 +2407,10 @@
                           {combinations[activeTab].slice(0, 20).map((teamCombo, teamIndex) => (
                             <React.Fragment key={teamIndex}>
                               {teamCombo.map((charEquip, charIdx) => {
-                                const rowClassName = (Math.floor(teamIndex / 1) % 2 === 0) ? currentThemeColors.stripedL : currentThemeColors.stripedD; // Use currentThemeColors
-                                // ここが修正のポイント: `characterClass` が直接Tailwindのテキストカラークラスを返すので、
-                                // `className` にそのまま渡せば良い
+                                const rowClassName = (Math.floor(teamIndex / 1) % 2 === 0) ? currentThemeColors.stripedL : currentThemeColors.stripedD;
                                 const characterColorClass = getCharacterTextColorClass(charEquip.character);
                                 return (
                                   <tr key={`${teamIndex}-${charIdx}`} className={`${currentThemeColors.itemOver} ${rowClassName}`}>
-                                    {/* 修正: characterClass が直接Tailwindのクラス名になるように変更 */}
                                     <td className={`px-3 py-2 text-sm whitespace-nowrap ${characterColorClass}`}>
                                       {charEquip.character}
                                     </td>
@@ -2370,9 +2444,9 @@
                       <table className={`min-w-full ${currentThemeColors.itemBack} border ${currentThemeColors.itemSepa}`}>
                         <thead className={`${currentThemeColors.headGray}`}>
                           <tr>
-                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} ${currentThemeColors.headGray} uppercase whitespace-nowrap ${getHeaderClass('主防具')}`}>主防具</th>
-                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} ${currentThemeColors.headGray} uppercase whitespace-nowrap ${getHeaderClass('副防具')}`}>副防具</th>
-                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} ${currentThemeColors.headGray} uppercase whitespace-nowrap ${getHeaderClass('装飾品')}`}>装飾品</th>
+                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} uppercase whitespace-nowrap ${getHeaderClass('主防具')}`}>主防具</th>
+                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} uppercase whitespace-nowrap ${getHeaderClass('副防具')}`}>副防具</th>
+                            <th className={`px-4 py-2 text-left text-xs font-medium ${currentThemeColors.headText} uppercase whitespace-nowrap ${getHeaderClass('装飾品')}`}>装飾品</th>
 
                             {totalAttributes.map(attr => (
                               <th key={attr} className={`px-2 py-1 text-center text-xs font-medium ${currentThemeColors.headText} uppercase ${getHeaderClass(attr)}`}>
@@ -2421,7 +2495,6 @@
                   </div>
                 )}
               </div>
-              {/* Footer is now inside the React component */}
               <footer className={`border-t ${currentThemeColors.underBdr} ${currentThemeColors.underTxt}`}>
                 ※使用は自己責任にて。<br/>
                 ※装飾品は基本的には耐性値が全項目ゼロのものはリストから除外しています。<br/>
