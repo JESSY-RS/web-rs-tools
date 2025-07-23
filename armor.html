@@ -2152,7 +2152,7 @@
                                               <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                           </button>
                                           {showBulkDropdown.main && (
-                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-60 w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.main = el)}>
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.main = el)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                       <input type="text" placeholder="検索..." value={bulkSearch.main} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
                                                   </div>
@@ -2182,7 +2182,7 @@
                                               <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                           </button>
                                           {showBulkDropdown.sub && (
-                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-60 w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.sub = el)}>
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.sub = el)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                       <input type="text" placeholder="検索..." value={bulkSearch.sub} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
                                                   </div>
@@ -2212,7 +2212,7 @@
                                               <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                           </button>
                                           {showBulkDropdown.deco && (
-                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-60 w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.deco = el)}>
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-80 w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.deco = el)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                       <input type="text" placeholder="検索..." value={bulkSearch.deco} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`} autoFocus />
                                                   </div>
