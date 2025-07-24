@@ -1076,12 +1076,56 @@
             setTargetValues(prev => ({ ...prev, [attr]: value }));
           }, []);
 
+          const handleLabelDoubleClick = useCallback((attr) => {
+            setTargetValues(prev => {
+              const currentValue = parseInt(prev[attr], 10);
+              let nextValue = '35'; // デフォルトの次の値
+
+              if (currentValue === 35) {
+                nextValue = '-999';
+              } else if (currentValue === -999) {
+                nextValue = '0';
+              }
+              // 現在値が0またはその他の場合は、デフォルトの'35'が使用される
+
+              return { ...prev, [attr]: nextValue };
+            });
+          }, []);
+
           const handleCharacterValueChange = useCallback((characterName, attr, value) => {
             setCharacterValues(prev => ({ ...prev, [characterName]: { ...prev[characterName], [attr]: value } }));
           }, []);
 
           const handleAdjustmentValueChange = useCallback((characterName, attr, value) => {
             setCharacterAdjustmentValues(prev => ({ ...prev, [characterName]: { ...prev[characterName], [attr]: value } }));
+          }, []);
+
+          const handleStyleResistLabelDoubleClick = useCallback((characterName, attr) => {
+            setCharacterAdjustmentValues(prev => {
+              const currentValue = parseInt(prev[characterName][attr] || '0', 10);
+              const newValue = currentValue + 5;
+              return {
+                ...prev,
+                [characterName]: {
+                  ...prev[characterName],
+                  [attr]: String(newValue)
+                }
+              };
+            });
+          }, []);
+
+          const handleAdjustmentLabelDoubleClick = useCallback((characterName, attr) => {
+            setCharacterAdjustmentValues(prev => {
+              const currentValue = parseInt(prev[characterName][attr] || '0', 10);
+              const newValue = currentValue - 5;
+              return {
+                ...prev,
+                [characterName]: {
+                  ...prev[characterName],
+                  [attr]: String(newValue)
+                }
+              };
+            });
           }, []);
 
           const handleCharacterSelect = useCallback((characterName, selectedName) => {
@@ -1236,7 +1280,7 @@
                   >
                   ★
                   </span>
-                  装備候補検索ツール ver.2025/07/23
+                  装備候補検索ツール ver.2025/07/24
                   {showThemeOptions && (
                     <div ref={themeOptionsRef} className={`absolute left-0 mt-2 p-4 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded-lg shadow-lg z-20`}>
                       <div className="flex flex-col space-y-2">
@@ -1403,7 +1447,12 @@
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-4">
                       {attributes.map(attr => (
                         <div key={attr} className="flex items-center gap-2">
-                          <label className={`font-medium w-8 ${currentThemeColors.basicTxt}`}>{attr}:</label>
+                          <label
+                            onDoubleClick={() => handleLabelDoubleClick(attr)}
+                            className={`font-medium w-8 ${currentThemeColors.basicTxt} cursor-pointer select-none`}
+                          >
+                            {attr}:
+                          </label>
                           <input
                             type="number"
                             min="-999"
@@ -2009,7 +2058,12 @@
                       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-4">
                         {attributes.map(attr => (
                           <div key={attr} className="flex items-center gap-2">
-                            <label className={`font-medium w-8 ${characterColors[activeTab].text}`}>{attr}:</label>
+                            <label
+                              onDoubleClick={() => handleStyleResistLabelDoubleClick(activeTab, attr)}
+                              className={`font-medium w-8 ${characterColors[activeTab].text} cursor-pointer select-none`}
+                            >
+                              {attr}:
+                            </label>
                             <input
                               type="number"
                               min="-999"
@@ -2027,7 +2081,12 @@
                       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-4">
                         {attributes.map(attr => (
                           <div key={attr} className="flex items-center gap-2">
-                            <label className={`font-medium w-8 ${characterColors[activeTab].text}`}>{attr}:</label>
+                            <label
+                              onDoubleClick={() => handleAdjustmentLabelDoubleClick(activeTab, attr)}
+                              className={`font-medium w-8 ${characterColors[activeTab].text} cursor-pointer select-none`}
+                            >
+                              {attr}:
+                            </label>
                             <input
                               type="number"
                               min="-999"
@@ -2497,6 +2556,8 @@
               </div>
               <footer className={`border-t ${currentThemeColors.underBdr} ${currentThemeColors.underTxt}`}>
                 ※使用は自己責任にて。<br/>
+                ※目標値の属性名をダブルクリックすると値が-999→0→35の順でループして切り替わります。<br/>
+                ※キャラのスタイル補正値と目標値個別修正の属性名ダブルクリックで目標値個別修正の値を5増減出来ます。<br/>
                 ※装飾品は基本的には耐性値が全項目ゼロのものはリストから除外しています。<br/>
                 ※各装備の一括指定リストは基本的には入手が５個以上可能なもののみ表示しています。<br/>
               </footer>
