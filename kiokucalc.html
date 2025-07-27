@@ -7,9 +7,7 @@
   <link rel="shortcut icon" href="favicon-kiokucalc.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-kiokucalc.png">
   <link rel="icon" type="image/png" href="android-chrome-144x144-kiokucalc.png">
-  <title>記憶再戦時間計算</title> <!-- Created by じぇ -->
-
-  <style>
+  <title>記憶再戦時間計算</title> <style>
 
     /* ページ全体のスタイル */
     body {
@@ -127,6 +125,14 @@
 
     .result-time {
       color: #eee;
+    }
+
+    /* 終了予定時刻のスタイル */
+    #endTimeDisplay {
+      font-size: 16pt;
+      color: red;
+      margin-top: 15px;
+      height: 24px; /* Prevent layout shift */
     }
 
     /* ボトムのスタイル */
@@ -327,10 +333,8 @@
 </head>
 <body>
 
-  <!-- サイドメニューオーバーレイ -->
   <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-  <!-- サイドメニュー -->
   <div class="side-menu" id="sideMenu">
     <div class="menu-title">リユニのWeb版いろいろ</div>
     <a class="menu-item" href="kiokucalc.html">記憶再戦時間計算</a><br>
@@ -394,6 +398,7 @@
     <div class="result">
       <span class="result-label">結果: </span><span id="result" class="result-time">00:00:00</span>
     </div>
+    <div id="endTimeDisplay"></div>
   </div>
 
   <br>
@@ -487,6 +492,7 @@
         let input2Min = document.getElementById('input2-min').value;
         let input2Sec = document.getElementById('input2-sec').value;
         let count = document.getElementById('count').value;
+        const endTimeElement = document.getElementById('endTimeDisplay');
 
         // 入力欄1の分が空の場合、0に設定
         if (input1Sec !== '' && input1Min === '') {
@@ -510,6 +516,7 @@
         if (emptyFields.length > 0) {
             document.getElementById('warning').innerText = `※${emptyFields.join('・')}に数値を入力してください。`;
             document.getElementById('result').innerText = '00:00:00';
+            endTimeElement.innerText = ''; // Clear end time on error
             return;
         } else {
             document.getElementById('warning').innerText = '';
@@ -520,6 +527,13 @@
         let totalTime = (time1 + time2) * parseInt(count);
         document.getElementById('result').innerText = formatTime(totalTime);
         document.getElementById('result').style.color = '#eee'; // 計算後にフォント色変更
+
+        // Calculate and display the end time
+        const now = new Date();
+        now.setSeconds(now.getSeconds() + totalTime);
+        const endHours = String(now.getHours()).padStart(2, '0');
+        const endMinutes = String(now.getMinutes()).padStart(2, '0');
+        endTimeElement.innerText = `終了予定時刻：${endHours}時${endMinutes}分頃`;
 
         // コピー用ボタンを表示
         document.getElementById('copyButton').value = '結果コピー';
