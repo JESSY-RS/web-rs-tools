@@ -16,10 +16,9 @@
         }
         header {
             display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
+            align-items: center; /* 垂直方向の中央揃え */
+            flex-wrap: wrap; /* 折り返しを許可 */
+            gap: 15px; /* タイトルとボタンの間の隙間 */
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 2px solid #555;
@@ -27,17 +26,21 @@
         h1 {
             font-size: 1.8em;
             color: white;
-            margin-right: auto;
+            margin: 0; /* 自動マージンを解除 */
         }
-        .header-controls button {
-            margin-left: 10px;
+        .header-controls {
+            display: flex;
+            flex-wrap: wrap; /* ボタンが複数行になる場合も考慮 */
+            gap: 10px; /* ボタン間の隙間 */
+            justify-content: flex-end; /* ボタン群を右端に配置 */
+            flex-grow: 1; /* 残りのスペースをすべて埋める */
         }
         button {
-            padding: 8px 16px;
+            padding: 8px 10px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 0.9em;
+            font-size: 0.8em;
             font-weight: bold;
             transition: background-color 0.3s;
         }
@@ -466,20 +469,16 @@
                     
                     panel.classList.toggle('show');
 
-                    // If the panel was just opened, reset its state
                     if (isOpening && panel.classList.contains('show')) {
                         const searchInput = panel.querySelector('.dropdown-search-input');
                         const optionsList = panel.querySelector('.dropdown-options-list');
                         
-                        // 1. Reset search input
                         searchInput.value = '';
                         
-                        // 2. Un-hide all options
                         optionsList.querySelectorAll('.dropdown-option.hidden').forEach(opt => {
                             opt.classList.remove('hidden');
                         });
 
-                        // 3. Reset scroll position
                         optionsList.scrollTop = 0;
                     }
                 }
