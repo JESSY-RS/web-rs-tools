@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>練磨(防具)リスト</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #2A2A2A;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #555;
+        }
+        h1 {
+            font-size: 1.8em;
+            color: white;
+            margin-right: auto;
+        }
+        .header-controls button {
+            margin-left: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        #import-btn { background-color: hotpink; color: white; }
+        #import-btn:hover { background-color: #ff69b4; }
+        #export-btn { background-color: orange; color: white; }
+        #export-btn:hover { background-color: #e69500; }
+        #add-part-btn { background-color: #28a745; color: white; }
+        #add-part-btn:hover { background-color: #218838; }
+        #edit-mode-btn { background-color: #007bff; color: white; }
+        #edit-mode-btn:hover { background-color: #0069d9; }
+        #edit-mode-btn.active { background-color: #dc3545; }
+        #import-file-input { display: none; }
+        #parts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .armor-part {
+            background-color: #424242;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 20px 20px 20px 47px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .drag-handle {
+            position: absolute;
+            top: 7px;
+            left: 10px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+            cursor: grab;
+            padding: 5px;
+            display: none;
+        }
+        .part-content {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 15px 15px;
+            align-items: start;
+        }
+        .group-label {
+            font-weight: bold;
+            font-size: 1em;
+            text-align: right;
+            padding-right: 10px;
+            padding-top: 5px;
+            color: white;
+        }
+        .controls-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            align-items: flex-start;
+        }
+        .radio-group input[type="radio"] { display: none; }
+        .radio-group label {
+            padding: 5px 15px;
+            border: 1px solid #777;
+            border-radius: 20px;
+            cursor: pointer;
+            background-color: #555;
+            color: white;
+            transition: all 0.2s;
+            margin-right: 5px;
+        }
+        .radio-group input[type="radio"]:checked + label {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        select, input[type="number"] {
+            padding: 8px;
+            border: 1px solid #777;
+            border-radius: 4px;
+            font-size: 1em;
+            box-sizing: border-box;
+            background-color: #555;
+            color: white;
+            width: 100%;
+            max-width: 750px;
+        }
+        .value-input-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .value-input-group .symbol {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
+            display: none;
+        }
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+        }
+        footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #555;
+            text-align: left;
+            font-size: 1em;
+            color: white;
+        }
+
+        /* --- Custom Searchable Dropdown Styles --- */
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+            max-width: 750px;
+        }
+        .custom-dropdown-button {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #777;
+            border-radius: 4px;
+            font-size: 1em;
+            background-color: #555;
+            color: white;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            font-weight: normal;
+        }
+        .custom-dropdown-button .button-arrow:after {
+            content: '▼';
+            margin-left: 8px;
+            font-size: 0.8em;
+        }
+        .custom-dropdown-panel {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            max-height: 300px;
+            background-color: #3a3a3a;
+            border: 1px solid #777;
+            border-radius: 4px;
+            z-index: 100;
+            margin-top: 4px;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        .custom-dropdown-panel.show {
+            display: flex;
+        }
+        .dropdown-search-input {
+            width: calc(100% - 16px);
+            margin: 8px;
+            padding: 8px;
+            border: 1px solid #777;
+            border-radius: 4px;
+            background-color: #555;
+            color: white;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        .dropdown-options-list {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .dropdown-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .dropdown-option:hover {
+            background-color: #007bff;
+        }
+        .dropdown-option.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>練磨(防具)リスト</h1>
+        <div class="header-controls">
+            <button id="import-btn">インポート</button>
+            <input type="file" id="import-file-input" accept=".json">
+            <button id="export-btn">エクスポート</button>
+            <button id="add-part-btn">＋ パーツを追加</button>
+            <button id="edit-mode-btn">編集モードを開始</button>
+        </div>
+    </header>
+
+    <main id="parts-container"></main>
+
+    <template id="armor-part-template">
+        <div class="armor-part" draggable="false">
+            <div class="drag-handle">☰</div>
+            <div class="part-content">
+                <div class="group-label">防具種別:</div>
+                <div class="controls-wrapper">
+                    <div class="radio-group">
+                        <input type="radio" id="armor-main" name="armor-type" value="main" checked><label for="armor-main">主防具</label>
+                        <input type="radio" id="armor-sub" name="armor-type" value="sub"><label for="armor-sub">副防具</label>
+                    </div>
+                    <div class="custom-dropdown armor-name-dropdown">
+                        <button class="custom-dropdown-button" data-value="">
+                            <span class="button-label">防具を選択</span>
+                            <span class="button-arrow"></span>
+                        </button>
+                        <div class="custom-dropdown-panel">
+                            <input type="text" class="dropdown-search-input" placeholder="検索...">
+                            <div class="dropdown-options-list"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="group-label">練磨アビ:</div>
+                <div class="controls-wrapper">
+                    <div class="radio-group">
+                        <input type="radio" id="grade-ss" name="ability-grade" value="SS" checked><label for="grade-ss">SS</label>
+                        <input type="radio" id="grade-s" name="ability-grade" value="S"><label for="grade-s">S</label>
+                        <input type="radio" id="grade-a" name="ability-grade" value="A"><label for="grade-a">A</label>
+                    </div>
+                    <select class="ability-select">
+                        <option value="">アビリティを選択</option>
+                    </select>
+                </div>
+                <div class="group-label">効果値:</div>
+                <div class="controls-wrapper">
+                    <div class="value-input-group">
+                        <span class="symbol prefix">+</span>
+                        <input type="number" class="ability-value">
+                        <span class="symbol suffix">%</span>
+                    </div>
+                </div>
+            </div>
+            <button class="delete-btn">×</button>
+        </div>
+    </template>
+
+    <footer>
+        ※使用は自己責任にて。<br>
+        ※アビリティの表記が実際のゲーム内の表記と異なる場合があります。
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let armorMainData = [], armorSubData = [], renmaAbilityData = [], isEditMode = false, sortableInstance = null;
+
+            const partsContainer = document.getElementById('parts-container');
+            const addPartBtn = document.getElementById('add-part-btn');
+            const editModeBtn = document.getElementById('edit-mode-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const importBtn = document.getElementById('import-btn');
+            const importFileInput = document.getElementById('import-file-input');
+            const template = document.getElementById('armor-part-template');
+
+            const hiraganaToKatakana = (str) => {
+              if (!str) return '';
+              return str.replace(/[\u3041-\u3096]/g, (match) => {
+                const charCode = match.charCodeAt(0) + 0x60;
+                return String.fromCharCode(charCode);
+              });
+            };
+            
+            async function loadCSV(filePath) {
+                try {
+                    const response = await fetch(filePath);
+                    if (!response.ok) throw new Error(`Network response was not ok`);
+                    const text = await response.text();
+                    const rows = text.trim().split(/\r\n|\n/);
+                    const header = rows.shift().split(',');
+                    return rows.map(row => {
+                        const values = row.split(',');
+                        let obj = {};
+                        header.forEach((key, i) => { obj[key.trim()] = values[i] ? values[i].trim() : ''; });
+                        return obj;
+                    });
+                } catch (error) {
+                    console.error(`Error loading CSV from ${filePath}:`, error);
+                    alert(`CSVファイル（${filePath}）の読み込みに失敗しました。`);
+                    return [];
+                }
+            }
+
+            function updateArmorDropdown(part, armorType) {
+                const dropdown = part.querySelector('.armor-name-dropdown');
+                const button = dropdown.querySelector('.custom-dropdown-button');
+                const label = button.querySelector('.button-label');
+                const optionsList = dropdown.querySelector('.dropdown-options-list');
+                const data = armorType === 'main' ? armorMainData : armorSubData;
+                
+                label.textContent = '防具を選択';
+                button.dataset.value = '';
+                optionsList.innerHTML = '';
+                
+                data.forEach(item => {
+                    if (item.名称) {
+                        const optionEl = document.createElement('div');
+                        optionEl.className = 'dropdown-option';
+                        optionEl.textContent = item.名称;
+                        optionEl.dataset.value = item.名称;
+                        optionsList.appendChild(optionEl);
+                    }
+                });
+            }
+
+            function updateAbilityDropdown(part, grade) {
+                const selectEl = part.querySelector('.ability-select');
+                const filteredData = renmaAbilityData.filter(item => item.グレード === grade);
+                selectEl.innerHTML = '<option value="">アビリティを選択</option>';
+                filteredData.forEach(item => {
+                    if (item.種類) {
+                        const optionEl = document.createElement('option');
+                        optionEl.value = item.種類;
+                        optionEl.textContent = item.種類;
+                        selectEl.appendChild(optionEl);
+                    }
+                });
+                updateValueSymbol(part, '');
+            }
+
+            function updateValueSymbol(part, abilityName) {
+                const prefix = part.querySelector('.symbol.prefix');
+                const suffix = part.querySelector('.symbol.suffix');
+                const ability = renmaAbilityData.find(item => item.種類 === abilityName);
+                prefix.style.display = 'none';
+                suffix.style.display = 'none';
+                if (ability && ability.最大値) {
+                    if (ability.最大値.includes('%')) {
+                        suffix.style.display = 'inline';
+                    } else {
+                        prefix.style.display = 'inline';
+                    }
+                }
+            }
+            
+            function addNewPart(data = null) {
+                const newPart = template.content.cloneNode(true).querySelector('.armor-part');
+                const uniqueId = Date.now() + Math.random();
+                newPart.querySelectorAll('input[type="radio"]').forEach(radio => {
+                    const oldId = radio.id;
+                    const newId = `${oldId}-${uniqueId}`;
+                    radio.id = newId;
+                    radio.name = `${radio.name}-${uniqueId}`;
+                    const label = newPart.querySelector(`label[for="${oldId}"]`);
+                    if(label) label.htmlFor = newId;
+                });
+                partsContainer.appendChild(newPart);
+
+                if (data) {
+                    const armorTypeRadio = newPart.querySelector(`input[name*="armor-type"][value="${data.armorType}"]`);
+                    if (armorTypeRadio) armorTypeRadio.checked = true;
+                    updateArmorDropdown(newPart, data.armorType);
+                    const armorBtn = newPart.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                    armorBtn.querySelector('.button-label').textContent = data.armorName || '防具を選択';
+                    armorBtn.dataset.value = data.armorName;
+
+                    const gradeRadio = newPart.querySelector(`input[name*="ability-grade"][value="${data.grade}"]`);
+                    if (gradeRadio) gradeRadio.checked = true;
+                    updateAbilityDropdown(newPart, data.grade);
+                    newPart.querySelector('.ability-select').value = data.abilityName;
+                    
+                    updateValueSymbol(newPart, data.abilityName);
+                    newPart.querySelector('.ability-value').value = data.value;
+                } else {
+                    updateArmorDropdown(newPart, 'main');
+                    updateAbilityDropdown(newPart, 'SS');
+                }
+            }
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.custom-dropdown')) {
+                    document.querySelectorAll('.custom-dropdown-panel.show').forEach(panel => {
+                        panel.classList.remove('show');
+                    });
+                }
+            });
+
+            partsContainer.addEventListener('input', (e) => {
+                if (e.target.classList.contains('dropdown-search-input')) {
+                    const searchTerm = hiraganaToKatakana(e.target.value).toLowerCase();
+                    const optionsList = e.target.nextElementSibling;
+                    optionsList.querySelectorAll('.dropdown-option').forEach(option => {
+                        const optionText = hiraganaToKatakana(option.textContent).toLowerCase();
+                        option.classList.toggle('hidden', !optionText.includes(searchTerm));
+                    });
+                }
+            });
+            
+            partsContainer.addEventListener('change', e => {
+                const target = e.target;
+                const part = target.closest('.armor-part');
+                if(!part) return;
+
+                if(target.matches('.ability-select')){
+                    updateValueSymbol(part, target.value);
+                } else if (target.matches('input[name*="armor-type"]')) {
+                    updateArmorDropdown(part, target.value);
+                } else if (target.matches('input[name*="ability-grade"]')) {
+                    updateAbilityDropdown(part, target.value);
+                }
+            });
+
+            partsContainer.addEventListener('click', (e) => {
+                const target = e.target;
+                const part = target.closest('.armor-part');
+                if (!part) return;
+
+                if (target.closest('.custom-dropdown-button')) {
+                    const button = target.closest('.custom-dropdown-button');
+                    const panel = button.nextElementSibling;
+                    const isOpening = !panel.classList.contains('show');
+
+                    document.querySelectorAll('.custom-dropdown-panel.show').forEach(p => {
+                        if (p !== panel) p.classList.remove('show');
+                    });
+                    
+                    panel.classList.toggle('show');
+
+                    // If the panel was just opened, reset its state
+                    if (isOpening && panel.classList.contains('show')) {
+                        const searchInput = panel.querySelector('.dropdown-search-input');
+                        const optionsList = panel.querySelector('.dropdown-options-list');
+                        
+                        // 1. Reset search input
+                        searchInput.value = '';
+                        
+                        // 2. Un-hide all options
+                        optionsList.querySelectorAll('.dropdown-option.hidden').forEach(opt => {
+                            opt.classList.remove('hidden');
+                        });
+
+                        // 3. Reset scroll position
+                        optionsList.scrollTop = 0;
+                    }
+                }
+                
+                else if (target.matches('.dropdown-option')) {
+                    const button = target.closest('.custom-dropdown-panel').previousElementSibling;
+                    button.querySelector('.button-label').textContent = target.textContent;
+                    button.dataset.value = target.dataset.value;
+                    target.closest('.custom-dropdown-panel').classList.remove('show');
+                }
+                
+                else if (target.matches('.delete-btn')) {
+                    part.remove();
+                }
+            });
+            
+            function exportData() {
+                const partsData = [];
+                document.querySelectorAll('.armor-part').forEach(part => {
+                    const armorType = part.querySelector('input[name*="armor-type"]:checked').value;
+                    const armorName = part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
+                    const grade = part.querySelector('input[name*="ability-grade"]:checked').value;
+                    const abilityName = part.querySelector('.ability-select').value;
+                    const value = part.querySelector('.ability-value').value;
+                    partsData.push({ armorType, armorName, grade, abilityName, value });
+                });
+
+                const jsonString = JSON.stringify(partsData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = '練磨_防具_リスト.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function importData(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (!Array.isArray(data)) throw new Error("JSON is not an array.");
+                        partsContainer.innerHTML = '';
+                        data.forEach(partData => addNewPart(partData));
+                    } catch (error) {
+                        alert('JSONファイルの読み込みに失敗しました。');
+                        console.error("Error parsing JSON:", error);
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+
+            async function initialize() {
+                [armorMainData, armorSubData, renmaAbilityData] = await Promise.all([
+                    loadCSV('data/armor-main.csv'),
+                    loadCSV('data/armor-sub.csv'),
+                    loadCSV('data/renma-armor.csv')
+                ]);
+                addNewPart();
+                addPartBtn.addEventListener('click', () => addNewPart());
+                editModeBtn.addEventListener('click', toggleEditMode);
+                exportBtn.addEventListener('click', exportData);
+                importBtn.addEventListener('click', () => importFileInput.click());
+                importFileInput.addEventListener('change', importData);
+            }
+
+            function toggleEditMode() {
+                isEditMode = !isEditMode;
+                document.querySelectorAll('.drag-handle').forEach(handle => {
+                    handle.style.display = isEditMode ? 'block' : 'none';
+                });
+                if (isEditMode) {
+                    editModeBtn.textContent = '編集モードを終了';
+                    editModeBtn.classList.add('active');
+                    if (!sortableInstance) {
+                         sortableInstance = new Sortable(partsContainer, {
+                            animation: 150, handle: '.drag-handle'
+                        });
+                    }
+                    sortableInstance.option('disabled', false);
+                } else {
+                    editModeBtn.textContent = '編集モードを開始';
+                    editModeBtn.classList.remove('active');
+                    if(sortableInstance) sortableInstance.option('disabled', true);
+                }
+            }
+
+            initialize();
+        });
+    </script>
+</body>
+</html>
