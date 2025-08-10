@@ -103,6 +103,26 @@
         }
         footer { margin-top: 30px; padding-top: 15px; border-top: 2px solid #555; text-align: left; font-size: 1em; color: white; }
 
+    /* 拡大縮小ボタンのスタイル */
+    .zoom-buttons {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: row;
+      gap: 5px;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      color: #000;
+      background-color: #eee;
+      padding: 5px 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
         /* --- フォームコントロール共通スタイル --- */
         .custom-dropdown-button, select {
             min-height: 40px;
@@ -240,6 +260,11 @@
         </div>
     </header>
 
+  <div class="zoom-buttons">
+    <button onclick="changeZoom(-0.1)">－</button>
+    <button onclick="changeZoom(0.1)">＋</button>
+  </div>
+
     <main id="parts-container"></main>
 
     <template id="armor-part-template">
@@ -300,6 +325,17 @@
     </footer>
 
     <script>
+
+    // 拡大縮小の関数
+    let zoomLevel = 1;
+
+    function changeZoom(delta) {
+      zoomLevel += delta;
+      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
+      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
+      document.body.style.zoom = zoomLevel;
+    }
+
         document.addEventListener('DOMContentLoaded', () => {
             let armorMainData = [], armorSubData = [], renmaAbilityData = [], isEditMode = false, sortableInstance = null;
             const partsContainer = document.getElementById('parts-container');
