@@ -95,7 +95,6 @@
             color: #bbb;
             font-style: italic;
             white-space: nowrap;
-            font-size: 1.0em;
         }
         #filter-btn {
             background-color: #28a745;
@@ -182,6 +181,9 @@
         .form-section:has(#approx-search-check) > .group-label {
             padding-top: 0;
         }
+        .search-panel-info {
+            font-size: 1.0em;
+        }
 
         /* --- 中くらいの画面のレイアウト (769px以上) --- */
         @media (min-width: 769px) {
@@ -189,6 +191,9 @@
             .controls-wrapper { flex-direction: row; align-items: center; width: auto; }
             .custom-dropdown, select { min-width: 270px; width: auto; }
             .group-label { padding-top: 0; }
+        }
+        .search-panel-info {
+            font-size: 1.0em;
         }
         /* --- 大きい画面のレイアウト (1281px以上) --- */
         @media (min-width: 1281px) {
@@ -200,6 +205,9 @@
             .search-panel-info { font-size: 0.8em; }
             .form-section { grid-template-columns: 65px 1fr; }
             .custom-dropdown, select { min-width: 0; }
+        }
+        .search-panel-info {
+            font-size: 1.0em;
         }
         /* --- その他フォーム部品 --- */
         .radio-group input[type="radio"] { display: none; }
