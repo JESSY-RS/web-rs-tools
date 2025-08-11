@@ -80,6 +80,9 @@
             padding-bottom: 0;
             cursor: pointer;
         }
+        #search-panel.is-collapsed .favorite-toggle {
+            display: none; /* ★ 閉じている時は☆★を非表示 */
+        }
         #search-panel .part-content.collapsed {
             display: none;
         }
@@ -253,7 +256,7 @@
     <main>
         <div id="search-panel" class="armor-part">
             <div class="drag-handle" style="visibility: hidden;">☰</div>
-            <div class="favorite-toggle" style="visibility: hidden;">☆</div>
+            <div class="favorite-toggle" data-favorite="false">☆</div>
             <div class="part-content">
                 <div class="form-section">
                     <span class="group-label">防具種別:</span>
@@ -304,7 +307,7 @@
     <template id="armor-part-template">
         <div class="armor-part" draggable="false">
             <div class="drag-handle">☰</div>
-            <div class="favorite-toggle">☆</div>
+            <div class="favorite-toggle" data-favorite="false">☆</div>
             <div class="part-content">
                 <div class="form-section">
                     <span class="group-label">防具種別:</span>
@@ -350,7 +353,9 @@
 
     <footer>
         ※使用は自己責任にて。<br>
-        ※アビリティの表記が実際のゲーム内の表記と異なる場合があります。
+        ※アビリティの表記が実際のゲーム内の表記と異なる場合があります。<br>
+        ※検索で星が☆の状態の場合は★も検索対象に含まれます。<br>
+        ※検索で防具種別および練磨アビで、選択されているものを再度クリックすると、全選択解除されます。この状態では検索対象は”すべて”になります。
     </footer>
 
     <script>
@@ -397,7 +402,7 @@
                 const button = dropdown.querySelector('.custom-dropdown-button');
                 const label = button.querySelector('.button-label');
                 const optionsList = dropdown.querySelector('.dropdown-options-list');
-                const data = armorType === 'main' ? armorMainData : armorSubData;
+                const data = !armorType ? [...armorMainData, ...armorSubData] : (armorType === 'main' ? armorMainData : armorSubData);
                 label.textContent = '防具を選択';
                 button.dataset.value = '';
                 optionsList.innerHTML = '';
@@ -413,7 +418,7 @@
             }
             function setupAbilityDropdown(part, grade) {
                 const selectEl = part.querySelector('.ability-select');
-                const filteredData = renmaAbilityData.filter(item => item.グレード === grade);
+                const filteredData = renmaAbilityData.filter(item => !grade || item.グレード === grade);
                 selectEl.innerHTML = '<option value="">アビリティを選択</option>';
                 filteredData.forEach(item => {
                     if (item.種類) {
@@ -506,9 +511,11 @@
                 if(e.target.matches('.ability-select')){
                     if (!isSearchPanel) updateValueSymbol(part, e.target.value);
                 } else if (e.target.matches('input[name*="armor-type"]')) {
-                    setupDropdown(part, e.target.value);
+                    const checkedRadio = e.target.closest('.radio-group').querySelector('input:checked');
+                    setupDropdown(part, checkedRadio ? checkedRadio.value : null);
                 } else if (e.target.matches('input[name*="ability-grade"]')) {
-                    setupAbilityDropdown(part, e.target.value);
+                    const checkedRadio = e.target.closest('.radio-group').querySelector('input:checked');
+                    setupAbilityDropdown(part, checkedRadio ? checkedRadio.value : null);
                 }
             });
 
@@ -516,9 +523,9 @@
                 const target = e.target;
                 const part = target.closest('.armor-part');
 
-                if (target.matches('.favorite-toggle') && !isEditMode) {
+                if (target.matches('.favorite-toggle') && !isEditMode && !target.closest('#search-panel')) {
                     const isFavorite = target.dataset.favorite === 'true';
-                    target.dataset.favorite = !isFavorite;
+                    target.dataset.favorite = String(!isFavorite);
                     target.textContent = isFavorite ? '☆' : '★';
                     target.classList.toggle('is-favorite');
                     return;
@@ -599,21 +606,26 @@
                 approxCheck.checked = false;
 
                 function applyFilter() {
-                    const filterArmorType = searchPanel.querySelector('input[name="search-armor-type"]:checked').value;
+                    const checkedArmorTypeRadio = searchPanel.querySelector('input[name="search-armor-type"]:checked');
+                    const filterArmorType = checkedArmorTypeRadio ? checkedArmorTypeRadio.value : null;
                     const filterArmorName = searchPanel.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
-                    const filterGrade = searchPanel.querySelector('input[name="search-ability-grade"]:checked').value;
+                    const checkedGradeRadio = searchPanel.querySelector('input[name="search-ability-grade"]:checked');
+                    const filterGrade = checkedGradeRadio ? checkedGradeRadio.value : null;
                     const filterAbilityName = searchPanel.querySelector('.ability-select').value;
                     const isApprox = approxCheck.checked;
+                    const filterFavorite = searchPanel.querySelector('.favorite-toggle').dataset.favorite === 'true';
                     
                     document.querySelectorAll('#parts-container .armor-part').forEach(part => {
                         const partArmorType = part.querySelector('input[name*="armor-type"]:checked').value;
                         const partArmorName = part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
                         const partGrade = part.querySelector('input[name*="ability-grade"]:checked').value;
                         const partAbilityName = part.querySelector('.ability-select').value;
+                        const partFavorite = part.querySelector('.favorite-toggle').dataset.favorite === 'true';
 
-                        const typeMatch = filterArmorType === partArmorType;
+                        const typeMatch = !filterArmorType || filterArmorType === partArmorType;
                         const nameMatch = filterArmorName === "" || filterArmorName === partArmorName;
-                        const gradeMatch = filterGrade === partGrade;
+                        const gradeMatch = !filterGrade || filterGrade === partGrade;
+                        const favoriteMatch = !filterFavorite || partFavorite;
                         
                         let abilityMatch = false;
                         if (isApprox && filterAbilityName && partAbilityName) {
@@ -623,7 +635,7 @@
                             abilityMatch = (filterAbilityName === "" || filterAbilityName === partAbilityName);
                         }
 
-                        part.style.display = (typeMatch && nameMatch && gradeMatch && abilityMatch) ? '' : 'none';
+                        part.style.display = (typeMatch && nameMatch && gradeMatch && abilityMatch && favoriteMatch) ? '' : 'none';
                     });
                 }
                 
@@ -637,7 +649,7 @@
                     const isFilterActive = filterBtn.classList.contains('is-active');
                     if (isFilterActive) {
                         infoText.textContent = '絞り込み中...';
-                        infoText.style.color = '#dc3545';
+                        infoText.style.color = 'red';
                     } else {
                         infoText.textContent = 'クリックして検索パネルを開く';
                         infoText.style.color = '#bbb';
@@ -658,6 +670,12 @@
                         toggleCollapse(false);
                     } else if (target.matches('.dropdown-option') && target.closest('#search-panel')) {
                         setTimeout(triggerLiveFilter, 0);
+                    } else if (target.matches('.favorite-toggle')) {
+                        const isFavorite = target.dataset.favorite === 'true';
+                        target.dataset.favorite = String(!isFavorite);
+                        target.textContent = isFavorite ? '☆' : '★';
+                        target.classList.toggle('is-favorite');
+                        triggerLiveFilter();
                     }
                 });
 
@@ -682,6 +700,21 @@
                     filterBtn.textContent = isActive ? '絞り込み' : '解除';
                     filterBtn.classList.toggle('is-active');
                     updateInfoText();
+                });
+                
+                searchPanel.querySelectorAll('.radio-group').forEach(group => {
+                    let lastChecked = group.querySelector('input:checked');
+                    group.addEventListener('click', (e) => {
+                        if (e.target.type === 'radio') {
+                            if (e.target === lastChecked) {
+                                e.target.checked = false;
+                                lastChecked = null;
+                                e.target.dispatchEvent(new Event('change', { bubbles: true }));
+                            } else {
+                                lastChecked = e.target;
+                            }
+                        }
+                    });
                 });
                 
                 toggleCollapse(true);
