@@ -33,6 +33,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
         }
         .header-controls .left-buttons,
         .header-controls .right-buttons {
@@ -62,13 +63,13 @@
             background-color: #424242;
             border: 1px solid #555;
             border-radius: 8px;
-            padding: 20px 46px;
+            padding: 20px 50px;
             position: relative;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .drag-handle {
             position: absolute;
-            left: 8px;
+            left: 5px;
             top: 50%;
             transform: translateY(-50%);
             font-size: 1.5em;
@@ -92,12 +93,12 @@
             font-weight: bold;
         }
         .add-part-inline-btn {
-            bottom: 6px;
+            bottom: 10px;
             background-color: #28a745;
             color: white;
         }
         .delete-btn {
-            top: 2px;
+            top: 10px;
             background: transparent;
             color: white;
         }
@@ -150,15 +151,16 @@
         /* --- レイアウトコンテナ --- */
         .part-content, .form-section, .controls-wrapper {
             display: flex;
-            gap: 8px; /* 項目間の間隔を半減 */
+            gap: 8px;
         }
         .group-label {
             font-weight: bold;
             white-space: nowrap;
             min-width: 70px;
             text-align: right;
+            margin-right: 2px;
         }
-        .radio-group { display: flex; align-items: center; }
+        .radio-group { display: flex; align-items: center; flex-shrink: 0; }
 
         /* --- 小さい画面のレイアウト (< 769px) --- */
         .part-content { flex-direction: column; }
@@ -170,6 +172,9 @@
         .controls-wrapper {
             flex-direction: column;
             align-items: flex-start;
+            width: 100%;
+        }
+        .custom-dropdown, select {
             width: 100%;
         }
         .group-label {
@@ -188,18 +193,36 @@
                 align-items: center;
                 width: auto;
             }
+            .custom-dropdown, select {
+                min-width: 270px;
+                width: auto;
+            }
             .group-label {
                 padding-top: 0;
             }
         }
-        
+
         /* --- 大きい画面のレイアウト (1281px以上) --- */
         @media (min-width: 1281px) {
             .part-content {
                 flex-direction: row;
                 align-items: center;
                 flex-wrap: wrap;
-                gap: 16px; /* 項目間の間隔を半減 */
+                gap: 16px;
+            }
+        }
+
+        /* --- 特に狭い画面用の追加修正 (480px以下) --- */
+        @media (max-width: 480px) {
+             .armor-part {
+                padding-left: 40px;
+                padding-right: 20px;
+            }
+            .form-section {
+                grid-template-columns: 65px 1fr;
+            }
+            .custom-dropdown, select {
+                min-width: 0;
             }
         }
 
@@ -214,12 +237,8 @@
         .value-input-group .symbol { font-size: 1.2em; font-weight: bold; color: white; display: none; }
 
         /* --- Custom Dropdown --- */
-        .controls-wrapper > .custom-dropdown, 
-        .controls-wrapper > select {
-            min-width: 270px;
-        }
         .custom-dropdown {
-            position: relative; /* ポジショニングの基点 */
+             position: relative;
         }
         .custom-dropdown-button {
             width: 100%; text-align: left; display: flex;
@@ -228,7 +247,7 @@
         .custom-dropdown-button .button-arrow:after { content: '▼'; margin-left: 8px; font-size: 0.8em; }
         .custom-dropdown-panel {
             display: none; position: absolute; top: 100%; left: 0; width: 100%;
-            min-width: 250px; max-height: 300px; background-color: #3a3a3a;
+            max-height: 300px; background-color: #3a3a3a;
             border: 1px solid #777; border-radius: 4px; z-index: 100; margin-top: 4px;
             flex-direction: column; box-sizing: border-box;
         }
@@ -255,7 +274,7 @@
                 <button id="export-btn">エクスポート</button>
             </div>
             <div class="right-buttons">
-                <button id="edit-mode-btn">編集モードを開始</button>
+                <button id="edit-mode-btn">編集モード開始</button>
             </div>
         </div>
     </header>
@@ -568,7 +587,7 @@
                     handle.style.display = isEditMode ? 'block' : 'none';
                 });
                 if (isEditMode) {
-                    editModeBtn.textContent = '編集モードを終了';
+                    editModeBtn.textContent = '編集モード終了';
                     editModeBtn.classList.add('active');
                     if (!sortableInstance) {
                          sortableInstance = new Sortable(partsContainer, {
@@ -577,7 +596,7 @@
                     }
                     sortableInstance.option('disabled', false);
                 } else {
-                    editModeBtn.textContent = '編集モードを開始';
+                    editModeBtn.textContent = '編集モード開始';
                     editModeBtn.classList.remove('active');
                     if(sortableInstance) sortableInstance.option('disabled', true);
                 }
