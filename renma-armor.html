@@ -117,11 +117,11 @@
             font-size: 1em;
             padding: 8px;
         }
-        /* iPhone Safariでの高さ問題を修正 */
-        select {
-            -webkit-appearance: none;
-            appearance: none;
+
+        .ability-select {
+            min-height: 40px;
         }
+
         input[type="number"].ability-value {
             width: 120px;
             min-height: 40px;
@@ -130,7 +130,7 @@
             color: white;
             border: 1px solid #777;
             border-radius: 4px;
-            font-size: 1em;
+            font-size: 1.2em;
             padding: 8px;
             text-align: right;
         }
@@ -203,7 +203,7 @@
         @media (max-width: 480px) {
              .armor-part {
                 padding-left: 40px;
-                padding-right: 20px; /* 左右ボタン用に少し広げる */
+                padding-right: 20px;
             }
             .form-section {
                 grid-template-columns: 65px 1fr;
