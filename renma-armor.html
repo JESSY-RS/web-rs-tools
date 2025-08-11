@@ -118,10 +118,6 @@
             padding: 8px;
         }
 
-        .ability-select {
-            min-height: 40px;
-        }
-
         input[type="number"].ability-value {
             width: 120px;
             min-height: 40px;
@@ -234,7 +230,7 @@
         .custom-dropdown-button .button-arrow:after { content: '▼'; margin-left: 8px; font-size: 0.8em; }
         .custom-dropdown-panel {
             display: none; position: absolute; top: 100%; left: 0; width: 100%;
-            min-width: 250px; max-height: 300px; background-color: #3a3a3a;
+            max-height: 300px; background-color: #3a3a3a;
             border: 1px solid #777; border-radius: 4px; z-index: 100; margin-top: 4px;
             flex-direction: column; box-sizing: border-box;
         }
@@ -325,7 +321,7 @@
                             <input type="radio" id="grade-s" name="ability-grade" value="S"><label for="grade-s">S</label>
                             <input type="radio" id="grade-a" name="ability-grade" value="A"><label for="grade-a">A</label>
                         </div>
-                        <select class="ability-select">
+                        <select class="ability-select" style="min-height: 40px;">
                             <option value="">アビリティを選択</option>
                         </select>
                     </div>
