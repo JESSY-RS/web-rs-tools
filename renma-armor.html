@@ -72,7 +72,6 @@
 
         /* --- 検索パネルの専用スタイル --- */
         #search-panel {
-            background-color: #424242; 
             border-color: #555;
         }
         #search-panel.is-collapsed {
@@ -88,7 +87,7 @@
             display: none;
             position: absolute;
             top: 50%;
-            left: 20px;
+            left: 40px;
             transform: translateY(-50%);
             color: #bbb;
             font-style: italic;
@@ -163,12 +162,23 @@
         .part-content, .form-section, .controls-wrapper { display: flex; gap: 8px; }
         .group-label { font-weight: bold; white-space: nowrap; min-width: 70px; text-align: right; margin-right: 2px; }
         .radio-group { display: flex; align-items: center; flex-shrink: 0; }
+        .checkbox-group { display: flex; align-items: center; gap: 5px; min-height: 40px; justify-content: flex-end; width: 100%;}
+        .checkbox-group label { cursor: pointer; }
+        
         /* --- 小さい画面のレイアウト (< 769px) --- */
         .part-content { flex-direction: column; }
         .form-section { display: grid; grid-template-columns: 80px 1fr; align-items: flex-start; }
         .controls-wrapper { flex-direction: column; align-items: flex-start; width: 100%; }
         .custom-dropdown, select { width: 100%; }
         .group-label { padding-top: 8px; }
+        
+        .form-section:has(#approx-search-check) {
+            align-items: center;
+        }
+        .form-section:has(#approx-search-check) > .group-label {
+            padding-top: 0;
+        }
+
         /* --- 中くらいの画面のレイアウト (769px以上) --- */
         @media (min-width: 769px) {
             .form-section { display: flex; flex-direction: row; align-items: center; }
@@ -183,7 +193,6 @@
         /* --- 特に狭い画面用の追加修正 (480px以下) --- */
         @media (max-width: 480px) {
             .armor-part { padding-left: 40px; padding-right: 20px; }
-            #search-panel { padding-left: 20px; }
             .search-panel-info { font-size: 0.8em; }
             .form-section { grid-template-columns: 65px 1fr; }
             .custom-dropdown, select { min-width: 0; }
@@ -243,6 +252,8 @@
 
     <main>
         <div id="search-panel" class="armor-part">
+            <div class="drag-handle" style="visibility: hidden;">☰</div>
+            <div class="favorite-toggle" style="visibility: hidden;">☆</div>
             <div class="part-content">
                 <div class="form-section">
                     <span class="group-label">防具種別:</span>
@@ -272,9 +283,14 @@
                     </div>
                 </div>
                 <div class="form-section">
-                    <span class="group-label">検索:</span>
+                    <span class="group-label">
+                         <div class="checkbox-group">
+                            <input type="checkbox" id="approx-search-check">
+                            <label for="approx-search-check">近似</label>
+                         </div>
+                    </span>
                     <div class="controls-wrapper">
-                        <button id="filter-btn">絞り込み</button>
+                         <button id="filter-btn">絞り込み</button>
                     </div>
                 </div>
             </div>
@@ -397,7 +413,6 @@
             }
             function setupAbilityDropdown(part, grade) {
                 const selectEl = part.querySelector('.ability-select');
-                const previousValue = selectEl.value;
                 const filteredData = renmaAbilityData.filter(item => item.グレード === grade);
                 selectEl.innerHTML = '<option value="">アビリティを選択</option>';
                 filteredData.forEach(item => {
@@ -408,8 +423,7 @@
                         selectEl.appendChild(optionEl);
                     }
                 });
-                selectEl.value = previousValue;
-                if (part.id !== 'search-panel') updateValueSymbol(part, selectEl.value);
+                if (part.id !== 'search-panel') updateValueSymbol(part, '');
             }
 
             function updateValueSymbol(part, abilityName) {
@@ -461,6 +475,12 @@
                     setupAbilityDropdown(newPart, 'SS');
                 }
             }
+            
+            document.addEventListener('focusin', (e) => {
+                if (e.target.classList.contains('ability-value')) {
+                    e.target.select();
+                }
+            });
 
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.custom-dropdown')) {
@@ -572,16 +592,52 @@
                 const collapseBtn = searchPanel.querySelector('.toggle-collapse-btn');
                 const content = searchPanel.querySelector('.part-content');
                 const infoText = searchPanel.querySelector('.search-panel-info');
-                
-                // ★★★ 更新時にデフォルト値を強制する処理を追加 ★★★
+                const approxCheck = document.getElementById('approx-search-check');
+
                 document.getElementById('search-type-main').checked = true;
                 document.getElementById('search-grade-ss').checked = true;
+                approxCheck.checked = false;
+
+                function applyFilter() {
+                    const filterArmorType = searchPanel.querySelector('input[name="search-armor-type"]:checked').value;
+                    const filterArmorName = searchPanel.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
+                    const filterGrade = searchPanel.querySelector('input[name="search-ability-grade"]:checked').value;
+                    const filterAbilityName = searchPanel.querySelector('.ability-select').value;
+                    const isApprox = approxCheck.checked;
+                    
+                    document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                        const partArmorType = part.querySelector('input[name*="armor-type"]:checked').value;
+                        const partArmorName = part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
+                        const partGrade = part.querySelector('input[name*="ability-grade"]:checked').value;
+                        const partAbilityName = part.querySelector('.ability-select').value;
+
+                        const typeMatch = filterArmorType === partArmorType;
+                        const nameMatch = filterArmorName === "" || filterArmorName === partArmorName;
+                        const gradeMatch = filterGrade === partGrade;
+                        
+                        let abilityMatch = false;
+                        if (isApprox && filterAbilityName && partAbilityName) {
+                            const searchTerm = filterAbilityName.split('(')[0];
+                            abilityMatch = partAbilityName.startsWith(searchTerm);
+                        } else {
+                            abilityMatch = (filterAbilityName === "" || filterAbilityName === partAbilityName);
+                        }
+
+                        part.style.display = (typeMatch && nameMatch && gradeMatch && abilityMatch) ? '' : 'none';
+                    });
+                }
+                
+                function triggerLiveFilter() {
+                    if (filterBtn.classList.contains('is-active')) {
+                        applyFilter();
+                    }
+                }
 
                 function updateInfoText() {
                     const isFilterActive = filterBtn.classList.contains('is-active');
                     if (isFilterActive) {
                         infoText.textContent = '絞り込み中...';
-                        infoText.style.color = 'red';
+                        infoText.style.color = '#dc3545';
                     } else {
                         infoText.textContent = 'クリックして検索パネルを開く';
                         infoText.style.color = '#bbb';
@@ -597,10 +653,16 @@
                 }
 
                 searchPanel.addEventListener('click', (e) => {
-                    if (searchPanel.classList.contains('is-collapsed') && !e.target.closest('button')) {
+                    const target = e.target;
+                    if (searchPanel.classList.contains('is-collapsed') && !target.closest('button')) {
                         toggleCollapse(false);
+                    } else if (target.matches('.dropdown-option') && target.closest('#search-panel')) {
+                        setTimeout(triggerLiveFilter, 0);
                     }
                 });
+
+                searchPanel.addEventListener('change', triggerLiveFilter);
+
                 collapseBtn.addEventListener('click', () => {
                      toggleCollapse(!searchPanel.classList.contains('is-collapsed'));
                 });
@@ -611,24 +673,7 @@
                 filterBtn.addEventListener('click', () => {
                     const isActive = filterBtn.classList.contains('is-active');
                     if(!isActive) {
-                        const filterArmorType = searchPanel.querySelector('input[name="search-armor-type"]:checked').value;
-                        const filterArmorName = searchPanel.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
-                        const filterGrade = searchPanel.querySelector('input[name="search-ability-grade"]:checked').value;
-                        const filterAbilityName = searchPanel.querySelector('.ability-select').value;
-                        
-                        document.querySelectorAll('#parts-container .armor-part').forEach(part => {
-                            const partArmorType = part.querySelector('input[name*="armor-type"]:checked').value;
-                            const partArmorName = part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
-                            const partGrade = part.querySelector('input[name*="ability-grade"]:checked').value;
-                            const partAbilityName = part.querySelector('.ability-select').value;
-
-                            const typeMatch = filterArmorType === partArmorType;
-                            const nameMatch = filterArmorName === "" || filterArmorName === partArmorName;
-                            const gradeMatch = filterGrade === partGrade;
-                            const abilityMatch = filterAbilityName === "" || filterAbilityName === partAbilityName;
-
-                            part.style.display = (typeMatch && nameMatch && gradeMatch && abilityMatch) ? '' : 'none';
-                        });
+                       applyFilter();
                     } else {
                         document.querySelectorAll('#parts-container .armor-part').forEach(part => {
                             part.style.display = '';
