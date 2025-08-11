@@ -41,7 +41,7 @@
             gap: 10px;
         }
         button {
-            padding: 8px 16px;
+            padding: 8px 12px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
@@ -77,6 +77,7 @@
             cursor: grab;
             padding: 5px;
             display: none;
+            user-select: none;
         }
         .add-part-inline-btn, .delete-btn {
             position: absolute;
@@ -91,6 +92,7 @@
             line-height: 1;
             font-size: 1.5em;
             font-weight: bold;
+            user-select: none;
         }
         .add-part-inline-btn {
             bottom: 10px;
@@ -104,26 +106,6 @@
         }
         footer { margin-top: 30px; padding-top: 15px; border-top: 2px solid #555; text-align: left; font-size: 1em; color: white; }
 
-    /* 拡大縮小ボタンのスタイル */
-    .zoom-buttons {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      display: flex;
-      flex-direction: row;
-      gap: 5px;
-      z-index: 1000;
-    }
-
-    .zoom-buttons button {
-      color: #000;
-      background-color: #eee;
-      padding: 5px 10px;
-      font-size: 16px;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-
         /* --- フォームコントロール共通スタイル --- */
         .custom-dropdown-button, select {
             min-height: 40px;
@@ -134,6 +116,11 @@
             border-radius: 4px;
             font-size: 1em;
             padding: 8px;
+        }
+        /* iPhone Safariでの高さ問題を修正 */
+        select {
+            -webkit-appearance: none;
+            appearance: none;
         }
         input[type="number"].ability-value {
             width: 120px;
@@ -216,7 +203,7 @@
         @media (max-width: 480px) {
              .armor-part {
                 padding-left: 40px;
-                padding-right: 20px;
+                padding-right: 20px; /* 左右ボタン用に少し広げる */
             }
             .form-section {
                 grid-template-columns: 65px 1fr;
@@ -247,7 +234,7 @@
         .custom-dropdown-button .button-arrow:after { content: '▼'; margin-left: 8px; font-size: 0.8em; }
         .custom-dropdown-panel {
             display: none; position: absolute; top: 100%; left: 0; width: 100%;
-            max-height: 300px; background-color: #3a3a3a;
+            min-width: 250px; max-height: 300px; background-color: #3a3a3a;
             border: 1px solid #777; border-radius: 4px; z-index: 100; margin-top: 4px;
             flex-direction: column; box-sizing: border-box;
         }
@@ -261,6 +248,27 @@
         .dropdown-option { padding: 8px 12px; cursor: pointer; font-size: 1em; }
         .dropdown-option:hover { background-color: #007bff; }
         .dropdown-option.hidden { display: none; }
+        
+    /* 拡大縮小ボタンのスタイル */
+    .zoom-buttons {
+      position: absolute;
+      top: 23px;
+      right: 20px;
+      display: flex;
+      flex-direction: row;
+      gap: 5px;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      color: #000;
+      background-color: #eee;
+      padding: 5px 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
     </style>
 </head>
 <body>
@@ -278,11 +286,11 @@
             </div>
         </div>
     </header>
-
-  <div class="zoom-buttons">
-    <button onclick="changeZoom(-0.1)">－</button>
-    <button onclick="changeZoom(0.1)">＋</button>
-  </div>
+    
+    <div class="zoom-buttons">
+        <button onclick="changeZoom(-0.1)">－</button>
+        <button onclick="changeZoom(0.1)">＋</button>
+    </div>
 
     <main id="parts-container"></main>
 
@@ -344,16 +352,14 @@
     </footer>
 
     <script>
-
-    // 拡大縮小の関数
-    let zoomLevel = 1;
-
-    function changeZoom(delta) {
-      zoomLevel += delta;
-      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
-      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
-      document.body.style.zoom = zoomLevel;
-    }
+        // 拡大縮小の関数 (グローバルスコープに配置)
+        let zoomLevel = 1;
+        function changeZoom(delta) {
+          zoomLevel += delta;
+          if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
+          if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
+          document.body.style.zoom = zoomLevel;
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             let armorMainData = [], armorSubData = [], renmaAbilityData = [], isEditMode = false, sortableInstance = null;
