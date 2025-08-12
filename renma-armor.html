@@ -756,7 +756,7 @@ line-height: 2;
                     else prefix.style.display = 'inline';
                 }
             }
-            function addNewPart(data = null) {
+            function addNewPart(data = null, basePart = null) { // 第2引数として basePart を追加
                 const newPart = template.content.cloneNode(true).querySelector('.armor-part');
                 const uniqueId = Date.now() + Math.random();
                 newPart.querySelectorAll('input[type="radio"]').forEach(radio => {
@@ -769,7 +769,15 @@ line-height: 2;
                 });
                 newPart.querySelector('.drag-handle').style.display = isEditMode ? 'block' : 'none';
                 newPart.querySelector('.favorite-toggle').style.display = isEditMode ? 'none' : 'block';
-                partsContainer.appendChild(newPart);
+
+                if (basePart) {
+                    // basePart (クリックされたパネル) があれば、その直後に新しいパネルを挿入
+                    basePart.after(newPart);
+                } else {
+                    // なければ (ページの初期読み込み時など)、従来通り末尾に追加
+                    partsContainer.appendChild(newPart);
+                }
+
                 if (data) {
                     const armorTypeRadio = newPart.querySelector(`input[name*="armor-type"][value="${data.armorType}"]`);
                     if (armorTypeRadio) armorTypeRadio.checked = true;
@@ -866,7 +874,7 @@ line-height: 2;
                     button.dataset.value = target.dataset.value;
                     target.closest('.custom-dropdown-panel').classList.remove('show');
                 }
-                else if (part && target.matches('.add-part-inline-btn')) addNewPart();
+                else if (part && target.matches('.add-part-inline-btn')) addNewPart(null, part); // 変更点
                 else if (part && target.matches('.delete-btn')) part.remove();
             });
 
