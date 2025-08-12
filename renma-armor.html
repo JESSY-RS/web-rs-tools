@@ -7,9 +7,7 @@
     <link rel="shortcut icon" href="favicon-renma.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
-    <title>練磨(防具)リスト</title> <!-- Created by じぇ -->
-
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <title>練磨(防具)リスト</title> <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <style>
         body {
@@ -25,7 +23,7 @@
             flex-direction: column;
             align-items: stretch;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             padding-bottom: 10px;
             border-bottom: 2px solid #555;
         }
@@ -55,22 +53,22 @@
             font-weight: bold;
             transition: background-color 0.3s;
         }
-        #import-btn { background-color: hotpink; color: white; }
-        #export-btn { background-color: orange; color: white; }
-        #edit-mode-btn { background-color: #007bff; color: white; }
-        #edit-mode-btn.active { background-color: #dc3545; }
+        #import-btn, #import-btn-footer { background-color: hotpink; color: white; }
+        #export-btn, #export-btn-footer { background-color: orange; color: white; }
+        #edit-mode-btn, #edit-mode-btn-footer { background-color: #007bff; color: white; }
+        #edit-mode-btn.active, #edit-mode-btn-footer.active { background-color: #dc3545; }
         #import-file-input { display: none; }
         #parts-container {
             display: flex;
             flex-direction: column;
             gap: 15px;
-            margin-top: 15px;
+            margin-top: 12px;
         }
         .armor-part {
             background-color: #424242;
             border: 1px solid #555;
             border-radius: 8px;
-            padding: 20px 50px;
+            padding: 18px 50px;
             position: relative;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
@@ -152,7 +150,14 @@
         .favorite-toggle { color: #eee; cursor: pointer; transition: color 0.2s; }
         .favorite-toggle.is-favorite { color: gold; }
         
-        footer { margin-top: 30px; padding-top: 15px; border-top: 2px solid #555; text-align: left; font-size: 1em; color: white; }
+        footer { 
+margin-top: 12px; 
+padding-top: 10px; 
+border-top: 2px solid #555; 
+text-align: left; 
+font-size: 1em; 
+color: white; 
+}
 
         /* --- フォームコントロール共通スタイル --- */
         .custom-dropdown-button, select {
@@ -166,6 +171,80 @@
             color: white; border: 1px solid #777; border-radius: 4px; font-size: 1.1em;
             padding: 8px; text-align: right; letter-spacing: 2px;
         }
+
+    /* コンテナのスタイル */
+    .container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    /* 各アビリティセクションのスタイル */
+    .ability-section {
+        margin-top: 10px;
+        background-color: #2A2A2A; /* セクションの背景 */
+        overflow: hidden;
+    }
+
+    /* 見出しのスタイル */
+    h2 {
+        padding: 8px 12px;
+        margin: 0 0 -1px 0;
+        font-size: 1.2em;
+        text-align: left;
+        border: 1px solid #ccc;
+    }
+    
+    /* テーブルのスタイル */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    th, td {
+        padding: 6px 12px;
+        text-align: left;
+        word-wrap: break-word;
+        border: 1px solid #ccc;
+    }
+
+    thead th {
+        font-weight: bold;
+        background-color: #333; /* thの背景 */
+    }
+
+    /* --- ここからダークモード用の変更 --- */
+
+    /* セクションごとの見出しの背景色 */
+    .ss-ability h2 { background-color: #C99004; color: #e0e0e0; }
+    .s-ability h2 { background-color: #616161; color: #e0e0e0; }
+    .a-ability h2 { background-color: #c62828; color: #e0e0e0; }
+
+    /* 「種類」ごとの行の背景色（ダークモード用） */
+    .type-keigen { background-color: #2a3a4a; }       /* 濃い水色 */
+    .type-iryoku { background-color: #5c3c3c; }       /* 濃いピンク */
+    .type-mikata-iryoku { background-color: #6b4a37; } /* 濃いオレンジ */
+    .type-nouryoku { background-color: #394a34; }     /* 濃い緑 */
+    .type-joutai-ijou { background-color: #4a3f5a; }   /* 濃い紫 */
+
+    /* 最大値の列の配置 */
+    th:nth-child(3) {
+        text-align: left;  /* 項目名は左寄せ */
+    }
+    td:nth-child(3) {
+        text-align: right; /* 数値は右寄せ */
+    }
+    
+    /* --- ここまでダークモード用の変更 --- */
+
+    /* レスポンシブ対応：画面幅が768px以下の場合 */
+    @media (max-width: 768px) {
+        .container {
+            grid-template-columns: 1fr;
+        }
+    }
+
         /* --- レイアウトコンテナ --- */
         .part-content, .form-section, .controls-wrapper { display: flex; gap: 8px; }
         .group-label { font-weight: bold; white-space: nowrap; min-width: 70px; text-align: right; margin-right: 2px; }
@@ -242,8 +321,33 @@
         .dropdown-option { padding: 8px 12px; cursor: pointer; font-size: 1em; }
         .dropdown-option:hover { background-color: #007bff; }
         .dropdown-option.hidden { display: none; }
-        .zoom-buttons { position: absolute; top: 23px; right: 20px; display: flex; flex-direction: row; gap: 5px; z-index: 1000; }
+        .zoom-buttons { position: absolute; top: 24px; right: 20px; display: flex; flex-direction: row; gap: 5px; z-index: 1000; }
         .zoom-buttons button { color: #000; background-color: #eee; padding: 5px 10px; font-size: 16px; cursor: pointer; border-radius: 5px; }
+    
+        /* リンクのスタイル */
+        a:link {
+          color: #1D9BF0;
+          text-decoration: underline;
+        }
+
+        a:visited {
+          color: #7755FF;
+          text-decoration: underline;
+        }
+
+        a:hover {
+          color: #0CFF57;
+        }
+
+        a:active {
+          color: #FF0000;
+          text-decoration: underline;
+        }
+
+        .bottom {
+          font-size: 16pt;
+line-height: 2;
+        }
     </style>
 </head>
 <body>
@@ -366,11 +470,177 @@
     </template>
 
     <footer>
+        <div class="header-controls" style="margin-bottom: 20px;">
+            <div class="left-buttons">
+                <button id="import-btn-footer">インポート</button>
+                <input type="file" id="import-file-input-footer" accept=".json" style="display: none;">
+                <button id="export-btn-footer">エクスポート</button>
+            </div>
+            <div class="right-buttons">
+                <button id="edit-mode-btn-footer">編集モード開始</button>
+            </div>
+        </div>
         ※使用は自己責任にて。<br>
         ※アビリティの表記が実際のゲーム内の表記と異なる場合があります。<br>
         ※検索で星が☆の状態の場合は★も検索対象に含まれます。<br>
-        ※検索で防具種別および練磨アビで、選択されているものを再度クリックすると、全選択解除されます。この状態では検索対象は”すべて”になります。
+        ※検索で防具種別および練磨アビで、選択されているものを再度クリックすると、全選択解除されます。この状態では検索対象は”すべて”になります。<br>
     </footer>
+
+<br>
+
+<div class="bottom">
+    <a href="#">▲TOPへ戻る</a>　<a href="index.html">INDEXへ戻る</a><br>
+    <span id="toggle-max-value" style="cursor: pointer; color: dodgerblue; text-decoration: underline;">▼最大値確認</span>
+</div>
+
+<div class="container" style="display: none;">
+    <div class="ability-section ss-ability">
+        <h2>SSアビリティ</h2>
+        <table>
+            <colgroup>
+                <col style="width: 40%;">
+                <col style="width: 35%;">
+                <col style="width: 25%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>種類</th>
+                    <th>分類</th>
+                    <th>最大値</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="type-keigen"><td>軽減</td><td>全</td><td>10%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>全</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>全</td><td>30%</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>全</td><td>+50</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/器/速/知</td><td>+75</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/精/愛/魅</td><td>+75</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="ability-section s-ability">
+        <h2>Sアビリティ</h2>
+        <table>
+            <colgroup>
+                <col style="width: 40%;">
+                <col style="width: 35%;">
+                <col style="width: 25%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>種類</th>
+                    <th>分類</th>
+                    <th>最大値</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="type-keigen"><td>軽減</td><td>斬打突</td><td>15%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>熱冷雷陽陰</td><td>15%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>HP満タン時</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>瀕死時</td><td>40%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>HP満タン時</td><td>400%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>瀕死時</td><td>600%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>カウンター</td><td>600%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>HP満タン時</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>瀕死時</td><td>200%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>カウンター</td><td>200%</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/体</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/器</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/速</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/知</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/精</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/速</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/知</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/精</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器/速</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器/知</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器/精</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>速/知</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>速/精</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>速/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>速/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>知/精</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>知/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>知/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>精/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>精/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>愛/魅</td><td>+100</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>すべて</td><td>+100</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="ability-section a-ability">
+        <h2>Aアビリティ</h2>
+        <table>
+            <colgroup>
+                <col style="width: 40%;">
+                <col style="width: 35%;">
+                <col style="width: 25%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>種類</th>
+                    <th>分類</th>
+                    <th>最大値</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="type-keigen"><td>軽減</td><td>斬</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>打</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>突</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>熱</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>冷</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>雷</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>陽</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>陰</td><td>30%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>斬</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>打</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>突</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>熱</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>冷</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>雷</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>陽</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>陰</td><td>300%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>斬</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>打</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>突</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>熱</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>冷</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>雷</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>陽</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>陰</td><td>100%</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>速</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>知</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>精</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>愛</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>魅</td><td>+150</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>毒</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>暗闇</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>スタン</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>マヒ</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>眠り</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>石化</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>混乱</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>魅了</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>狂戦士</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>気絶</td><td>+250</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
 
     <script>
         let zoomLevel = 1;
@@ -380,6 +650,20 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            const toggleMaxValueBtn = document.getElementById('toggle-max-value');
+            const maxValueContainer = document.querySelector('.container');
+
+            toggleMaxValueBtn.addEventListener('click', () => {
+                const isHidden = maxValueContainer.style.display === 'none';
+                if (isHidden) {
+                    maxValueContainer.style.display = 'grid';
+                    toggleMaxValueBtn.textContent = '×確認を終了';
+                } else {
+                    maxValueContainer.style.display = 'none';
+                    toggleMaxValueBtn.textContent = '▼最大値確認';
+                }
+            });
+
             let armorMainData = [], armorSubData = [], renmaAbilityData = [], isEditMode = false, sortableInstance = null;
             const partsContainer = document.getElementById('parts-container');
             const searchPanel = document.getElementById('search-panel');
@@ -406,7 +690,7 @@
                     });
                 } catch (error) {
                     console.error(`Error loading CSV from ${filePath}:`, error);
-                    alert(`CSVファイル（${filePath}）の読み込みに失敗しました。`);
+                    //alert(`CSVファイル（${filePath}）の読み込みに失敗しました。`);
                     return [];
                 }
             }
@@ -601,7 +885,7 @@
                         partsContainer.innerHTML = '';
                         data.forEach(partData => addNewPart(partData));
                     } catch (error) {
-                        alert('JSONファイルの読み込みに失敗しました。'); console.error(error);
+                        //alert('JSONファイルの読み込みに失敗しました。'); console.error(error);
                     }
                 };
                 reader.readAsText(file);
@@ -742,19 +1026,33 @@
                 ]);
                 setupSearchPanel();
                 addNewPart(); 
+                
+                // Original Listeners
                 editModeBtn.addEventListener('click', toggleEditMode);
                 exportBtn.addEventListener('click', exportData);
                 importBtn.addEventListener('click', () => importFileInput.click());
                 importFileInput.addEventListener('change', importData);
+
+                // Footer Button Listeners
+                document.getElementById('edit-mode-btn-footer').addEventListener('click', toggleEditMode);
+                document.getElementById('export-btn-footer').addEventListener('click', exportData);
+                document.getElementById('import-btn-footer').addEventListener('click', () => document.getElementById('import-file-input-footer').click());
+                document.getElementById('import-file-input-footer').addEventListener('change', importData);
             }
+
             function toggleEditMode() {
                 isEditMode = !isEditMode;
                 document.querySelectorAll('#parts-container .armor-part').forEach(part => {
                     part.querySelector('.drag-handle').style.display = isEditMode ? 'block' : 'none';
                     part.querySelector('.favorite-toggle').style.display = isEditMode ? 'none' : 'block';
                 });
-                editModeBtn.textContent = isEditMode ? '編集モード終了' : '編集モード開始';
-                editModeBtn.classList.toggle('active');
+                
+                const allEditModeBtns = document.querySelectorAll('#edit-mode-btn, #edit-mode-btn-footer');
+                allEditModeBtns.forEach(btn => {
+                    btn.textContent = isEditMode ? '編集モード終了' : '編集モード開始';
+                    btn.classList.toggle('active', isEditMode);
+                });
+
                 if (isEditMode) {
                     if (!sortableInstance) {
                          sortableInstance = new Sortable(partsContainer, { animation: 150, handle: '.drag-handle' });
