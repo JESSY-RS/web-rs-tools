@@ -345,6 +345,7 @@ color: white;
         }
 
         .bottom {
+margin-top: 20px;
           font-size: 16pt;
 line-height: 2;
         }
@@ -485,8 +486,6 @@ line-height: 2;
         ※検索で星が☆の状態の場合は★も検索対象に含まれます。<br>
         ※検索で防具種別および練磨アビで、選択されているものを再度クリックすると、全選択解除されます。この状態では検索対象は”すべて”になります。<br>
     </footer>
-
-<br>
 
 <div class="bottom">
     <a href="#">▲TOPへ戻る</a>　<a href="index.html">INDEXへ戻る</a><br>
@@ -642,6 +641,10 @@ line-height: 2;
 
 </div>
 
+<div class="bottom">
+<span id="toggle-max-value-bottom" style="cursor: pointer; color: dodgerblue; text-decoration: underline; display: none;">×確認を終了</span>
+</div>
+
     <script>
         let zoomLevel = 1;
         function changeZoom(delta) {
@@ -651,18 +654,31 @@ line-height: 2;
 
         document.addEventListener('DOMContentLoaded', () => {
             const toggleMaxValueBtn = document.getElementById('toggle-max-value');
+            const toggleMaxValueBottomBtn = document.getElementById('toggle-max-value-bottom');
             const maxValueContainer = document.querySelector('.container');
+
+            const hideMaxValueSection = () => {
+                maxValueContainer.style.display = 'none';
+                toggleMaxValueBottomBtn.style.display = 'none';
+                toggleMaxValueBtn.textContent = '▼最大値確認';
+            };
+            
+            const showMaxValueSection = () => {
+                maxValueContainer.style.display = 'grid';
+                toggleMaxValueBottomBtn.style.display = 'inline';
+                toggleMaxValueBtn.textContent = '×確認を終了';
+            };
 
             toggleMaxValueBtn.addEventListener('click', () => {
                 const isHidden = maxValueContainer.style.display === 'none';
                 if (isHidden) {
-                    maxValueContainer.style.display = 'grid';
-                    toggleMaxValueBtn.textContent = '×確認を終了';
+                    showMaxValueSection();
                 } else {
-                    maxValueContainer.style.display = 'none';
-                    toggleMaxValueBtn.textContent = '▼最大値確認';
+                    hideMaxValueSection();
                 }
             });
+
+            toggleMaxValueBottomBtn.addEventListener('click', hideMaxValueSection);
 
             let armorMainData = [], armorSubData = [], renmaAbilityData = [], isEditMode = false, sortableInstance = null;
             const partsContainer = document.getElementById('parts-container');
