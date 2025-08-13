@@ -809,7 +809,14 @@
                 const button = dropdown.querySelector('.custom-dropdown-button');
                 const label = button.querySelector('.button-label');
                 const optionsList = dropdown.querySelector('.dropdown-options-list');
-                const data = !armorType ? allArmorData : (armorType === 'main' ? armorMainData : armorSubData);
+                const isControlPanel = part.id === 'search-panel' || part.id === 'sort-panel';
+
+                let data = [];
+                if (armorType) {
+                    data = (armorType === 'main' ? armorMainData : armorSubData);
+                } else if (!isControlPanel) {
+                    data = allArmorData;
+                }
                 
                 label.textContent = '防具を選択';
                 button.dataset.value = '';
@@ -844,8 +851,14 @@
             function setupAbilityDropdown(part, grade, options = {}) {
                 const { addNone = false, addListOrder = false } = options;
                 const selectEl = part.querySelector('.ability-select');
-                const filteredData = renmaAbilityData.filter(item => !grade || item.グレード === grade);
                 const isControlPanel = part.id === 'search-panel' || part.id === 'sort-panel';
+
+                let filteredData = [];
+                if (grade) {
+                    filteredData = renmaAbilityData.filter(item => item.グレード === grade);
+                } else if (!isControlPanel) {
+                    filteredData = renmaAbilityData;
+                }
                 
                 selectEl.innerHTML = isControlPanel ? '' : '<option value="">アビリティを選択</option>';
                 
@@ -967,7 +980,7 @@
                     if (!isSearchPanel && !isSortPanel) updateValueSymbol(part, e.target.value);
                 } else if (e.target.matches('input[name*="armor-type"]')) {
                     const checkedRadio = e.target.closest('.radio-group').querySelector('input:checked');
-                    const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel };
+                    const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel && !!checkedRadio };
                     setupDropdown(part, checkedRadio ? checkedRadio.value : null, options);
                     
                     if (isSearchPanel || isSortPanel) {
@@ -982,7 +995,7 @@
 
                 } else if (e.target.matches('input[name*="ability-grade"]')) {
                     const checkedRadio = e.target.closest('.radio-group').querySelector('input:checked');
-                    const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel };
+                    const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel && !!checkedRadio };
                     setupAbilityDropdown(part, checkedRadio ? checkedRadio.value : null, options);
                     
                     if (isSearchPanel || isSortPanel) {
