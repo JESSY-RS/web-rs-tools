@@ -846,7 +846,8 @@
                 const selectEl = part.querySelector('.ability-select');
                 const filteredData = renmaAbilityData.filter(item => !grade || item.グレード === grade);
                 const isControlPanel = part.id === 'search-panel' || part.id === 'sort-panel';
-                selectEl.innerHTML = '<option value="">アビリティを選択</option>';
+                
+                selectEl.innerHTML = isControlPanel ? '' : '<option value="">アビリティを選択</option>';
                 
                 if (addNone) {
                     const noneOption = document.createElement('option');
