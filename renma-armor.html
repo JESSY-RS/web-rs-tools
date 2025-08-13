@@ -73,23 +73,25 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        /* --- 検索パネルの専用スタイル --- */
-        #search-panel {
+        /* --- 検索・並び替えパネルの専用スタイル --- */
+        #search-panel, #sort-panel {
             border-color: #555;
         }
-        #search-panel.is-collapsed {
+        #search-panel.is-collapsed, #sort-panel.is-collapsed {
             min-height: 50px;
             padding-top: 0;
             padding-bottom: 0;
             cursor: pointer;
         }
-        #search-panel.is-collapsed .favorite-toggle {
+        #search-panel.is-collapsed .favorite-toggle,
+        #sort-panel.is-collapsed .favorite-toggle {
             display: none; /* ★ 閉じている時は☆★を非表示 */
         }
-        #search-panel .part-content.collapsed {
+        #search-panel .part-content.collapsed,
+        #sort-panel .part-content.collapsed {
             display: none;
         }
-        .search-panel-info {
+        .search-panel-info, .sort-panel-info {
             display: none;
             position: absolute;
             top: 50%;
@@ -107,6 +109,15 @@
         }
         #filter-btn.is-active {
             background-color: #dc3545;
+        }
+        #sort-btn {
+            background-color: darkviolet;
+            color: white;
+            width: 120px;
+            min-height: 40px;
+        }
+        #sort-btn:active {
+            background-color: #6a6a6a;
         }
         
         /* --- アイコンボタンの共通スタイル --- */
@@ -133,7 +144,8 @@
             color: white;
             font-size: 1.2em;
         }
-        #search-panel.is-collapsed .toggle-collapse-btn {
+        #search-panel.is-collapsed .toggle-collapse-btn,
+        #sort-panel.is-collapsed .toggle-collapse-btn {
             top: 50%;
             transform: translateY(-50%);
         }
@@ -147,17 +159,18 @@
             padding: 5px; user-select: none;
         }
         .drag-handle { color: white; cursor: grab; display: none; }
+        .drag-handle.is-favorite { color: gold; }
         .favorite-toggle { color: #eee; cursor: pointer; transition: color 0.2s; }
         .favorite-toggle.is-favorite { color: gold; }
         
         footer { 
-margin-top: 12px; 
-padding-top: 10px; 
-border-top: 2px solid #555; 
-text-align: left; 
-font-size: 1em; 
-color: white; 
-}
+            margin-top: 12px; 
+            padding-top: 10px; 
+            border-top: 2px solid #555; 
+            text-align: left; 
+            font-size: 1em; 
+            color: white; 
+        }
 
         /* --- フォームコントロール共通スタイル --- */
         .custom-dropdown-button, select {
@@ -259,13 +272,14 @@ color: white;
         .custom-dropdown, select { width: 100%; }
         .group-label { padding-top: 8px; }
         
-        .form-section:has(#approx-search-check) {
+        .form-section:has(#approx-search-check), .form-section:has(#save-sort-check) {
             align-items: center;
         }
-        .form-section:has(#approx-search-check) > .group-label {
+        .form-section:has(#approx-search-check) > .group-label,
+        .form-section:has(#save-sort-check) > .group-label {
             padding-top: 0;
         }
-        .search-panel-info {
+        .search-panel-info, .sort-panel-info {
             font-size: 1.0em;
         }
 
@@ -276,7 +290,7 @@ color: white;
             .custom-dropdown, select { min-width: 270px; width: auto; }
             .group-label { padding-top: 0; }
         }
-        .search-panel-info {
+        .search-panel-info, .sort-panel-info {
             font-size: 1.0em;
         }
         /* --- 大きい画面のレイアウト (1281px以上) --- */
@@ -286,13 +300,25 @@ color: white;
         /* --- 特に狭い画面用の追加修正 (480px以下) --- */
         @media (max-width: 480px) {
             .armor-part { padding-left: 40px; padding-right: 20px; }
-            .search-panel-info { font-size: 0.8em; }
+            .search-panel-info, .sort-panel-info { font-size: 0.8em; }
             .form-section { grid-template-columns: 65px 1fr; }
             .custom-dropdown, select { min-width: 0; }
         }
-        .search-panel-info {
+        .search-panel-info, .sort-panel-info {
             font-size: 1.0em;
         }
+
+        /* --- 並び替えパネル用スタイル --- */
+        .sort-checkbox-group {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 5px;
+            width: 100%;
+        }
+        .sort-checkbox-group label { cursor: pointer; }
+
+
         /* --- その他フォーム部品 --- */
         .radio-group input[type="radio"] { display: none; }
         .radio-group label {
@@ -345,9 +371,9 @@ color: white;
         }
 
         .bottom {
-margin-top: 20px;
-          font-size: 16pt;
-line-height: 2;
+            margin-top: 20px;
+            font-size: 16pt;
+            line-height: 2;
         }
     </style>
 </head>
@@ -381,7 +407,7 @@ line-height: 2;
                     <span class="group-label">防具種別:</span>
                     <div class="controls-wrapper">
                         <div class="radio-group">
-                            <input type="radio" id="search-type-main" name="search-armor-type" value="main" checked><label for="search-type-main">主防具</label>
+                            <input type="radio" id="search-type-main" name="search-armor-type" value="main"><label for="search-type-main">主防具</label>
                             <input type="radio" id="search-type-sub" name="search-armor-type" value="sub"><label for="search-type-sub">副防具</label>
                         </div>
                         <div class="custom-dropdown armor-name-dropdown">
@@ -397,7 +423,7 @@ line-height: 2;
                     <span class="group-label">練磨アビ:</span>
                     <div class="controls-wrapper">
                         <div class="radio-group">
-                            <input type="radio" id="search-grade-ss" name="search-ability-grade" value="SS" checked><label for="search-grade-ss">SS</label>
+                            <input type="radio" id="search-grade-ss" name="search-ability-grade" value="SS"><label for="search-grade-ss">SS</label>
                             <input type="radio" id="search-grade-s" name="search-ability-grade" value="S"><label for="search-grade-s">S</label>
                             <input type="radio" id="search-grade-a" name="search-ability-grade" value="A"><label for="search-grade-a">A</label>
                         </div>
@@ -419,6 +445,62 @@ line-height: 2;
             <div class="search-panel-info">クリックして検索パネルを開く</div>
             <button class="toggle-collapse-btn">▼</button>
         </div>
+        
+        <div id="sort-panel" class="armor-part" style="display: none;">
+            <div class="drag-handle" style="visibility: hidden;">☰</div>
+            <div class="favorite-toggle" data-favorite="false">☆</div>
+            <div class="part-content">
+                <div class="form-section">
+                    <span class="group-label">
+                        <div class="sort-checkbox-group">
+                           <input type="checkbox" id="sort-type-asc"><label for="sort-type-asc">昇順</label>
+                        </div>
+                    </span>
+                    <div class="controls-wrapper">
+                        <div class="radio-group">
+                            <input type="radio" id="sort-type-main" name="sort-armor-type" value="main"><label for="sort-type-main">主防具</label>
+                            <input type="radio" id="sort-type-sub" name="sort-armor-type" value="sub"><label for="sort-type-sub">副防具</label>
+                        </div>
+                        <div class="custom-dropdown armor-name-dropdown">
+                            <button class="custom-dropdown-button" data-value=""><span class="button-label">防具を選択</span><span class="button-arrow"></span></button>
+                            <div class="custom-dropdown-panel">
+                                <input type="text" class="dropdown-search-input" placeholder="検索...">
+                                <div class="dropdown-options-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <span class="group-label">
+                        <div class="sort-checkbox-group">
+                           <input type="checkbox" id="sort-ability-asc"><label for="sort-ability-asc">昇順</label>
+                        </div>
+                    </span>
+                    <div class="controls-wrapper">
+                        <div class="radio-group">
+                            <input type="radio" id="sort-grade-ss" name="sort-ability-grade" value="SS"><label for="sort-grade-ss">SS</label>
+                            <input type="radio" id="sort-grade-s" name="sort-ability-grade" value="S"><label for="sort-grade-s">S</label>
+                            <input type="radio" id="sort-grade-a" name="sort-ability-grade" value="A"><label for="sort-grade-a">A</label>
+                        </div>
+                        <select class="ability-select"><option value="">アビリティを選択</option></select>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <span class="group-label">
+                         <div class="sort-checkbox-group">
+                            <input type="checkbox" id="save-sort-check">
+                            <label for="save-sort-check">保存</label>
+                         </div>
+                    </span>
+                    <div class="controls-wrapper">
+                         <button id="sort-btn">並び替え</button>
+                    </div>
+                </div>
+            </div>
+            <div class="sort-panel-info">クリックして並び替えパネルを開く</div>
+            <button class="toggle-collapse-btn">▼</button>
+        </div>
+
 
         <div id="parts-container"></div>
     </main>
@@ -481,10 +563,18 @@ line-height: 2;
                 <button id="edit-mode-btn-footer">編集モード開始</button>
             </div>
         </div>
-        ※使用は自己責任にて。<br>
-        ※アビリティの表記が実際のゲーム内の表記と異なる場合があります。<br>
-        ※検索で星が☆の状態の場合は★も検索対象に含まれます。<br>
-        ※検索で防具種別および練磨アビで、選択されているものを再度クリックすると、全選択解除されます。この状態では検索対象は”すべて”になります。<br>
+        <div id="footer-normal-notes">
+            ※使用は自己責任にて。<br>
+            ※アビリティの表記が実際のゲーム内の表記と異なる場合があります。<br>
+            ※検索で星が☆の状態の場合は★も検索対象に含まれます。<br>
+            ※検索で防具種別および練磨アビで、選択されているものを再度クリックすると、全選択解除されます。この状態では検索対象は”すべて”になります。<br>
+        </div>
+        <div id="footer-edit-notes" style="display: none;">
+            ※使用は自己責任にて。<br>
+            ※アビリティの表記が実際のゲーム内の表記と異なる場合があります。<br>
+            ※並び替え機能で昇順のチェックがオフの場合は降順で並び替えられます。<br>
+            ※並び替え機能で保存のチェックがオフの場合はプレビューとして、並び順が希望の順番になっていれば、保存のチェックをオンにして、再び並び替えボタンを押して状態を反映させてください。並び順が希望の順番になっていない場合は、編集モードを一度終了させる事でキャンセル出来ます。<br>
+        </div>
     </footer>
 
 <div class="bottom">
@@ -680,9 +770,12 @@ line-height: 2;
 
             toggleMaxValueBottomBtn.addEventListener('click', hideMaxValueSection);
 
-            let armorMainData = [], armorSubData = [], renmaAbilityData = [], isEditMode = false, sortableInstance = null;
+            let armorMainData = [], armorSubData = [], renmaAbilityData = [], allArmorData = [];
+            let isEditMode = false, sortableInstance = null;
+            let originalPartOrder = []; // To store order before sorting
             const partsContainer = document.getElementById('parts-container');
             const searchPanel = document.getElementById('search-panel');
+            const sortPanel = document.getElementById('sort-panel');
             const editModeBtn = document.getElementById('edit-mode-btn');
             const exportBtn = document.getElementById('export-btn');
             const importBtn = document.getElementById('import-btn');
@@ -706,20 +799,37 @@ line-height: 2;
                     });
                 } catch (error) {
                     console.error(`Error loading CSV from ${filePath}:`, error);
-                    //alert(`CSVファイル（${filePath}）の読み込みに失敗しました。`);
                     return [];
                 }
             }
 
-            function setupDropdown(part, armorType) {
+            function setupDropdown(part, armorType, options = {}) {
+                const { addNone = false, addListOrder = false } = options;
                 const dropdown = part.querySelector('.armor-name-dropdown');
                 const button = dropdown.querySelector('.custom-dropdown-button');
                 const label = button.querySelector('.button-label');
                 const optionsList = dropdown.querySelector('.dropdown-options-list');
-                const data = !armorType ? [...armorMainData, ...armorSubData] : (armorType === 'main' ? armorMainData : armorSubData);
+                const data = !armorType ? allArmorData : (armorType === 'main' ? armorMainData : armorSubData);
+                
                 label.textContent = '防具を選択';
                 button.dataset.value = '';
                 optionsList.innerHTML = '';
+
+                if (addNone) {
+                    const noneOption = document.createElement('div');
+                    noneOption.className = 'dropdown-option';
+                    noneOption.textContent = '※指定しない';
+                    noneOption.dataset.value = 'none';
+                    optionsList.appendChild(noneOption);
+                }
+                if (addListOrder) {
+                    const listOrderOption = document.createElement('div');
+                    listOrderOption.className = 'dropdown-option';
+                    listOrderOption.textContent = '※メニューの順番で並び替え';
+                    listOrderOption.dataset.value = 'list_order';
+                    optionsList.appendChild(listOrderOption);
+                }
+
                 data.forEach(item => {
                     if (item.名称) {
                         const optionEl = document.createElement('div');
@@ -730,10 +840,26 @@ line-height: 2;
                     }
                 });
             }
-            function setupAbilityDropdown(part, grade) {
+
+            function setupAbilityDropdown(part, grade, options = {}) {
+                 const { addNone = false, addListOrder = false } = options;
                 const selectEl = part.querySelector('.ability-select');
                 const filteredData = renmaAbilityData.filter(item => !grade || item.グレード === grade);
                 selectEl.innerHTML = '<option value="">アビリティを選択</option>';
+                
+                if (addNone) {
+                    const noneOption = document.createElement('option');
+                    noneOption.value = 'none';
+                    noneOption.textContent = '※指定しない';
+                    selectEl.appendChild(noneOption);
+                }
+                 if (addListOrder) {
+                    const listOrderOption = document.createElement('option');
+                    listOrderOption.value = 'list_order';
+                    listOrderOption.textContent = '※メニューの順番で並び替え';
+                    selectEl.appendChild(listOrderOption);
+                }
+
                 filteredData.forEach(item => {
                     if (item.種類) {
                         const optionEl = document.createElement('option');
@@ -742,8 +868,9 @@ line-height: 2;
                         selectEl.appendChild(optionEl);
                     }
                 });
-                if (part.id !== 'search-panel') updateValueSymbol(part, '');
+                if (part.id !== 'search-panel' && part.id !== 'sort-panel') updateValueSymbol(part, '');
             }
+
 
             function updateValueSymbol(part, abilityName) {
                 const prefix = part.querySelector('.symbol.prefix');
@@ -756,7 +883,7 @@ line-height: 2;
                     else prefix.style.display = 'inline';
                 }
             }
-            function addNewPart(data = null, basePart = null) { // 第2引数として basePart を追加
+            function addNewPart(data = null, basePart = null) { 
                 const newPart = template.content.cloneNode(true).querySelector('.armor-part');
                 const uniqueId = Date.now() + Math.random();
                 newPart.querySelectorAll('input[type="radio"]').forEach(radio => {
@@ -768,13 +895,12 @@ line-height: 2;
                     if(label) label.htmlFor = newId;
                 });
                 newPart.querySelector('.drag-handle').style.display = isEditMode ? 'block' : 'none';
-                newPart.querySelector('.favorite-toggle').style.display = isEditMode ? 'none' : 'block';
+                newPart.querySelector('.favorite-toggle').style.display = isEditMode ? 'block' : 'none';
+                newPart.dataset.originalIndex = partsContainer.children.length;
 
                 if (basePart) {
-                    // basePart (クリックされたパネル) があれば、その直後に新しいパネルを挿入
                     basePart.after(newPart);
                 } else {
-                    // なければ (ページの初期読み込み時など)、従来通り末尾に追加
                     partsContainer.appendChild(newPart);
                 }
 
@@ -830,14 +956,25 @@ line-height: 2;
                 const part = e.target.closest('.armor-part');
                 if(!part) return;
                 const isSearchPanel = part.id === 'search-panel';
+                const isSortPanel = part.id === 'sort-panel';
+
                 if(e.target.matches('.ability-select')){
-                    if (!isSearchPanel) updateValueSymbol(part, e.target.value);
+                    if (!isSearchPanel && !isSortPanel) updateValueSymbol(part, e.target.value);
                 } else if (e.target.matches('input[name*="armor-type"]')) {
                     const checkedRadio = e.target.closest('.radio-group').querySelector('input:checked');
-                    setupDropdown(part, checkedRadio ? checkedRadio.value : null);
+                    const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel };
+                    setupDropdown(part, checkedRadio ? checkedRadio.value : null, options);
+                    
+                    const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                    armorBtn.dataset.value = 'none';
+                    armorBtn.querySelector('.button-label').textContent = '※指定しない';
+
                 } else if (e.target.matches('input[name*="ability-grade"]')) {
                     const checkedRadio = e.target.closest('.radio-group').querySelector('input:checked');
-                    setupAbilityDropdown(part, checkedRadio ? checkedRadio.value : null);
+                    const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel };
+                    setupAbilityDropdown(part, checkedRadio ? checkedRadio.value : null, options);
+                    
+                    part.querySelector('.ability-select').value = 'none';
                 }
             });
 
@@ -845,7 +982,7 @@ line-height: 2;
                 const target = e.target;
                 const part = target.closest('.armor-part');
 
-                if (target.matches('.favorite-toggle') && !isEditMode && !target.closest('#search-panel')) {
+                if (target.matches('.favorite-toggle') && !isEditMode && !target.closest('#search-panel') && !target.closest('#sort-panel')) {
                     const isFavorite = target.dataset.favorite === 'true';
                     target.dataset.favorite = String(!isFavorite);
                     target.textContent = isFavorite ? '☆' : '★';
@@ -874,7 +1011,7 @@ line-height: 2;
                     button.dataset.value = target.dataset.value;
                     target.closest('.custom-dropdown-panel').classList.remove('show');
                 }
-                else if (part && target.matches('.add-part-inline-btn')) addNewPart(null, part); // 変更点
+                else if (part && target.matches('.add-part-inline-btn')) addNewPart(null, part);
                 else if (part && target.matches('.delete-btn')) part.remove();
             });
 
@@ -898,6 +1035,7 @@ line-height: 2;
                 a.click();
                 URL.revokeObjectURL(a.href);
             }
+
             function importData(event) {
                 const file = event.target.files[0];
                 if (!file) return;
@@ -906,16 +1044,22 @@ line-height: 2;
                     try {
                         const data = JSON.parse(e.target.result);
                         if (!Array.isArray(data)) throw new Error("JSON is not an array.");
+                        
+                        if (isEditMode) {
+                            toggleEditMode();
+                        }
+
                         partsContainer.innerHTML = '';
                         data.forEach(partData => addNewPart(partData));
+
                     } catch (error) {
-                        //alert('JSONファイルの読み込みに失敗しました。'); console.error(error);
+                        console.error(error);
                     }
                 };
                 reader.readAsText(file);
                 event.target.value = '';
             }
-
+            
             function setupSearchPanel() {
                 const filterBtn = document.getElementById('filter-btn');
                 const collapseBtn = searchPanel.querySelector('.toggle-collapse-btn');
@@ -923,17 +1067,35 @@ line-height: 2;
                 const infoText = searchPanel.querySelector('.search-panel-info');
                 const approxCheck = document.getElementById('approx-search-check');
 
-                document.getElementById('search-type-main').checked = true;
-                document.getElementById('search-grade-ss').checked = true;
+                searchPanel.querySelectorAll('input[type=radio]').forEach(radio => radio.checked = false);
                 approxCheck.checked = false;
+                
+                function deactivateFilter() {
+                    const filterBtn = document.getElementById('filter-btn');
+                    if (filterBtn.classList.contains('is-active')) {
+                        document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                            part.style.display = '';
+                        });
+                        filterBtn.textContent = '絞り込み';
+                        filterBtn.classList.remove('is-active');
+                        updateInfoText();
+                    }
+                }
+                window.deactivateFilter = deactivateFilter;
 
                 function applyFilter() {
                     const checkedArmorTypeRadio = searchPanel.querySelector('input[name="search-armor-type"]:checked');
                     const filterArmorType = checkedArmorTypeRadio ? checkedArmorTypeRadio.value : null;
-                    const filterArmorName = searchPanel.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
+                    
+                    const armorDropdown = searchPanel.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                    const filterArmorName = armorDropdown.dataset.value === 'none' ? '' : armorDropdown.dataset.value;
+
                     const checkedGradeRadio = searchPanel.querySelector('input[name="search-ability-grade"]:checked');
                     const filterGrade = checkedGradeRadio ? checkedGradeRadio.value : null;
-                    const filterAbilityName = searchPanel.querySelector('.ability-select').value;
+                    
+                    const abilitySelect = searchPanel.querySelector('.ability-select');
+                    const filterAbilityName = abilitySelect.value === 'none' ? '' : abilitySelect.value;
+                    
                     const isApprox = approxCheck.checked;
                     const filterFavorite = searchPanel.querySelector('.favorite-toggle').dataset.favorite === 'true';
                     
@@ -969,19 +1131,23 @@ line-height: 2;
 
                 function updateInfoText() {
                     const isFilterActive = filterBtn.classList.contains('is-active');
-                    if (isFilterActive) {
-                        infoText.textContent = '絞り込み中...';
-                        infoText.style.color = 'red';
+                    if (searchPanel.classList.contains('is-collapsed')) {
+                        if (isFilterActive) {
+                            infoText.textContent = '絞り込み中...';
+                            infoText.style.color = 'red';
+                        } else {
+                            infoText.textContent = 'クリックして検索パネルを開く';
+                            infoText.style.color = '#bbb';
+                        }
+                        infoText.style.display = 'block';
                     } else {
-                        infoText.textContent = 'クリックして検索パネルを開く';
-                        infoText.style.color = '#bbb';
+                        infoText.style.display = 'none';
                     }
                 }
 
                 function toggleCollapse(shouldCollapse) {
                     searchPanel.classList.toggle('is-collapsed', shouldCollapse);
                     content.style.display = shouldCollapse ? 'none' : '';
-                    infoText.style.display = shouldCollapse ? 'block' : 'none';
                     collapseBtn.textContent = shouldCollapse ? '▼' : '▲';
                     updateInfoText();
                 }
@@ -1006,9 +1172,15 @@ line-height: 2;
                 collapseBtn.addEventListener('click', () => {
                      toggleCollapse(!searchPanel.classList.contains('is-collapsed'));
                 });
+                
+                setupDropdown(searchPanel, null, { addNone: true });
+                setupAbilityDropdown(searchPanel, null, { addNone: true });
+                
+                const armorBtn = searchPanel.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                armorBtn.dataset.value = 'none';
+                armorBtn.querySelector('.button-label').textContent = '※指定しない';
+                searchPanel.querySelector('.ability-select').value = 'none';
 
-                setupDropdown(searchPanel, 'main');
-                setupAbilityDropdown(searchPanel, 'SS');
 
                 filterBtn.addEventListener('click', () => {
                     const isActive = filterBtn.classList.contains('is-active');
@@ -1042,22 +1214,221 @@ line-height: 2;
                 toggleCollapse(true);
             }
 
+            function setupSortPanel() {
+                const collapseBtn = sortPanel.querySelector('.toggle-collapse-btn');
+                const content = sortPanel.querySelector('.part-content');
+                const infoText = sortPanel.querySelector('.sort-panel-info');
+                const sortBtn = document.getElementById('sort-btn');
+                
+                function toggleCollapse(shouldCollapse) {
+                    sortPanel.classList.toggle('is-collapsed', shouldCollapse);
+                    content.style.display = shouldCollapse ? 'none' : '';
+                    infoText.style.display = shouldCollapse ? 'block' : 'none';
+                    collapseBtn.textContent = shouldCollapse ? '▼' : '▲';
+
+                    document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                        const handle = part.querySelector('.drag-handle');
+                        const favorite = part.querySelector('.favorite-toggle');
+                        handle.classList.remove('is-favorite'); 
+
+                        if (shouldCollapse) {
+                            handle.textContent = '☰';
+                        } else {
+                            handle.textContent = favorite.textContent;
+                            if (favorite.dataset.favorite === 'true') {
+                                handle.classList.add('is-favorite');
+                            }
+                        }
+                    });
+
+                    if (shouldCollapse) {
+                         infoText.textContent = 'クリックして並び替えパネルを開く';
+                         infoText.style.color = '#bbb';
+                    }
+                }
+
+                sortPanel.addEventListener('click', (e) => {
+                    const target = e.target;
+                     if (sortPanel.classList.contains('is-collapsed') && !target.closest('button')) {
+                        toggleCollapse(false);
+                    } else if (target.matches('.favorite-toggle')) {
+                        const isFavorite = target.dataset.favorite === 'true';
+                        target.dataset.favorite = String(!isFavorite);
+                        target.textContent = isFavorite ? '☆' : '★';
+                        target.classList.toggle('is-favorite');
+                    }
+                });
+
+                collapseBtn.addEventListener('click', () => {
+                     toggleCollapse(!sortPanel.classList.contains('is-collapsed'));
+                });
+
+                sortBtn.addEventListener('click', performSort);
+
+                sortPanel.querySelectorAll('.radio-group').forEach(group => {
+                    let lastChecked = group.querySelector('input:checked');
+                    group.addEventListener('click', (e) => {
+                        if (e.target.type === 'radio') {
+                            if (e.target === lastChecked) {
+                                e.target.checked = false;
+                                lastChecked = null;
+                                e.target.dispatchEvent(new Event('change', { bubbles: true }));
+                            } else {
+                                lastChecked = e.target;
+                            }
+                        }
+                    });
+                });
+
+                toggleCollapse(true);
+                resetSortPanel();
+            }
+
+            function resetSortPanel(keepOpen = false) {
+                sortPanel.querySelector('.favorite-toggle').textContent = '☆';
+                sortPanel.querySelector('.favorite-toggle').dataset.favorite = 'false';
+                sortPanel.querySelector('.favorite-toggle').classList.remove('is-favorite');
+
+                document.getElementById('sort-type-asc').checked = true;
+                document.getElementById('sort-ability-asc').checked = true;
+                document.getElementById('save-sort-check').checked = false;
+                
+                sortPanel.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
+                
+                const sortOptions = { addNone: true, addListOrder: true };
+                setupDropdown(sortPanel, null, sortOptions);
+                setupAbilityDropdown(sortPanel, null, sortOptions);
+
+                const armorBtn = sortPanel.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                armorBtn.dataset.value = 'none';
+                armorBtn.querySelector('.button-label').textContent = '※指定しない';
+                sortPanel.querySelector('.ability-select').value = 'none';
+
+                if (!keepOpen) {
+                    sortPanel.classList.add('is-collapsed');
+                    sortPanel.querySelector('.part-content').style.display = 'none';
+                    sortPanel.querySelector('.sort-panel-info').style.display = 'block';
+                    sortPanel.querySelector('.toggle-collapse-btn').textContent = '▼';
+                }
+            }
+            
+            function performSort() {
+                const sortFavorite = sortPanel.querySelector('.favorite-toggle').dataset.favorite === 'true';
+                
+                const sortArmorTypeRadio = sortPanel.querySelector('input[name="sort-armor-type"]:checked');
+                const sortArmorType = sortArmorTypeRadio ? sortArmorTypeRadio.value : null;
+                const sortArmorAsc = document.getElementById('sort-type-asc').checked;
+                const sortArmorName = sortPanel.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
+
+                const sortAbilityGradeRadio = sortPanel.querySelector('input[name="sort-ability-grade"]:checked');
+                const sortAbilityGrade = sortAbilityGradeRadio ? sortAbilityGradeRadio.value : null;
+                const sortAbilityAsc = document.getElementById('sort-ability-asc').checked;
+                const sortAbilityName = sortPanel.querySelector('.ability-select').value;
+                
+                let parts = Array.from(partsContainer.children);
+                
+                parts.sort((a, b) => {
+                    const aData = getPartData(a);
+                    const bData = getPartData(b);
+                    
+                    // 1. Favorite
+                    if (sortFavorite) {
+                        const aVal = aData.favorite ? 1 : 0;
+                        const bVal = bData.favorite ? 1 : 0;
+                        if (aVal !== bVal) return bVal - aVal;
+                    }
+
+                    // 2. Armor (Type & Name)
+                    if (sortArmorType) {
+                        const direction = sortArmorAsc ? 1 : -1;
+                        let result = 0;
+                        
+                        const aIsType = aData.armorType === sortArmorType;
+                        const bIsType = bData.armorType === sortArmorType;
+                        if (aIsType !== bIsType) {
+                           result = aIsType ? -1 : 1;
+                           return result * direction;
+                        }
+
+                        if (sortArmorName && sortArmorName !== 'none') {
+                            if (sortArmorName === 'list_order') {
+                                const aIndex = allArmorData.findIndex(item => item.名称 === aData.armorName);
+                                const bIndex = allArmorData.findIndex(item => item.名称 === bData.armorName);
+                                if (aIndex !== bIndex) result = aIndex - bIndex;
+                            } else {
+                                const aIsTarget = aData.armorName === sortArmorName;
+                                const bIsTarget = bData.armorName === sortArmorName;
+                                if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
+                            }
+                            if (result !== 0) return result * direction;
+                        }
+                    }
+
+                    // 3. Ability (Grade & Name)
+                    if (sortAbilityGrade) {
+                         const direction = sortAbilityAsc ? 1 : -1;
+                         let result = 0;
+
+                        const aIsGrade = aData.grade === sortAbilityGrade;
+                        const bIsGrade = bData.grade === sortAbilityGrade;
+                         if (aIsGrade !== bIsGrade) {
+                            result = aIsGrade ? -1 : 1;
+                            return result * direction;
+                         }
+                        
+                        if (sortAbilityName && sortAbilityName !== 'none') {
+                            if (sortAbilityName === 'list_order') {
+                                const aIndex = renmaAbilityData.findIndex(item => item.種類 === aData.abilityName);
+                                const bIndex = renmaAbilityData.findIndex(item => item.種類 === bData.abilityName);
+                                if (aIndex !== bIndex) result = aIndex - bIndex;
+                            } else {
+                                const aIsTarget = aData.abilityName === sortAbilityName;
+                                const bIsTarget = bData.abilityName === sortAbilityName;
+                                if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
+                            }
+                            if (result !== 0) return result * direction;
+                        }
+                    }
+
+                    return 0;
+                });
+
+                parts.forEach(p => partsContainer.appendChild(p));
+                
+                const isSave = document.getElementById('save-sort-check').checked;
+                if(isSave) {
+                    originalPartOrder = Array.from(partsContainer.children);
+                    resetSortPanel(true);
+                }
+            }
+
+            function getPartData(part) {
+                return {
+                    armorType: part.querySelector('input[name*="armor-type"]:checked')?.value,
+                    armorName: part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value,
+                    grade: part.querySelector('input[name*="ability-grade"]:checked')?.value,
+                    abilityName: part.querySelector('.ability-select').value,
+                    favorite: part.querySelector('.favorite-toggle').dataset.favorite === 'true'
+                };
+            }
+
+
             async function initialize() {
                 [armorMainData, armorSubData, renmaAbilityData] = await Promise.all([
                     loadCSV('data/armor-main.csv'),
                     loadCSV('data/armor-sub.csv'),
                     loadCSV('data/renma-armor.csv')
                 ]);
+                allArmorData = [...armorMainData, ...armorSubData];
                 setupSearchPanel();
+                setupSortPanel();
                 addNewPart(); 
                 
-                // Original Listeners
                 editModeBtn.addEventListener('click', toggleEditMode);
                 exportBtn.addEventListener('click', exportData);
                 importBtn.addEventListener('click', () => importFileInput.click());
                 importFileInput.addEventListener('change', importData);
 
-                // Footer Button Listeners
                 document.getElementById('edit-mode-btn-footer').addEventListener('click', toggleEditMode);
                 document.getElementById('export-btn-footer').addEventListener('click', exportData);
                 document.getElementById('import-btn-footer').addEventListener('click', () => document.getElementById('import-file-input-footer').click());
@@ -1066,9 +1437,29 @@ line-height: 2;
 
             function toggleEditMode() {
                 isEditMode = !isEditMode;
+                
+                if (window.deactivateFilter) window.deactivateFilter();
+                searchPanel.style.display = isEditMode ? 'none' : 'block';
+                sortPanel.style.display = isEditMode ? 'block' : 'none';
+                document.getElementById('footer-normal-notes').style.display = isEditMode ? 'none' : 'block';
+                document.getElementById('footer-edit-notes').style.display = isEditMode ? 'block' : 'none';
+
+                if (isEditMode) {
+                   originalPartOrder = Array.from(partsContainer.children);
+                   resetSortPanel();
+                } else {
+                   if (!document.getElementById('save-sort-check').checked) {
+                        originalPartOrder.forEach(part => partsContainer.appendChild(part));
+                   }
+                }
+
                 document.querySelectorAll('#parts-container .armor-part').forEach(part => {
                     part.querySelector('.drag-handle').style.display = isEditMode ? 'block' : 'none';
                     part.querySelector('.favorite-toggle').style.display = isEditMode ? 'none' : 'block';
+                    
+                    const handle = part.querySelector('.drag-handle');
+                    handle.textContent = '☰';
+                    handle.classList.remove('is-favorite');
                 });
                 
                 const allEditModeBtns = document.querySelectorAll('#edit-mode-btn, #edit-mode-btn-footer');
