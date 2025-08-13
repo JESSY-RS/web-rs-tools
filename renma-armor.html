@@ -1097,27 +1097,32 @@
                 reader.readAsText(file);
                 event.target.value = '';
             }
-            
+
             function setupRadioDeselection(panel) {
-                panel.querySelectorAll('input[type="radio"]').forEach(radio => {
-                    if (radio.dataset.deselectionHandler) return;
-                    radio.dataset.deselectionHandler = 'true';
+                panel.querySelectorAll('.radio-group').forEach(group => {
+                    if (group.dataset.radioToggleHandler) return;
+                    group.dataset.radioToggleHandler = 'true';
 
-                    let wasChecked = false;
+                    let lastChecked = group.querySelector('input:checked');
 
-                    radio.addEventListener('mousedown', () => {
-                        wasChecked = radio.checked;
-                    });
+                    group.addEventListener('click', (e) => {
+                        if (e.target.type !== 'radio') return;
+                        
+                        if (lastChecked && !lastChecked.checked) {
+                            lastChecked = null;
+                        }
 
-                    radio.addEventListener('click', () => {
-                        if (wasChecked) {
-                            radio.checked = false;
-                            radio.dispatchEvent(new Event('change', { bubbles: true }));
+                        if (e.target === lastChecked) {
+                            e.target.checked = false;
+                            lastChecked = null;
+                            e.target.dispatchEvent(new Event('change', { bubbles: true }));
+                        } else {
+                            lastChecked = e.target;
                         }
                     });
                 });
             }
-
+            
             function setupSearchPanel() {
                 const filterBtn = document.getElementById('filter-btn');
                 const collapseBtn = searchPanel.querySelector('.toggle-collapse-btn');
@@ -1308,9 +1313,9 @@
                 });
 
                 sortBtn.addEventListener('click', performSort);
-
-                setupRadioDeselection(sortPanel);
                 
+                setupRadioDeselection(sortPanel);
+
                 toggleCollapse(true);
                 resetSortPanel();
             }
