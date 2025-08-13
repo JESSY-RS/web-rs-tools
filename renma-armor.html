@@ -328,6 +328,7 @@
         .radio-group input[type="radio"]:checked + label { background-color: #007bff; color: white; border-color: #007bff; }
         .value-input-group { display: flex; align-items: center; gap: 5px; }
         .value-input-group .symbol { font-size: 1.2em; font-weight: bold; color: white; display: none; }
+        
         /* --- Custom Dropdown --- */
         .custom-dropdown { position: relative; }
         .custom-dropdown-button { width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; font-weight: normal; }
@@ -347,6 +348,31 @@
         .dropdown-option { padding: 8px 12px; cursor: pointer; font-size: 1em; }
         .dropdown-option:hover { background-color: #007bff; }
         .dropdown-option.hidden { display: none; }
+        
+        /* --- Submenu Styles --- */
+        .custom-dropdown-submenu {
+            display: none;
+            position: absolute;
+            left: 100%;
+            width: 200px;
+            background-color: #3a3a3a;
+            border: 1px solid #777;
+            border-radius: 4px;
+            z-index: 101;
+            max-height: 448px;
+            overflow-y: auto;
+        }
+        .dropdown-option[data-has-submenu] {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .submenu-arrow {
+            color: #aaa;
+            font-size: 0.8em;
+        }
+
+
         .zoom-buttons { position: absolute; top: 24px; right: 20px; display: flex; flex-direction: row; gap: 5px; z-index: 1000; }
         .zoom-buttons button { color: #000; background-color: #eee; padding: 5px 10px; font-size: 16px; cursor: pointer; border-radius: 5px; }
     
@@ -416,6 +442,7 @@
                                 <input type="text" class="dropdown-search-input" placeholder="検索...">
                                 <div class="dropdown-options-list"></div>
                             </div>
+                            <div class="custom-dropdown-submenu"></div>
                         </div>
                     </div>
                 </div>
@@ -467,6 +494,7 @@
                                 <input type="text" class="dropdown-search-input" placeholder="検索...">
                                 <div class="dropdown-options-list"></div>
                             </div>
+                            <div class="custom-dropdown-submenu"></div>
                         </div>
                     </div>
                 </div>
@@ -522,6 +550,7 @@
                             <div class="custom-dropdown-panel">
                                 <input type="text" class="dropdown-search-input" placeholder="検索..."><div class="dropdown-options-list"></div>
                             </div>
+                            <div class="custom-dropdown-submenu"></div>
                         </div>
                     </div>
                 </div>
@@ -781,6 +810,8 @@
             const importBtn = document.getElementById('import-btn');
             const importFileInput = document.getElementById('import-file-input');
             const template = document.getElementById('armor-part-template');
+            const warlordArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'];
+            let applyFilterFunction = () => {};
             
             const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
             
@@ -839,11 +870,28 @@
 
                 data.forEach(item => {
                     if (item.名称) {
-                        const optionEl = document.createElement('div');
-                        optionEl.className = 'dropdown-option';
-                        optionEl.textContent = item.名称;
-                        optionEl.dataset.value = item.名称;
-                        optionsList.appendChild(optionEl);
+                         if (item.名称 === '◆名将の鎧') {
+                            const optionEl = document.createElement('div');
+                            optionEl.className = 'dropdown-option';
+                            optionEl.dataset.hasSubmenu = 'true';
+                            
+                            const textSpan = document.createElement('span');
+                            textSpan.textContent = item.名称;
+                            
+                            const arrowSpan = document.createElement('span');
+                            arrowSpan.className = 'submenu-arrow';
+                            arrowSpan.textContent = '▶';
+
+                            optionEl.appendChild(textSpan);
+                            optionEl.appendChild(arrowSpan);
+                            optionsList.appendChild(optionEl);
+                        } else {
+                            const optionEl = document.createElement('div');
+                            optionEl.className = 'dropdown-option';
+                            optionEl.textContent = item.名称;
+                            optionEl.dataset.value = item.名称;
+                            optionsList.appendChild(optionEl);
+                        }
                     }
                 });
             }
@@ -927,8 +975,11 @@
                     if (armorTypeRadio) armorTypeRadio.checked = true;
                     setupDropdown(newPart, data.armorType);
                     const armorBtn = newPart.querySelector('.armor-name-dropdown .custom-dropdown-button');
-                    armorBtn.querySelector('.button-label').textContent = data.armorName || '防具を選択';
-                    armorBtn.dataset.value = data.armorName;
+                    
+                    const armorName = data.armorName || '';
+                    armorBtn.querySelector('.button-label').textContent = armorName || '防具を選択';
+                    armorBtn.dataset.value = armorName;
+
                     const gradeRadio = newPart.querySelector(`input[name*="ability-grade"][value="${data.grade}"]`);
                     if (gradeRadio) gradeRadio.checked = true;
                     setupAbilityDropdown(newPart, data.grade);
@@ -955,7 +1006,13 @@
 
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.custom-dropdown')) {
-                    document.querySelectorAll('.custom-dropdown-panel.show').forEach(panel => panel.classList.remove('show'));
+                    document.querySelectorAll('.custom-dropdown-panel.show').forEach(panel => {
+                        panel.classList.remove('show');
+                        const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
+                        if (submenu) {
+                            submenu.style.display = 'none';
+                        }
+                    });
                 }
             });
 
@@ -983,7 +1040,14 @@
                     const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel && !!checkedRadio };
                     setupDropdown(part, checkedRadio ? checkedRadio.value : null, options);
                     
-                    if (isSearchPanel || isSortPanel) {
+                    if (isSearchPanel) {
+                        const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                        armorBtn.dataset.value = 'none';
+                        armorBtn.querySelector('.button-label').textContent = '※指定しない';
+                        if (document.getElementById('filter-btn').classList.contains('is-active')) {
+                            applyFilterFunction();
+                        }
+                    } else if (isSortPanel) {
                         const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
                         armorBtn.dataset.value = 'none';
                         armorBtn.querySelector('.button-label').textContent = '※指定しない';
@@ -998,8 +1062,13 @@
                     const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel && !!checkedRadio };
                     setupAbilityDropdown(part, checkedRadio ? checkedRadio.value : null, options);
                     
-                    if (isSearchPanel || isSortPanel) {
+                    if (isSearchPanel) {
                         part.querySelector('.ability-select').value = 'none';
+                         if (document.getElementById('filter-btn').classList.contains('is-active')) {
+                            applyFilterFunction();
+                        }
+                    } else if (isSortPanel) {
+                         part.querySelector('.ability-select').value = 'none';
                     } else {
                          part.querySelector('.ability-select').value = '';
                     }
@@ -1022,22 +1091,43 @@
                     const button = target.closest('.custom-dropdown-button');
                     const panel = button.nextElementSibling;
                     const isOpening = !panel.classList.contains('show');
+                    
                     document.querySelectorAll('.custom-dropdown-panel.show').forEach(p => {
                         if (p !== panel) p.classList.remove('show');
                     });
+                    
                     panel.classList.toggle('show');
-                    if (isOpening) {
+
+                    if (!isOpening) {
+                        const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
+                        if (submenu) submenu.style.display = 'none';
+                    } else {
                         const searchInput = panel.querySelector('.dropdown-search-input');
                         if(searchInput) searchInput.value = '';
                         panel.querySelectorAll('.dropdown-option.hidden').forEach(opt => opt.classList.remove('hidden'));
                         panel.querySelector('.dropdown-options-list').scrollTop = 0;
                     }
                 }
-                else if (target.matches('.dropdown-option')) {
-                    const button = target.closest('.custom-dropdown-panel').previousElementSibling;
-                    button.querySelector('.button-label').textContent = target.textContent;
-                    button.dataset.value = target.dataset.value;
-                    target.closest('.custom-dropdown-panel').classList.remove('show');
+                else if (target.matches('.dropdown-option') && !target.dataset.hasSubmenu) {
+                    const dropdown = target.closest('.custom-dropdown');
+                    const button = dropdown.querySelector('.custom-dropdown-button');
+                    const label = button.querySelector('.button-label');
+                    let value, text;
+
+                    if (target.dataset.parent) {
+                        text = `${target.dataset.parent}(${target.textContent})`;
+                        value = text;
+                    } else {
+                        text = target.textContent;
+                        value = target.dataset.value;
+                    }
+                    label.textContent = text;
+                    button.dataset.value = value;
+                    
+                    const mainPanel = dropdown.querySelector('.custom-dropdown-panel');
+                    const submenu = dropdown.querySelector('.custom-dropdown-submenu');
+                    if (mainPanel) mainPanel.classList.remove('show');
+                    if (submenu) submenu.style.display = 'none';
                 }
                 else if (part && target.matches('.add-part-inline-btn')) {
                     addNewPart(null, part);
@@ -1050,6 +1140,38 @@
                     if (isEditMode) {
                         originalPartOrder = Array.from(partsContainer.children);
                     }
+                }
+            });
+
+            document.addEventListener('mouseover', e => {
+                const option = e.target.closest('.dropdown-option');
+                if (!option) return;
+
+                const panel = option.closest('.custom-dropdown-panel');
+                if (!panel) return;
+
+                const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
+                if (!submenu) return;
+
+                if (option.dataset.hasSubmenu) {
+                    submenu.innerHTML = '';
+                    
+                    warlordArmorSublist.forEach(subItemText => {
+                        const subOption = document.createElement('div');
+                        subOption.className = 'dropdown-option';
+                        subOption.textContent = subItemText;
+                        subOption.dataset.value = subItemText;
+                        subOption.dataset.parent = '◆名将の鎧';
+                        submenu.appendChild(subOption);
+                    });
+                    
+                    const panelRect = panel.getBoundingClientRect();
+                    const listRect = panel.querySelector('.dropdown-options-list').getBoundingClientRect();
+                    submenu.style.top = (listRect.top - panelRect.top - 8) + 'px';
+
+                    submenu.style.display = 'block';
+                } else if (!e.target.closest('.custom-dropdown-submenu')) {
+                    submenu.style.display = 'none';
                 }
             });
 
@@ -1102,22 +1224,30 @@
                 panel.querySelectorAll('.radio-group').forEach(group => {
                     if (group.dataset.radioToggleHandler) return;
                     group.dataset.radioToggleHandler = 'true';
+                    
+                    let wasCheckedOnMousedown = false;
 
-                    let lastChecked = group.querySelector('input:checked');
+                    group.addEventListener('mousedown', e => {
+                        const el = e.target;
+                        if (el.tagName !== 'INPUT' && el.tagName !== 'LABEL') return;
 
-                    group.addEventListener('click', (e) => {
-                        if (e.target.type !== 'radio') return;
-                        
-                        if (lastChecked && !lastChecked.checked) {
-                            lastChecked = null;
+                        const radio = el.type === 'radio' ? el : document.getElementById(el.htmlFor);
+                        if (radio) {
+                            wasCheckedOnMousedown = radio.checked;
                         }
+                    });
 
-                        if (e.target === lastChecked) {
-                            e.target.checked = false;
-                            lastChecked = null;
-                            e.target.dispatchEvent(new Event('change', { bubbles: true }));
-                        } else {
-                            lastChecked = e.target;
+                    group.addEventListener('click', e => {
+                        const el = e.target;
+                        if (el.tagName !== 'INPUT' && el.tagName !== 'LABEL') return;
+
+                        if (wasCheckedOnMousedown) {
+                            const radio = el.type === 'radio' ? el : document.getElementById(el.htmlFor);
+                            if (radio) {
+                                e.preventDefault();
+                                radio.checked = false;
+                                radio.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
                         }
                     });
                 });
@@ -1170,7 +1300,20 @@
                         const partFavorite = part.querySelector('.favorite-toggle').dataset.favorite === 'true';
 
                         const typeMatch = !filterArmorType || filterArmorType === partArmorType;
-                        const nameMatch = filterArmorName === "" || filterArmorName === partArmorName;
+                        
+                        let nameMatch = false;
+                        if (!filterArmorName) {
+                            nameMatch = true; 
+                        } else {
+                            const parentArmorMatch = partArmorName.match(/(.+)\((.+)\)/);
+                            if (parentArmorMatch) {
+                                const parentName = parentArmorMatch[1];
+                                nameMatch = filterArmorName === parentName || filterArmorName === partArmorName;
+                            } else {
+                                nameMatch = filterArmorName === partArmorName;
+                            }
+                        }
+
                         const gradeMatch = !filterGrade || filterGrade === partGrade;
                         const favoriteMatch = !filterFavorite || partFavorite;
                         
@@ -1185,6 +1328,7 @@
                         part.style.display = (typeMatch && nameMatch && gradeMatch && abilityMatch && favoriteMatch) ? '' : 'none';
                     });
                 }
+                applyFilterFunction = applyFilter;
                 
                 function triggerLiveFilter() {
                     if (filterBtn.classList.contains('is-active')) {
@@ -1275,6 +1419,10 @@
                     infoText.style.display = shouldCollapse ? 'block' : 'none';
                     collapseBtn.textContent = shouldCollapse ? '▼' : '▲';
 
+                    if (sortableInstance) {
+                        sortableInstance.option('disabled', !shouldCollapse);
+                    }
+
                     document.querySelectorAll('#parts-container .armor-part').forEach(part => {
                         const handle = part.querySelector('.drag-handle');
                         const favorite = part.querySelector('.favorite-toggle');
@@ -1282,11 +1430,13 @@
 
                         if (shouldCollapse) {
                             handle.textContent = '☰';
+                            handle.style.cursor = 'grab';
                         } else {
                             handle.textContent = favorite.textContent;
                             if (favorite.dataset.favorite === 'true') {
                                 handle.classList.add('is-favorite');
                             }
+                            handle.style.cursor = 'default';
                         }
                     });
 
@@ -1313,7 +1463,7 @@
                 });
 
                 sortBtn.addEventListener('click', performSort);
-                
+
                 setupRadioDeselection(sortPanel);
 
                 toggleCollapse(true);
