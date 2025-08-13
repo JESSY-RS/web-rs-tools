@@ -1098,6 +1098,26 @@
                 event.target.value = '';
             }
             
+            function setupRadioDeselection(panel) {
+                panel.querySelectorAll('input[type="radio"]').forEach(radio => {
+                    if (radio.dataset.deselectionHandler) return;
+                    radio.dataset.deselectionHandler = 'true';
+
+                    let wasChecked = false;
+
+                    radio.addEventListener('mousedown', () => {
+                        wasChecked = radio.checked;
+                    });
+
+                    radio.addEventListener('click', () => {
+                        if (wasChecked) {
+                            radio.checked = false;
+                            radio.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                });
+            }
+
             function setupSearchPanel() {
                 const filterBtn = document.getElementById('filter-btn');
                 const collapseBtn = searchPanel.querySelector('.toggle-collapse-btn');
@@ -1213,6 +1233,7 @@
                 
                 setupDropdown(searchPanel, null, { addNone: true });
                 setupAbilityDropdown(searchPanel, null, { addNone: true });
+                setupRadioDeselection(searchPanel);
                 
                 const armorBtn = searchPanel.querySelector('.armor-name-dropdown .custom-dropdown-button');
                 armorBtn.dataset.value = 'none';
@@ -1232,21 +1253,6 @@
                     filterBtn.textContent = isActive ? '絞り込み' : '解除';
                     filterBtn.classList.toggle('is-active');
                     updateInfoText();
-                });
-                
-                searchPanel.querySelectorAll('.radio-group').forEach(group => {
-                    let lastChecked = group.querySelector('input:checked');
-                    group.addEventListener('click', (e) => {
-                        if (e.target.type === 'radio') {
-                            if (e.target === lastChecked) {
-                                e.target.checked = false;
-                                lastChecked = null;
-                                e.target.dispatchEvent(new Event('change', { bubbles: true }));
-                            } else {
-                                lastChecked = e.target;
-                            }
-                        }
-                    });
                 });
                 
                 toggleCollapse(true);
@@ -1303,21 +1309,8 @@
 
                 sortBtn.addEventListener('click', performSort);
 
-                sortPanel.querySelectorAll('.radio-group').forEach(group => {
-                    let lastChecked = group.querySelector('input:checked');
-                    group.addEventListener('click', (e) => {
-                        if (e.target.type === 'radio') {
-                            if (e.target === lastChecked) {
-                                e.target.checked = false;
-                                lastChecked = null;
-                                e.target.dispatchEvent(new Event('change', { bubbles: true }));
-                            } else {
-                                lastChecked = e.target;
-                            }
-                        }
-                    });
-                });
-
+                setupRadioDeselection(sortPanel);
+                
                 toggleCollapse(true);
                 resetSortPanel();
             }
