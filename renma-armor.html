@@ -51,7 +51,7 @@
             cursor: pointer;
             font-size: 0.9em;
             font-weight: bold;
-            transition: background-color 0.3s;
+            transition: background-color: 0.3s;
         }
         #import-btn, #import-btn-footer { background-color: hotpink; color: white; }
         #export-btn, #export-btn-footer { background-color: orange; color: white; }
@@ -842,9 +842,10 @@
             }
 
             function setupAbilityDropdown(part, grade, options = {}) {
-                 const { addNone = false, addListOrder = false } = options;
+                const { addNone = false, addListOrder = false } = options;
                 const selectEl = part.querySelector('.ability-select');
                 const filteredData = renmaAbilityData.filter(item => !grade || item.グレード === grade);
+                const isControlPanel = part.id === 'search-panel' || part.id === 'sort-panel';
                 selectEl.innerHTML = '<option value="">アビリティを選択</option>';
                 
                 if (addNone) {
@@ -862,13 +863,16 @@
 
                 filteredData.forEach(item => {
                     if (item.種類) {
+                        if (isControlPanel && item.種類 === "アビリティを選択") {
+                            return; 
+                        }
                         const optionEl = document.createElement('option');
                         optionEl.value = item.種類;
                         optionEl.textContent = item.種類;
                         selectEl.appendChild(optionEl);
                     }
                 });
-                if (part.id !== 'search-panel' && part.id !== 'sort-panel') updateValueSymbol(part, '');
+                if (!isControlPanel) updateValueSymbol(part, '');
             }
 
 
@@ -895,7 +899,7 @@
                     if(label) label.htmlFor = newId;
                 });
                 newPart.querySelector('.drag-handle').style.display = isEditMode ? 'block' : 'none';
-                newPart.querySelector('.favorite-toggle').style.display = isEditMode ? 'block' : 'none';
+                newPart.querySelector('.favorite-toggle').style.display = isEditMode ? 'none' : 'block';
                 newPart.dataset.originalIndex = partsContainer.children.length;
 
                 if (basePart) {
@@ -965,16 +969,26 @@
                     const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel };
                     setupDropdown(part, checkedRadio ? checkedRadio.value : null, options);
                     
-                    const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
-                    armorBtn.dataset.value = 'none';
-                    armorBtn.querySelector('.button-label').textContent = '※指定しない';
+                    if (isSearchPanel || isSortPanel) {
+                        const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                        armorBtn.dataset.value = 'none';
+                        armorBtn.querySelector('.button-label').textContent = '※指定しない';
+                    } else {
+                        const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                        armorBtn.dataset.value = '';
+                        armorBtn.querySelector('.button-label').textContent = '防具を選択';
+                    }
 
                 } else if (e.target.matches('input[name*="ability-grade"]')) {
                     const checkedRadio = e.target.closest('.radio-group').querySelector('input:checked');
                     const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel };
                     setupAbilityDropdown(part, checkedRadio ? checkedRadio.value : null, options);
                     
-                    part.querySelector('.ability-select').value = 'none';
+                    if (isSearchPanel || isSortPanel) {
+                        part.querySelector('.ability-select').value = 'none';
+                    } else {
+                         part.querySelector('.ability-select').value = '';
+                    }
                 }
             });
 
@@ -1011,8 +1025,18 @@
                     button.dataset.value = target.dataset.value;
                     target.closest('.custom-dropdown-panel').classList.remove('show');
                 }
-                else if (part && target.matches('.add-part-inline-btn')) addNewPart(null, part);
-                else if (part && target.matches('.delete-btn')) part.remove();
+                else if (part && target.matches('.add-part-inline-btn')) {
+                    addNewPart(null, part);
+                    if (isEditMode) {
+                        originalPartOrder = Array.from(partsContainer.children);
+                    }
+                }
+                else if (part && target.matches('.delete-btn')) {
+                    part.remove();
+                    if (isEditMode) {
+                        originalPartOrder = Array.from(partsContainer.children);
+                    }
+                }
             });
 
             function exportData() {
@@ -1470,7 +1494,13 @@
 
                 if (isEditMode) {
                     if (!sortableInstance) {
-                         sortableInstance = new Sortable(partsContainer, { animation: 150, handle: '.drag-handle' });
+                         sortableInstance = new Sortable(partsContainer, { 
+                            animation: 150, 
+                            handle: '.drag-handle',
+                            onEnd: function(evt) {
+                                originalPartOrder = Array.from(partsContainer.children);
+                            }
+                        });
                     }
                     sortableInstance.option('disabled', false);
                 } else {
