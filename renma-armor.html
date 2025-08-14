@@ -84,8 +84,10 @@
             cursor: pointer;
         }
         #search-panel.is-collapsed .favorite-toggle,
-        #sort-panel.is-collapsed .favorite-toggle {
-            display: none; /* ★ 閉じている時は☆★を非表示 */
+        #sort-panel.is-collapsed .favorite-toggle,
+        #search-panel.is-collapsed .value-sort-btn,
+        #sort-panel.is-collapsed .value-sort-btn {
+            display: none; 
         }
         #search-panel .part-content.collapsed,
         #sort-panel .part-content.collapsed {
@@ -151,6 +153,28 @@
         }
         .delete-btn { top: 4px; background: transparent; color: white; }
         .add-part-inline-btn { bottom: 10px; background-color: #28a745; color: white; }
+        
+        /* --- 効果値ソートボタンのスタイル --- */
+        .value-sort-btn {
+            position: absolute;
+            right: 10px;
+            bottom: 5px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            color: gray;
+            user-select: none;
+            border-radius: 5px;
+        }
+        .value-sort-btn.active {
+            color: dodgerblue;
+        }
+
 
         /* --- ☆/★ボタンとドラッグハンドルのスタイル --- */
         .drag-handle, .favorite-toggle {
@@ -359,8 +383,8 @@
             border: 1px solid #777;
             border-radius: 4px;
             z-index: 101;
-            max-height: 448px;
             overflow-y: auto;
+            margin-top: 4px;
         }
         .dropdown-option[data-has-submenu] {
             display: flex;
@@ -471,6 +495,7 @@
             </div>
             <div class="search-panel-info">クリックして検索パネルを開く</div>
             <button class="toggle-collapse-btn">▼</button>
+            <div id="search-value-sort" class="value-sort-btn" title="効果値で並び替え">9↓</div>
         </div>
         
         <div id="sort-panel" class="armor-part" style="display: none;">
@@ -527,6 +552,7 @@
             </div>
             <div class="sort-panel-info">クリックして並び替えパネルを開く</div>
             <button class="toggle-collapse-btn">▼</button>
+            <div id="sort-value-sort" class="value-sort-btn" title="効果値で並び替え">9↓</div>
         </div>
 
 
@@ -801,7 +827,9 @@
 
             let armorMainData = [], armorSubData = [], renmaAbilityData = [], allArmorData = [];
             let isEditMode = false, sortableInstance = null;
-            let originalPartOrder = []; // To store order before sorting
+            let originalPartOrder = [];
+            let valueSortState = 0; // 0: off, 1: desc, 2: asc
+
             const partsContainer = document.getElementById('parts-container');
             const searchPanel = document.getElementById('search-panel');
             const sortPanel = document.getElementById('sort-panel');
@@ -810,11 +838,15 @@
             const importBtn = document.getElementById('import-btn');
             const importFileInput = document.getElementById('import-file-input');
             const template = document.getElementById('armor-part-template');
+            
             const warlordArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'];
+            const vanbraceArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US・ES・IS','SSG','SaGaRS','SaGaEB'];
+
             let applyFilterFunction = () => {};
             
             const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
-            
+            const toHalfWidthBattleVanbrace = (str) => str.replace('バトルヴァンブレイス', 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+
             async function loadCSV(filePath) {
                 try {
                     const response = await fetch(filePath);
@@ -870,7 +902,7 @@
 
                 data.forEach(item => {
                     if (item.名称) {
-                         if (item.名称 === '◆名将の鎧') {
+                         if (item.名称 === '◆名将の鎧' || item.名称 === '☆バトルヴァンブレイス') {
                             const optionEl = document.createElement('div');
                             optionEl.className = 'dropdown-option';
                             optionEl.dataset.hasSubmenu = 'true';
@@ -1092,6 +1124,8 @@
                     const panel = button.nextElementSibling;
                     const isOpening = !panel.classList.contains('show');
                     
+                    document.querySelectorAll('.custom-dropdown-submenu').forEach(submenu => submenu.style.display = 'none');
+                    
                     document.querySelectorAll('.custom-dropdown-panel.show').forEach(p => {
                         if (p !== panel) p.classList.remove('show');
                     });
@@ -1115,12 +1149,24 @@
                     let value, text;
 
                     if (target.dataset.parent) {
-                        text = `${target.dataset.parent}(${target.textContent})`;
-                        value = text;
+                        let parentName = target.dataset.parent;
+                        const valueText = target.textContent;
+
+                        if (target.dataset.value && (target.dataset.value.includes('(全対象)') || target.dataset.value.includes('(シリーズ順)'))) {
+                             text = target.dataset.value;
+                             value = target.dataset.value;
+                        } else {
+                            if (parentName === '☆バトルヴァンブレイス') {
+                                parentName = toHalfWidthBattleVanbrace(parentName);
+                            }
+                            text = `${parentName}(${valueText})`;
+                            value = text;
+                        }
                     } else {
                         text = target.textContent;
                         value = target.dataset.value;
                     }
+
                     label.textContent = text;
                     button.dataset.value = value;
                     
@@ -1155,20 +1201,45 @@
 
                 if (option.dataset.hasSubmenu) {
                     submenu.innerHTML = '';
+                    const parentText = option.querySelector('span').textContent;
+                    let sublist = [];
+                    let formattedParentText = parentText;
+
+                    if (parentText === '◆名将の鎧') {
+                        sublist = warlordArmorSublist;
+                    } else if (parentText === '☆バトルヴァンブレイス') {
+                        sublist = vanbraceArmorSublist;
+                        formattedParentText = toHalfWidthBattleVanbrace(parentText);
+                    }
+
+                    const parentPart = option.closest('.armor-part');
+                    if (parentPart && (parentPart.id === 'search-panel' || parentPart.id === 'sort-panel')) {
+                        const allSeriesOption = document.createElement('div');
+                        allSeriesOption.className = 'dropdown-option';
+                        allSeriesOption.textContent = '全対象';
+                        allSeriesOption.dataset.value = `${formattedParentText}(全対象)`;
+                        allSeriesOption.dataset.parent = parentText;
+                        submenu.appendChild(allSeriesOption);
+
+                        if (parentPart.id === 'sort-panel') {
+                            const seriesOrderOption = document.createElement('div');
+                            seriesOrderOption.className = 'dropdown-option';
+                            seriesOrderOption.textContent = 'シリーズ順';
+                            seriesOrderOption.dataset.value = `${formattedParentText}(シリーズ順)`;
+                            seriesOrderOption.dataset.parent = parentText;
+                            submenu.appendChild(seriesOrderOption);
+                        }
+                    }
                     
-                    warlordArmorSublist.forEach(subItemText => {
+                    sublist.forEach(subItemText => {
                         const subOption = document.createElement('div');
                         subOption.className = 'dropdown-option';
                         subOption.textContent = subItemText;
                         subOption.dataset.value = subItemText;
-                        subOption.dataset.parent = '◆名将の鎧';
+                        subOption.dataset.parent = parentText;
                         submenu.appendChild(subOption);
                     });
                     
-                    const panelRect = panel.getBoundingClientRect();
-                    const listRect = panel.querySelector('.dropdown-options-list').getBoundingClientRect();
-                    submenu.style.top = (listRect.top - panelRect.top - 8) + 'px';
-
                     submenu.style.display = 'block';
                 } else if (!e.target.closest('.custom-dropdown-submenu')) {
                     submenu.style.display = 'none';
@@ -1211,6 +1282,7 @@
 
                         partsContainer.innerHTML = '';
                         data.forEach(partData => addNewPart(partData));
+                        originalPartOrder = Array.from(partsContainer.children);
 
                     } catch (error) {
                         console.error(error);
@@ -1266,12 +1338,14 @@
                 function deactivateFilter() {
                     const filterBtn = document.getElementById('filter-btn');
                     if (filterBtn.classList.contains('is-active')) {
+                        originalPartOrder.forEach(part => partsContainer.appendChild(part));
                         document.querySelectorAll('#parts-container .armor-part').forEach(part => {
                             part.style.display = '';
                         });
                         filterBtn.textContent = '絞り込み';
                         filterBtn.classList.remove('is-active');
                         updateInfoText();
+                        resetValueSortButtons();
                     }
                 }
                 window.deactivateFilter = deactivateFilter;
@@ -1292,7 +1366,9 @@
                     const isApprox = approxCheck.checked;
                     const filterFavorite = searchPanel.querySelector('.favorite-toggle').dataset.favorite === 'true';
                     
-                    document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                    let visibleParts = [];
+                    originalPartOrder.forEach(part => {
+                        partsContainer.appendChild(part);
                         const partArmorType = part.querySelector('input[name*="armor-type"]:checked').value;
                         const partArmorName = part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
                         const partGrade = part.querySelector('input[name*="ability-grade"]:checked').value;
@@ -1304,6 +1380,10 @@
                         let nameMatch = false;
                         if (!filterArmorName) {
                             nameMatch = true; 
+                        } else if (filterArmorName === '◆名将の鎧(全対象)') {
+                            nameMatch = partArmorName.startsWith('◆名将の鎧');
+                        } else if (filterArmorName === '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ(全対象)') {
+                            nameMatch = partArmorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
                         } else {
                             const parentArmorMatch = partArmorName.match(/(.+)\((.+)\)/);
                             if (parentArmorMatch) {
@@ -1325,8 +1405,21 @@
                             abilityMatch = (filterAbilityName === "" || filterAbilityName === partAbilityName);
                         }
 
-                        part.style.display = (typeMatch && nameMatch && gradeMatch && abilityMatch && favoriteMatch) ? '' : 'none';
+                        const isVisible = typeMatch && nameMatch && gradeMatch && abilityMatch && favoriteMatch;
+                        part.style.display = isVisible ? '' : 'none';
+                        if (isVisible) {
+                            visibleParts.push(part);
+                        }
                     });
+
+                    if (valueSortState > 0) {
+                        visibleParts.sort((a, b) => {
+                            const valA = parseFloat(a.querySelector('.ability-value').value) || 0;
+                            const valB = parseFloat(b.querySelector('.ability-value').value) || 0;
+                            return valueSortState === 1 ? valB - valA : valA - valB;
+                        });
+                        visibleParts.forEach(part => partsContainer.appendChild(part));
+                    }
                 }
                 applyFilterFunction = applyFilter;
                 
@@ -1393,13 +1486,17 @@
                 filterBtn.addEventListener('click', () => {
                     const isActive = filterBtn.classList.contains('is-active');
                     if(!isActive) {
+                       originalPartOrder = Array.from(partsContainer.children);
                        applyFilter();
+                       filterBtn.textContent = '解除';
                     } else {
+                        originalPartOrder.forEach(part => partsContainer.appendChild(part));
                         document.querySelectorAll('#parts-container .armor-part').forEach(part => {
                             part.style.display = '';
                         });
+                        filterBtn.textContent = '絞り込み';
+                        resetValueSortButtons();
                     }
-                    filterBtn.textContent = isActive ? '絞り込み' : '解除';
                     filterBtn.classList.toggle('is-active');
                     updateInfoText();
                 });
@@ -1422,28 +1519,26 @@
                     if (sortableInstance) {
                         sortableInstance.option('disabled', !shouldCollapse);
                     }
-
+                    
                     document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                        const addButton = part.querySelector('.add-part-inline-btn');
+                        const deleteButton = part.querySelector('.delete-btn');
+                        const buttonDisplayStyle = shouldCollapse ? '' : 'none';
+                        if (addButton) addButton.style.display = buttonDisplayStyle;
+                        if (deleteButton) deleteButton.style.display = buttonDisplayStyle;
+                        
                         const handle = part.querySelector('.drag-handle');
                         const favorite = part.querySelector('.favorite-toggle');
-                        handle.classList.remove('is-favorite'); 
-
                         if (shouldCollapse) {
                             handle.textContent = '☰';
                             handle.style.cursor = 'grab';
+                            handle.classList.remove('is-favorite');
                         } else {
                             handle.textContent = favorite.textContent;
-                            if (favorite.dataset.favorite === 'true') {
-                                handle.classList.add('is-favorite');
-                            }
                             handle.style.cursor = 'default';
+                            handle.classList.toggle('is-favorite', favorite.dataset.favorite === 'true');
                         }
                     });
-
-                    if (shouldCollapse) {
-                         infoText.textContent = 'クリックして並び替えパネルを開く';
-                         infoText.style.color = '#bbb';
-                    }
                 }
 
                 sortPanel.addEventListener('click', (e) => {
@@ -1517,14 +1612,12 @@
                     const aData = getPartData(a);
                     const bData = getPartData(b);
                     
-                    // 1. Favorite
                     if (sortFavorite) {
                         const aVal = aData.favorite ? 1 : 0;
                         const bVal = bData.favorite ? 1 : 0;
                         if (aVal !== bVal) return bVal - aVal;
                     }
 
-                    // 2. Armor (Type & Name)
                     if (sortArmorType) {
                         const direction = sortArmorAsc ? 1 : -1;
                         let result = 0;
@@ -1537,10 +1630,57 @@
                         }
 
                         if (sortArmorName && sortArmorName !== 'none') {
-                            if (sortArmorName === 'list_order') {
-                                const aIndex = allArmorData.findIndex(item => item.名称 === aData.armorName);
-                                const bIndex = allArmorData.findIndex(item => item.名称 === bData.armorName);
-                                if (aIndex !== bIndex) result = aIndex - bIndex;
+                           if (sortArmorName.endsWith('(シリーズ順)')) {
+                                const isWarlord = sortArmorName.startsWith('◆名将の鎧');
+                                const isVanbrace = sortArmorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                const prefix = isWarlord ? '◆名将の鎧' : '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ';
+                                const sublist = isWarlord ? warlordArmorSublist : vanbraceArmorSublist;
+
+                                const aIsTarget = aData.armorName.startsWith(prefix);
+                                const bIsTarget = bData.armorName.startsWith(prefix);
+
+                                if (aIsTarget !== bIsTarget) {
+                                    result = aIsTarget ? -1 : 1;
+                                } else if (aIsTarget && bIsTarget) {
+                                    const regex = /\(([^)]+)\)/;
+                                    const aMatch = aData.armorName.match(regex);
+                                    const bMatch = bData.armorName.match(regex);
+                                    const aIndex = aMatch ? sublist.indexOf(aMatch[1]) : -1;
+                                    const bIndex = bMatch ? sublist.indexOf(bMatch[1]) : -1;
+                                    result = aIndex - bIndex;
+                                }
+                            } else if (sortArmorName === 'list_order') {
+                                const aIsWarlord = aData.armorName.startsWith('◆名将の鎧');
+                                const bIsWarlord = bData.armorName.startsWith('◆名将の鎧');
+                                const aIsVanbrace = aData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                const bIsVanbrace = bData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                const regex = /\(([^)]+)\)/;
+
+                                if (aIsWarlord && bIsWarlord) {
+                                    const aMatch = aData.armorName.match(regex);
+                                    const bMatch = bData.armorName.match(regex);
+                                    const aSeriesIndex = aMatch ? warlordArmorSublist.indexOf(aMatch[1]) : -1;
+                                    const bSeriesIndex = bMatch ? warlordArmorSublist.indexOf(bMatch[1]) : -1;
+                                    if(aSeriesIndex !== bSeriesIndex) result = aSeriesIndex - bSeriesIndex;
+                                } else if (aIsVanbrace && bIsVanbrace) {
+                                    const aMatch = aData.armorName.match(regex);
+                                    const bMatch = bData.armorName.match(regex);
+                                    const aSeriesIndex = aMatch ? vanbraceArmorSublist.indexOf(aMatch[1]) : -1;
+                                    const bSeriesIndex = bMatch ? vanbraceArmorSublist.indexOf(bMatch[1]) : -1;
+                                    if(aSeriesIndex !== bSeriesIndex) result = aSeriesIndex - bSeriesIndex;
+                                } else {
+                                    const aIndex = allArmorData.findIndex(item => item.名称 === aData.armorName);
+                                    const bIndex = allArmorData.findIndex(item => item.名称 === bData.armorName);
+                                    if (aIndex !== bIndex) result = aIndex - bIndex;
+                                }
+                            } else if (sortArmorName === '◆名将の鎧(全対象)') {
+                                const aIsTarget = aData.armorName.startsWith('◆名将の鎧');
+                                const bIsTarget = bData.armorName.startsWith('◆名将の鎧');
+                                if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
+                            } else if (sortArmorName === '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ(全対象)') {
+                                const aIsTarget = aData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                const bIsTarget = bData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
                             } else {
                                 const aIsTarget = aData.armorName === sortArmorName;
                                 const bIsTarget = bData.armorName === sortArmorName;
@@ -1550,7 +1690,6 @@
                         }
                     }
 
-                    // 3. Ability (Grade & Name)
                     if (sortAbilityGrade) {
                          const direction = sortAbilityAsc ? 1 : -1;
                          let result = 0;
@@ -1575,6 +1714,14 @@
                             if (result !== 0) return result * direction;
                         }
                     }
+                    
+                    if (valueSortState > 0) {
+                        const valA = parseFloat(aData.value) || 0;
+                        const valB = parseFloat(bData.value) || 0;
+                        if (valA !== valB) {
+                            return valueSortState === 1 ? valB - valA : valA - valB;
+                        }
+                    }
 
                     return 0;
                 });
@@ -1585,6 +1732,7 @@
                 if(isSave) {
                     originalPartOrder = Array.from(partsContainer.children);
                     resetSortPanel(true);
+                    resetValueSortButtons();
                 }
             }
 
@@ -1594,8 +1742,52 @@
                     armorName: part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value,
                     grade: part.querySelector('input[name*="ability-grade"]:checked')?.value,
                     abilityName: part.querySelector('.ability-select').value,
+                    value: part.querySelector('.ability-value').value,
                     favorite: part.querySelector('.favorite-toggle').dataset.favorite === 'true'
                 };
+            }
+
+            function resetValueSortButtons() {
+                const btns = document.querySelectorAll('.value-sort-btn');
+                btns.forEach(btn => {
+                    btn.textContent = '9↓';
+                    btn.classList.remove('active');
+                });
+                valueSortState = 0;
+            }
+
+            function handleValueSort(event) {
+                const btn = event.currentTarget;
+                valueSortState = (valueSortState + 1) % 3;
+
+                switch (valueSortState) {
+                    case 0:
+                        btn.textContent = '9↓';
+                        btn.classList.remove('active');
+                        break;
+                    case 1:
+                        btn.textContent = '9↓';
+                        btn.classList.add('active');
+                        break;
+                    case 2:
+                        btn.textContent = '1↓';
+                        btn.classList.add('active');
+                        break;
+                }
+                
+                if (document.getElementById('filter-btn').classList.contains('is-active')) {
+                    if (valueSortState === 0) {
+                        applyFilter();
+                    } else {
+                        const visibleParts = Array.from(partsContainer.children).filter(p => p.style.display !== 'none');
+                        visibleParts.sort((a, b) => {
+                            const valA = parseFloat(a.querySelector('.ability-value').value) || 0;
+                            const valB = parseFloat(b.querySelector('.ability-value').value) || 0;
+                            return valueSortState === 1 ? valB - valA : valA - valB;
+                        });
+                        visibleParts.forEach(part => partsContainer.appendChild(part));
+                    }
+                }
             }
 
 
@@ -1609,6 +1801,7 @@
                 setupSearchPanel();
                 setupSortPanel();
                 addNewPart(); 
+                originalPartOrder = Array.from(partsContainer.children);
                 
                 editModeBtn.addEventListener('click', toggleEditMode);
                 exportBtn.addEventListener('click', exportData);
@@ -1619,6 +1812,11 @@
                 document.getElementById('export-btn-footer').addEventListener('click', exportData);
                 document.getElementById('import-btn-footer').addEventListener('click', () => document.getElementById('import-file-input-footer').click());
                 document.getElementById('import-file-input-footer').addEventListener('change', importData);
+                
+                document.getElementById('search-value-sort').addEventListener('click', handleValueSort);
+                document.getElementById('sort-value-sort').addEventListener('click', handleValueSort);
+
+                resetValueSortButtons();
             }
 
             function toggleEditMode() {
@@ -1633,10 +1831,17 @@
                 if (isEditMode) {
                    originalPartOrder = Array.from(partsContainer.children);
                    resetSortPanel();
+                   resetValueSortButtons();
                 } else {
                    if (!document.getElementById('save-sort-check').checked) {
                         originalPartOrder.forEach(part => partsContainer.appendChild(part));
                    }
+                   document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                        const addButton = part.querySelector('.add-part-inline-btn');
+                        const deleteButton = part.querySelector('.delete-btn');
+                        if (addButton) addButton.style.display = '';
+                        if (deleteButton) deleteButton.style.display = '';
+                   });
                 }
 
                 document.querySelectorAll('#parts-container .armor-part').forEach(part => {
