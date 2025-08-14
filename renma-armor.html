@@ -1182,9 +1182,15 @@
                     }
                 }
                 else if (part && target.matches('.delete-btn')) {
-                    part.remove();
-                    if (isEditMode) {
-                        originalPartOrder = Array.from(partsContainer.children);
+                    // Count all panels in the document that have a delete button.
+                    // This correctly identifies only the registration panels, excluding the search/sort panels.
+                    const deletablePanelCount = document.querySelectorAll('.armor-part .delete-btn').length;
+
+                    if (deletablePanelCount > 1) {
+                        part.remove();
+                        if (isEditMode) {
+                            originalPartOrder = Array.from(partsContainer.children);
+                        }
                     }
                 }
             });
