@@ -27,10 +27,19 @@
             margin-bottom: -5px;
         }
 
-        /* --- ファイル入力 --- */
-        .file-input-container {
+        /* --- コントロールセクション --- */
+        .controls-container {
             text-align: center;
             padding: 20px;
+            border-radius: 8px;
+        }
+
+        .checkbox-container {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .checkbox-container label {
+            cursor: pointer;
         }
 
         /* --- 結果グリッドコンテナ (レスポンシブ対応) --- */
@@ -141,6 +150,17 @@
             color: #ffd700;
         }
 
+        /* --- 追加スタイル --- */
+        .combined-value {
+            color: red !important;
+        }
+        .combined-armor-name {
+            color: orange;
+        }
+        .special-armor-name {
+            color: magenta;
+        }
+        
         /* ヘッダーの効果値は左揃え */
         th.value-col {
             text-align: left;
@@ -200,8 +220,16 @@
         <button onclick="changeZoom(-0.1)">－</button>
     </div>
 
-    <div class="file-input-container">
-        <input type="file" id="json-file-input" accept=".json">
+    <div class="controls-container">
+        <div class="checkbox-container">
+            <label>
+                <input type="checkbox" id="include-unique-ability" checked>
+                装備固有のアビリティも加味する
+            </label>
+        </div>
+        <div class="file-input-container">
+            <input type="file" id="json-file-input" accept=".json">
+        </div>
     </div>
 
     <div class="results-grid">
@@ -247,6 +275,14 @@
         </div>
     </div>
 
+
+
+    <footer>
+<br>
+            ※使用は自己責任にて。<br>
+            ※名将の鎧(+15)とバトルヴァンブレイス(+20)のシリーズ一致分は加味されていませんので注意してください。
+    </footer>
+
     <div class="bottom">
         <br>
         <a href="renma-armor.html">リストページへ</a>　<a href="armor-calc.html">仮ツールへ</a>
@@ -254,143 +290,237 @@
     </div>
 
     <script>
-
-        // 拡大縮小の関数
+        // --- グローバル変数 ---
         let zoomLevel = 1;
-        let zoomControlsVisible = false;
+        let loadedJsonData = null;
+        let uniqueAbilities = {};
 
-        function toggleZoomControls() {
-            const zoomControls = document.getElementById('zoomControls');
-            const zoomToggle = document.getElementById('zoomToggle');
-            
-            zoomControlsVisible = !zoomControlsVisible;
-            
-            if (zoomControlsVisible) {
-                zoomControls.classList.add('show');
-                zoomToggle.style.display = 'none';
-            } else {
-                zoomControls.classList.remove('show');
-                zoomToggle.style.display = 'block';
-            }
-        }
-
+        // --- ユーティリティ関数 ---
         function changeZoom(delta) {
             zoomLevel += delta;
-            if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
-            if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
+            if (zoomLevel < 0.5) zoomLevel = 0.5;
+            if (zoomLevel > 2.0) zoomLevel = 2.0;
             document.body.style.zoom = zoomLevel;
         }
 
-        // カテゴリ間移動の関数
         function scrollToCategory(categoryId) {
             const element = document.getElementById(categoryId);
             if (element) {
-                element.scrollIntoView({ 
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
 
+        // --- メイン処理 ---
         document.addEventListener('DOMContentLoaded', () => {
-
-            const abilityClassMap = {
-                "威力＋(HP満タン時)": "hp-full", "威力＋(瀕死時)": "hp-low", "威力＋(カウンター)": "counter", "威力＋(斬)": "slash", "威力＋(打)": "blunt", "威力＋(突)": "pierce", "威力＋(熱)": "heat", "威力＋(冷)": "cold", "威力＋(雷)": "volt", "威力＋(陽)": "sun", "威力＋(陰)": "shadow",
-                "味方威力＋(HP満タン時)": "party-hp-full", "味方威力＋(瀕死時)": "party-hp-low", "味方威力＋(カウンター)": "party-counter", "味方威力＋(斬)": "party-slash", "味方威力＋(打)": "party-blunt", "味方威力＋(突)": "party-pierce", "味方威力＋(熱)": "party-heat", "味方威力＋(冷)": "party-cold", "味方威力＋(雷)": "party-volt", "味方威力＋(陽)": "party-sun", "味方威力＋(陰)": "party-shadow"
-            };
-
             const fileInput = document.getElementById('json-file-input');
-            fileInput.addEventListener('change', handleFileSelect);
+            const uniqueAbilityCheckbox = document.getElementById('include-unique-ability');
 
+            fileInput.addEventListener('change', handleFileSelect);
+            uniqueAbilityCheckbox.addEventListener('change', runAnalysis);
+
+            // CSVデータを読み込む
+            loadUniqueAbilities();
+        });
+
+        // CSVファイルを非同期で読み込みパースする
+        async function loadUniqueAbilities() {
+            const files = ['data/armor-main-ability.csv', 'data/armor-sub-ability.csv'];
+            const promises = files.map(file => fetch(file).then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.text();
+            }));
+            
+            try {
+                const [mainCsv, subCsv] = await Promise.all(promises);
+                uniqueAbilities = parseCsvData(mainCsv + "\n" + subCsv);
+            } catch (error) {
+                console.error("固有アビリティCSVの読み込みに失敗しました:", error);
+                alert("固有アビリティデータ(CSV)の読み込みに失敗しました。\n'data'フォルダにファイルが存在するか確認してください。");
+            }
+        }
+
+        function parseCsvData(csvText) {
+            const data = {};
+            const attributeMap = { "斬": "斬", "打": "打", "突": "突", "熱": "熱", "冷": "冷", "雷": "雷", "陽": "陽", "陰": "陰", "味方威力": "味方威力" };
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            lines.forEach(line => {
+                const parts = line.split(',');
+                if (parts.length < 3) return;
+                const armorName = parts[0].trim();
+                const target = parts[1].trim();
+                const value = parseInt(parts[2].trim(), 10);
+
+                if (attributeMap[target] && !isNaN(value)) {
+                    if (!data[armorName]) {
+                        data[armorName] = {};
+                    }
+                    data[armorName][target] = value;
+                }
+            });
+            return data;
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    loadedJsonData = JSON.parse(e.target.result);
+                    runAnalysis(); // 最初の解析を実行
+                } catch (error) {
+                    alert('JSONの読込に失敗\n' + error);
+                    loadedJsonData = null;
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 解析と表示のメイン関数
+        function runAnalysis() {
+            if (!loadedJsonData) return;
+            try {
+                const processed = processData(loadedJsonData);
+                displayReport(processed);
+            } catch (error) {
+                console.error("データ処理中にエラー:", error);
+                alert("データ処理中にエラーが発生しました。\n" + error);
+            }
+        }
+
+        function getTargetFromAbilityName(abilityName) {
+            if (abilityName.startsWith('味方威力＋')) return "味方威力";
+            const match = abilityName.match(/\(([^)]+)\)/);
+            if (!match) return null;
+            const content = match[1];
+            // 属性名に直接一致するかチェック
+            const attributes = ["斬", "打", "突", "熱", "冷", "雷", "陽", "陰"];
+            if (attributes.includes(content)) return content;
+            return null;
+        }
+
+        function processData(armorData) {
+            const selfPowerAbilities = ["威力＋(HP満タン時)", "威力＋(瀕死時)", "威力＋(カウンター)", "威力＋(斬)", "威力＋(打)", "威力＋(突)", "威力＋(熱)", "威力＋(冷)", "威力＋(雷)", "威力＋(陽)", "威力＋(陰)"];
+            const partyPowerAbilities = ["味方威力＋(HP満タン時)", "味方威力＋(瀕死時)", "味方威力＋(カウンター)", "味方威力＋(斬)", "味方威力＋(打)", "味方威力＋(突)", "味方威力＋(熱)", "味方威力＋(冷)", "味方威力＋(雷)", "味方威力＋(陽)", "味方威力＋(陰)"];
+            const includeUnique = document.getElementById('include-unique-ability').checked;
+
+            const categorizedData = { mainSelf: {}, subSelf: {}, mainParty: {}, subParty: {} };
+            [...selfPowerAbilities, ...partyPowerAbilities].forEach(name => {
+                Object.keys(categorizedData).forEach(cat => categorizedData[cat][name] = []);
+            });
+
+            // データをディープコピーして元のデータを変更しないようにする
+            const dataToProcess = JSON.parse(JSON.stringify(armorData));
+
+            for (const item of dataToProcess) {
+                if (!item.abilityName || !item.value) continue;
+                let value = parseInt(item.value, 10);
+                if (isNaN(value)) continue;
+
+                item.isCombined = false;
+
+                // 固有アビリティを加味する場合の処理
+                if (includeUnique) {
+                    const target = getTargetFromAbilityName(item.abilityName);
+                    // CSVデータは装備名が完全一致である必要があるため、そのキーで探す
+                    if (target && uniqueAbilities[item.armorName] && uniqueAbilities[item.armorName][target]) {
+                        const addedValue = uniqueAbilities[item.armorName][target];
+                        value += addedValue;
+                        item.isCombined = true;
+                        item.addedValue = addedValue;
+                    }
+                }
+                
+                const newItem = { ...item, value };
+
+                if (selfPowerAbilities.includes(item.abilityName)) {
+                    if (item.armorType === 'main') categorizedData.mainSelf[item.abilityName].push(newItem);
+                    else if (item.armorType === 'sub') categorizedData.subSelf[item.abilityName].push(newItem);
+                } else if (partyPowerAbilities.includes(item.abilityName)) {
+                    if (item.armorType === 'main') categorizedData.mainParty[item.abilityName].push(newItem);
+                    else if (item.armorType === 'sub') categorizedData.subParty[item.abilityName].push(newItem);
+                }
+            }
+            
+            for (const category in categorizedData) {
+                for (const abilityName in categorizedData[category]) {
+                    categorizedData[category][abilityName].sort((a, b) => b.value - a.value);
+                }
+            }
+            return categorizedData;
+        }
+            
+        function displayReport(data) {
             const selfPowerAbilities = ["威力＋(HP満タン時)", "威力＋(瀕死時)", "威力＋(カウンター)", "威力＋(斬)", "威力＋(打)", "威力＋(突)", "威力＋(熱)", "威力＋(冷)", "威力＋(雷)", "威力＋(陽)", "威力＋(陰)"];
             const partyPowerAbilities = ["味方威力＋(HP満タン時)", "味方威力＋(瀕死時)", "味方威力＋(カウンター)", "味方威力＋(斬)", "味方威力＋(打)", "味方威力＋(突)", "味方威力＋(熱)", "味方威力＋(冷)", "味方威力＋(雷)", "味方威力＋(陽)", "味方威力＋(陰)"];
 
-            function handleFileSelect(event) {
-                const file = event.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        const categorizedData = processData(data);
-                        displayReport(categorizedData);
-                    } catch (error) { alert('JSONの読込に失敗\n' + error); }
-                };
-                reader.readAsText(file);
-            }
-
-            function processData(armorData) {
-                const categorizedData = { mainSelf: {}, subSelf: {}, mainParty: {}, subParty: {} };
-                [...selfPowerAbilities, ...partyPowerAbilities].forEach(name => {
-                    Object.keys(categorizedData).forEach(cat => categorizedData[cat][name] = []);
-                });
-                for (const item of armorData) {
-                    if (!item.abilityName || !item.value) continue;
-                    const value = parseInt(item.value, 10);
-                    if (isNaN(value)) continue;
-                    const newItem = { ...item, value };
-                    if (selfPowerAbilities.includes(item.abilityName)) {
-                        if (item.armorType === 'main') categorizedData.mainSelf[item.abilityName].push(newItem);
-                        else if (item.armorType === 'sub') categorizedData.subSelf[item.abilityName].push(newItem);
-                    } else if (partyPowerAbilities.includes(item.abilityName)) {
-                        if (item.armorType === 'main') categorizedData.mainParty[item.abilityName].push(newItem);
-                        else if (item.armorType === 'sub') categorizedData.subParty[item.abilityName].push(newItem);
-                    }
-                }
-                for (const category in categorizedData) {
-                    for (const abilityName in categorizedData[category]) {
-                        categorizedData[category][abilityName].sort((a, b) => b.value - a.value);
-                    }
-                }
-                return categorizedData;
-            }
+            const categories = [
+                { id: 'main-self', abilities: selfPowerAbilities, data: data.mainSelf },
+                { id: 'sub-self', abilities: selfPowerAbilities, data: data.subSelf },
+                { id: 'main-party', abilities: partyPowerAbilities, data: data.mainParty },
+                { id: 'sub-party', abilities: partyPowerAbilities, data: data.subParty }
+            ];
             
-            function displayReport(data) {
-                const categories = [
-                    { id: 'main-self', abilities: selfPowerAbilities, data: data.mainSelf },
-                    { id: 'sub-self', abilities: selfPowerAbilities, data: data.subSelf },
-                    { id: 'main-party', abilities: partyPowerAbilities, data: data.mainParty },
-                    { id: 'sub-party', abilities: partyPowerAbilities, data: data.subParty }
-                ];
-                
-                categories.forEach(cat => {
-                    const container = document.querySelector(`#${cat.id} .table-wrapper`);
-                    container.innerHTML = '';
-                    const table = document.createElement('table');
-                    const thead = table.createTHead();
-                    thead.insertRow().innerHTML = `<th class="col-ability">アビリティ</th><th class="col-armor">防具</th><th class="col-value value-col">効果値</th>`;
-                    const tbody = table.createTBody();
+            categories.forEach(cat => {
+                const container = document.querySelector(`#${cat.id} .table-wrapper`);
+                container.innerHTML = '';
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th class="col-ability">アビリティ</th>
+                            <th class="col-armor">防具</th>
+                            <th class="col-value value-col">効果値</th>
+                        </tr>
+                    </thead>`;
+                const tbody = table.createTBody();
 
-                    cat.abilities.forEach(abilityName => {
-                        const items = cat.data[abilityName] || [];
+                cat.abilities.forEach(abilityName => {
+                    const items = cat.data[abilityName] || [];
+                    
+                    for (let i = 0; i < 5; i++) {
+                        const item = items[i];
+                        const row = tbody.insertRow();
                         
-                        for (let i = 0; i < 5; i++) {
-                            const item = items[i];
-                            const row = tbody.insertRow();
-                            const groupClass = abilityClassMap[abilityName] || 'unknown';
-                            row.classList.add('ability-group-' + groupClass);
-                            
-                            // 空のセルには高さ維持のため&nbsp;（ノーブレークスペース）を入れる
-                            const armorCell = item ? item.armorName : '&nbsp;';
-                            const valueCell = item ? item.value + '%' : '&nbsp;';
+                        let armorCellHTML = '&nbsp;';
+                        let valueCellHTML = '&nbsp;';
+                        let valueCellClass = 'value-col';
 
-                            if (i === 0) {
-                                row.innerHTML = `
-                                    <td class="merged-ability-cell" rowspan="5">${abilityName}</td>
-                                    <td>${armorCell}</td>
-                                    <td class="value-col">${valueCell}</td>
-                                `;
+                        if (item) {
+                            // 装備名セルのHTMLを生成
+                            if (item.isCombined) {
+                                // 加算あり(オレンジ色)
+                                armorCellHTML = `<span class="combined-armor-name">${item.armorName} (+${item.addedValue})</span>`;
+                                valueCellClass += ' combined-value'; // 効果値を赤色に
+                            } else if (item.armorName.includes("名将の鎧") || item.armorName.includes("バトルヴァンブレイス")) {
+                                // 特定装備(紫色)
+                                armorCellHTML = `<span class="special-armor-name">${item.armorName}</span>`;
                             } else {
-                                row.innerHTML = `
-                                    <td>${armorCell}</td>
-                                    <td class="value-col">${valueCell}</td>
-                                `;
+                                // 通常
+                                armorCellHTML = item.armorName;
                             }
+                            
+                            // 効果値セルのHTMLを生成
+                            valueCellHTML = item.value + '%';
                         }
-                    });
-                    container.appendChild(table);
+
+                        if (i === 0) {
+                            row.innerHTML = `
+                                <td class="merged-ability-cell" rowspan="5">${abilityName}</td>
+                                <td>${armorCellHTML}</td>
+                                <td class="${valueCellClass}">${valueCellHTML}</td>
+                            `;
+                        } else {
+                            row.innerHTML = `
+                                <td>${armorCellHTML}</td>
+                                <td class="${valueCellClass}">${valueCellHTML}</td>
+                            `;
+                        }
+                    }
                 });
-            }
-        });
+                container.appendChild(table);
+            });
+        }
     </script>
 </body>
 </html>
