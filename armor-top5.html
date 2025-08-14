@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>練磨(防具)アビリティ TOP5</title>
+    <style>
+        /* --- 全体 --- */
+        body {
+            background-color: #2A2A2A;
+            color: #eee;
+            font-family: 'Hiragino Kaku Gothic ProN', 'メイリオ', Meiryo, sans-serif;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- ヘッダー --- */
+        header {
+            text-align: center;
+        }
+
+        h1 {
+            color: #4da8da;
+            margin-top: 0px;
+            margin-bottom: -5px;
+        }
+
+        /* --- ファイル入力 --- */
+        .file-input-container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* --- 結果グリッドコンテナ (レスポンシブ対応) --- */
+        .results-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px; /* コンテナ間の隙間 */
+            justify-content: center;
+            max-width: 1400px; /* ページの最大幅をよりコンパクトに設定 */
+            width: 100%;
+            margin: 0 auto; /* 中央配置を強化 */
+        }
+
+        .category-container {
+            background-color: #383838;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 20px;
+            box-sizing: border-box;
+            justify-content: center;
+            flex-basis: 100%; /* モバイルでのデフォルトは1列 */
+        }
+
+        /* PCなど広い画面(1200px以上)では2x2グリッドに */
+        @media (min-width: 1200px) {
+            .category-container {
+                flex-basis: 45%; /* 50%より少し小さくしてgapのスペースを確保 */
+            }
+        }
+
+        h2 {
+            color: #c0c0ff;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #555;
+            padding-bottom: 8px;
+        }
+
+        /* --- テーブルスタイル --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* 列幅を固定 */
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #777; /* 罫線の太さを統一 */
+            text-align: left;
+            word-wrap: break-word; /* 長い単語を折り返す */
+        }
+
+        thead th {
+            background-color: #444;
+            color: #fff;
+        }
+        
+        /* セル結合されたアビリティ名のスタイル */
+        td.merged-ability-cell {
+            vertical-align: top; /* 上揃え */
+            color: #98fb98;
+        }
+
+        /* 列幅の指定 */
+        .col-ability { width: 35%; }
+        .col-armor { width: 45%; }
+        .col-value { width: 20%; }
+
+        /* データセルの効果値は右揃え */
+        td.value-col {
+            text-align: right;
+            font-weight: bold;
+            color: #ffd700;
+        }
+
+        /* ヘッダーの効果値は左揃え */
+        th.value-col {
+            text-align: left;
+        }
+
+    .bottom {
+      font-size: 16pt;
+      margin-top: 20px;
+    }
+
+
+   /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+    .bottom {
+      font-size: 16pt;
+      margin-top: 20px;
+    }
+
+    /* 拡大縮小ボタンのスタイル */
+    /* 拡大縮小ボタンのスタイル */
+    .zoom-buttons {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>練磨(防具)アビリティ TOP5</h1>
+    </header>
+
+  <div class="zoom-buttons">
+    <button onclick="changeZoom(0.1)">＋</button>
+    <button onclick="changeZoom(-0.1)">－</button>
+  </div>
+
+    <div class="file-input-container">
+        <input type="file" id="json-file-input" accept=".json">
+    </div>
+
+    <div class="results-grid">
+        <div class="category-container" id="main-self"><h2>■威力＋ (主防具)</h2><div class="table-wrapper"></div></div>
+        <div class="category-container" id="sub-self"><h2>■威力＋ (副防具)</h2><div class="table-wrapper"></div></div>
+        <div class="category-container" id="main-party"><h2>■味方威力＋ (主防具)</h2><div class="table-wrapper"></div></div>
+        <div class="category-container" id="sub-party"><h2>■味方威力＋ (副防具)</h2><div class="table-wrapper"></div></div>
+    </div>
+
+  <div class="bottom">
+    <br>
+    <a href="renma-armor.html">リストページへ</a>
+    <br>
+  </div>
+
+    <script>
+
+    // 拡大縮小の関数
+    let zoomLevel = 1;
+    let zoomControlsVisible = false;
+
+    function toggleZoomControls() {
+      const zoomControls = document.getElementById('zoomControls');
+      const zoomToggle = document.getElementById('zoomToggle');
+      
+      zoomControlsVisible = !zoomControlsVisible;
+      
+      if (zoomControlsVisible) {
+        zoomControls.classList.add('show');
+        zoomToggle.style.display = 'none';
+      } else {
+        zoomControls.classList.remove('show');
+        zoomToggle.style.display = 'block';
+      }
+    }
+
+    function changeZoom(delta) {
+      zoomLevel += delta;
+      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
+      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
+      document.body.style.zoom = zoomLevel;
+    }
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const abilityClassMap = {
+                "威力＋(HP満タン時)": "hp-full", "威力＋(瀕死時)": "hp-low", "威力＋(カウンター)": "counter", "威力＋(斬)": "slash", "威力＋(打)": "blunt", "威力＋(突)": "pierce", "威力＋(熱)": "heat", "威力＋(冷)": "cold", "威力＋(雷)": "volt", "威力＋(陽)": "sun", "威力＋(陰)": "shadow",
+                "味方威力＋(HP満タン時)": "party-hp-full", "味方威力＋(瀕死時)": "party-hp-low", "味方威力＋(カウンター)": "party-counter", "味方威力＋(斬)": "party-slash", "味方威力＋(打)": "party-blunt", "味方威力＋(突)": "party-pierce", "味方威力＋(熱)": "party-heat", "味方威力＋(冷)": "party-cold", "味方威力＋(雷)": "party-volt", "味方威力＋(陽)": "party-sun", "味方威力＋(陰)": "party-shadow"
+            };
+
+            const fileInput = document.getElementById('json-file-input');
+            fileInput.addEventListener('change', handleFileSelect);
+
+            const selfPowerAbilities = ["威力＋(HP満タン時)", "威力＋(瀕死時)", "威力＋(カウンター)", "威力＋(斬)", "威力＋(打)", "威力＋(突)", "威力＋(熱)", "威力＋(冷)", "威力＋(雷)", "威力＋(陽)", "威力＋(陰)"];
+            const partyPowerAbilities = ["味方威力＋(HP満タン時)", "味方威力＋(瀕死時)", "味方威力＋(カウンター)", "味方威力＋(斬)", "味方威力＋(打)", "味方威力＋(突)", "味方威力＋(熱)", "味方威力＋(冷)", "味方威力＋(雷)", "味方威力＋(陽)", "味方威力＋(陰)"];
+
+            function handleFileSelect(event) {
+                const file = event.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        const categorizedData = processData(data);
+                        displayReport(categorizedData);
+                    } catch (error) { alert('JSONの読込に失敗\n' + error); }
+                };
+                reader.readAsText(file);
+            }
+
+            function processData(armorData) {
+                const categorizedData = { mainSelf: {}, subSelf: {}, mainParty: {}, subParty: {} };
+                [...selfPowerAbilities, ...partyPowerAbilities].forEach(name => {
+                    Object.keys(categorizedData).forEach(cat => categorizedData[cat][name] = []);
+                });
+                for (const item of armorData) {
+                    if (!item.abilityName || !item.value) continue;
+                    const value = parseInt(item.value, 10);
+                    if (isNaN(value)) continue;
+                    const newItem = { ...item, value };
+                    if (selfPowerAbilities.includes(item.abilityName)) {
+                        if (item.armorType === 'main') categorizedData.mainSelf[item.abilityName].push(newItem);
+                        else if (item.armorType === 'sub') categorizedData.subSelf[item.abilityName].push(newItem);
+                    } else if (partyPowerAbilities.includes(item.abilityName)) {
+                        if (item.armorType === 'main') categorizedData.mainParty[item.abilityName].push(newItem);
+                        else if (item.armorType === 'sub') categorizedData.subParty[item.abilityName].push(newItem);
+                    }
+                }
+                for (const category in categorizedData) {
+                    for (const abilityName in categorizedData[category]) {
+                        categorizedData[category][abilityName].sort((a, b) => b.value - a.value);
+                    }
+                }
+                return categorizedData;
+            }
+            
+            function displayReport(data) {
+                const categories = [
+                    { id: 'main-self', abilities: selfPowerAbilities, data: data.mainSelf },
+                    { id: 'sub-self', abilities: selfPowerAbilities, data: data.subSelf },
+                    { id: 'main-party', abilities: partyPowerAbilities, data: data.mainParty },
+                    { id: 'sub-party', abilities: partyPowerAbilities, data: data.subParty }
+                ];
+                
+                categories.forEach(cat => {
+                    const container = document.querySelector(`#${cat.id} .table-wrapper`);
+                    container.innerHTML = '';
+                    const table = document.createElement('table');
+                    const thead = table.createTHead();
+                    thead.insertRow().innerHTML = `<th class="col-ability">アビリティ</th><th class="col-armor">防具</th><th class="col-value value-col">効果値</th>`;
+                    const tbody = table.createTBody();
+
+                    cat.abilities.forEach(abilityName => {
+                        const items = cat.data[abilityName] || [];
+                        
+                        for (let i = 0; i < 5; i++) {
+                            const item = items[i];
+                            const row = tbody.insertRow();
+                            const groupClass = abilityClassMap[abilityName] || 'unknown';
+                            row.classList.add('ability-group-' + groupClass);
+                            
+                            // 空のセルには高さ維持のため&nbsp;（ノーブレークスペース）を入れる
+                            const armorCell = item ? item.armorName : '&nbsp;';
+                            const valueCell = item ? item.value + '%' : '&nbsp;';
+
+                            if (i === 0) {
+                                row.innerHTML = `
+                                    <td class="merged-ability-cell" rowspan="5">${abilityName}</td>
+                                    <td>${armorCell}</td>
+                                    <td class="value-col">${valueCell}</td>
+                                `;
+                            } else {
+                                row.innerHTML = `
+                                    <td>${armorCell}</td>
+                                    <td class="value-col">${valueCell}</td>
+                                `;
+                            }
+                        }
+                    });
+                    container.appendChild(table);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
