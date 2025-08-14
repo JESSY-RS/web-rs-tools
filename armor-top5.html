@@ -9,7 +9,6 @@
         body {
             background-color: #2A2A2A;
             color: #eee;
-            font-family: 'Hiragino Kaku Gothic ProN', 'メイリオ', Meiryo, sans-serif;
             padding: 20px;
             margin: 0;
             display: flex;
@@ -64,10 +63,45 @@
 
         h2 {
             color: #c0c0ff;
-            margin-top: 0;
+            margin-top: -5px;
             margin-bottom: 15px;
             border-bottom: 2px solid #555;
             padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 移動ボタンのスタイル */
+        .nav-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .nav-button {
+            background-color: #555;
+            color: #eee;
+            border: 1px solid #777;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+
+        .nav-button:hover {
+            background-color: #666;
+        }
+
+        .nav-button:active {
+            background-color: #444;
+        }
+
+        .nav-button:disabled {
+            background-color: #333;
+            color: #666;
+            cursor: default;
+            opacity: 0.5;
         }
 
         /* --- テーブルスタイル --- */
@@ -96,9 +130,9 @@
         }
 
         /* 列幅の指定 */
-        .col-ability { width: 35%; }
+        .col-ability { width: 40%; }
         .col-armor { width: 45%; }
-        .col-value { width: 20%; }
+        .col-value { width: 15%; }
 
         /* データセルの効果値は右揃え */
         td.value-col {
@@ -112,54 +146,52 @@
             text-align: left;
         }
 
-    .bottom {
-      font-size: 16pt;
-      margin-top: 20px;
-    }
+        .bottom {
+            font-size: 16pt;
+            margin-top: 20px;
+        }
 
+        /* リンクのスタイル */
+        a:link {
+            color: #1D9BF0;
+            text-decoration: underline;
+        }
 
-   /* リンクのスタイル */
-    a:link {
-      color: #1D9BF0;
-      text-decoration: underline;
-    }
+        a:visited {
+            color: #7755FF;
+            text-decoration: underline;
+        }
 
-    a:visited {
-      color: #7755FF;
-      text-decoration: underline;
-    }
+        a:hover {
+            color: #0CFF57;
+        }
 
-    a:hover {
-      color: #0CFF57;
-    }
+        a:active {
+            color: #FF0000;
+            text-decoration: underline;
+        }
 
-    a:active {
-      color: #FF0000;
-      text-decoration: underline;
-    }
+        .bottom {
+            font-size: 16pt;
+            margin-top: 20px;
+        }
 
-    .bottom {
-      font-size: 16pt;
-      margin-top: 20px;
-    }
+        /* 拡大縮小ボタンのスタイル - absolute positioned to not scroll */
+        .zoom-buttons {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 1000;
+        }
 
-    /* 拡大縮小ボタンのスタイル */
-    /* 拡大縮小ボタンのスタイル */
-    .zoom-buttons {
-      position: fixed;
-      top: 15px;
-      right: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      z-index: 1000;
-    }
-
-    .zoom-buttons button {
-      padding: 5px 10px;
-      font-size: 14px;
-      cursor: pointer;
-    }
+        .zoom-buttons button {
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
 
     </style>
 </head>
@@ -169,55 +201,102 @@
         <h1>練磨(防具)アビリティ TOP5</h1>
     </header>
 
-  <div class="zoom-buttons">
-    <button onclick="changeZoom(0.1)">＋</button>
-    <button onclick="changeZoom(-0.1)">－</button>
-  </div>
+    <div class="zoom-buttons">
+        <button onclick="changeZoom(0.1)">＋</button>
+        <button onclick="changeZoom(-0.1)">－</button>
+    </div>
 
     <div class="file-input-container">
         <input type="file" id="json-file-input" accept=".json">
     </div>
 
     <div class="results-grid">
-        <div class="category-container" id="main-self"><h2>■威力＋ (主防具)</h2><div class="table-wrapper"></div></div>
-        <div class="category-container" id="sub-self"><h2>■威力＋ (副防具)</h2><div class="table-wrapper"></div></div>
-        <div class="category-container" id="main-party"><h2>■味方威力＋ (主防具)</h2><div class="table-wrapper"></div></div>
-        <div class="category-container" id="sub-party"><h2>■味方威力＋ (副防具)</h2><div class="table-wrapper"></div></div>
+        <div class="category-container" id="main-self">
+            <h2>
+                ■威力＋ (主防具)
+                <div class="nav-buttons">
+                    <button class="nav-button" disabled>▲</button>
+                    <button class="nav-button" onclick="scrollToCategory('sub-self')">▼</button>
+                </div>
+            </h2>
+            <div class="table-wrapper"></div>
+        </div>
+        <div class="category-container" id="sub-self">
+            <h2>
+                ■威力＋ (副防具)
+                <div class="nav-buttons">
+                    <button class="nav-button" onclick="scrollToCategory('main-self')">▲</button>
+                    <button class="nav-button" onclick="scrollToCategory('main-party')">▼</button>
+                </div>
+            </h2>
+            <div class="table-wrapper"></div>
+        </div>
+        <div class="category-container" id="main-party">
+            <h2>
+                ■味方威力＋ (主防具)
+                <div class="nav-buttons">
+                    <button class="nav-button" onclick="scrollToCategory('sub-self')">▲</button>
+                    <button class="nav-button" onclick="scrollToCategory('sub-party')">▼</button>
+                </div>
+            </h2>
+            <div class="table-wrapper"></div>
+        </div>
+        <div class="category-container" id="sub-party">
+            <h2>
+                ■味方威力＋ (副防具)
+                <div class="nav-buttons">
+                    <button class="nav-button" onclick="scrollToCategory('main-party')">▲</button>
+                    <button class="nav-button" disabled>▼</button>
+                </div>
+            </h2>
+            <div class="table-wrapper"></div>
+        </div>
     </div>
 
-  <div class="bottom">
-    <br>
-    <a href="renma-armor.html">リストページへ</a>
-    <br>
-  </div>
+    <div class="bottom">
+        <br>
+        <a href="renma-armor.html">リストページへ</a>
+        <br>
+    </div>
 
     <script>
 
-    // 拡大縮小の関数
-    let zoomLevel = 1;
-    let zoomControlsVisible = false;
+        // 拡大縮小の関数
+        let zoomLevel = 1;
+        let zoomControlsVisible = false;
 
-    function toggleZoomControls() {
-      const zoomControls = document.getElementById('zoomControls');
-      const zoomToggle = document.getElementById('zoomToggle');
-      
-      zoomControlsVisible = !zoomControlsVisible;
-      
-      if (zoomControlsVisible) {
-        zoomControls.classList.add('show');
-        zoomToggle.style.display = 'none';
-      } else {
-        zoomControls.classList.remove('show');
-        zoomToggle.style.display = 'block';
-      }
-    }
+        function toggleZoomControls() {
+            const zoomControls = document.getElementById('zoomControls');
+            const zoomToggle = document.getElementById('zoomToggle');
+            
+            zoomControlsVisible = !zoomControlsVisible;
+            
+            if (zoomControlsVisible) {
+                zoomControls.classList.add('show');
+                zoomToggle.style.display = 'none';
+            } else {
+                zoomControls.classList.remove('show');
+                zoomToggle.style.display = 'block';
+            }
+        }
 
-    function changeZoom(delta) {
-      zoomLevel += delta;
-      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
-      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
-      document.body.style.zoom = zoomLevel;
-    }
+        function changeZoom(delta) {
+            zoomLevel += delta;
+            if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
+            if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
+            document.body.style.zoom = zoomLevel;
+        }
+
+        // カテゴリ間移動の関数
+        function scrollToCategory(categoryId) {
+            const element = document.getElementById(categoryId);
+            if (element) {
+                element.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
 
