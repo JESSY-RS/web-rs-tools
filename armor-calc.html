@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>練磨(防具)最適組み合せ選定ツール(仮)</title>
+    <style>
+        /* --- 全体 --- */
+        body {
+            background-color: #2A2A2A;
+            color: #eee;
+            font-family: 'Meiryo', sans-serif;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- ヘッダー --- */
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { 
+color: #50b4f0; 
+            margin: 0;
+}
+
+        /* --- グローバルコンテナ --- */
+        .main-container {
+            width: 100%;
+            max-width: 1600px;
+        }
+        
+        /* --- ファイル入力 --- */
+        .file-input-container {
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        #file-status { margin-top: 10px; color: #ffd700; }
+
+        /* --- キャラクターグリッド (1列・5行レイアウト) --- */
+        .character-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        /* --- キャラクターコンテナ --- */
+        .character-container {
+            background-color: #383838;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 20px 20px;
+        }
+        
+        h2 {
+            color: #c0c0ff;
+            margin: 0 0 15px 0;
+            border-bottom: 2px solid #555;
+            padding-bottom: 8px;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        
+        /* --- フォームの横並びコンテナ --- */
+        .form-horizontal-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* --- フォームスタイル --- */
+        .form-section {
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+        .form-section legend {
+            font-weight: bold;
+            color: #98fb98;
+            padding: 0 5px;
+        }
+        
+        .form-type .form-group {
+            display: flex;
+            gap: 25px;
+        }
+
+        .form-conditions {
+            flex-grow: 1;
+        }
+        .conditions-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 20px;
+        }
+        
+        .form-group label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        /* --- 結果表示 --- */
+        .result-area {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px dashed #777;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .result-details {
+            flex-grow: 1;
+        }
+        
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .result-table td {
+            padding: 8px;
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid #3a3a3a;
+        }
+        .result-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* ★列の幅を再々調整 */
+        .col-heading { width: 7%; }
+        .col-armor   { width: 35%; }
+        .col-ability { width: 35%; }
+        .col-value   { width: 23%; }
+        
+        .data-label {
+            display: inline-block;
+            width: 120px;
+            text-align: right;
+            margin-right: 10px;
+            color: #a0a0a0;
+        }
+
+        .heading-text { color: #c0c0ff; font-weight: bold; }
+        .armor-text   { color: #98fb98; }
+        .ability-text { color: #ccc; }
+        .value-text   { color: #ffd700; font-weight: bold; }
+        
+        /* ★合計値表示エリアのスタイルを修正 */
+        .total-container {
+            padding-left: 20px;
+            border-left: 1px solid #555;
+            white-space: nowrap;
+            text-align: right;
+        }
+        .total-container .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 15px;
+        }
+        .total-container .label {
+            font-size: 16px;
+            color: #a0a0a0;
+        }
+        .total-container .value {
+             font-weight: bold;
+             font-size: 24px; /* ★フォントサイズを統一 */
+             color: #ffd700; /* 自身・味方の色 */
+        }
+        .total-container .final-total .label,
+        .total-container .final-total .value {
+            color: #ff6347; /* 合計の色 */
+        }
+        
+        /* ★計算ボタンのデザインを修正 */
+        .global-controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .calculate-button {
+            background-color: #f0506e;
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s; /* アニメーションを追加 */
+        }
+        .calculate-button:hover:not(:disabled) {
+            background-color: #c8405a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .calculate-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        .calculate-button:disabled {
+            background-color: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .zoom-buttons { position: absolute; top: 24px; right: 20px; display: flex; flex-direction: row; gap: 5px; z-index: 1000; }
+        .zoom-buttons button { color: #000; background-color: #eee; padding: 5px 10px; font-size: 16px; cursor: pointer; border-radius: 5px; }
+
+        /* リンクのスタイル */
+        a:link {
+          color: #1D9BF0;
+          text-decoration: underline;
+        }
+
+        a:visited {
+          color: #7755FF;
+          text-decoration: underline;
+        }
+
+        a:hover {
+          color: #0CFF57;
+        }
+
+        a:active {
+          color: #FF0000;
+          text-decoration: underline;
+        }
+
+    /* フッターのスタイル */
+    footer {
+            width: 100%;
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      font-size: 16pt;
+      margin-top: 40px;
+    }
+
+        .bottom {
+            margin-top: 20px;
+            font-size: 16pt;
+            line-height: 2;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <header>
+            <h1>練磨(防具)最適組み合せ選定ツール(仮)</h1>
+        </header>
+
+    <div class="zoom-buttons">
+        <button onclick="changeZoom(-0.1)">－</button>
+        <button onclick="changeZoom(0.1)">＋</button>
+    </div>
+
+        <div class="file-input-container">
+            <input type="file" id="json-file-input" accept=".json">
+            <p id="file-status">ファイルが選択されていません</p>
+        </div>
+
+        <div class="character-grid" id="character-grid">
+            </div>
+
+        <div class="global-controls">
+            <button class="calculate-button" id="calculate-all-button" disabled>全キャラクターをまとめて計算</button>
+        </div>
+    </div>
+
+    <footer>
+            ※使用は自己責任にて。<br>
+            ※最適な組み合わせが選定出来ない可能性もあります。あくまで参考としてお考えください。<br>
+            ※装備固有のアビリティは加味されません。(後日対応予定)<br>
+    </footer>
+
+    <div class="bottom">
+        <a href="renma-armor.html">リストページへ</a>　<a href="armor-top5.html">TOP5ページへ</a>
+        <br>
+    </div>
+
+    <script>
+
+        let zoomLevel = 1;
+        function changeZoom(delta) {
+          zoomLevel = (zoomLevel + delta < 0.5) ? 0.5 : (zoomLevel + delta > 2.0) ? 2.0 : zoomLevel + delta;
+          document.body.style.zoom = zoomLevel;
+        }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        let armorData = [];
+        const fileInput = document.getElementById('json-file-input');
+        const fileStatus = document.getElementById('file-status');
+        const characterGrid = document.getElementById('character-grid');
+        const calculateAllButton = document.getElementById('calculate-all-button');
+
+        const abilityConditions = [
+            { name: "HP満タン時", value: "HP満タン時" }, { name: "瀕死時", value: "瀕死時" },
+            { name: "カウンター", value: "カウンター" }, { name: "斬", value: "斬" },
+            { name: "打", value: "打" }, { name: "突", value: "突" },
+            { name: "熱", value: "熱" }, { name: "冷", value: "冷" },
+            { name: "雷", value: "雷" }, { name: "陽", value: "陽" },
+            { name: "陰", value: "陰" }
+        ];
+
+        // キャラクター5人分の設定欄を生成
+        for (let i = 1; i <= 5; i++) {
+            const charContainer = document.createElement('div');
+            charContainer.className = 'character-container';
+            charContainer.id = `char-${i}`;
+            
+            let checkboxesHTML = '';
+            abilityConditions.forEach(cond => {
+                checkboxesHTML += `<label><input type="checkbox" name="condition-${i}" value="${cond.value}"> ${cond.name}</label>`;
+            });
+
+            charContainer.innerHTML = `
+                <h2>キャラクター ${i}</h2>
+                <div class="form-horizontal-row">
+                    <div class="form-type">
+                        <fieldset class="form-section">
+                            <legend>アビリティ種別</legend>
+                            <div class="form-group">
+                                <label><input type="radio" name="ability-type-${i}" value="威力＋" checked> 威力＋</label>
+                                <label><input type="radio" name="ability-type-${i}" value="味方威力＋"> 味方威力＋</label>
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="form-conditions">
+                        <fieldset class="form-section">
+                            <legend>条件 (複数可)</legend>
+                            <div class="conditions-wrapper">${checkboxesHTML}</div>
+                        </fieldset>
+                    </div>
+                </div>
+                <div class="result-area" id="result-area-${i}"><p>計算結果がここに表示されます。</p></div>
+            `;
+            characterGrid.appendChild(charContainer);
+        }
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const rawData = JSON.parse(e.target.result);
+                    armorData = rawData.map(item => ({...item, value: parseInt(item.value, 10)})).filter(item => !isNaN(item.value));
+                    fileStatus.textContent = `読み込み完了: ${file.name}`;
+                    fileStatus.style.color = '#98fb98';
+                    calculateAllButton.disabled = false;
+                } catch (error) {
+                    alert('JSONファイルの読み込みまたは解析に失敗しました。\n' + error);
+                    fileStatus.textContent = 'エラー: ファイルを読み込めません';
+                    fileStatus.style.color = '#ff6347';
+                    armorData = [];
+                    calculateAllButton.disabled = true;
+                }
+            };
+            reader.readAsText(file);
+        });
+        
+        function getConditionFromAbilityName(abilityName) {
+            if (!abilityName) return null;
+            const match = abilityName.match(/\((.*)\)/);
+            return match ? match[1] : null;
+        }
+
+        function findBestArmor(armorType, abilityNames, excludedItems) {
+            let bestArmor = { armorName: '該当なし', value: 0, abilityName: '-' };
+            const filteredData = armorData.filter(item => 
+                item.armorType === armorType && 
+                abilityNames.includes(item.abilityName) &&
+                !excludedItems.has(item.armorName)
+            );
+            if (filteredData.length > 0) {
+                filteredData.sort((a, b) => b.value - a.value);
+                bestArmor = filteredData[0];
+            }
+            return bestArmor;
+        }
+        
+        function calculateAllCharacters() {
+            const equippedItems = new Set();
+            const characterResults = [];
+
+            // フェーズ1: 各キャラクターの最適な装備を決定
+            for (let charId = 1; charId <= 5; charId++) {
+                const abilityType = document.querySelector(`input[name="ability-type-${charId}"]:checked`).value;
+                const selectedConditions = Array.from(document.querySelectorAll(`input[name="condition-${charId}"]:checked`)).map(cb => cb.value);
+                
+                let mainArmor = { armorName: '該当なし', value: 0, abilityName: '-' };
+                let subArmor = { armorName: '該当なし', value: 0, abilityName: '-' };
+
+                if (selectedConditions.length > 0) {
+                    const targetAbilityNames = selectedConditions.map(cond => `${abilityType}(${cond})`);
+                    mainArmor = findBestArmor('main', targetAbilityNames, equippedItems);
+                    if (mainArmor.armorName !== '該当なし') equippedItems.add(mainArmor.armorName);
+                    subArmor = findBestArmor('sub', targetAbilityNames, equippedItems);
+                    if (subArmor.armorName !== '該当なし') equippedItems.add(subArmor.armorName);
+                }
+                
+                characterResults.push({ charId, abilityType, selectedConditions, mainArmor, subArmor });
+            }
+
+            // フェーズ2: 味方威力を集計
+            const partyBuffs = new Map();
+            for (const result of characterResults) {
+                if (result.abilityType === '味方威力＋') {
+                    [result.mainArmor, result.subArmor].forEach(armor => {
+                        const condition = getConditionFromAbilityName(armor.abilityName);
+                        if (condition) {
+                            partyBuffs.set(condition, (partyBuffs.get(condition) || 0) + armor.value);
+                        }
+                    });
+                }
+            }
+
+            // フェーズ3: 最終的な値を計算して表示
+            for (const result of characterResults) {
+                const selfValue = result.mainArmor.value + result.subArmor.value;
+                
+                if (result.selectedConditions.length === 0) {
+                    displayEmptyResult(result.charId);
+                    continue;
+                }
+
+                let totals;
+                if (result.abilityType === '威力＋') {
+                    let partyValue = 0;
+                    result.selectedConditions.forEach(condition => {
+                        partyValue += partyBuffs.get(condition) || 0;
+                    });
+                    totals = {
+                        self: selfValue,
+                        party: partyValue,
+                        grand: selfValue + partyValue
+                    };
+                } else { // 味方威力＋の場合
+                    totals = { self: selfValue };
+                }
+                displayResult(result.charId, result.mainArmor, result.subArmor, totals);
+            }
+        }
+        
+        function displayResult(charId, mainArmor, subArmor, totals) {
+            const resultArea = document.getElementById(`result-area-${charId}`);
+            
+            // ★合計値表示エリアのHTMLを動的に生成
+            let totalHTML = '';
+            if (totals.grand !== undefined) { // "威力＋" のキャラ
+                totalHTML = `
+                    <div class="total-container">
+                        <div class="total-row"><span class="label">自身:</span><span class="value">${totals.self}%</span></div>
+                        <div class="total-row"><span class="label">味方:</span><span class="value">${totals.party}%</span></div>
+                        <div class="total-row final-total"><span class="label">合計:</span><span class="value">${totals.grand}%</span></div>
+                    </div>
+                `;
+            } else { // "味方威力＋" のキャラ
+                totalHTML = `
+                    <div class="total-container">
+                        <div class="total-row final-total"><span class="label">合計:</span><span class="value">${totals.self}%</span></div>
+                    </div>
+                `;
+            }
+
+            resultArea.innerHTML = `
+                <div class="result-details">
+                    <table class="result-table">
+                        <tbody>
+                            <tr>
+                                <td class="col-heading"><span class="heading-text">主防具</span></td>
+                                <td class="col-armor">
+                                    <span class="data-label">防具:</span><span class="armor-text">${mainArmor.armorName}</span>
+                                </td>
+                                <td class="col-ability">
+                                    <span class="data-label">アビリティ:</span><span class="ability-text">${mainArmor.abilityName}</span>
+                                </td>
+                                <td class="col-value">
+                                    <span class="data-label">効果値:</span><span class="value-text">${mainArmor.value}%</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="col-heading"><span class="heading-text">副防具</span></td>
+                                <td class="col-armor">
+                                    <span class="data-label">防具:</span><span class="armor-text">${subArmor.armorName}</span>
+                                </td>
+                                <td class="col-ability">
+                                    <span class="data-label">アビリティ:</span><span class="ability-text">${subArmor.abilityName}</span>
+                                </td>
+                                <td class="col-value">
+                                    <span class="data-label">効果値:</span><span class="value-text">${subArmor.value}%</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                ${totalHTML}
+            `;
+        }
+
+        function displayEmptyResult(charId) {
+            const resultArea = document.getElementById(`result-area-${charId}`);
+            resultArea.innerHTML = `<p>条件を選択して計算を実行してください。</p>`;
+        }
+
+        calculateAllButton.addEventListener('click', calculateAllCharacters);
+    });
+    </script>
+</body>
+</html>
