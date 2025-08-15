@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>練磨(防具)最適組み合せ選定ツール(仮)</title>
+    <title>練磨(防具)自動選定ツール(仮)</title>
     <style>
         /* --- 全体 --- */
         body {
@@ -20,9 +20,9 @@
         /* --- ヘッダー --- */
         header { text-align: center; margin-bottom: 20px; }
         h1 { 
-color: #50b4f0; 
+            color: #50b4f0; 
             margin: 0;
-}
+        }
 
         /* --- グローバルコンテナ --- */
         .main-container {
@@ -136,7 +136,6 @@ color: #50b4f0;
             border-bottom: none;
         }
         
-        /* ★列の幅を再々調整 */
         .col-heading { width: 7%; }
         .col-armor   { width: 35%; }
         .col-ability { width: 35%; }
@@ -155,7 +154,6 @@ color: #50b4f0;
         .ability-text { color: #ccc; }
         .value-text   { color: #ffd700; font-weight: bold; }
         
-        /* ★合計値表示エリアのスタイルを修正 */
         .total-container {
             padding-left: 20px;
             border-left: 1px solid #555;
@@ -174,15 +172,14 @@ color: #50b4f0;
         }
         .total-container .value {
              font-weight: bold;
-             font-size: 24px; /* ★フォントサイズを統一 */
-             color: #ffd700; /* 自身・味方の色 */
+             font-size: 24px;
+             color: #ffd700;
         }
         .total-container .final-total .label,
         .total-container .final-total .value {
             color: #ff6347; /* 合計の色 */
         }
         
-        /* ★計算ボタンのデザインを修正 */
         .global-controls {
             text-align: center;
             margin-top: 20px;
@@ -196,7 +193,7 @@ color: #50b4f0;
             cursor: pointer;
             font-size: 20px;
             font-weight: bold;
-            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s; /* アニメーションを追加 */
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
         }
         .calculate-button:hover:not(:disabled) {
             background-color: #c8405a;
@@ -215,34 +212,18 @@ color: #50b4f0;
         .zoom-buttons { position: absolute; top: 24px; right: 20px; display: flex; flex-direction: row; gap: 5px; z-index: 1000; }
         .zoom-buttons button { color: #000; background-color: #eee; padding: 5px 10px; font-size: 16px; cursor: pointer; border-radius: 5px; }
 
-        /* リンクのスタイル */
-        a:link {
-          color: #1D9BF0;
-          text-decoration: underline;
-        }
+        a:link { color: #1D9BF0; text-decoration: underline; }
+        a:visited { color: #7755FF; text-decoration: underline; }
+        a:hover { color: #0CFF57; }
+        a:active { color: #FF0000; text-decoration: underline; }
 
-        a:visited {
-          color: #7755FF;
-          text-decoration: underline;
-        }
-
-        a:hover {
-          color: #0CFF57;
-        }
-
-        a:active {
-          color: #FF0000;
-          text-decoration: underline;
-        }
-
-    /* フッターのスタイル */
-    footer {
+        footer {
             width: 100%;
-      border-top: 1px solid #eee;
-      padding-top: 10px;
-      font-size: 16pt;
-      margin-top: 40px;
-    }
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            font-size: 16pt;
+            margin-top: 40px;
+        }
 
         .bottom {
             margin-top: 20px;
@@ -250,18 +231,71 @@ color: #50b4f0;
             line-height: 2;
         }
 
+        /* --- ▼ここから修正 (レスポンシブデザイン) ▼ --- */
+
+        /* 中サイズ画面 (幅992px以下) */
+        @media (max-width: 992px) {
+            /* 結果テーブルのセルを縦に並べる */
+            .result-table tr {
+                display: block;
+                padding: 10px 0;
+                border-bottom: 1px solid #3a3a3a;
+            }
+            .result-table tr:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+            .result-table td {
+                display: block;
+                width: 100%;
+                border-bottom: none;
+                padding: 5px 0;
+            }
+
+            /* 固定幅を解除 */
+            .col-heading, .col-armor, .col-ability, .col-value {
+                width: auto;
+            }
+            .data-label {
+                width: 90px;
+            }
+        }
+
+        /* 小サイズ画面 (幅768px以下) */
+        @media (max-width: 768px) {
+            /* 結果表示エリア全体を縦並びにする */
+            .result-area {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            /* 合計値コンテナを下に移動させるための調整 */
+            .total-container {
+                border-left: none;
+                border-top: 1px solid #555;
+                padding-left: 0;
+                padding-top: 15px;
+                margin-top: 15px;
+                text-align: left;
+            }
+            .total-container .total-row {
+                justify-content: flex-start;
+            }
+        }
+        /* --- ▲ここまで修正▲ --- */
+
     </style>
 </head>
 <body>
     <div class="main-container">
         <header>
-            <h1>練磨(防具)最適組み合せ選定ツール(仮)</h1>
+            <h1>練磨(防具)自動選定ツール(仮)</h1>
         </header>
 
-    <div class="zoom-buttons">
-        <button onclick="changeZoom(-0.1)">－</button>
-        <button onclick="changeZoom(0.1)">＋</button>
-    </div>
+        <div class="zoom-buttons">
+            <button onclick="changeZoom(-0.1)">－</button>
+            <button onclick="changeZoom(0.1)">＋</button>
+        </div>
 
         <div class="file-input-container">
             <input type="file" id="json-file-input" accept=".json">
@@ -269,7 +303,7 @@ color: #50b4f0;
         </div>
 
         <div class="character-grid" id="character-grid">
-            </div>
+        </div>
 
         <div class="global-controls">
             <button class="calculate-button" id="calculate-all-button" disabled>全キャラクターをまとめて計算</button>
@@ -277,9 +311,9 @@ color: #50b4f0;
     </div>
 
     <footer>
-            ※使用は自己責任にて。<br>
-            ※最適な組み合わせが選定出来ない可能性もあります。あくまで参考としてお考えください。<br>
-            ※装備固有のアビリティは加味されません。(後日対応予定)<br>
+        ※使用は自己責任にて。<br>
+        ※最適な組み合わせが選定出来ない可能性もあります。あくまで参考としてお考えください。<br>
+        ※名将の鎧(+15)とバトルヴァンブレイス(+20)のシリーズ一致分は加味されていませんので注意してください。<br>
     </footer>
 
     <div class="bottom">
@@ -288,15 +322,18 @@ color: #50b4f0;
     </div>
 
     <script>
-
         let zoomLevel = 1;
         function changeZoom(delta) {
-          zoomLevel = (zoomLevel + delta < 0.5) ? 0.5 : (zoomLevel + delta > 2.0) ? 2.0 : zoomLevel + delta;
-          document.body.style.zoom = zoomLevel;
+            zoomLevel = (zoomLevel + delta < 0.5) ? 0.5 : (zoomLevel + delta > 2.0) ? 2.0 : zoomLevel + delta;
+            document.body.style.zoom = zoomLevel;
         }
 
     document.addEventListener('DOMContentLoaded', () => {
         let armorData = [];
+        // 装備固有アビリティ(CSV)を格納するMap
+        let mainNativeAbilities = new Map();
+        let subNativeAbilities = new Map();
+
         const fileInput = document.getElementById('json-file-input');
         const fileStatus = document.getElementById('file-status');
         const characterGrid = document.getElementById('character-grid');
@@ -311,40 +348,86 @@ color: #50b4f0;
             { name: "陰", value: "陰" }
         ];
 
-        // キャラクター5人分の設定欄を生成
-        for (let i = 1; i <= 5; i++) {
-            const charContainer = document.createElement('div');
-            charContainer.className = 'character-container';
-            charContainer.id = `char-${i}`;
-            
-            let checkboxesHTML = '';
-            abilityConditions.forEach(cond => {
-                checkboxesHTML += `<label><input type="checkbox" name="condition-${i}" value="${cond.value}"> ${cond.name}</label>`;
-            });
+        /**
+         * CSVファイルを読み込み、指定されたMapオブジェクトにデータを格納する関数
+         * @param {string} url - CSVファイルのパス
+         * @param {Map} targetMap - 格納先のMapオブジェクト
+         */
+        async function loadCsvData(url, targetMap) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok for ${url}`);
+                }
+                const csvText = await response.text();
+                const lines = csvText.trim().split('\n');
+                lines.shift(); // ヘッダー行をスキップ
 
-            charContainer.innerHTML = `
-                <h2>キャラクター ${i}</h2>
-                <div class="form-horizontal-row">
-                    <div class="form-type">
-                        <fieldset class="form-section">
-                            <legend>アビリティ種別</legend>
-                            <div class="form-group">
-                                <label><input type="radio" name="ability-type-${i}" value="威力＋" checked> 威力＋</label>
-                                <label><input type="radio" name="ability-type-${i}" value="味方威力＋"> 味方威力＋</label>
-                            </div>
-                        </fieldset>
-                    </div>
-                    <div class="form-conditions">
-                        <fieldset class="form-section">
-                            <legend>条件 (複数可)</legend>
-                            <div class="conditions-wrapper">${checkboxesHTML}</div>
-                        </fieldset>
-                    </div>
-                </div>
-                <div class="result-area" id="result-area-${i}"><p>計算結果がここに表示されます。</p></div>
-            `;
-            characterGrid.appendChild(charContainer);
+                lines.forEach(line => {
+                    const [name, target, valueStr] = line.split(',');
+                    if (name && target && valueStr) {
+                        const value = parseInt(valueStr.trim(), 10);
+                        if (!isNaN(value)) {
+                            if (!targetMap.has(name.trim())) {
+                                targetMap.set(name.trim(), []);
+                            }
+                            targetMap.get(name.trim()).push({ target: target.trim(), value });
+                        }
+                    }
+                });
+                console.log(`Successfully loaded and parsed: ${url}`);
+            } catch (error) {
+                console.error(`Error loading or parsing CSV from ${url}:`, error);
+                fileStatus.innerHTML += `<br><span style="color: #ff6347;">${url} の読み込みに失敗しました。</span>`;
+            }
         }
+
+        // ページの初期化処理
+        async function initialize() {
+            // キャラクターUIを生成
+            for (let i = 1; i <= 5; i++) {
+                const charContainer = document.createElement('div');
+                charContainer.className = 'character-container';
+                charContainer.id = `char-${i}`;
+                
+                let checkboxesHTML = '';
+                abilityConditions.forEach(cond => {
+                    checkboxesHTML += `<label><input type="checkbox" name="condition-${i}" value="${cond.value}"> ${cond.name}</label>`;
+                });
+
+                charContainer.innerHTML = `
+                    <h2>キャラクター ${i}</h2>
+                    <div class="form-horizontal-row">
+                        <div class="form-type">
+                            <fieldset class="form-section">
+                                <legend>アビリティ</legend>
+                                <div class="form-group">
+                                    <label><input type="radio" name="ability-type-${i}" value="威力＋" checked> 威力＋</label>
+                                    <label><input type="radio" name="ability-type-${i}" value="味方威力＋"> 味方威力＋</label>
+                                </div>
+                            </fieldset>
+                        </div>
+                        <div class="form-conditions">
+                            <fieldset class="form-section">
+                                <legend>条件 (複数可)</legend>
+                                <div class="conditions-wrapper">${checkboxesHTML}</div>
+                            </fieldset>
+                        </div>
+                    </div>
+                    <div class="result-area" id="result-area-${i}"><p>計算結果がここに表示されます。</p></div>
+                `;
+                characterGrid.appendChild(charContainer);
+            }
+
+            // CSVデータを非同期で読み込む
+            await Promise.all([
+                loadCsvData('data/armor-main-ability.csv', mainNativeAbilities),
+                loadCsvData('data/armor-sub-ability.csv', subNativeAbilities)
+            ]);
+        }
+        
+        // 初期化実行
+        initialize();
 
         fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
@@ -387,7 +470,41 @@ color: #50b4f0;
             }
             return bestArmor;
         }
-        
+
+        /**
+         * 装備の固有アビリティ(CSV)の効果値を取得する
+         * @param {string} armorName - 防具名
+         * @param {string} armorType - 'main' または 'sub'
+         * @param {string[]} selectedConditions - キャラクターが選択した条件の配列
+         * @param {string} abilityType - '威力＋' または '味方威力＋'
+         * @returns {number} - 固有アビリティの効果値の合計
+         */
+        function getNativeAbilityValue(armorName, armorType, selectedConditions, abilityType) {
+            const nativeAbilityMap = armorType === 'main' ? mainNativeAbilities : subNativeAbilities;
+            if (!nativeAbilityMap.has(armorName)) {
+                return 0;
+            }
+
+            let totalValue = 0;
+            const abilities = nativeAbilityMap.get(armorName);
+
+            for (const ability of abilities) {
+                // 「味方威力＋」を選択している場合は、「味方威力」のアビリティのみ加算
+                if (abilityType === '味方威力＋') {
+                    if (ability.target === '味方威力') {
+                        totalValue += ability.value;
+                    }
+                }
+                // 「威力＋」を選択している場合は、条件一致と「味方威力」の両方を加算
+                else {
+                    if (ability.target === '味方威力' || selectedConditions.includes(ability.target)) {
+                        totalValue += ability.value;
+                    }
+                }
+            }
+            return totalValue;
+        }
+
         function calculateAllCharacters() {
             const equippedItems = new Set();
             const characterResults = [];
@@ -426,12 +543,17 @@ color: #50b4f0;
 
             // フェーズ3: 最終的な値を計算して表示
             for (const result of characterResults) {
-                const selfValue = result.mainArmor.value + result.subArmor.value;
-                
                 if (result.selectedConditions.length === 0) {
                     displayEmptyResult(result.charId);
                     continue;
                 }
+
+                // 装備固有アビリティの効果値を取得（アビリティ種別を渡すように変更）
+                const mainNativeValue = getNativeAbilityValue(result.mainArmor.armorName, 'main', result.selectedConditions, result.abilityType);
+                const subNativeValue = getNativeAbilityValue(result.subArmor.armorName, 'sub', result.selectedConditions, result.abilityType);
+                
+                const totalNativeValue = mainNativeValue + subNativeValue;
+                const selfJsonValue = result.mainArmor.value + result.subArmor.value;
 
                 let totals;
                 if (result.abilityType === '威力＋') {
@@ -440,21 +562,35 @@ color: #50b4f0;
                         partyValue += partyBuffs.get(condition) || 0;
                     });
                     totals = {
-                        self: selfValue,
+                        self: selfJsonValue + totalNativeValue,
                         party: partyValue,
-                        grand: selfValue + partyValue
+                        grand: selfJsonValue + totalNativeValue + partyValue
                     };
                 } else { // 味方威力＋の場合
-                    totals = { self: selfValue };
+                    totals = { 
+                        self: selfJsonValue + totalNativeValue
+                    };
                 }
-                displayResult(result.charId, result.mainArmor, result.subArmor, totals);
+                displayResult(result.charId, result.mainArmor, result.subArmor, totals, mainNativeValue, subNativeValue);
             }
         }
         
-        function displayResult(charId, mainArmor, subArmor, totals) {
+        function displayResult(charId, mainArmor, subArmor, totals, mainNativeValue, subNativeValue) {
             const resultArea = document.getElementById(`result-area-${charId}`);
             
-            // ★合計値表示エリアのHTMLを動的に生成
+            // 固有アビリティ値に基づいて防具名の表示を決定する
+            let mainArmorNameStyle = mainNativeValue > 0 ? 'style="color: orange;"' : '';
+            if (mainArmor.armorName.includes('名将の鎧') || mainArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+                mainArmorNameStyle = 'style="color: magenta;"';
+            }
+            const mainArmorNameText = mainNativeValue > 0 ? `${mainArmor.armorName}(+${mainNativeValue})` : mainArmor.armorName;
+            
+            let subArmorNameStyle = subNativeValue > 0 ? 'style="color: orange;"' : '';
+            if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+                subArmorNameStyle = 'style="color: magenta;"';
+            }
+            const subArmorNameText = subNativeValue > 0 ? `${subArmor.armorName}(+${subNativeValue})` : subArmor.armorName;
+
             let totalHTML = '';
             if (totals.grand !== undefined) { // "威力＋" のキャラ
                 totalHTML = `
@@ -479,7 +615,7 @@ color: #50b4f0;
                             <tr>
                                 <td class="col-heading"><span class="heading-text">主防具</span></td>
                                 <td class="col-armor">
-                                    <span class="data-label">防具:</span><span class="armor-text">${mainArmor.armorName}</span>
+                                    <span class="data-label">装備:</span><span class="armor-text" ${mainArmorNameStyle}>${mainArmorNameText}</span>
                                 </td>
                                 <td class="col-ability">
                                     <span class="data-label">アビリティ:</span><span class="ability-text">${mainArmor.abilityName}</span>
@@ -491,7 +627,7 @@ color: #50b4f0;
                             <tr>
                                 <td class="col-heading"><span class="heading-text">副防具</span></td>
                                 <td class="col-armor">
-                                    <span class="data-label">防具:</span><span class="armor-text">${subArmor.armorName}</span>
+                                    <span class="data-label">装備:</span><span class="armor-text" ${subArmorNameStyle}>${subArmorNameText}</span>
                                 </td>
                                 <td class="col-ability">
                                     <span class="data-label">アビリティ:</span><span class="ability-text">${subArmor.abilityName}</span>
