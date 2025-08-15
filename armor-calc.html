@@ -7,9 +7,7 @@
     <link rel="shortcut icon" href="favicon-renma.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
-    <title>練磨(防具)自動選定ツール</title> <!-- Created by じぇ -->
-
-    <style>
+    <title>練磨(防具)自動選定ツール</title> <style>
         /* --- 全体 --- */
         body {
             background-color: #2A2A2A;
@@ -65,10 +63,47 @@
             margin: 0 0 15px 0;
             border-bottom: 2px solid #555;
             padding-bottom: 8px;
-            text-align: left;
             margin-bottom: 20px;
+            /* ▼ここから修正▼ */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            /* ▲ここまで修正▲ */
         }
         
+        /* ▼ここから追加 (ジャンプボタンのスタイル)▼ */
+        .nav-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .nav-button {
+            background-color: #555;
+            color: #eee;
+            border: 1px solid #777;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+
+        .nav-button:hover {
+            background-color: #666;
+        }
+
+        .nav-button:active {
+            background-color: #444;
+        }
+
+        .nav-button:disabled {
+            background-color: #333;
+            color: #666;
+            cursor: default;
+            opacity: 0.5;
+        }
+        /* ▲ここまで追加▲ */
+
         /* --- フォームの横並びコンテナ --- */
         .form-horizontal-row {
             display: flex;
@@ -345,6 +380,15 @@
             zoomLevel = (zoomLevel + delta < 0.5) ? 0.5 : (zoomLevel + delta > 2.0) ? 2.0 : zoomLevel + delta;
             document.body.style.zoom = zoomLevel;
         }
+        
+        // ▼ここから追加 (スクロール関数)▼
+        function scrollToCategory(categoryId) {
+            const element = document.getElementById(categoryId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        // ▲ここまで追加▲
 
     document.addEventListener('DOMContentLoaded', () => {
         let armorData = [];
@@ -464,8 +508,15 @@
                     checkboxesHTML += `<label><input type="checkbox" name="condition-${i}" value="${cond.value}"> ${cond.name}</label>`;
                 });
 
+                // ▼ここから修正 (innerHTMLにジャンプボタンを追加)▼
                 charContainer.innerHTML = `
-                    <h2>キャラクター ${i}</h2>
+                    <h2>
+                        キャラクター ${i}
+                        <div class="nav-buttons">
+                            <button class="nav-button" id="nav-up-${i}">▲</button>
+                            <button class="nav-button" id="nav-down-${i}">▼</button>
+                        </div>
+                    </h2>
                     <div class="form-horizontal-row">
                         <div class="form-type">
                             <fieldset class="form-section">
@@ -485,9 +536,25 @@
                     </div>
                     <div class="result-area" id="result-area-${i}"><p>計算結果がここに表示されます。</p></div>
                 `;
+                // ▲ここまで修正▲
                 characterGrid.appendChild(charContainer);
                 
                 // --- ▼ここから修正 (イベントリスナー追加)▼ ---
+                const navUpButton = charContainer.querySelector(`#nav-up-${i}`);
+                const navDownButton = charContainer.querySelector(`#nav-down-${i}`);
+
+                if (i === 1) {
+                    navUpButton.disabled = true;
+                } else {
+                    navUpButton.addEventListener('click', () => scrollToCategory(`char-${i - 1}`));
+                }
+
+                if (i === 5) {
+                    navDownButton.disabled = true;
+                } else {
+                    navDownButton.addEventListener('click', () => scrollToCategory(`char-${i + 1}`));
+                }
+
                 const newRadios = charContainer.querySelectorAll(`input[name="ability-type-${i}"]`);
                 newRadios.forEach(radio => radio.addEventListener('change', () => handleConditionSync(i, 'radio-change')));
 
