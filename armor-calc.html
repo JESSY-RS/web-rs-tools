@@ -206,8 +206,22 @@
             cursor: not-allowed;
         }
 
-        .zoom-buttons { position: absolute; top: 24px; right: 20px; display: flex; flex-direction: row; gap: 5px; z-index: 1000; }
-        .zoom-buttons button { color: #000; background-color: #eee; padding: 5px 10px; font-size: 16px; cursor: pointer; border-radius: 5px; }
+        /* 拡大縮小ボタンのスタイル - absolute positioned to not scroll */
+        .zoom-buttons {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 1000;
+        }
+
+        .zoom-buttons button {
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
 
         a:link { color: #1D9BF0; text-decoration: underline; }
         a:visited { color: #7755FF; text-decoration: underline; }
@@ -290,8 +304,8 @@
         </header>
 
         <div class="zoom-buttons">
-            <button onclick="changeZoom(-0.1)">－</button>
             <button onclick="changeZoom(0.1)">＋</button>
+            <button onclick="changeZoom(-0.1)">－</button>
         </div>
 
         <div class="file-input-container">
