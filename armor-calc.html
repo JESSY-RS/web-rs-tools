@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>練磨(防具)自動選定ツール(仮)</title>
+    <title>練磨(防具)自動選定ツール</title>
     <style>
         /* --- 全体 --- */
         body {
@@ -137,15 +137,14 @@
         }
         
         .col-heading { width: 7%; }
-        .col-armor   { width: 35%; }
-        .col-ability { width: 35%; }
+        .col-armor   { width: 33%; }
+        .col-ability { width: 37%; }
         .col-value   { width: 23%; }
         
         .data-label {
             display: inline-block;
-            width: 120px;
             text-align: right;
-            margin-right: 10px;
+            margin-right: 8px;
             color: #a0a0a0;
         }
 
@@ -177,7 +176,7 @@
         }
         .total-container .final-total .label,
         .total-container .final-total .value {
-            color: #ff6347; /* 合計の色 */
+            color: red; /* 合計の色 */
         }
         
         .global-controls {
@@ -197,8 +196,6 @@
         }
         .calculate-button:hover:not(:disabled) {
             background-color: #c8405a;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
         .calculate-button:active:not(:disabled) {
             transform: translateY(0);
@@ -221,7 +218,7 @@
             width: 100%;
             border-top: 1px solid #eee;
             padding-top: 10px;
-            font-size: 16pt;
+            font-size: 12pt;
             margin-top: 40px;
         }
 
@@ -276,10 +273,10 @@
                 padding-left: 0;
                 padding-top: 15px;
                 margin-top: 15px;
-                text-align: left;
+                text-align: right;
             }
             .total-container .total-row {
-                justify-content: flex-start;
+                justify-content: flex-end;
             }
         }
         /* --- ▲ここまで修正▲ --- */
@@ -289,7 +286,7 @@
 <body>
     <div class="main-container">
         <header>
-            <h1>練磨(防具)自動選定ツール(仮)</h1>
+            <h1>練磨(防具)自動選定ツール</h1>
         </header>
 
         <div class="zoom-buttons">
@@ -378,9 +375,60 @@
                 console.log(`Successfully loaded and parsed: ${url}`);
             } catch (error) {
                 console.error(`Error loading or parsing CSV from ${url}:`, error);
-                fileStatus.innerHTML += `<br><span style="color: #ff6347;">${url} の読み込みに失敗しました。</span>`;
+                fileStatus.innerHTML += `<br><span style="color: red;">${url} の読み込みに失敗しました。</span>`;
             }
         }
+        
+        // --- ▼ここから修正 (機能追加)▼ ---
+        /**
+         * 「味方威力＋」選択時の条件を同期する関数
+         * @param {number} charId - 変更が発生したキャラクターのID (1-5)
+         * @param {string} eventType - 'radio-change' または 'checkbox-change'
+         */
+        function handleConditionSync(charId, eventType) {
+            const currentAbilityType = document.querySelector(`input[name="ability-type-${charId}"]:checked`).value;
+
+            // --- Logic for BECOMING a party buffer ---
+            // If the event was a radio button change and the new type is "味方威力＋"
+            if (eventType === 'radio-change' && currentAbilityType === '味方威力＋') {
+                let conditionsToCopy = null;
+                // Find the first previous character who is also a party buffer
+                for (let i = charId - 1; i >= 1; i--) {
+                    const prevAbilityType = document.querySelector(`input[name="ability-type-${i}"]:checked`).value;
+                    if (prevAbilityType === '味方威力＋') {
+                        // Get their conditions
+                        conditionsToCopy = Array.from(document.querySelectorAll(`input[name="condition-${i}"]:checked`)).map(cb => cb.value);
+                        break; // Stop at the first one
+                    }
+                }
+                
+                // If we found a previous buffer, apply their conditions to the current character
+                if (conditionsToCopy !== null) {
+                    const currentCheckboxes = document.querySelectorAll(`input[name="condition-${charId}"]`);
+                    currentCheckboxes.forEach(cb => {
+                        cb.checked = conditionsToCopy.includes(cb.value);
+                    });
+                }
+            }
+
+            // --- Logic for UPDATING subsequent party buffers ---
+            // If the current character is a party buffer (regardless of what event happened)
+            if (currentAbilityType === '味方威力＋') {
+                const sourceConditions = Array.from(document.querySelectorAll(`input[name="condition-${charId}"]:checked`)).map(cb => cb.value);
+                
+                // Update all subsequent characters who are also party buffers
+                for (let i = charId + 1; i <= 5; i++) {
+                    const nextAbilityType = document.querySelector(`input[name="ability-type-${i}"]:checked`).value;
+                    if (nextAbilityType === '味方威力＋') {
+                        const nextCheckboxes = document.querySelectorAll(`input[name="condition-${i}"]`);
+                        nextCheckboxes.forEach(cb => {
+                            cb.checked = sourceConditions.includes(cb.value);
+                        });
+                    }
+                }
+            }
+        }
+        // --- ▲ここまで修正▲ ---
 
         // ページの初期化処理
         async function initialize() {
@@ -417,6 +465,14 @@
                     <div class="result-area" id="result-area-${i}"><p>計算結果がここに表示されます。</p></div>
                 `;
                 characterGrid.appendChild(charContainer);
+                
+                // --- ▼ここから修正 (イベントリスナー追加)▼ ---
+                const newRadios = charContainer.querySelectorAll(`input[name="ability-type-${i}"]`);
+                newRadios.forEach(radio => radio.addEventListener('change', () => handleConditionSync(i, 'radio-change')));
+
+                const newCheckboxes = charContainer.querySelectorAll(`input[name="condition-${i}"]`);
+                newCheckboxes.forEach(checkbox => checkbox.addEventListener('change', () => handleConditionSync(i, 'checkbox-change')));
+                // --- ▲ここまで修正▲ ---
             }
 
             // CSVデータを非同期で読み込む
@@ -443,7 +499,7 @@
                 } catch (error) {
                     alert('JSONファイルの読み込みまたは解析に失敗しました。\n' + error);
                     fileStatus.textContent = 'エラー: ファイルを読み込めません';
-                    fileStatus.style.color = '#ff6347';
+                    fileStatus.style.color = 'red';
                     armorData = [];
                     calculateAllButton.disabled = true;
                 }
@@ -506,6 +562,10 @@
         }
 
         function calculateAllCharacters() {
+            // --- ▼ここから修正 (ページ先頭へスクロール)▼ ---
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // --- ▲ここまで修正▲ ---
+
             const equippedItems = new Set();
             const characterResults = [];
 
