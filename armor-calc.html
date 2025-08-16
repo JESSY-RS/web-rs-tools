@@ -66,14 +66,11 @@
             border-bottom: 2px solid #555;
             padding-bottom: 8px;
             margin-bottom: 20px;
-            /* ▼ここから修正▼ */
             display: flex;
             justify-content: space-between;
             align-items: center;
-            /* ▲ここまで修正▲ */
         }
         
-        /* ▼ここから追加 (ジャンプボタンのスタイル)▼ */
         .nav-buttons {
             display: flex;
             gap: 6px;
@@ -104,7 +101,6 @@
             cursor: default;
             opacity: 0.5;
         }
-        /* ▲ここまで追加▲ */
 
         /* --- フォームの横並びコンテナ --- */
         .form-horizontal-row {
@@ -285,7 +281,7 @@
             text-align: center;
         }
 
-        /* --- ▼ここから修正 (レスポンシブデザイン) ▼ --- */
+        /* --- レスポンシブデザイン --- */
 
         /* 中サイズ画面 (幅992px以下) */
         @media (max-width: 992px) {
@@ -336,7 +332,6 @@
                 justify-content: flex-end;
             }
         }
-        /* --- ▲ここまで修正▲ --- */
 
     </style>
 </head>
@@ -383,14 +378,12 @@
             document.body.style.zoom = zoomLevel;
         }
         
-        // ▼ここから追加 (スクロール関数)▼
         function scrollToCategory(categoryId) {
             const element = document.getElementById(categoryId);
             if (element) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
-        // ▲ここまで追加▲
 
     document.addEventListener('DOMContentLoaded', () => {
         let armorData = [];
@@ -446,7 +439,6 @@
             }
         }
         
-        // --- ▼ここから修正 (機能追加)▼ ---
         /**
          * 「味方威力＋」選択時の条件を同期する関数
          * @param {number} charId - 変更が発生したキャラクターのID (1-5)
@@ -525,7 +517,6 @@
                 }
             }
         }
-        // --- ▲ここまで修正▲ ---
 
         // ページの初期化処理
         async function initialize() {
@@ -540,7 +531,6 @@
                     checkboxesHTML += `<label><input type="checkbox" name="condition-${i}" value="${cond.value}"> ${cond.name}</label>`;
                 });
 
-                // ▼ここから修正 (innerHTMLにジャンプボタンを追加)▼
                 charContainer.innerHTML = `
                     <h2>
                         キャラクター ${i}
@@ -568,10 +558,9 @@
                     </div>
                     <div class="result-area" id="result-area-${i}"><p>計算結果がここに表示されます。</p></div>
                 `;
-                // ▲ここまで修正▲
+
                 characterGrid.appendChild(charContainer);
                 
-                // --- ▼ここから修正 (イベントリスナー追加)▼ ---
                 const navUpButton = charContainer.querySelector(`#nav-up-${i}`);
                 const navDownButton = charContainer.querySelector(`#nav-down-${i}`);
 
@@ -592,7 +581,6 @@
 
                 const newCheckboxes = charContainer.querySelectorAll(`input[name="condition-${i}"]`);
                 newCheckboxes.forEach(checkbox => checkbox.addEventListener('change', () => handleConditionSync(i, 'checkbox-change')));
-                // --- ▲ここまで修正▲ ---
             }
 
             // CSVデータを非同期で読み込む
@@ -682,9 +670,8 @@
         }
 
         function calculateAllCharacters() {
-            // --- ▼ここから修正 (ページ先頭へスクロール)▼ ---
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            // --- ▲ここまで修正▲ ---
 
             const equippedItems = new Set();
             const characterResults = [];
