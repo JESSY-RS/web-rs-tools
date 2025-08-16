@@ -446,7 +446,7 @@
             }
         }
         
-        // --- ▼ここから修正 (ご要望の機能を実装)▼ ---
+        // --- ▼ここから修正 (機能追加)▼ ---
         /**
          * 「味方威力＋」選択時の条件を同期する関数
          * @param {number} charId - 変更が発生したキャラクターのID (1-5)
@@ -454,7 +454,6 @@
          */
         function handleConditionSync(charId, eventType) {
 
-            // ▼▼▼ ここからがユーザー依頼による修正箇所 ▼▼▼
             // 特別要件: キャラクター2のラジオボタンが「味方威力＋」に変更された場合
             if (charId === 2 && eventType === 'radio-change' && document.querySelector('input[name="ability-type-2"]:checked').value === '味方威力＋') {
                 
@@ -483,8 +482,6 @@
                 // この特別な処理が完了したら、以降の通常処理は行わない
                 return; 
             }
-            // ▲▲▲ ここまでがユーザー依頼による修正箇所 ▲▲▲
-
 
             const currentAbilityType = document.querySelector(`input[name="ability-type-${charId}"]:checked`).value;
 
