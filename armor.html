@@ -24,17 +24,38 @@
         /* フッターのスタイル */
         footer {
           font-size: 12pt;
-          margin: -20px 30px 30px 30px;
+          margin: -20px 30px 20px 30px;
         }
+
+        bottom {
+            margin-left: 30px;
+            padding-bottom: 24px;
+            font-size: 14pt;
+            text-decoration: underline;
+        }
+
+        .zoom-buttons { position: absolute; top: 24px; right: 24px; display: flex; flex-direction: row; gap: 5px; z-index: 1000; }
+        .zoom-buttons button { color: #000; background-color: #eee; padding: 3px 10px 6px 10px; font-size: 16px; cursor: pointer; border-radius: 5px; border: 1px solid #ccc; }
 
     </style>
 
 </head>
 <body>
 
+    <div class="zoom-buttons">
+        <button onclick="changeZoom(-0.1)">－</button>
+        <button onclick="changeZoom(0.1)">＋</button>
+    </div>
+
     <div id="root"></div>
 
     <script type="text/babel">
+
+        let zoomLevel = 1;
+        function changeZoom(delta) {
+          zoomLevel = (zoomLevel + delta < 0.5) ? 0.5 : (zoomLevel + delta > 2.0) ? 2.0 : zoomLevel + delta;
+          document.body.style.zoom = zoomLevel;
+        }
 
         const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
         const additionalAttributes = ['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
@@ -1280,7 +1301,7 @@
                   >
                   ★
                   </span>
-                  装備候補検索ツール ver.2025/08/08
+                  装備候補検索ツール ver.2025/08/16
                   {showThemeOptions && (
                     <div ref={themeOptionsRef} className={`absolute left-0 mt-2 p-4 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded-lg shadow-lg z-20`}>
                       <div className="flex flex-col space-y-2">
@@ -2561,6 +2582,11 @@
                 ※装飾品は基本的には耐性値が全項目ゼロのものはリストから除外しています。<br/>
                 ※各装備の一括指定リストは基本的には入手が５個以上可能なもののみ表示しています。<br/>
               </footer>
+
+              <bottom>
+                <a href="index.html" className={`web-link ${currentThemeColors.linkTagN} ${currentThemeColors.linkTagNV} ${currentThemeColors.linkTagH} ${currentThemeColors.linkTagA}`}>INDEXへ戻る</a>
+              </bottom>
+
             </div>
           );
         };

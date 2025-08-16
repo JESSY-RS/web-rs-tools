@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スタイル情報ビューア</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --main-bg: #fff;
+            --main-text: #000;
+            --title-text: #000;
+            --controls-bg: #f0f0f0;
+            --controls-border: #ddd;
+            --select-bg: #fff;
+            --select-text: #000;
+            --select-border: #ccc;
+            --select-disabled-bg: #ccc;
+            --skill-col-bg: #e7f3ff;
+            --skill-col-text: #0056b3;
+            --ability-col-bg: #e8f5e9;
+            --ability-col-text: #1e8e3e;
+            --addinfo-col-bg: #f3e8f5;
+            --addinfo-col-text: #6a1b9a;
+            --col-border: #ddd;
+            --card-bg: #fff;
+            --card-border: #e8e8e8;
+            --card-title-text: #000;
+            --card-text: #333;
+            --link-color: #007bff;
+            --link-hover-color: #0056b3;
+            --back-link-color: #000; /* Changed to black */
+            --silver-text: silver;
+            --popup-bg: #fff;
+            --popup-border: #a0aec0;
+            --web-link-text: dodgerblue;
+            --web-link-visited: blueviolet;
+            --web-link-hover: lime;
+            --web-link-active: orangered;
+        }
+
+        [data-theme="dark"] {
+            --main-bg: #2A2A2A;
+            --main-text: #f2f2f2;
+            --title-text: #f2f2f2;
+            --controls-bg: #3a3a3a;
+            --controls-border: #555;
+            --select-bg: #4a4a4a;
+            --select-text: #f2f2f2;
+            --select-border: #666;
+            --select-disabled-bg: #555;
+            --skill-col-bg: #1e293b;
+            --skill-col-text: #93c5fd;
+            --ability-col-bg: #163318;
+            --ability-col-text: #86efac;
+            --addinfo-col-bg: #2a1a2e;
+            --addinfo-col-text: #d8b4fe;
+            --col-border: #555;
+            --card-bg: #3a3a3a;
+            --card-border: #555;
+            --card-title-text: #f2f2f2;
+            --card-text: #ccc;
+            --link-color: #1D9BF0;
+            --link-hover-color: #0CFF57;
+            --back-link-color: #ccc; /* Changed to gray */
+            --silver-text: #888;
+            --popup-bg: #4a4a4a;
+            --popup-border: #666;
+            --web-link-text: #1D9BF0;
+            --web-link-visited: #7755FF;
+            --web-link-hover: #0CFF57;
+            --web-link-active: #FF0000;
+        }
+
+        body {
+            font-family: 'Segoe UI', Meiryo, sans-serif;
+            margin: 0 3px;
+            padding: 15px;
+            background-color: var(--main-bg);
+            color: var(--main-text);
+            font-size: 16px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .no-select {
+          user-select: none;
+          -webkit-user-select: none;
+          -moz-user-select: none;
+          -ms-user-select: none;
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            padding: 0;
+        }
+        .main-title {
+            text-align: left;
+            margin-bottom: 15px;
+            color: var(--title-text);
+            position: relative;
+            font-size: 1.8em;
+        }
+        .controls-wrapper {
+            max-width: none;
+            margin: 0 auto 20px auto;
+            padding: 20px 15px;
+            background: var(--controls-bg);
+            border: 1px solid var(--controls-border);
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        .control-group {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            align-items: center; 
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        .control-group label {
+            font-weight: bold;
+            text-align: right;
+            font-size: 1.1em;
+            white-space: nowrap;
+        }
+        .control-group-separator {
+            margin-top: 20px;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--select-border);
+            font-size: 1.1em;
+            background-color: var(--select-bg);
+            color: var(--select-text);
+            height: 45px;
+            box-sizing: border-box;
+        }
+        select:disabled {
+            background-color: var(--select-disabled-bg);
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: none;
+            margin: 0 auto;
+        }
+        .column {
+            border: 1px solid var(--col-border);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .column h2 {
+            text-align: left;
+            margin-bottom: 15px;
+            border-bottom: none;
+        }
+        .card {
+            border: 1px solid var(--card-border);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 11px;
+            background: var(--card-bg);
+        }
+        .card h3 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            color: var(--card-title-text);
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .summary-line, .detail-line {
+            font-size: 1em;
+            color: var(--card-text);
+            line-height: 1.7;
+        }
+        .summary-line { margin-bottom: 10px; }
+        .detail-line { white-space: pre-wrap; }
+
+        .keyword-link { text-decoration: underline; color: var(--link-color); font-weight: bold; cursor: pointer; }
+        .keyword-link:hover { color: var(--link-hover-color); }
+        .back-link { font-size: 1em; text-decoration: none; color: var(--back-link-color); font-weight: bold; margin-left: 10px; }
+        
+        .skill-column { background-color: var(--skill-col-bg); }
+        .skill-column h2 { color: var(--skill-col-text); }
+        .ability-column { background-color: var(--ability-col-bg); }
+        .ability-column h2 { color: var(--ability-col-text); }
+        .add-info-column { background-color: var(--addinfo-col-bg); }
+        .add-info-column h2 { color: var(--addinfo-col-text); }
+
+        .button-group-multi {
+            margin-top: 15px;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        .save-btn {
+            flex: 1;
+            padding: 10px 5px;
+            font-size: 1em;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            white-space: nowrap;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #saveSkillBtn { background-color: #007bff; }
+        #saveSkillBtn:hover { background-color: #0056b3; }
+        #saveAbilityBtn { background-color: #28a745; }
+        #saveAbilityBtn:hover { background-color: #218838; }
+        #saveAddInfoBtn { background-color: #8441a1; }
+        #saveAddInfoBtn:hover { background-color: #6a1b9a; }
+        .save-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .custom-select-container {
+            position: relative;
+            width: 100%;
+        }
+        .custom-select-button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--select-border);
+            background-color: var(--select-bg);
+            color: var(--main-text);
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 45px;
+            box-sizing: border-box;
+            font-size: 1.1em;
+        }
+        .custom-select-button.is-empty {
+            background-color: var(--select-disabled-bg);
+        }
+        .custom-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            border: 1px solid var(--select-border);
+            background: var(--select-bg);
+            color: var(--main-text);
+            z-index: 1000;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        .custom-select-search {
+            margin: 8px 0 0 8px;
+            padding: 8px;
+            width: calc(100% - 24px);
+            box-sizing: border-box;
+            border: 1px solid var(--select-border);
+            background-color: var(--select-bg);
+            color: var(--main-text);
+            font-size: 1.1em;
+        }
+        .custom-select-option {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        #deselectAllExclusions {
+             border-bottom: 1px solid var(--select-border);
+        }
+        .custom-select-option:hover {
+            background-color: var(--controls-bg);
+        }
+        .profile-btn {
+            flex: 1;
+            padding: 10px 5px;
+            font-size: 1em;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.1s ease;
+        }
+        .profile-btn-save { background-color: #007bff; }
+        .profile-btn-save:hover { background-color: #0056b3; }
+        .profile-btn-delete { background-color: #dc3545; }
+        .profile-btn-delete:hover { background-color: #c82333; }
+        .profile-btn:disabled {
+            background-color: #bbb;
+            cursor: default;
+            opacity: 0.8;
+        }
+        .profile-btn-save.is-saving {
+            background-color: #6c757d;
+        }
+        .silver-text {
+            color: var(--silver-text);
+        }
+        #theme-options {
+            display: none;
+            position: absolute;
+            left: 0;
+            margin-top: 8px; /* 0.5rem */
+            padding: 1rem;
+            background-color: var(--popup-bg);
+            border: 1px solid var(--popup-border);
+            border-radius: 0.5rem; /* 8px */
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            z-index: 20;
+        }
+        #theme-options .flex-col {
+            display: flex;
+            flex-direction: column;
+        }
+        #theme-options .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+        #theme-options .inline-flex {
+            display: inline-flex;
+        }
+        #theme-options .items-center {
+            align-items: center;
+        }
+        #theme-options .form-radio {
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: var(--select-bg);
+            margin-top: 0;
+            font-family: inherit;
+            color: currentColor;
+            width: 1.15em;
+            height: 1.15em;
+            border: 0.15em solid currentColor;
+            border-radius: 50%;
+            transform: translateY(-0.075em);
+            display: grid;
+            place-content: center;
+        }
+        #theme-options .form-radio::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em #2563eb;
+        }
+        #theme-options .form-radio:checked::before {
+            transform: scale(1);
+        }
+        #theme-options .text-xl {
+            font-size: 1.25rem;
+        }
+        #theme-options .ml-2 {
+            margin-left: 0.5rem;
+        }
+
+        @media (max-width: 1200px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .zoom-buttons { position: absolute; top: 17px; right: 18px; display: flex; flex-direction: row; gap: 5px; z-index: 1000; }
+        .zoom-buttons button { color: #000; background-color: #eee; padding: 5px 10px; font-size: 16px; cursor: pointer; border-radius: 5px; border: 1px solid var(--select-border)}
+
+        footer {
+            width: 100%;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            font-size: 14pt;
+            margin-top: 40px;
+        }
+
+        .bottom {
+            margin-top: 20px;
+            font-size: 16pt;
+            line-height: 2;
+        }
+
+  .web-link:link { 
+    color: var(--web-link-text); 
+    text-decoration: underline; 
+  }
+  .web-link:visited { 
+    color: var(--web-link-visited); 
+    text-decoration: underline; 
+  }
+  .web-link:hover { 
+    color: var(--web-link-hover); 
+  }
+  .web-link:active { 
+    color: var(--web-link-active); 
+    text-decoration: underline; 
+  }
+
+    </style>
+</head>
+<body>
+
+    <h1 class="main-title">
+        <span id="theme-toggle-button" style="cursor: pointer; color: #f5c542; margin-right: -8px;">★</span>
+        スタイル情報ビューア
+        <div id="theme-options">
+            <div class="flex-col space-y-2">
+                <label class="inline-flex items-center">
+                    <input type="radio" name="theme" value="system" class="form-radio">
+                    <span class="text-xl ml-2">端末の設定を使う</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="radio" name="theme" value="dark" class="form-radio">
+                    <span class="text-xl ml-2">ダークモード ON</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="radio" name="theme" value="light" class="form-radio">
+                    <span class="text-xl ml-2">ダークモード OFF</span>
+                </label>
+            </div>
+        </div>
+    </h1>
+
+    <div class="zoom-buttons">
+        <button onclick="changeZoom(-0.1)">－</button>
+        <button onclick="changeZoom(0.1)">＋</button>
+    </div>
+
+    <div class="controls-wrapper">
+        <div class="control-group">
+            <label for="characterSelect">キャラ名:</label>
+            <select id="characterSelect" disabled><option>---</option></select>
+        </div>
+        <div class="control-group">
+            <label for="styleSelect">スタイル名:</label>
+            <select id="styleSelect" disabled><option>---</option></select>
+        </div>
+        
+        <div class="control-group control-group-separator">
+            <label for="additionalExclusionSelect">追加除外:</label>
+            <div class="custom-select-container" id="additionalExclusionContainer">
+                <button class="custom-select-button" id="additionalExclusionBtn">
+                    <span id="additionalExclusionText">(未指定)</span>
+                    <span>▼</span>
+                </button>
+                <div class="custom-select-dropdown" id="additionalExclusionDropdown" style="display: none;">
+                    <input type="text" class="custom-select-search" id="additionalExclusionSearch" placeholder="検索...">
+                    <div class="custom-select-option" id="deselectAllExclusions">
+                        <label><input type="checkbox" id="selectAllExclusionsCheckbox" /> すべて選択/解除</label>
+                    </div>
+                    <div id="additionalExclusionOptions"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label></label>
+            <div class="button-container">
+                <button class="profile-btn profile-btn-save" id="saveExclusionProfile">除外設定を保存</button>
+                <button class="profile-btn profile-btn-delete" id="deleteExclusionProfile">除外設定を削除</button>
+            </div>
+        </div>
+
+        <div class="control-group button-group-multi control-group-separator" id="screenshot-section">
+            <label>スクショ保存:</label>
+            <div class="button-container">
+                <button id="saveSkillBtn" class="save-btn" disabled>スキル</button>
+                <button id="saveAbilityBtn" class="save-btn" disabled>アビリティ</button>
+                <button id="saveAddInfoBtn" class="save-btn" disabled>追加情報</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="mainContainer">
+        <div class="column skill-column">
+            <h2>スキル</h2>
+            <div id="skillDisplay"></div>
+        </div>
+        <div class="column ability-column">
+            <h2>アビリティ</h2>
+            <div id="abilityDisplay"></div>
+        </div>
+        <div class="column add-info-column">
+            <h2>追加情報</h2>
+            <div id="addInfoDisplay"></div>
+        </div>
+    </div>
+
+    <footer>
+        ※使用は自己責任にて。<br>
+        ※記載の情報が間違っている可能性もあります。気付かれた方は<a href="https://x.com/jessy_romasaga" class="web-link">@jessy_romasaga</a>までご一報いただけると助かります。<br>
+    </footer>
+
+    <div class="bottom">
+        <a href="index.html" class="web-link">INDEXへ戻る</a>
+    </div>
+
+<script>
+        let zoomLevel = 1;
+        function changeZoom(delta) {
+          zoomLevel = (zoomLevel + delta < 0.5) ? 0.5 : (zoomLevel + delta > 2.0) ? 2.0 : zoomLevel + delta;
+          document.body.style.zoom = zoomLevel;
+        }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // --- テキスト選択と右クリックの制御 ---
+        const pageTitle = document.title;
+        if (!pageTitle.includes('★')) {
+            // <title>に「★」が含まれていない場合
+
+            // 1. 右クリックを禁止
+            document.addEventListener('contextmenu', event => event.preventDefault());
+
+            // 2. テキスト選択を禁止するCSSクラスをbodyに追加
+            document.body.classList.add('no-select');
+
+            // 3. スクショ保存の項目を非表示にする
+            document.getElementById('screenshot-section').style.display = 'none';
+        }
+        // --- 制御ここまで ---
+
+        // --- Theme switcher logic ---
+        const themeToggleButton = document.getElementById('theme-toggle-button');
+        const themeOptions = document.getElementById('theme-options');
+        const themeRadios = document.querySelectorAll('input[name="theme"]');
+
+        const applyTheme = (theme) => {
+            if (theme === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        };
+
+        const handleThemeChange = () => {
+            const selectedTheme = localStorage.getItem('theme') || 'system';
+            applyTheme(selectedTheme);
+            
+            for (const radio of themeRadios) {
+                if (radio.value === selectedTheme) {
+                    radio.checked = true;
+                }
+            }
+        };
+        
+        themeToggleButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            themeOptions.style.display = themeOptions.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!themeOptions.contains(e.target) && e.target !== themeToggleButton) {
+                themeOptions.style.display = 'none';
+            }
+        });
+
+        themeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const newTheme = e.target.value;
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+        });
+        
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            const selectedTheme = localStorage.getItem('theme') || 'system';
+            if (selectedTheme === 'system') {
+                applyTheme('system');
+            }
+        });
+
+        handleThemeChange(); // Apply theme on initial load
+        // --- End of theme switcher logic ---
+
+        try {
+            await Promise.all([
+                loadCsv('data/style.csv', 'styles'),
+                loadCsv('data/skill.csv', 'skills'),
+                loadCsv('data/ability.csv', 'abilities'),
+                loadCsv('data/add_info.csv', 'addInfo')
+            ]);
+            populateCharacterSelect();
+            document.getElementById('characterSelect').disabled = false;
+            initializeExclusionFeature();
+        } catch (error) {
+            alert(`エラー: ${error.message}`);
+        }
+        
+        initializeSaveButtons();
+    });
+
+    let db = { styles: [], skills: {}, abilities: {}, addInfo: {} };
+    let additionalExclusionList = [];
+    let allExclusionKeywords = [];
+    let addInfoOrderedKeys = [];
+
+    const fixedExclusionList = new Set(["攻撃", "アビリティ効果により発動する技・術", "特殊状態の効果により発動する技・術", "技・術の効果により発動する技・術", "溜め技・術", "溜め状態を付与する技・術", "カウンター効果による反撃技・術", "\"追撃\"により発動する技・術"]);
+    
+    function displayInfo(type, name, allInitialItems, displayedAddInfo) {
+        if (type === 'addInfo' && (displayedAddInfo.has(name) || additionalExclusionList.includes(name))) return; 
+
+        let data, containerId, isSkill = false;
+        if (type === 'skill') { data = db.skills[name]; containerId = 'skillDisplay'; isSkill = true; }
+        else if (type === 'ability') { data = db.abilities[name]; containerId = 'abilityDisplay'; }
+        else if (type === 'addInfo') { 
+             data = db.addInfo[name] || db.skills[name] || db.abilities[name];
+             containerId = 'addInfoDisplay';
+             if (!data) return;
+             if (db.skills[name]) isSkill = true;
+        }
+        if (!data) return;
+        if (type === 'addInfo') displayedAddInfo.add(name);
+        const container = document.getElementById(containerId);
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.id = `card-${name.replace(/ /g, "_")}`;
+        let content = `<h3>${name}</h3>`;
+        if (isSkill) {
+            const summaryParts = [], slashParts = [];
+            if (data['種類']) slashParts.push(data['種類']);
+            if (data['遠近']) slashParts.push(data['遠近']);
+            if (data['方法']) slashParts.push(data['方法']);
+            if (data['行動順']) slashParts.push(data['行動順']);
+            let targetRange = (data['対象'] || '') + (data['範囲'] || '');
+            if (targetRange) slashParts.push(targetRange);
+            let slashStr = slashParts.join('/');
+            
+            let attrStr = '';
+            if (data['種類'] !== '補助') {
+                if (data['属性1']) {
+                    attrStr = data['属性2'] ? `(${data['属性1']}+${data['属性2']})` : `(${data['属性1']})`;
+                }
+            }
+            summaryParts.push(slashStr + attrStr);
+            if (data['再使用']) summaryParts.push(`[リキャストターン:${data['再使用']}]`);
+            
+            if (data['制限'] && !(type === 'addInfo' && data['制限'] === '1')) {
+                summaryParts.push(`[使用回数制限:バトル中${data['制限']}回]`);
+            }
+
+            const summaryLine = summaryParts.join(' ').trim();
+            
+            const bpPart = (type !== 'addInfo') ? ` / <strong>BP:</strong> ${data['BP'] || ''}` : '';
+            content += `<div class="summary-line"><strong>種別:</strong> ${data['属性'] || ''}${data['技術'] || ''} / <strong>威力:</strong> ${data['威力'] || ''}${bpPart}</div>`;
+            
+            if(summaryLine) content += `<div class="summary-line">${summaryLine}</div>`;
+        }
+        
+        let detailText = data['効果詳細'] || '(効果詳細なし)';
+        
+        const phrasesToColorSilver = [
+            '※「アビリティ効果により発動する技・術」「特殊状態の効果により発動する技・術」「技・術の効果により発動する技・術」「溜め技・術」「溜め状態を付与する技・術」「カウンター効果による反撃技・術」は含まない',
+            '※「"追撃"により発動する技・術」「カウンター効果による反撃技・術」は含まない'
+        ];
+
+        phrasesToColorSilver.forEach(phrase => {
+            if (detailText.includes(phrase)) {
+                detailText = detailText.replace(phrase, `<span class="silver-text">${phrase}</span>`);
+            }
+        });
+
+        const linkedDetailText = detailText.replace(/「([^」]+)」/g, (match, keyword) => {
+            if (fixedExclusionList.has(keyword) || keyword === name || allInitialItems.has(keyword) || additionalExclusionList.includes(keyword)) return match; 
+            const sourceCardId = `card-${name.replace(/ /g, "_")}`;
+            const targetCardId = `card-${keyword.replace(/ /g, "_")}`;
+            return `「<a class="keyword-link" data-source-id="${sourceCardId}" href="#${targetCardId}">${keyword}</a>」`;
+        });
+
+        content += `<div class="detail-line">${linkedDetailText.replace(/\n/g, '<br>')}</div>`;
+        card.innerHTML = content;
+        container.appendChild(card);
+    }
+    
+    function findDetailText(name) { /* ... */ }
+    function clearDisplays() { /* ... */ }
+
+    document.getElementById('mainContainer').addEventListener('click', function(event) {
+        const keywordLink = event.target.closest('.keyword-link');
+        const backLink = event.target.closest('.back-link');
+
+        if (keywordLink) {
+            event.preventDefault();
+            // Remove any existing back links first
+            document.querySelectorAll('.back-link').forEach(btn => btn.remove());
+
+            const sourceId = keywordLink.dataset.sourceId;
+            const targetId = keywordLink.getAttribute('href').substring(1);
+            const targetCard = document.getElementById(targetId);
+
+            if (targetCard) {
+                // Create and append the new back link
+                const newBackLink = document.createElement('a');
+                newBackLink.href = `#${sourceId}`;
+                newBackLink.className = 'back-link';
+                newBackLink.textContent = '▲';
+                targetCard.querySelector('h3').appendChild(newBackLink);
+                // Navigate
+                location.href = `#${targetId}`;
+            } else {
+                console.error("ジャンプ先のカードが見つかりません:", targetId);
+            }
+        } else if (backLink) {
+            // リンクのデフォルト動作（ページ内ジャンプ）はそのまま実行させます。
+            // ジャンプが完了した後にURLを書き換えるため、setTimeoutを使用します。
+            setTimeout(() => {
+                // History APIを使い、履歴を追加せずにURLからハッシュ(#)を削除します。
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+                // ▲リンク自体を削除します。
+                backLink.remove();
+            }, 100); // 100ミリ秒（0.1秒）後に処理を実行
+        }
+    });
+    function saveColumnAsImage(displayId, filePrefix) {
+        const displayElement = document.getElementById(displayId);
+        if (!displayElement || displayElement.innerHTML.trim() === '') {
+            alert(filePrefix + '欄に表示されている内容がありません。');
+            return;
+        }
+        const characterName = document.getElementById('characterSelect').value;
+        const styleName = document.getElementById('styleSelect').value;
+        const safeCharName = characterName.replace(/[\\/:*?"<>|]/g, '');
+        const safeStyleName = styleName.replace(/[\\/:*?"<>|]/g, '');
+        const fileName = (styleName !== '---' && characterName !== '---')
+            ? `${safeCharName}_${safeStyleName}_${filePrefix}.png`
+            : `${filePrefix}_情報.png`;
+        const columnElement = displayElement.closest('.column');
+        const options = { 
+            scale: 2, 
+            useCORS: true,
+            backgroundColor: getComputedStyle(columnElement).backgroundColor
+        };
+        html2canvas(columnElement, options).then(canvas => {
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }).catch(err => {
+            console.error('画像変換に失敗しました:', err);
+            alert('画像の生成に失敗しました。');
+        });
+    }
+    function initializeSaveButtons() {
+        document.getElementById('saveSkillBtn').addEventListener('click', () => saveColumnAsImage('skillDisplay', 'スキル'));
+        document.getElementById('saveAbilityBtn').addEventListener('click', () => saveColumnAsImage('abilityDisplay', 'アビリティ'));
+        document.getElementById('saveAddInfoBtn').addEventListener('click', () => saveColumnAsImage('addInfoDisplay', '追加情報'));
+    }
+    function initializeExclusionFeature() {
+        const btn = document.getElementById('additionalExclusionBtn');
+        const dropdown = document.getElementById('additionalExclusionDropdown');
+        const searchInput = document.getElementById('additionalExclusionSearch');
+        const optionsContainer = document.getElementById('additionalExclusionOptions');
+        const selectedText = document.getElementById('additionalExclusionText');
+        const selectAllCheckbox = document.getElementById('selectAllExclusionsCheckbox');
+        const saveProfileBtn = document.getElementById('saveExclusionProfile');
+        const deleteProfileBtn = document.getElementById('deleteExclusionProfile');
+        allExclusionKeywords = addInfoOrderedKeys;
+        const savedExclusions = JSON.parse(localStorage.getItem('styleViewerExclusions') || '[]');
+        additionalExclusionList = savedExclusions.filter(item => allExclusionKeywords.includes(item));
+        const renderOptions = (filter = '') => {
+            optionsContainer.innerHTML = '';
+            const filteredKeywords = allExclusionKeywords.filter(kw => kw.toLowerCase().includes(filter.toLowerCase()));
+            filteredKeywords.forEach(keyword => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'custom-select-option';
+                const label = document.createElement('label');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = keyword;
+                checkbox.checked = additionalExclusionList.includes(keyword);
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        additionalExclusionList.push(keyword);
+                    } else {
+                        additionalExclusionList = additionalExclusionList.filter(item => item !== keyword);
+                    }
+                    updateSelectedText();
+                });
+                label.appendChild(checkbox);
+                label.append(` ${keyword}`);
+                optionDiv.appendChild(label);
+                optionsContainer.appendChild(optionDiv);
+            });
+            updateSelectAllCheckboxState();
+        };
+        const updateSelectedText = () => {
+            if (additionalExclusionList.length === 0) {
+                selectedText.textContent = '(未指定)';
+                btn.classList.add('is-empty');
+                saveProfileBtn.disabled = true;
+                deleteProfileBtn.disabled = true;
+            } else {
+                btn.classList.remove('is-empty');
+                saveProfileBtn.disabled = false;
+                deleteProfileBtn.disabled = false;
+                if (additionalExclusionList.length === 1) {
+                    selectedText.textContent = additionalExclusionList[0];
+                } else {
+                    selectedText.textContent = `${additionalExclusionList.length}個選択`;
+                }
+            }
+            updateSelectAllCheckboxState();
+        };
+        const updateSelectAllCheckboxState = () => {
+            const visibleKeywords = [...optionsContainer.querySelectorAll('input[type="checkbox"]')].map(cb => cb.value);
+            const allVisibleSelected = visibleKeywords.every(kw => additionalExclusionList.includes(kw));
+            selectAllCheckbox.checked = allVisibleSelected && visibleKeywords.length > 0;
+        };
+        btn.addEventListener('click', () => {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            if (dropdown.style.display === 'block') {
+                renderOptions(searchInput.value);
+            }
+        });
+        searchInput.addEventListener('input', () => renderOptions(searchInput.value));
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const visibleKeywords = [...optionsContainer.querySelectorAll('input[type="checkbox"]')].map(cb => cb.value);
+            if (e.target.checked) {
+                visibleKeywords.forEach(kw => {
+                    if (!additionalExclusionList.includes(kw)) {
+                        additionalExclusionList.push(kw);
+                    }
+                });
+            } else {
+                additionalExclusionList = additionalExclusionList.filter(kw => !visibleKeywords.includes(kw));
+            }
+            renderOptions(searchInput.value);
+            updateSelectedText();
+        });
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('additionalExclusionContainer').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+        saveProfileBtn.addEventListener('click', () => {
+            saveProfileBtn.classList.add('is-saving');
+            localStorage.setItem('styleViewerExclusions', JSON.stringify(additionalExclusionList));
+            setTimeout(() => {
+                saveProfileBtn.classList.remove('is-saving');
+            }, 500);
+        });
+        deleteProfileBtn.addEventListener('click', () => {
+            localStorage.removeItem('styleViewerExclusions');
+            additionalExclusionList = [];
+            renderOptions(searchInput.value);
+            updateSelectedText();
+        });
+        updateSelectedText();
+    }
+    async function loadCsv(fileName, dbKey) {
+        const response = await fetch(fileName);
+        if (!response.ok) throw new Error(`${fileName} が見つかりません`);
+        const csvText = await response.text();
+        const results = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+        if (dbKey === 'styles') {
+            db.styles = results.data;
+        } else {
+            if (dbKey === 'addInfo') {
+                addInfoOrderedKeys = [];
+            }
+            results.data.forEach(row => {
+                const key = row['スキル名'] || row['アビリティ名'] || row['名称'];
+                if(key) {
+                    db[dbKey][key] = row;
+                    if (dbKey === 'addInfo') {
+                        addInfoOrderedKeys.push(key);
+                    }
+                }
+            });
+        }
+    }
+    function populateCharacterSelect() {
+        const charaSelect = document.getElementById('characterSelect');
+        const uniqueCharacters = [...new Set(db.styles.map(item => item['キャラ名']))].filter(Boolean);
+        charaSelect.innerHTML = '<option value="---">---</option>';
+        uniqueCharacters.sort((a,b) => a.localeCompare(b, 'ja')).forEach(chara => {
+            charaSelect.innerHTML += `<option value="${chara}">${chara}</option>`;
+        });
+    }
+    document.getElementById('characterSelect').addEventListener('change', e => {
+        const selectedCharacter = e.target.value;
+        const styleSelect = document.getElementById('styleSelect');
+        const saveBtns = document.querySelectorAll('.save-btn');
+        styleSelect.innerHTML = '<option value="---">---</option>';
+        clearDisplays();
+        if (selectedCharacter === '---') {
+            styleSelect.disabled = true;
+            saveBtns.forEach(btn => btn.disabled = true);
+            return;
+        }
+        db.styles.filter(style => style['キャラ名'] === selectedCharacter).forEach(style => {
+            const displayName = `[${style['グレード']}] ${style['スタイル名']}`;
+            styleSelect.innerHTML += `<option value="${style['スタイル名']}">${displayName}</option>`;
+        });
+        styleSelect.disabled = false;
+        saveBtns.forEach(btn => btn.disabled = true);
+    });
+    document.getElementById('styleSelect').addEventListener('change', e => {
+        const selectedStyleName = e.target.value;
+        const saveBtns = document.querySelectorAll('.save-btn');
+        clearDisplays();
+        if (selectedStyleName === '---') {
+            saveBtns.forEach(btn => btn.disabled = true);
+            return;
+        }
+        saveBtns.forEach(btn => btn.disabled = false);
+        const selectedStyle = db.styles.find(s => s['スタイル名'] === selectedStyleName);
+        if (!selectedStyle) return;
+        const skillsToShow = [selectedStyle['スキル1'], selectedStyle['スキル2'], selectedStyle['スキル3']].filter(Boolean);
+        const abilitiesToShow = [selectedStyle['アビリティ1'], selectedStyle['アビリティ2'], selectedStyle['アビリティ3']].filter(Boolean);
+        const allInitialItems = new Set([...skillsToShow, ...abilitiesToShow]);
+        const displayedAddInfo = new Set();
+        skillsToShow.forEach(name => displayInfo('skill', name, allInitialItems, displayedAddInfo));
+        abilitiesToShow.forEach(name => displayInfo('ability', name, allInitialItems, displayedAddInfo));
+        let keywordsToProcess = new Set();
+        [...allInitialItems].forEach(name => {
+             const detailText = findDetailText(name);
+             if (!detailText) return;
+             [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
+                 if (!allInitialItems.has(keyword) && !fixedExclusionList.has(keyword) && !additionalExclusionList.includes(keyword)) {
+                     keywordsToProcess.add(keyword);
+                 }
+             });
+        });
+        let processedKeywords = new Set();
+        while(keywordsToProcess.size > 0){
+            const currentKeyword = [...keywordsToProcess][0];
+            if(processedKeywords.has(currentKeyword)) {
+                keywordsToProcess.delete(currentKeyword);
+                continue;
+            }
+            displayInfo('addInfo', currentKeyword, allInitialItems, displayedAddInfo);
+            const detailText = findDetailText(currentKeyword);
+            processedKeywords.add(currentKeyword);
+            keywordsToProcess.delete(currentKeyword);
+            if (!detailText) continue;
+            [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
+                if(!allInitialItems.has(keyword) && !fixedExclusionList.has(keyword) && !processedKeywords.has(keyword) && !additionalExclusionList.includes(keyword)){
+                    keywordsToProcess.add(keyword);
+                }
+            });
+        }
+    });
+    function findDetailText(name) {
+        if(db.skills[name]) return db.skills[name]['効果詳細'];
+        if(db.abilities[name]) return db.abilities[name]['効果詳細'];
+        if(db.addInfo[name]) return db.addInfo[name]['効果詳細'];
+        return null;
+    }
+    function clearDisplays() {
+        document.getElementById('skillDisplay').innerHTML = '';
+        document.getElementById('abilityDisplay').innerHTML = '';
+        document.getElementById('addInfoDisplay').innerHTML = '';
+    }
+</script>
+</body>
+</html>
