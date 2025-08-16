@@ -347,7 +347,7 @@
 
         function parseCsvData(csvText) {
             const data = {};
-            const attributeMap = { "斬": "斬", "打": "打", "突": "突", "熱": "熱", "冷": "冷", "雷": "雷", "陽": "陽", "陰": "陰", "味方威力": "味方威力" };
+            const attributeMap = { "斬": "斬", "打": "打", "突": "突", "熱": "熱", "冷": "冷", "雷": "雷", "陽": "陽", "陰": "陰", "味方威力": "味方威力", "威力": "威力" };
             const lines = csvText.split('\n').filter(line => line.trim() !== '');
             lines.forEach(line => {
                 const parts = line.split(',');
@@ -440,6 +440,11 @@
                     const isSelfPower = selfPowerAbilities.includes(item.abilityName);
                     if (isSelfPower && armorBonuses['味方威力']) {
                         totalAddedValue += armorBonuses['味方威力'];
+                    }
+
+                    // 3. 「威力＋」系の場合、「威力」ボーナスも加算する
+                    if (isSelfPower && armorBonuses['威力']) {
+                        totalAddedValue += armorBonuses['威力'];
                     }
                 }
                 

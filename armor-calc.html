@@ -7,9 +7,7 @@
     <link rel="shortcut icon" href="favicon-renma.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
-    <title>練磨(防具)自動選定ツール</title> <!-- Created by じぇ -->
-
-    <style>
+    <title>練磨(防具)自動選定ツール</title> <style>
         /* --- 全体 --- */
         body {
             background-color: #2A2A2A;
@@ -659,9 +657,9 @@
                         totalValue += ability.value;
                     }
                 }
-                // 「威力＋」を選択している場合は、条件一致と「味方威力」の両方を加算
+                // 「威力＋」を選択している場合は、「威力」「味方威力」と条件一致のものを加算
                 else {
-                    if (ability.target === '味方威力' || selectedConditions.includes(ability.target)) {
+                    if (ability.target === '威力' || ability.target === '味方威力' || selectedConditions.includes(ability.target)) {
                         totalValue += ability.value;
                     }
                 }
@@ -746,17 +744,25 @@
             const resultArea = document.getElementById(`result-area-${charId}`);
             
             // 固有アビリティ値に基づいて防具名の表示を決定する
-            let mainArmorNameStyle = mainNativeValue > 0 ? 'style="color: orange;"' : '';
-            if (mainArmor.armorName.includes('名将の鎧') || mainArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+            let mainArmorNameStyle = '';
+            if (mainArmor.armorName === '該当なし') {
+                mainArmorNameStyle = 'style="color: red;"';
+            } else if (mainArmor.armorName.includes('名将の鎧') || mainArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
                 mainArmorNameStyle = 'style="color: magenta;"';
+            } else if (mainNativeValue > 0) {
+                mainArmorNameStyle = 'style="color: orange;"';
             }
-            const mainArmorNameText = mainNativeValue > 0 ? `${mainArmor.armorName}(+${mainNativeValue})` : mainArmor.armorName;
+            const mainArmorNameText = mainNativeValue > 0 && mainArmor.armorName !== '該当なし' ? `${mainArmor.armorName}(+${mainNativeValue})` : mainArmor.armorName;
             
-            let subArmorNameStyle = subNativeValue > 0 ? 'style="color: orange;"' : '';
-            if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+            let subArmorNameStyle = '';
+             if (subArmor.armorName === '該当なし') {
+                subArmorNameStyle = 'style="color: red;"';
+            } else if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
                 subArmorNameStyle = 'style="color: magenta;"';
+            } else if (subNativeValue > 0) {
+                subArmorNameStyle = 'style="color: orange;"';
             }
-            const subArmorNameText = subNativeValue > 0 ? `${subArmor.armorName}(+${subNativeValue})` : subArmor.armorName;
+            const subArmorNameText = subNativeValue > 0 && subArmor.armorName !== '該当なし' ? `${subArmor.armorName}(+${subNativeValue})` : subArmor.armorName;
 
             let totalHTML = '';
             if (totals.grand !== undefined) { // "威力＋" のキャラ
