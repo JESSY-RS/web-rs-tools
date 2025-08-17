@@ -7,9 +7,7 @@
     <link rel="shortcut icon" href="favicon-renma.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
-    <title>練磨(防具)自動選定ツール</title> <!-- Created by じぇ -->
-
-    <style>
+    <title>練磨(防具)自動選定ツール</title> <style>
         /* --- 全体 --- */
         body {
             background-color: #2A2A2A;
@@ -488,15 +486,88 @@
       color: #FF0000;
       text-decoration: underline;
     }
+    
+    /* --- renma-armor.html風のボタンスタイル --- */
+
+    /* 共通クラス */
+    .styled-form-group {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap; /* 条件チェックボックスが折り返せるように */
+        gap: 5px 10px;   /* ボタン間の隙間 */
+    }
+
+    /* 元のラジオボタンとチェックボックスを非表示にする */
+    .styled-form-group input[type="radio"],
+    .styled-form-group input[type="checkbox"] {
+        display: none;
+    }
+
+    /* labelをボタンのようにスタイリング */
+    .styled-form-group label {
+        padding: 5px 15px;
+        border: 1px solid #777;
+        border-radius: 20px; /* pill型デザインの角丸 */
+        cursor: pointer;
+        background-color: #555;
+        color: white;
+        transition: all 0.2s;
+        margin: 0; /* 元のlabelスタイルを上書き */
+    }
+
+    /* 選択された際のスタイル(デフォルト) */
+    .styled-form-group input[type="radio"]:checked + label,
+    .styled-form-group input[type="checkbox"]:checked + label {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    /* アビリティ選択ボタンの折り返しを禁止 */
+    .form-type .styled-form-group {
+        flex-wrap: nowrap;
+    }
+
+    /* --- 【今回追加したCSS】特定の条件ボタンの色を変更 --- */
+    .styled-form-group input[value="HP満タン時"]:checked + label {
+        background-color: forestgreen;
+        border-color: forestgreen;
+    }
+    .styled-form-group input[value="瀕死時"]:checked + label {
+        background-color: forestgreen;
+        border-color: forestgreen;
+    }
+    .styled-form-group input[value="カウンター"]:checked + label {
+        background-color: forestgreen;
+        border-color: forestgreen;
+    }
+    .styled-form-group input[value="熱"]:checked + label {
+        background-color: red;
+        border-color: red;
+    }
+    .styled-form-group input[value="冷"]:checked + label {
+        background-color: dodgerblue;
+        border-color: dodgerblue;
+    }
+    .styled-form-group input[value="雷"]:checked + label {
+        background-color: darkorange;
+        border-color: darkorange;
+    }
+    .styled-form-group input[value="陽"]:checked + label {
+        background-color: orangered;
+        border-color: orangered;
+    }
+    .styled-form-group input[value="陰"]:checked + label {
+        background-color: darkorchid;
+        border-color: darkorchid;
+    }
 
     </style>
 </head>
 <body>
 
-  <!-- サイドメニューオーバーレイ -->
   <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-  <!-- サイドメニュー -->
   <div id="sidemenu-container"></div>
 
     <div class="main-container">
@@ -778,7 +849,8 @@
                 
                 let checkboxesHTML = '';
                 abilityConditions.forEach(cond => {
-                    checkboxesHTML += `<label><input type="checkbox" name="condition-${i}" value="${cond.value}"> ${cond.name}</label>`;
+                    const uniqueId = `condition-${i}-${cond.value.replace(/\s/g, '-')}`;
+                    checkboxesHTML += `<input type="checkbox" name="condition-${i}" value="${cond.value}" id="${uniqueId}"><label for="${uniqueId}">${cond.name}</label>`;
                 });
 
                 charContainer.innerHTML = `
@@ -793,16 +865,16 @@
                         <div class="form-type">
                             <fieldset class="form-section">
                                 <legend>アビリティ</legend>
-                                <div class="form-group">
-                                    <label><input type="radio" name="ability-type-${i}" value="威力＋" checked> 威力＋</label>
-                                    <label><input type="radio" name="ability-type-${i}" value="味方威力＋"> 味方威力＋</label>
+                                <div class="styled-form-group">
+                                    <input type="radio" name="ability-type-${i}" value="威力＋" id="ability-type-${i}-power" checked><label for="ability-type-${i}-power">威力＋</label>
+                                    <input type="radio" name="ability-type-${i}" value="味方威力＋" id="ability-type-${i}-party"><label for="ability-type-${i}-party">味方威力＋</label>
                                 </div>
                             </fieldset>
                         </div>
                         <div class="form-conditions">
                             <fieldset class="form-section">
                                 <legend>条件 (複数可)</legend>
-                                <div class="conditions-wrapper">${checkboxesHTML}</div>
+                                <div class="styled-form-group conditions-wrapper">${checkboxesHTML}</div>
                             </fieldset>
                         </div>
                     </div>
