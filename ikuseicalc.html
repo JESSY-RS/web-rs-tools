@@ -669,21 +669,6 @@
       document.body.style.zoom = zoomLevel;
     }
 
-    function handleGesture() {
-      let diffX = endX - startX;
-
-      if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
-        // かつ開始位置が30px以内なら右フリックと判定
-        if (diffX > 0 && startX < 30) {
-          // 右にフリック
-          toggleMenu();
-        } else {
-          // 左にフリック
-          closeMenu();
-        }
-      }
-    }
-
     const gradeValues = {
       0: 1.00,
       1: 1.01,
