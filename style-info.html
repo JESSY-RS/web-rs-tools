@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>スタイル情報ビューア</title> <!-- Created by じぇ -->
+    <title>★スタイル情報ビューア</title> <!-- Created by じぇ -->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -804,15 +804,20 @@
             updateSelectAllCheckboxState();
         };
         const updateSelectedText = () => {
+            const hasSavedProfile = localStorage.getItem('styleViewerExclusions') !== null;
+
+            // 保存ボタンは、何かしらの項目が選択されている時だけ有効
+            saveProfileBtn.disabled = (additionalExclusionList.length === 0);
+
+            // 削除ボタンは、ストレージに保存されたプロファイルが存在する時だけ有効
+            deleteProfileBtn.disabled = !hasSavedProfile;
+
+            // プルダウンメニューのテキスト表示を更新
             if (additionalExclusionList.length === 0) {
                 selectedText.textContent = '(未指定)';
                 btn.classList.add('is-empty');
-                saveProfileBtn.disabled = true;
-                deleteProfileBtn.disabled = true;
             } else {
                 btn.classList.remove('is-empty');
-                saveProfileBtn.disabled = false;
-                deleteProfileBtn.disabled = false;
                 if (additionalExclusionList.length === 1) {
                     selectedText.textContent = additionalExclusionList[0];
                 } else {
@@ -855,6 +860,7 @@
         saveProfileBtn.addEventListener('click', () => {
             saveProfileBtn.classList.add('is-saving');
             localStorage.setItem('styleViewerExclusions', JSON.stringify(additionalExclusionList));
+            updateSelectedText();
             setTimeout(() => {
                 saveProfileBtn.classList.remove('is-saving');
             }, 500);

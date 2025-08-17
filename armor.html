@@ -51,12 +51,6 @@
 
     <script type="text/babel">
 
-        let zoomLevel = 1;
-        function changeZoom(delta) {
-          zoomLevel = (zoomLevel + delta < 0.5) ? 0.5 : (zoomLevel + delta > 2.0) ? 2.0 : zoomLevel + delta;
-          document.body.style.zoom = zoomLevel;
-        }
-
         const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
         const additionalAttributes = ['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
         const totalAttributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰', '毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
@@ -73,6 +67,7 @@
         };
 
         const ArmorCombinationAnalyzer = () => {
+          const [excludeProfileExists, setExcludeProfileExists] = useState({ main: false, sub: false, deco: false });
           const [mainArmor, setMainArmor] = useState([]);
           const [subArmor, setSubArmor] = useState([]);
           const [decorations, setDecorations] = useState([]);
@@ -87,6 +82,21 @@
           const [searching, setSearching] = useState({});
           const [activeTab, setActiveTab] = useState('キャラ１');
           const dropdownRefs = useRef({});
+
+  const [zoomLevel, setZoomLevel] = useState(1);
+
+  useEffect(() => {
+    document.body.style.zoom = zoomLevel;
+  }, [zoomLevel]);
+
+  const changeZoom = (delta) => {
+    setZoomLevel(prevZoom => {
+      const newZoom = prevZoom + delta;
+      if (newZoom < 0.5) return 0.5;
+      if (newZoom > 2.0) return 2.0;
+      return newZoom;
+    });
+  };
 
           const [countdown, setCountdown] = useState(0);
           const countdownIntervalRef = useRef(null);
@@ -487,33 +497,39 @@
           const characterDropdownRef = useRef(null);
 
 
-          const saveExcludeProfile = (type) => {
-            let key = '';
-            let data = [];
-            let category = '';
-            if (type === '主防具') { key = 'exclude_main'; data = [...excludeSettings.main]; category = 'main'; }
-            else if (type === '副防具') { key = 'exclude_sub'; data = [...excludeSettings.sub]; category = 'sub'; }
-            else if (type === '装飾品') { key = 'exclude_deco'; data = [...excludeSettings.deco]; category = 'deco'; }
+const saveExcludeProfile = (type) => {
+  let key = '';
+  let data = [];
+  let category = '';
+  if (type === '主防具') { key = 'exclude_main'; data = [...excludeSettings.main]; category = 'main'; }
+  else if (type === '副防具') { key = 'exclude_sub'; data = [...excludeSettings.sub]; category = 'sub'; }
+  else if (type === '装飾品') { key = 'exclude_deco'; data = [...excludeSettings.deco]; category = 'deco'; }
 
-            setExcludeSaving(prev => ({ ...prev, [category]: true }));
-            try { localStorage.setItem(key, JSON.stringify(data)); }
-            catch (e) { console.error(`${type}除外設定の保存に失敗しました`, e); }
-            finally { setTimeout(() => { setExcludeSaving(prev => ({ ...prev, [category]: false })); }, 800); }
-          };
+  setExcludeSaving(prev => ({ ...prev, [category]: true }));
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    setExcludeProfileExists(prev => ({ ...prev, [category]: true })); // この行を追加
+  }
+  catch (e) { console.error(`${type}除外設定の保存に失敗しました`, e); }
+  finally { setTimeout(() => { setExcludeSaving(prev => ({ ...prev, [category]: false })); }, 800); }
+};
 
-          const deleteExcludeProfile = (type) => {
-            let key = '';
-            let category = '';
-            if (type === '主防具') { key = 'exclude_main'; category = 'main'; }
-            else if (type === '副防具') { key = 'exclude_sub'; category = 'sub'; }
-            else if (type === '装飾品') { key = 'exclude_deco'; category = 'deco'; }
+const deleteExcludeProfile = (type) => {
+  let key = '';
+  let category = '';
+  if (type === '主防具') { key = 'exclude_main'; category = 'main'; }
+  else if (type === '副防具') { key = 'exclude_sub'; category = 'sub'; }
+  else if (type === '装飾品') { key = 'exclude_deco'; category = 'deco'; }
 
-            setExcludeDeleting(prev => ({ ...prev, [category]: true }));
-            setExcludeSettings(prev => ({ ...prev, [category]: [] }));
-            try { localStorage.removeItem(key); }
-            catch (e) { console.error(`${type}除外設定の削除に失敗`, e); }
-            finally { setTimeout(() => { setExcludeDeleting(prev => ({ ...prev, [category]: false })); }, 800); }
-          };
+  setExcludeDeleting(prev => ({ ...prev, [category]: true }));
+  setExcludeSettings(prev => ({ ...prev, [category]: [] }));
+  try {
+    localStorage.removeItem(key);
+    setExcludeProfileExists(prev => ({ ...prev, [category]: false })); // この行を追加
+  }
+  catch (e) { console.error(`${type}除外設定の削除に失敗`, e); }
+  finally { setTimeout(() => { setExcludeDeleting(prev => ({ ...prev, [category]: false })); }, 800); }
+};
 
           const [profileName, setProfileName] = useState('');
           const [savedProfiles, setSavedProfiles] = useState({});
@@ -762,12 +778,22 @@
             }
           }, []);
 
-          useEffect(() => {
-            const main = JSON.parse(localStorage.getItem('exclude_main') || '[]');
-            const sub = JSON.parse(localStorage.getItem('exclude_sub') || '[]');
-            const deco = JSON.parse(localStorage.getItem('exclude_deco') || '[]');
-            setExcludeSettings(prev => ({ ...prev, main, sub, deco }));
-          }, []);
+useEffect(() => {
+  const mainData = localStorage.getItem('exclude_main');
+  const subData = localStorage.getItem('exclude_sub');
+  const decoData = localStorage.getItem('exclude_deco');
+
+  setExcludeProfileExists({
+    main: mainData !== null,
+    sub: subData !== null,
+    deco: decoData !== null
+  });
+
+  const main = JSON.parse(mainData || '[]');
+  const sub = JSON.parse(subData || '[]');
+  const deco = JSON.parse(decoData || '[]');
+  setExcludeSettings(prev => ({ ...prev, main, sub, deco }));
+}, []);
 
           useEffect(() => {
             const handleClickOutside = (event) => {
@@ -1291,7 +1317,11 @@
 
 
           return (
-            <div className={`max-w-8xl mx-auto p-0`}>
+            <div className={`max-w-8xl mx-auto p-0 relative`}>
+    <div className="zoom-buttons">
+      <button onClick={() => changeZoom(-0.1)}>－</button>
+      <button onClick={() => changeZoom(0.1)}>＋</button>
+    </div>
               <div className={`${currentThemeColors.wholeTxt} p-6`}>
                 <h1 className={`text-2xl font-bold mb-6 ${currentThemeColors.titleTxt} relative`}>
                   <span
@@ -1792,9 +1822,9 @@
 
                           <button
                             onClick={() => deleteExcludeProfile('主防具')}
-                            disabled={excludeSaving.main || excludeSettings.main.length === 0}
+                            disabled={excludeDeleting.main || !excludeProfileExists.main}
                             className={`w-full ${currentThemeColors.btnsdTxt} px-4 py-2 rounded ${
-                              excludeDeleting.main || excludeSettings.main.length === 0
+                              excludeDeleting.main || !excludeProfileExists.main
                                 ? `${currentThemeColors.btnsdDis}`
                                 : `${currentThemeColors.btDelBak}`
                             }`}
@@ -1819,9 +1849,9 @@
 
                           <button
                             onClick={() => deleteExcludeProfile('副防具')}
-                            disabled={excludeSaving.sub || excludeSettings.sub.length === 0}
-                            className={`w-full ${currentThemeColors.btnsdTxt} px-4 py-21 rounded ${
-                              excludeDeleting.sub || excludeSettings.sub.length === 0
+                            disabled={excludeDeleting.sub || !excludeProfileExists.sub}
+                            className={`w-full ${currentThemeColors.btnsdTxt} px-4 py-2 rounded ${
+                              excludeDeleting.sub || !excludeProfileExists.sub
                                 ? `${currentThemeColors.btnsdDis}`
                                 : `${currentThemeColors.btDelBak}`
                             }`}
@@ -1845,9 +1875,9 @@
 
                           <button
                             onClick={() => deleteExcludeProfile('装飾品')}
-                            disabled={excludeSaving.deco || excludeSettings.deco.length === 0}
+                            disabled={excludeDeleting.deco || !excludeProfileExists.deco}
                             className={`w-full ${currentThemeColors.btnsdTxt} px-4 py-2 rounded ${
-                              excludeDeleting.deco || excludeSettings.deco.length === 0
+                              excludeDeleting.deco || !excludeProfileExists.deco
                                 ? `${currentThemeColors.btnsdDis}`
                                 : `${currentThemeColors.btDelBak}`
                             }`}
@@ -2575,6 +2605,7 @@
                   </div>
                 )}
               </div>
+
               <footer className={`border-t ${currentThemeColors.underBdr} ${currentThemeColors.underTxt}`}>
                 ※使用は自己責任にて。<br/>
                 ※目標値の属性名をダブルクリックすると値が-999→0→35の順でループして切り替わります。<br/>
