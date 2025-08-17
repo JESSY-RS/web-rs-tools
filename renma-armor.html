@@ -427,12 +427,172 @@
             font-size: 16pt;
             line-height: 2;
         }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      cursor: pointer;
+      margin-right: 10px;
+      user-select: none;
+      color: #eee;
+      display: inline-block;
+    }
+    
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 320px;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1001;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: #FF6E3D;
+    }
+
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: inline-block;
+      padding: 6px 0;
+      color: #eee;
+      text-decoration: none;
+    }
+    .menu-item:hover {
+      color: #0CFF57;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
+    .toggle-button {
+      cursor: pointer;
+      color: #7755FF;
+      text-decoration: underline;
+      font-size: 18px;
+      text-align: left;
+      display: block;
+      padding: 6px 0;
+      user-select: none;
+    }
+
+    .toggle-button:hover {
+      color: #0CFF57;
+      text-decoration: underline;
+    }
+
+    #linkList {
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList1 {
+      font-size: 18px;
+      text-align: left;
+      padding: 12px 0;
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList2 {
+      font-size: 18px;
+      text-align: left;
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList a {
+      display: inline-block;
+      text-decoration: none;
+      color: #7755FF;
+    }
+
+    #linkList a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    #linkList a:hover {
+      text-decoration: underline;
+      color: #0CFF57;
+    }
+
+    #linkList a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
     </style>
 </head>
 <body>
 
+  <!-- サイドメニューオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <!-- サイドメニュー -->
+  <div id="sidemenu-container"></div>
+
     <header>
-        <h1>練磨(防具)リスト</h1>
+        <h1><span class="hamburger" onclick="toggleMenu()">☰</span>練磨(防具)リスト</h1>
         <div class="header-controls">
             <div class="left-buttons">
                 <button id="import-btn">インポート</button>
@@ -794,11 +954,102 @@
 </div>
 
     <script>
-        let zoomLevel = 1;
-        function changeZoom(delta) {
-          zoomLevel = (zoomLevel + delta < 0.5) ? 0.5 : (zoomLevel + delta > 2.0) ? 2.0 : zoomLevel + delta;
-          document.body.style.zoom = zoomLevel;
+
+    // サイドメニューを呼び出す関数
+    function loadSideMenu() {
+      fetch('sidemenu.html')
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('sidemenu-container').innerHTML = data;
+
+          // メニュー読み込み後に、メニュー内のトグルボタンのイベントリスナーを再設定する
+          var toggleButtons = document.querySelectorAll(".toggle-button");
+          toggleButtons.forEach(function(button) {
+            var targetId = button.getAttribute("data-target");
+            var list = document.getElementById(targetId);
+            // list.style.display = "none"; // 初期状態はCSSで制御されているため不要
+
+            button.addEventListener("click", function(){
+              if (list.style.display === "block") {
+                list.style.display = "none";
+              } else {
+                list.style.display = "block";
+              }
+            });
+          });
+        });
+    }
+
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        if (!sideMenu) return;
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
         }
+    }
+
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        if (!sideMenu) return;
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+    }
+
+    // フリックでメニュー開閉（スクロール誤作動対策版）
+    let startX = 0, startY = 0;
+    let endX = 0, endY = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      // タッチ開始時のX座標とY座標を記録
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      // タッチ終了時のX座標とY座標を記録
+      endX = e.changedTouches[0].screenX;
+      endY = e.changedTouches[0].screenY;
+      handleGesture(); // ジェスチャーを判定する関数を呼び出し
+    }, false);
+
+    function handleGesture() {
+      const diffX = endX - startX; // 水平方向の移動量
+      const diffY = endY - startY; // 垂直方向の移動量
+
+      // 条件1: 水平方向の移動量が、垂直方向の移動量よりも大きい場合のみ処理（スワイプかスクロールかを判定）
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+
+        // 条件2-1: 右へのスワイプ（50px以上移動し、かつ画面の左端30px以内から開始）
+        if (diffX > 50 && startX < 30) {
+          // 右にフリックしてメニューを開く
+          toggleMenu();
+        } 
+        // 条件2-2: 左へのスワイプ（50px以上移動）
+        else if (diffX < -50) {
+          // 左にフリックしてメニューを閉じる
+          closeMenu();
+        }
+      }
+      // 垂直方向の移動量が大きい場合は、何もしない（ブラウザの標準スクロールに任せる）
+    }
+
+    // 拡大縮小の関数
+    let zoomLevel = 1;
+
+    function changeZoom(delta) {
+      zoomLevel += delta;
+      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
+      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
+      document.body.style.zoom = zoomLevel;
+    }
 
         document.addEventListener('DOMContentLoaded', () => {
             const toggleMaxValueBtn = document.getElementById('toggle-max-value');
@@ -1885,6 +2136,13 @@
             }
             initialize();
         });
-    </script>
+
+    // ページをリロードしたらサイドメニューを呼び出す
+    window.onload = function () {
+        loadSideMenu();
+    }
+
+  </script>
+
 </body>
 </html>
