@@ -397,32 +397,42 @@
         menuOverlay.classList.remove('open');
     }
 
-    // フリックでメニュー開閉
-    let startX = 0;
-    let endX = 0;
+    // フリックでメニュー開閉（スクロール誤作動対策版）
+    let startX = 0, startY = 0;
+    let endX = 0, endY = 0;
 
     document.addEventListener('touchstart', function (e) {
+      // タッチ開始時のX座標とY座標を記録
       startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
     }, false);
 
     document.addEventListener('touchend', function (e) {
+      // タッチ終了時のX座標とY座標を記録
       endX = e.changedTouches[0].screenX;
-      handleGesture();
+      endY = e.changedTouches[0].screenY;
+      handleGesture(); // ジェスチャーを判定する関数を呼び出し
     }, false);
 
     function handleGesture() {
-      let diffX = endX - startX;
+      const diffX = endX - startX; // 水平方向の移動量
+      const diffY = endY - startY; // 垂直方向の移動量
 
-      if (Math.abs(diffX) > 50) {  // 50px以上の動きで判定
-        // かつ開始位置が30px以内なら右フリックと判定
-        if (diffX > 0 && startX < 30) {
-          // 右にフリック
+      // 条件1: 水平方向の移動量が、垂直方向の移動量よりも大きい場合のみ処理（スワイプかスクロールかを判定）
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+
+        // 条件2-1: 右へのスワイプ（50px以上移動し、かつ画面の左端30px以内から開始）
+        if (diffX > 50 && startX < 30) {
+          // 右にフリックしてメニューを開く
           toggleMenu();
-        } else {
-          // 左にフリック
+        } 
+        // 条件2-2: 左へのスワイプ（50px以上移動）
+        else if (diffX < -50) {
+          // 左にフリックしてメニューを閉じる
           closeMenu();
         }
       }
+      // 垂直方向の移動量が大きい場合は、何もしない（ブラウザの標準スクロールに任せる）
     }
 
     const expData = {
