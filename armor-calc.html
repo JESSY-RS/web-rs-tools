@@ -331,6 +331,14 @@
             }
         }
 
+        /* ---【今回追加】画面幅480px以下のためのスタイル --- */
+        @media (max-width: 480px) {
+            .form-horizontal-row {
+                flex-direction: column; /* アビリティと条件のセクションを縦積みにする */
+                align-items: stretch;   /* 幅を親要素に合わせる */
+            }
+        }
+
     /* ハンバーガーメニューのスタイル */
     .hamburger {
       cursor: pointer;
@@ -943,25 +951,11 @@
             return match ? match[1] : null;
         }
 
-        function findBestArmor(armorType, abilityNames, excludedItems) {
-            let bestArmor = { armorName: '該当なし', value: 0, abilityName: '-' };
-            const filteredData = armorData.filter(item => 
-                item.armorType === armorType && 
-                abilityNames.includes(item.abilityName) &&
-                !excludedItems.has(item.armorName)
-            );
-            if (filteredData.length > 0) {
-                filteredData.sort((a, b) => b.value - a.value);
-                bestArmor = filteredData[0];
-            }
-            return bestArmor;
-        }
-
         /**
          * 装備の固有アビリティ(CSV)の効果値を取得する
          * @param {string} armorName - 防具名
          * @param {string} armorType - 'main' または 'sub'
-         * @param {string[]} selectedConditions - キャラクターが選択した条件の配列
+         * @param {string[]} selectedConditions - キャラクターが選択した全ての条件の配列 (例: ["HP満タン時", "雷"])
          * @param {string} abilityType - '威力＋' または '味方威力＋'
          * @returns {number} - 固有アビリティの効果値の合計
          */
@@ -975,15 +969,15 @@
             const abilities = nativeAbilityMap.get(armorName);
 
             for (const ability of abilities) {
-                // 「味方威力＋」を選択している場合は、「味方威力」のアビリティのみ加算
+                const nativeAbilityTarget = ability.target;
                 if (abilityType === '味方威力＋') {
-                    if (ability.target === '味方威力') {
+                    if (nativeAbilityTarget === '味方威力') {
                         totalValue += ability.value;
                     }
-                }
-                // 「威力＋」を選択している場合は、「威力」「味方威力」と条件一致のものを加算
-                else {
-                    if (ability.target === '威力' || ability.target === '味方威力' || selectedConditions.includes(ability.target)) {
+                } else {
+                    const isUnconditional = nativeAbilityTarget === '威力' || nativeAbilityTarget === '味方威力';
+                    const isConditionMet = selectedConditions.includes(nativeAbilityTarget);
+                    if (isUnconditional || isConditionMet) {
                         totalValue += ability.value;
                     }
                 }
@@ -991,30 +985,87 @@
             return totalValue;
         }
 
-        function calculateAllCharacters() {
+        /**
+         * JSON値とCSV値を合算した総合値で最適な防具を見つける関数
+         * @param {string} armorType - 'main' or 'sub'
+         * @param {string} abilityType - '威力＋' or '味方威力＋'
+         * @param {string[]} selectedConditions - 選択された条件の配列
+         * @param {Set<string>} excludedItems - 既に装備済みの防具名のSet
+         * @returns {object} - 最適な防具の情報 (nativeValue含む)
+         */
+        function findBestArmorWithNativeAbilities(armorType, abilityType, selectedConditions, excludedItems) {
+            const candidates = [];
 
+            const availableArmor = armorData.filter(item =>
+                item.armorType === armorType &&
+                !excludedItems.has(item.armorName)
+            );
+
+            for (const armor of availableArmor) {
+                const jsonAbilityCondition = getConditionFromAbilityName(armor.abilityName);
+                const jsonAbilityType = armor.abilityName.includes('味方威力＋') ? '味方威力＋' : '威力＋';
+                
+                if (abilityType === jsonAbilityType && selectedConditions.includes(jsonAbilityCondition)) {
+                    const jsonValue = armor.value;
+                    const nativeValue = getNativeAbilityValue(armor.armorName, armorType, selectedConditions, abilityType);
+                    const combinedValue = jsonValue + nativeValue;
+
+                    candidates.push({
+                        ...armor,
+                        combinedValue: combinedValue,
+                        nativeValue: nativeValue
+                    });
+                }
+            }
+
+            if (candidates.length === 0) {
+                return { armorName: '該当なし', value: 0, abilityName: '-', combinedValue: 0, nativeValue: 0 };
+            }
+
+            candidates.sort((a, b) => b.combinedValue - a.combinedValue);
+            return candidates[0];
+        }
+
+
+        function calculateAllCharacters() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
             const equippedItems = new Set();
             const characterResults = [];
 
-            // フェーズ1: 各キャラクターの最適な装備を決定
+            // フェーズ1: 各キャラクターの最適な装備を決定 (総合値で判断)
             for (let charId = 1; charId <= 5; charId++) {
                 const abilityType = document.querySelector(`input[name="ability-type-${charId}"]:checked`).value;
                 const selectedConditions = Array.from(document.querySelectorAll(`input[name="condition-${charId}"]:checked`)).map(cb => cb.value);
                 
-                let mainArmor = { armorName: '該当なし', value: 0, abilityName: '-' };
-                let subArmor = { armorName: '該当なし', value: 0, abilityName: '-' };
+                let mainArmorResult = { armorName: '該当なし', value: 0, abilityName: '-', nativeValue: 0 };
+                let subArmorResult = { armorName: '該当なし', value: 0, abilityName: '-', nativeValue: 0 };
 
                 if (selectedConditions.length > 0) {
-                    const targetAbilityNames = selectedConditions.map(cond => `${abilityType}(${cond})`);
-                    mainArmor = findBestArmor('main', targetAbilityNames, equippedItems);
-                    if (mainArmor.armorName !== '該当なし') equippedItems.add(mainArmor.armorName);
-                    subArmor = findBestArmor('sub', targetAbilityNames, equippedItems);
-                    if (subArmor.armorName !== '該当なし') equippedItems.add(subArmor.armorName);
+                    const bestMain = findBestArmorWithNativeAbilities('main', abilityType, selectedConditions, equippedItems);
+                    if (bestMain.armorName !== '該当なし') {
+                        equippedItems.add(bestMain.armorName);
+                    }
+                    mainArmorResult = {
+                        armorName: bestMain.armorName,
+                        value: bestMain.value,
+                        abilityName: bestMain.abilityName,
+                        nativeValue: bestMain.nativeValue
+                    };
+
+                    const bestSub = findBestArmorWithNativeAbilities('sub', abilityType, selectedConditions, equippedItems);
+                    if (bestSub.armorName !== '該当なし') {
+                        equippedItems.add(bestSub.armorName);
+                    }
+                    subArmorResult = {
+                        armorName: bestSub.armorName,
+                        value: bestSub.value,
+                        abilityName: bestSub.abilityName,
+                        nativeValue: bestSub.nativeValue
+                    };
                 }
                 
-                characterResults.push({ charId, abilityType, selectedConditions, mainArmor, subArmor });
+                characterResults.push({ charId, abilityType, selectedConditions, mainArmor: mainArmorResult, subArmor: subArmorResult });
             }
 
             // フェーズ2: 味方威力を集計
@@ -1024,8 +1075,23 @@
                     [result.mainArmor, result.subArmor].forEach(armor => {
                         const condition = getConditionFromAbilityName(armor.abilityName);
                         if (condition) {
+                            // JSONの数値でバフ量を計算
                             partyBuffs.set(condition, (partyBuffs.get(condition) || 0) + armor.value);
                         }
+                        // 固有アビリティの味方威力も加算
+                         const nativeAbilityMap = armor.armorType === 'main' ? mainNativeAbilities : subNativeAbilities;
+                         if (nativeAbilityMap.has(armor.armorName)) {
+                             nativeAbilityMap.get(armor.armorName).forEach(ability => {
+                                 if (ability.target === '味方威力') {
+                                     // 味方威力は特定の条件に紐づかない全体バフとして扱う
+                                     // ここでは、 selectedConditions の最初の条件に仮に紐づけるか、別途管理が必要
+                                     // 簡単にするため、選択された全ての条件に均等に加算する（または、代表的なものに）
+                                     result.selectedConditions.forEach(cond => {
+                                         partyBuffs.set(cond, (partyBuffs.get(cond) || 0) + ability.value);
+                                     });
+                                 }
+                             });
+                         }
                     });
                 }
             }
@@ -1037,9 +1103,9 @@
                     continue;
                 }
 
-                // 装備固有アビリティの効果値を取得（アビリティ種別を渡すように変更）
-                const mainNativeValue = getNativeAbilityValue(result.mainArmor.armorName, 'main', result.selectedConditions, result.abilityType);
-                const subNativeValue = getNativeAbilityValue(result.subArmor.armorName, 'sub', result.selectedConditions, result.abilityType);
+                // フェーズ1で計算済みの固有アビリティ値を使用
+                const mainNativeValue = result.mainArmor.nativeValue || 0;
+                const subNativeValue = result.subArmor.nativeValue || 0;
                 
                 const totalNativeValue = mainNativeValue + subNativeValue;
                 const selfJsonValue = result.mainArmor.value + result.subArmor.value;
@@ -1067,7 +1133,6 @@
         function displayResult(charId, mainArmor, subArmor, totals, mainNativeValue, subNativeValue) {
             const resultArea = document.getElementById(`result-area-${charId}`);
             
-            // 固有アビリティ値に基づいて防具名の表示を決定する
             let mainArmorNameStyle = '';
             if (mainArmor.armorName === '該当なし') {
                 mainArmorNameStyle = 'style="color: red;"';
@@ -1089,7 +1154,7 @@
             const subArmorNameText = subNativeValue > 0 && subArmor.armorName !== '該当なし' ? `${subArmor.armorName}(+${subNativeValue})` : subArmor.armorName;
 
             let totalHTML = '';
-            if (totals.grand !== undefined) { // "威力＋" のキャラ
+            if (totals.grand !== undefined) {
                 totalHTML = `
                     <div class="total-container">
                         <div class="total-row"><span class="label">自身:</span><span class="value">${totals.self}%</span></div>
@@ -1097,7 +1162,7 @@
                         <div class="total-row final-total"><span class="label">合計:</span><span class="value">${totals.grand}%</span></div>
                     </div>
                 `;
-            } else { // "味方威力＋" のキャラ
+            } else {
                 totalHTML = `
                     <div class="total-container">
                         <div class="total-row final-total"><span class="label">合計:</span><span class="value">${totals.self}%</span></div>
