@@ -7,9 +7,7 @@
     <link rel="shortcut icon" href="favicon-renma.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
-    <title>練磨(防具)アビリティ TOP5</title> <!-- Created by じぇ -->
-
-    <style>
+    <title>練磨(防具)アビリティ TOP5</title> <style>
         /* --- 全体 --- */
         body {
             background-color: #2A2A2A;
@@ -375,10 +373,8 @@
 </head>
 <body>
 
-  <!-- サイドメニューオーバーレイ -->
   <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-  <!-- サイドメニュー -->
   <div id="sidemenu-container"></div>
 
     <header>
@@ -677,23 +673,28 @@
 
                 // 固有アビリティを加味する場合の処理
                 if (includeUnique && uniqueAbilities[item.armorName]) {
-                    const armorBonuses = uniqueAbilities[item.armorName];
+                    const isSpecialArmor = item.armorName.includes("名将の鎧") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ");
 
-                    // 1. 対応する属性のボーナスを加算
-                    const specificTarget = getTargetFromAbilityName(item.abilityName);
-                    if (specificTarget && armorBonuses[specificTarget]) {
-                        totalAddedValue += armorBonuses[specificTarget];
-                    }
+                    // 名将の鎧とバトルヴァンブレイスの場合は、固有アビリティを加算しない
+                    if (!isSpecialArmor) {
+                        const armorBonuses = uniqueAbilities[item.armorName];
 
-                    // 2. 「威力＋」系の場合、さらに「味方威力」ボーナスも加算 (重複はしない)
-                    const isSelfPower = selfPowerAbilities.includes(item.abilityName);
-                    if (isSelfPower && armorBonuses['味方威力']) {
-                        totalAddedValue += armorBonuses['味方威力'];
-                    }
+                        // 1. 対応する属性のボーナスを加算
+                        const specificTarget = getTargetFromAbilityName(item.abilityName);
+                        if (specificTarget && armorBonuses[specificTarget]) {
+                            totalAddedValue += armorBonuses[specificTarget];
+                        }
 
-                    // 3. 「威力＋」系の場合、「威力」ボーナスも加算する
-                    if (isSelfPower && armorBonuses['威力']) {
-                        totalAddedValue += armorBonuses['威力'];
+                        // 2. 「威力＋」系の場合、さらに「味方威力」ボーナスも加算 (重複はしない)
+                        const isSelfPower = selfPowerAbilities.includes(item.abilityName);
+                        if (isSelfPower && armorBonuses['味方威力']) {
+                            totalAddedValue += armorBonuses['味方威力'];
+                        }
+
+                        // 3. 「威力＋」系の場合、「威力」ボーナスも加算する
+                        if (isSelfPower && armorBonuses['威力']) {
+                            totalAddedValue += armorBonuses['威力'];
+                        }
                     }
                 }
                 
