@@ -7,9 +7,7 @@
     <link rel="shortcut icon" href="favicon-renma.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
-    <title>練磨(防具)リスト</title> <!-- Created by じぇ -->
-
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <title>練磨(防具)リスト</title> <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <style>
         body {
@@ -77,6 +75,7 @@
 
         /* --- 検索・並び替えパネルの専用スタイル --- */
         #search-panel, #sort-panel {
+            background-color: #2A2A2A;
             border-color: #555;
         }
         #search-panel.is-collapsed, #sort-panel.is-collapsed {
@@ -372,7 +371,7 @@
         }
         .dropdown-options-list { overflow-y: auto; flex-grow: 1; }
         .dropdown-option { padding: 8px 12px; cursor: pointer; font-size: 1em; }
-        .dropdown-option:hover { background-color: #007bff; }
+        .dropdown-option:hover, .dropdown-option.focused { background-color: #007bff; }
         .dropdown-option.hidden { display: none; }
         
         /* --- Submenu Styles --- */
@@ -586,10 +585,8 @@
 </head>
 <body>
 
-  <!-- サイドメニューオーバーレイ -->
   <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-  <!-- サイドメニュー -->
   <div id="sidemenu-container"></div>
 
     <header>
@@ -1295,6 +1292,7 @@
                 if (!e.target.closest('.custom-dropdown')) {
                     document.querySelectorAll('.custom-dropdown-panel.show').forEach(panel => {
                         panel.classList.remove('show');
+                        panel.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
                         const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
                         if (submenu) {
                             submenu.style.display = 'none';
@@ -1382,19 +1380,61 @@
                     document.querySelectorAll('.custom-dropdown-submenu').forEach(submenu => submenu.style.display = 'none');
                     
                     document.querySelectorAll('.custom-dropdown-panel.show').forEach(p => {
-                        if (p !== panel) p.classList.remove('show');
+                        if (p !== panel) {
+                            p.classList.remove('show');
+                            p.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
+                        }
                     });
                     
                     panel.classList.toggle('show');
 
                     if (!isOpening) {
+                        panel.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
                         const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
                         if (submenu) submenu.style.display = 'none';
                     } else {
                         const searchInput = panel.querySelector('.dropdown-search-input');
-                        if(searchInput) searchInput.value = '';
+                        if (searchInput) searchInput.value = '';
                         panel.querySelectorAll('.dropdown-option.hidden').forEach(opt => opt.classList.remove('hidden'));
-                        panel.querySelector('.dropdown-options-list').scrollTop = 0;
+
+                        const optionsList = panel.querySelector('.dropdown-options-list');
+                        optionsList.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
+
+                        const selectedValue = button.dataset.value;
+                        let selectedOption = null;
+
+                        if (selectedValue && selectedValue !== 'none' && selectedValue !== 'list_order') {
+                            const selectedText = button.querySelector('.button-label').textContent;
+                            selectedOption = optionsList.querySelector(`.dropdown-option[data-value="${selectedValue}"]`);
+
+                            if (!selectedOption) {
+                                const match = selectedText.match(/(.+)\(.*\)/);
+                                let parentText = match ? match[1] : null;
+
+                                // ★★★ 変更点: 半角のﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽを全角に戻して比較する ★★★
+                                if (parentText) {
+                                    parentText = parentText.replace('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ', 'バトルヴァンブレイス');
+                                }
+
+                                if (parentText) {
+                                    const parentOptions = optionsList.querySelectorAll('.dropdown-option[data-has-submenu]');
+                                    for (const opt of parentOptions) {
+                                        const optText = opt.querySelector('span')?.textContent;
+                                        if (optText === parentText) {
+                                            selectedOption = opt;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (selectedOption) {
+                            selectedOption.classList.add('focused');
+                            selectedOption.scrollIntoView({ block: 'nearest' });
+                        } else {
+                            optionsList.scrollTop = 0;
+                        }
                     }
                 }
                 else if (target.matches('.dropdown-option') && !target.dataset.hasSubmenu) {
@@ -1427,7 +1467,10 @@
                     
                     const mainPanel = dropdown.querySelector('.custom-dropdown-panel');
                     const submenu = dropdown.querySelector('.custom-dropdown-submenu');
-                    if (mainPanel) mainPanel.classList.remove('show');
+                    if (mainPanel) {
+                        mainPanel.classList.remove('show');
+                        mainPanel.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
+                    }
                     if (submenu) submenu.style.display = 'none';
                 }
                 else if (part && target.matches('.add-part-inline-btn')) {
@@ -1437,8 +1480,6 @@
                     }
                 }
                 else if (part && target.matches('.delete-btn')) {
-                    // Count all panels in the document that have a delete button.
-                    // This correctly identifies only the registration panels, excluding the search/sort panels.
                     const deletablePanelCount = document.querySelectorAll('.armor-part .delete-btn').length;
 
                     if (deletablePanelCount > 1) {
@@ -1453,6 +1494,11 @@
             document.addEventListener('mouseover', e => {
                 const option = e.target.closest('.dropdown-option');
                 if (!option) return;
+
+                const optionsList = option.closest('.dropdown-options-list');
+                if (optionsList) {
+                    optionsList.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
+                }
 
                 const panel = option.closest('.custom-dropdown-panel');
                 if (!panel) return;
@@ -1502,6 +1548,17 @@
                     });
                     
                     submenu.style.display = 'block';
+
+                    const listRect = optionsList.getBoundingClientRect();
+                    const optionRect = option.getBoundingClientRect();
+                    const buffer = 5; 
+
+                    if (optionRect.bottom > listRect.bottom - buffer) {
+                        optionsList.scrollTop += (optionRect.bottom - listRect.bottom + buffer);
+                    } else if (optionRect.top < listRect.top + buffer) {
+                        optionsList.scrollTop -= (listRect.top - optionRect.top + buffer);
+                    }
+
                 } else if (!e.target.closest('.custom-dropdown-submenu')) {
                     submenu.style.display = 'none';
                 }
