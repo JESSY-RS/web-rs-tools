@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>装備候補検索ツール</title> <!-- Created by じぇ --> 
+    <title>装備候補検索ツール</title> <!-- Created by じぇ -->
 
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -55,7 +55,10 @@
         const additionalAttributes = ['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
         const totalAttributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰', '毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
 
-        const { useState, useEffect, useRef, useCallback } = React;
+        // ===== ここから変更 =====
+        // useLayoutEffect をReactからインポート
+        const { useState, useEffect, useLayoutEffect, useRef, useCallback } = React;
+        // ===== ここまで変更 =====
 
         // ひらがなをカタカナに変換するヘルパー関数
         const hiraganaToKatakana = (str) => {
@@ -82,6 +85,10 @@
           const [searching, setSearching] = useState({});
           const [activeTab, setActiveTab] = useState('キャラ１');
           const dropdownRefs = useRef({});
+
+          // プルダウン内の選択中項目へ自動スクロール/フォーカスするためのstateとref
+          const [focusedItem, setFocusedItem] = useState(null); // { type: string, name: string }
+          const itemRefs = useRef({}); // 各リスト項目のDOM参照を保持
 
   const [zoomLevel, setZoomLevel] = useState(1);
 
@@ -794,6 +801,48 @@ useEffect(() => {
   const deco = JSON.parse(decoData || '[]');
   setExcludeSettings(prev => ({ ...prev, main, sub, deco }));
 }, []);
+          
+          // ===== ここから変更 =====
+          // プルダウンが開かれたときに選択項目へスクロールしフォーカスする
+          // useEffectをuseLayoutEffectに変更し、setTimeoutを削除
+          useLayoutEffect(() => {
+            const scrollAndFocus = (type, selectedValue) => {
+                if (!selectedValue) {
+                    setFocusedItem(null); // 選択がない場合はフォーカスをクリア
+                    return;
+                }
+
+                // 新しいプルダウンが開かれるたびにフォーカスを設定
+                setFocusedItem({ type, name: selectedValue });
+                const selectedItemRef = itemRefs.current[type]?.[selectedValue];
+
+                if (selectedItemRef) {
+                    // タイムラグなしでスクロールを実行
+                    selectedItemRef.scrollIntoView({ block: 'nearest' });
+                }
+            };
+
+            // 各プルダウンの表示状態を監視し、対応する処理を呼び出す
+            if (showCharacterDropdown) scrollAndFocus('character', selectedCharacters[activeTab]);
+            if (showFixedDropdown.main) scrollAndFocus('mainFixed', fixedEquipments[activeTab].main);
+            if (showFixedDropdown.sub) scrollAndFocus('subFixed', fixedEquipments[activeTab].sub);
+            if (showFixedDropdown.deco) scrollAndFocus('decoFixed', fixedEquipments[activeTab].deco);
+            if (showBulkDropdown.main) scrollAndFocus('mainBulk', bulkMainArmorSelect);
+            if (showBulkDropdown.sub) scrollAndFocus('subBulk', bulkSubArmorSelect);
+            if (showBulkDropdown.deco) scrollAndFocus('decoBulk', bulkDecorationSelect);
+
+          }, [showCharacterDropdown, showFixedDropdown, showBulkDropdown, selectedCharacters, fixedEquipments, bulkMainArmorSelect, bulkSubArmorSelect, bulkDecorationSelect, activeTab]);
+          // ===== ここまで変更 =====
+
+          // すべての関連プルダウンが閉じたときにフォーカス状態をリセットするuseEffect
+          useEffect(() => {
+            const anyDropdownOpen = showCharacterDropdown || 
+                                  showFixedDropdown.main || showFixedDropdown.sub || showFixedDropdown.deco ||
+                                  showBulkDropdown.main || showBulkDropdown.sub || showBulkDropdown.deco;
+            if (!anyDropdownOpen) {
+                setFocusedItem(null);
+            }
+          }, [showCharacterDropdown, showFixedDropdown, showBulkDropdown]);
 
           useEffect(() => {
             const handleClickOutside = (event) => {
@@ -1986,12 +2035,15 @@ useEffect(() => {
                                 <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                               </button>
                               {showCharacterDropdown && (
-                                  <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}>
+                                  <div
+                                    className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
+                                    onMouseMove={() => focusedItem && setFocusedItem(null)}
+                                  >
                                       <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                           <input type="text" placeholder="検索..." value={characterSearch} onChange={e => { e.stopPropagation(); setCharacterSearch(e.target.value); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                       </div>
                                       <div className="overflow-y-auto">
-                                          <div onClick={() => { handleCharacterSelect(activeTab, ''); setShowCharacterDropdown(false); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>(未指定)</div>
+                                          <div onClick={() => { handleCharacterSelect(activeTab, ''); setShowCharacterDropdown(false); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>(未指定)</div>
                                           {characterResistances
                                             .filter(char => {
                                                 if (!char['登録名']) return false;
@@ -2000,7 +2052,17 @@ useEffect(() => {
                                                 return charName.includes(searchTerm);
                                             })
                                             .map((char, index) => (
-                                                <div key={index} onClick={() => { handleCharacterSelect(activeTab, char['登録名']); setShowCharacterDropdown(false); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{char['登録名']}</div>
+                                                <div
+                                                  key={index}
+                                                  ref={el => {
+                                                    if (!itemRefs.current.character) itemRefs.current.character = {};
+                                                    itemRefs.current.character[char['登録名']] = el;
+                                                  }}
+                                                  onClick={() => { handleCharacterSelect(activeTab, char['登録名']); setShowCharacterDropdown(false); }}
+                                                  className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'character' && focusedItem.name === char['登録名'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}
+                                                >
+                                                  {char['登録名']}
+                                                </div>
                                           ))}
                                       </div>
                                   </div>
@@ -2170,13 +2232,14 @@ useEffect(() => {
                             <div
                               className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
                               ref={(el) => (fixedDropdownRefs.current.main = el)}
+                              onMouseMove={() => focusedItem && setFocusedItem(null)}
                             >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                     <input type="text" placeholder="検索..." value={fixedSearch.main} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                 </div>
                                 <div className="overflow-y-auto">
-                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: '' }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                    {mainArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.main).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div>))}
+                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: '' }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                    {mainArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.main).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} ref={el => { if (!itemRefs.current.mainFixed) itemRefs.current.mainFixed = {}; itemRefs.current.mainFixed[item['名称']] = el; }} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'mainFixed' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div>))}
                                 </div>
                             </div>
                           )}
@@ -2200,13 +2263,14 @@ useEffect(() => {
                             <div
                               className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
                               ref={(el) => (fixedDropdownRefs.current.sub = el)}
+                              onMouseMove={() => focusedItem && setFocusedItem(null)}
                             >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                     <input type="text" placeholder="検索..." value={fixedSearch.sub} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                 </div>
                                 <div className="overflow-y-auto">
-                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: '' }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                    {subArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.sub).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div>))}
+                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: '' }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                    {subArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.sub).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} ref={el => { if (!itemRefs.current.subFixed) itemRefs.current.subFixed = {}; itemRefs.current.subFixed[item['名称']] = el; }} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'subFixed' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div>))}
                                 </div>
                             </div>
                           )}
@@ -2230,13 +2294,14 @@ useEffect(() => {
                             <div
                               className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
                               ref={(el) => (fixedDropdownRefs.current.deco = el)}
+                              onMouseMove={() => focusedItem && setFocusedItem(null)}
                             >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                     <input type="text" placeholder="検索..." value={fixedSearch.deco} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                 </div>
                                 <div className="overflow-y-auto">
-                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: '' }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                    {decorations.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.deco).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div>))}
+                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: '' }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                    {decorations.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.deco).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} ref={el => { if (!itemRefs.current.decoFixed) itemRefs.current.decoFixed = {}; itemRefs.current.decoFixed[item['名称']] = el; }} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'decoFixed' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div>))}
                                 </div>
                             </div>
                           )}
@@ -2262,13 +2327,13 @@ useEffect(() => {
                                               <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                           </button>
                                           {showBulkDropdown.main && (
-                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.main = el)}>
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.main = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                       <input type="text" placeholder="検索..." value={bulkSearch.main} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                   </div>
                                                   <div className="overflow-y-auto">
-                                                      <div onClick={() => { setBulkMainArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                                      {availableBulkMainArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.main).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} onClick={() => { setBulkMainArmorSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div> ))}
+                                                      <div onClick={() => { setBulkMainArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                                      {availableBulkMainArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.main).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} ref={el => { if (!itemRefs.current.mainBulk) itemRefs.current.mainBulk = {}; itemRefs.current.mainBulk[item['名称']] = el; }} onClick={() => { setBulkMainArmorSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'mainBulk' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div> ))}
                                                   </div>
                                               </div>
                                           )}
@@ -2292,13 +2357,13 @@ useEffect(() => {
                                               <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                           </button>
                                           {showBulkDropdown.sub && (
-                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.sub = el)}>
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.sub = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                       <input type="text" placeholder="検索..." value={bulkSearch.sub} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                   </div>
                                                   <div className="overflow-y-auto">
-                                                      <div onClick={() => { setBulkSubArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                                      {availableBulkSubArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.sub).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} onClick={() => { setBulkSubArmorSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div> ))}
+                                                      <div onClick={() => { setBulkSubArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                                      {availableBulkSubArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.sub).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} ref={el => { if (!itemRefs.current.subBulk) itemRefs.current.subBulk = {}; itemRefs.current.subBulk[item['名称']] = el; }} onClick={() => { setBulkSubArmorSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'subBulk' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div> ))}
                                                   </div>
                                               </div>
                                           )}
@@ -2322,13 +2387,13 @@ useEffect(() => {
                                               <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                           </button>
                                           {showBulkDropdown.deco && (
-                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.deco = el)}>
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.deco = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                       <input type="text" placeholder="検索..." value={bulkSearch.deco} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                   </div>
                                                   <div className="overflow-y-auto">
-                                                      <div onClick={() => { setBulkDecorationSelect(''); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                                      {availableBulkDecorations.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.deco).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} onClick={() => { setBulkDecorationSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div> ))}
+                                                      <div onClick={() => { setBulkDecorationSelect(''); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                                      {availableBulkDecorations.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.deco).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} ref={el => { if (!itemRefs.current.decoBulk) itemRefs.current.decoBulk = {}; itemRefs.current.decoBulk[item['名称']] = el; }} onClick={() => { setBulkDecorationSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'decoBulk' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div> ))}
                                                   </div>
                                               </div>
                                           )}

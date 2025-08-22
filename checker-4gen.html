@@ -22,6 +22,21 @@
       margin-bottom: 15px;
     }
 
+    #statusContainer {
+        display: grid;
+        gap: 20px;
+    }
+
+    #statusContainer.two-columns-main {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, auto);
+        grid-auto-flow: column;
+    }
+
+    #statusContainer.four-columns-main {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
     .group-title {
       font-size: 26px;
       margin-top: 40px;
@@ -180,6 +195,55 @@
       display: flex;
       gap: 8px;
     }
+    
+    /* 列切り替えボタンのスタイル */
+    .column-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      flex-shrink: 0;
+      margin-right: -5px;
+    }
+    
+    .column-buttons button {
+      color: #000;
+      background-color: #eee;
+      padding: 6px 12px;
+      font-size: 14px;
+      height: 32px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: none;
+      box-sizing: border-box;
+      transition: background-color 0.2s; /* ホバー効果を滑らかに */
+    }
+
+    .column-buttons button:hover {
+      background-color: #ccc;
+    }
+
+    /* --- ここから変更 --- */
+    .column-buttons .column-button.active,
+    .column-buttons .column-toggle {
+      background-color: #2A99E6;
+      color: #fff;
+    }
+
+    .column-buttons .column-button.active:hover,
+    .column-buttons .column-toggle:hover {
+      background-color: #55b8ff;
+    }
+    /* --- ここまで変更 --- */
+    
+    .column-controls {
+      display: none;
+    }
+
+    .column-controls.show {
+      display: flex;
+      gap: 8px;
+    }
+
 
     /* ハンバーガーメニューのスタイル */
     .hamburger {
@@ -295,13 +359,10 @@
 </head>
 <body>
 
-  <!-- サイドメニューオーバーレイ -->
   <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-  <!-- サイドメニュー -->
   <div id="sidemenu-container"></div>
 
-  <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
     <h1><span class="hamburger" onclick="toggleMenu()">☰</span> 四元像ピアスチェッカー</h1>
   </div>
@@ -463,6 +524,47 @@
       if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
       document.body.style.zoom = zoomLevel;
     }
+    
+    // 列表示のトグル機能
+    function toggleColumnControls(buttonElement) {
+        const columnButtons = buttonElement.parentElement;
+        const columnToggle = columnButtons.querySelector('.column-toggle');
+        const columnControls = columnButtons.querySelector('.column-controls');
+
+        if (columnControls.classList.contains('show')) {
+            columnControls.classList.remove('show');
+            columnToggle.style.display = 'block';
+        } else {
+            columnControls.classList.add('show');
+            columnToggle.style.display = 'none';
+        }
+    }
+
+    // 列切り替え機能
+    function setColumns(columns, buttonElement) {
+        const mainContainer = document.getElementById('statusContainer');
+        const allColumnButtons = buttonElement.parentElement.querySelectorAll('.column-button');
+
+        // レイアウトクラスを更新
+        mainContainer.classList.remove('two-columns-main', 'four-columns-main');
+        if (columns === 2) {
+            mainContainer.classList.add('two-columns-main');
+        } else if (columns === 4) {
+            mainContainer.classList.add('four-columns-main');
+        }
+
+        // アクティブなボタンのスタイルを更新
+        allColumnButtons.forEach(btn => btn.classList.remove('active'));
+        buttonElement.classList.add('active');
+
+        // ボタンの表示をトグル状態に戻す
+        const columnButtonsContainer = buttonElement.closest('.column-buttons');
+        const columnToggle = columnButtonsContainer.querySelector('.column-toggle');
+        const columnControls = columnButtonsContainer.querySelector('.column-controls');
+        
+        columnControls.classList.remove('show');
+        columnToggle.style.display = 'block';
+    }
 
     const groups = [
       { title: "◆緋のピアス", color: "緋" },
@@ -488,6 +590,9 @@
       container.innerHTML = '';
     
       groups.forEach((group, groupIndex) => {
+        const groupWrapper = document.createElement('div');
+        groupWrapper.className = 'group-wrapper';
+        
         const groupTitle = document.createElement('div');
         groupTitle.className = `group-title ${group.color}`;
         groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
@@ -517,7 +622,22 @@
         groupTitle.appendChild(markerSpan);
         groupTitle.appendChild(titleText);
         groupTitle.appendChild(zoomButtons);
-        container.appendChild(groupTitle);
+        
+        if (groupIndex === 0) {
+            const columnButtons = document.createElement('div');
+            columnButtons.className = 'column-buttons';
+            columnButtons.innerHTML = `
+              <button class="column-toggle" onclick="toggleColumnControls(this)">表示</button>
+              <div class="column-controls">
+                <button class="column-button active" onclick="setColumns(1, this)">１列</button>
+                <button class="column-button" onclick="setColumns(2, this)">２列</button>
+                <button class="column-button" onclick="setColumns(4, this)">４列</button>
+              </div>
+            `;
+            groupTitle.appendChild(columnButtons);
+        }
+
+        groupWrapper.appendChild(groupTitle);
     
         attributes.forEach(attr => {
           const line = document.createElement('div');
@@ -550,14 +670,16 @@
     
           line.appendChild(name);
           line.appendChild(stars);
-          container.appendChild(line);
+          groupWrapper.appendChild(line);
         });
     
         const exportBtn = document.createElement('button');
         exportBtn.textContent = '状態をエクスポート';
         exportBtn.style.marginTop = '15px';
         exportBtn.addEventListener('click', exportState);
-        container.appendChild(exportBtn);
+        groupWrapper.appendChild(exportBtn);
+
+        container.appendChild(groupWrapper);
       });
     
       setupScrollButtons();
