@@ -7,9 +7,7 @@
     <link rel="shortcut icon" href="favicon-renma.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
-    <title>練磨(防具)自動選定ツール</title> <!-- Created by じぇ -->
-
-    <style>
+    <title>練磨(防具)X用非公開ツール</title> <style>
         /* --- 全体 --- */
         body {
             background-color: #2A2A2A;
@@ -29,7 +27,7 @@
         }
 
         h1 { 
-            color: #50b4f0; 
+            color: orangered; 
             margin: 0;
         }
 
@@ -199,18 +197,46 @@
         .col-armor   { width: 33%; }
         .col-ability { width: 37%; }
         .col-value   { width: 23%; }
+
+        /* --- NEW: Flex container for label + select alignment --- */
+        .td-flex-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
         
         .data-label {
             display: inline-block;
             text-align: right;
-            margin-right: 8px;
             color: #a0a0a0;
+            flex-shrink: 0; /* Prevent label from shrinking */
         }
 
         .heading-text { color: #c0c0ff; font-weight: bold; }
-        .armor-text   { color: #98fb98; }
-        .ability-text { color: #ccc; }
-        .value-text   { color: #ffd700; font-weight: bold; }
+        
+        /* --- Modified for dropdowns --- */
+        .result-area select {
+            background-color: #2A2A2A;
+            color: #98fb98;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-family: inherit;
+            font-size: 1em;
+            /* NEW: Flex properties for auto-width */
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .result-area .value-select {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .result-area .armor-text-default { color: #98fb98; }
+        .result-area .armor-text-native { color: orange; }
+        .result-area .armor-text-special { color: magenta; }
+        .result-area .armor-text-none { color: red; }
         
         .total-container {
             padding-left: 20px;
@@ -658,7 +684,7 @@
 
     <div class="main-container">
         <header>
-            <h1><span class="hamburger" onclick="toggleMenu()">☰</span>練磨(防具)自動選定ツール</h1>
+            <h1><span class="hamburger" onclick="toggleMenu()">☰</span>練磨(防具)X用非公開ツール</h1>
         </header>
 
         <div class="zoom-buttons">
@@ -680,16 +706,12 @@
     </div>
 
     <footer>
-        ※使用は自己責任にて。<br>
-        ※最適な組み合わせが選定出来ない可能性もあります。あくまで参考としてお考えください。<br>
-        ※名将の鎧の固有アビリティ考慮で威力＋選択のキャラにシリーズ指定した場合は、味方威力＋選択のキャラも威力＋選択のキャラとシリーズが同じであるなら必ず指定してください。<br>
-        ※シリーズで「その他」を選択してもバトルヴァンブレイズに対応するものはありません。
+        ※こちらのツールは一般公開しておりません。<br>
+        ※合計値は装備固有アビリティの値も加算されています。
     </footer>
 
     <div class="bottom">
-        <a href="renma-armor.html">リストページへ</a>　<a href="armor-top5.html">TOP5ページへ</a>
-        <br>
-        <a href="index.html">INDEXへ戻る</a>
+        <a href="renma-armor.html">リストページへ</a>　<a href="armor-top5.html">TOP5ページへ</a>　<a href="armor-calc.html">自動選定ツールへ</a>
     </div>
 
     <script>
@@ -717,272 +739,114 @@
         menuClose.style.color = '#eee';
     }
 
-    // フリックでメニュー開閉（スクロール誤作動対策版）
-    let startX = 0, startY = 0;
-    let endX = 0, endY = 0;
-
-    document.addEventListener('touchstart', function (e) {
-      // タッチ開始時のX座標とY座標を記録
-      startX = e.changedTouches[0].screenX;
-      startY = e.changedTouches[0].screenY;
-    }, false);
-
-    document.addEventListener('touchend', function (e) {
-      // タッチ終了時のX座標とY座標を記録
-      endX = e.changedTouches[0].screenX;
-      endY = e.changedTouches[0].screenY;
-      handleGesture(); // ジェスチャーを判定する関数を呼び出し
-    }, false);
+    let startX = 0, startY = 0, endX = 0, endY = 0;
+    document.addEventListener('touchstart', e => { startX = e.changedTouches[0].screenX; startY = e.changedTouches[0].screenY; }, false);
+    document.addEventListener('touchend', e => { endX = e.changedTouches[0].screenX; endY = e.changedTouches[0].screenY; handleGesture(); }, false);
 
     function handleGesture() {
-      const diffX = endX - startX; // 水平方向の移動量
-      const diffY = endY - startY; // 垂直方向の移動量
-
-      // 条件1: 水平方向の移動量が、垂直方向の移動量よりも大きい場合のみ処理（スワイプかスクロールかを判定）
+      const diffX = endX - startX; const diffY = endY - startY;
       if (Math.abs(diffX) > Math.abs(diffY)) {
-
-        // 条件2-1: 右へのスワイプ（50px以上移動し、かつ画面の左端30px以内から開始）
-        if (diffX > 50 && startX < 30) {
-          // 右にフリックしてメニューを開く
-          toggleMenu();
-        } 
-        // 条件2-2: 左へのスワイプ（50px以上移動）
-        else if (diffX < -50) {
-          // 左にフリックしてメニューを閉じる
-          closeMenu();
-        }
+        if (diffX > 50 && startX < 30) toggleMenu();
+        else if (diffX < -50) closeMenu();
       }
-      // 垂直方向の移動量が大きい場合は、何もしない（ブラウザの標準スクロールに任せる）
     }
 
-        let zoomLevel = 1;
-        function changeZoom(delta) {
-            zoomLevel = (zoomLevel + delta < 0.5) ? 0.5 : (zoomLevel + delta > 2.0) ? 2.0 : zoomLevel + delta;
-            document.body.style.zoom = zoomLevel;
-        }
-        
-        function scrollToCategory(categoryId) {
-            const element = document.getElementById(categoryId);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
+    let zoomLevel = 1;
+    function changeZoom(delta) {
+        zoomLevel = Math.max(0.5, Math.min(2.0, zoomLevel + delta));
+        document.body.style.zoom = zoomLevel;
+    }
+    
+    function scrollToCategory(categoryId) {
+        const element = document.getElementById(categoryId);
+        if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         let armorData = [];
-        // 装備固有アビリティ(CSV)を格納するMap
+        let uniqueMainArmorNames = [];
+        let uniqueSubArmorNames = [];
         let mainNativeAbilities = new Map();
         let subNativeAbilities = new Map();
-
         const fileInput = document.getElementById('json-file-input');
         const fileStatus = document.getElementById('file-status');
         const characterGrid = document.getElementById('character-grid');
         const calculateAllButton = document.getElementById('calculate-all-button');
-
-        const abilityConditions = [
-            { name: "HP満タン時", value: "HP満タン時" }, { name: "瀕死時", value: "瀕死時" },
-            { name: "カウンター", value: "カウンター" }, { name: "斬", value: "斬" },
-            { name: "打", value: "打" }, { name: "突", value: "突" },
-            { name: "熱", value: "熱" }, { name: "冷", value: "冷" },
-            { name: "雷", value: "雷" }, { name: "陽", value: "陽" },
-            { name: "陰", value: "陰" }
-        ];
-        
+        const abilityConditions = [ { name: "HP満タン時", value: "HP満タン時" }, { name: "瀕死時", value: "瀕死時" }, { name: "カウンター", value: "カウンター" }, { name: "斬", value: "斬" }, { name: "打", value: "打" }, { name: "突", value: "突" }, { name: "熱", value: "熱" }, { name: "冷", value: "冷" }, { name: "雷", value: "雷" }, { name: "陽", value: "陽" }, { name: "陰", value: "陰" } ];
         const seriesNames = ["未選択", "GBSaGa", "RS1", "RS2", "RS3", "SF1", "SF2", "US", "ES", "IS", "SSG", "SaGaRS", "SaGaEB", "その他"];
 
-        /**
-         * CSVファイルを読み込み、指定されたMapオブジェクトにデータを格納する関数
-         * @param {string} url - CSVファイルのパス
-         * @param {Map} targetMap - 格納先のMapオブジェクト
-         */
         async function loadCsvData(url, targetMap) {
             try {
                 const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Network response was not ok for ${url}`);
-                }
+                if (!response.ok) throw new Error(`Network response was not ok for ${url}`);
                 const csvText = await response.text();
                 const lines = csvText.trim().split('\n');
-                lines.shift(); // ヘッダー行をスキップ
-
+                lines.shift();
                 lines.forEach(line => {
                     const [name, target, valueStr] = line.split(',');
                     if (name && target && valueStr) {
                         const value = parseInt(valueStr.trim(), 10);
                         if (!isNaN(value)) {
-                            if (!targetMap.has(name.trim())) {
-                                targetMap.set(name.trim(), []);
-                            }
+                            if (!targetMap.has(name.trim())) targetMap.set(name.trim(), []);
                             targetMap.get(name.trim()).push({ target: target.trim(), value });
                         }
                     }
                 });
-                console.log(`Successfully loaded and parsed: ${url}`);
             } catch (error) {
                 console.error(`Error loading or parsing CSV from ${url}:`, error);
                 fileStatus.innerHTML += `<br><span style="color: red;">${url} の読み込みに失敗しました。</span>`;
             }
         }
         
-        /**
-         * 「味方威力＋」選択時の条件を同期する関数
-         * @param {number} charId - 変更が発生したキャラクターのID (1-5)
-         * @param {string} eventType - 'radio-change' または 'checkbox-change'
-         */
         function handleConditionSync(charId, eventType) {
-
-            // 特別要件: キャラクター2のラジオボタンが「味方威力＋」に変更された場合
             if (charId === 2 && eventType === 'radio-change' && document.querySelector('input[name="ability-type-2"]:checked').value === '味方威力＋') {
-                
-                // 1. キャラクター1の条件を取得 (アビリティタイプは問わない)
                 const sourceConditions = Array.from(document.querySelectorAll('input[name="condition-1"]:checked')).map(cb => cb.value);
-
-                // 2. キャラクター2から5まで、アビリティタイプと条件を同期
                 for (let i = 2; i <= 5; i++) {
-                    // アビリティタイプを「味方威力＋」に設定
                     document.querySelector(`input[name="ability-type-${i}"][value="味方威力＋"]`).checked = true;
-                    
-                    // 条件をキャラクター1の状態に同期
-                    const targetCheckboxes = document.querySelectorAll(`input[name="condition-${i}"]`);
-                    targetCheckboxes.forEach(cb => {
-                        cb.checked = sourceConditions.includes(cb.value);
-                    });
+                    document.querySelectorAll(`input[name="condition-${i}"]`).forEach(cb => { cb.checked = sourceConditions.includes(cb.value); });
                 }
-                
-                // 3. 計算ボタンまでスクロール
                 const calculateButton = document.getElementById('calculate-all-button');
-                if (calculateButton) {
-                    // ボタンが画面の中央に来るようにスクロール
-                    calculateButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-
-                // この特別な処理が完了したら、以降の通常処理は行わない
+                if (calculateButton) calculateButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return; 
             }
-
             const currentAbilityType = document.querySelector(`input[name="ability-type-${charId}"]:checked`).value;
-
-            // --- Logic for BECOMING a party buffer ---
-            // If the event was a radio button change and the new type is "味方威力＋"
             if (eventType === 'radio-change' && currentAbilityType === '味方威力＋') {
                 let conditionsToCopy = null;
-                // Find the first previous character who is also a party buffer
                 for (let i = charId - 1; i >= 1; i--) {
-                    const prevAbilityType = document.querySelector(`input[name="ability-type-${i}"]:checked`).value;
-                    if (prevAbilityType === '味方威力＋') {
-                        // Get their conditions
+                    if (document.querySelector(`input[name="ability-type-${i}"]:checked`).value === '味方威力＋') {
                         conditionsToCopy = Array.from(document.querySelectorAll(`input[name="condition-${i}"]:checked`)).map(cb => cb.value);
-                        break; // Stop at the first one
+                        break; 
                     }
                 }
-                
-                // If we found a previous buffer, apply their conditions to the current character
-                if (conditionsToCopy !== null) {
-                    const currentCheckboxes = document.querySelectorAll(`input[name="condition-${charId}"]`);
-                    currentCheckboxes.forEach(cb => {
-                        cb.checked = conditionsToCopy.includes(cb.value);
-                    });
-                }
+                if (conditionsToCopy !== null) document.querySelectorAll(`input[name="condition-${charId}"]`).forEach(cb => { cb.checked = conditionsToCopy.includes(cb.value); });
             }
-
-            // --- Logic for UPDATING subsequent party buffers ---
-            // If the current character is a party buffer (regardless of what event happened)
             if (currentAbilityType === '味方威力＋') {
                 const sourceConditions = Array.from(document.querySelectorAll(`input[name="condition-${charId}"]:checked`)).map(cb => cb.value);
-                
-                // Update all subsequent characters who are also party buffers
                 for (let i = charId + 1; i <= 5; i++) {
-                    const nextAbilityType = document.querySelector(`input[name="ability-type-${i}"]:checked`).value;
-                    if (nextAbilityType === '味方威力＋') {
-                        const nextCheckboxes = document.querySelectorAll(`input[name="condition-${i}"]`);
-                        nextCheckboxes.forEach(cb => {
-                            cb.checked = sourceConditions.includes(cb.value);
-                        });
+                    if (document.querySelector(`input[name="ability-type-${i}"]:checked`).value === '味方威力＋') {
+                        document.querySelectorAll(`input[name="condition-${i}"]`).forEach(cb => { cb.checked = sourceConditions.includes(cb.value); });
                     }
                 }
             }
         }
 
-        // ページの初期化処理
         async function initialize() {
-            // キャラクターUIを生成
             for (let i = 1; i <= 5; i++) {
                 const charContainer = document.createElement('div');
                 charContainer.className = 'character-container';
                 charContainer.id = `char-${i}`;
-                
-                let checkboxesHTML = '';
-                abilityConditions.forEach(cond => {
-                    const uniqueId = `condition-${i}-${cond.value.replace(/\s/g, '-')}`;
-                    checkboxesHTML += `<input type="checkbox" name="condition-${i}" value="${cond.value}" id="${uniqueId}"><label for="${uniqueId}">${cond.name}</label>`;
-                });
-                
-                let seriesOptionsHTML = '';
-                seriesNames.forEach(name => {
-                    seriesOptionsHTML += `<option value="${name}">${name}</option>`;
-                });
-
-                charContainer.innerHTML = `
-                    <h2>
-                        <span>キャラ ${i}</span>
-                        <select class="series-select" id="series-select-${i}">${seriesOptionsHTML}</select>
-                        <div class="nav-buttons">
-                            <button class="nav-button" id="nav-up-${i}">▲</button>
-                            <button class="nav-button" id="nav-down-${i}">▼</button>
-                        </div>
-                    </h2>
-                    <div class="form-horizontal-row">
-                        <div class="form-type">
-                            <fieldset class="form-section">
-                                <legend>アビリティ</legend>
-                                <div class="styled-form-group">
-                                    <input type="radio" name="ability-type-${i}" value="威力＋" id="ability-type-${i}-power" checked><label for="ability-type-${i}-power">威力＋</label>
-                                    <input type="radio" name="ability-type-${i}" value="味方威力＋" id="ability-type-${i}-party"><label for="ability-type-${i}-party">味方威力＋</label>
-                                </div>
-                            </fieldset>
-                        </div>
-                        <div class="form-conditions">
-                            <fieldset class="form-section">
-                                <legend>条件 (複数可)</legend>
-                                <div class="styled-form-group conditions-wrapper">${checkboxesHTML}</div>
-                            </fieldset>
-                        </div>
-                    </div>
-                    <div class="result-area" id="result-area-${i}"><p>計算結果がここに表示されます。</p></div>
-                `;
-
+                let checkboxesHTML = abilityConditions.map(cond => `<input type="checkbox" name="condition-${i}" value="${cond.value}" id="condition-${i}-${cond.value.replace(/\s/g, '-')}"><label for="condition-${i}-${cond.value.replace(/\s/g, '-')}">${cond.name}</label>`).join('');
+                let seriesOptionsHTML = seriesNames.map(name => `<option value="${name}">${name}</option>`).join('');
+                charContainer.innerHTML = `<h2><span>キャラ ${i}</span><select class="series-select" id="series-select-${i}">${seriesOptionsHTML}</select><div class="nav-buttons"><button class="nav-button" id="nav-up-${i}">▲</button><button class="nav-button" id="nav-down-${i}">▼</button></div></h2><div class="form-horizontal-row"><div class="form-type"><fieldset class="form-section"><legend>アビリティ</legend><div class="styled-form-group"><input type="radio" name="ability-type-${i}" value="威力＋" id="ability-type-${i}-power" checked><label for="ability-type-${i}-power">威力＋</label><input type="radio" name="ability-type-${i}" value="味方威力＋" id="ability-type-${i}-party"><label for="ability-type-${i}-party">味方威力＋</label></div></fieldset></div><div class="form-conditions"><fieldset class="form-section"><legend>条件 (複数可)</legend><div class="styled-form-group conditions-wrapper">${checkboxesHTML}</div></fieldset></div></div><div class="result-area" id="result-area-${i}"><p>計算結果がここに表示されます。</p></div>`;
                 characterGrid.appendChild(charContainer);
-                
                 const navUpButton = charContainer.querySelector(`#nav-up-${i}`);
                 const navDownButton = charContainer.querySelector(`#nav-down-${i}`);
-
-                if (i === 1) {
-                    navUpButton.disabled = true;
-                } else {
-                    navUpButton.addEventListener('click', () => scrollToCategory(`char-${i - 1}`));
-                }
-
-                if (i === 5) {
-                    navDownButton.disabled = true;
-                } else {
-                    navDownButton.addEventListener('click', () => scrollToCategory(`char-${i + 1}`));
-                }
-
-                const newRadios = charContainer.querySelectorAll(`input[name="ability-type-${i}"]`);
-                newRadios.forEach(radio => radio.addEventListener('change', () => handleConditionSync(i, 'radio-change')));
-
-                const newCheckboxes = charContainer.querySelectorAll(`input[name="condition-${i}"]`);
-                newCheckboxes.forEach(checkbox => checkbox.addEventListener('change', () => handleConditionSync(i, 'checkbox-change')));
+                if (i === 1) navUpButton.disabled = true; else navUpButton.addEventListener('click', () => scrollToCategory(`char-${i - 1}`));
+                if (i === 5) navDownButton.disabled = true; else navDownButton.addEventListener('click', () => scrollToCategory(`char-${i + 1}`));
             }
-
-            // CSVデータを非同期で読み込む
-            await Promise.all([
-                loadCsvData('data/armor-main-ability.csv', mainNativeAbilities),
-                loadCsvData('data/armor-sub-ability.csv', subNativeAbilities)
-            ]);
+            await Promise.all([ loadCsvData('data/armor-main-ability.csv', mainNativeAbilities), loadCsvData('data/armor-sub-ability.csv', subNativeAbilities) ]);
         }
         
-        // 初期化実行
         initialize();
 
         fileInput.addEventListener('change', (event) => {
@@ -993,6 +857,10 @@
                 try {
                     const rawData = JSON.parse(e.target.result);
                     armorData = rawData.map(item => ({...item, value: parseInt(item.value, 10)})).filter(item => !isNaN(item.value));
+                    const mainNames = new Set(armorData.filter(a => a.armorType === 'main').map(a => a.armorName));
+                    const subNames = new Set(armorData.filter(a => a.armorType === 'sub').map(a => a.armorName));
+                    uniqueMainArmorNames = ['該当なし', ...Array.from(mainNames).sort()];
+                    uniqueSubArmorNames = ['該当なし', ...Array.from(subNames).sort()];
                     fileStatus.textContent = `読み込み完了: ${file.name}`;
                     fileStatus.style.color = '#98fb98';
                     calculateAllButton.disabled = false;
@@ -1013,100 +881,45 @@
             return match ? match[1] : null;
         }
 
-        /**
-         * [修正済み] 装備の固有アビリティ(CSV)の効果値を取得する関数
-         * @param {string} armorName - 防具名
-         * @param {string} armorType - 'main' または 'sub'
-         * @param {string[]} selectedConditions - キャラクターが選択した全ての条件の配列
-         * @param {string} abilityType - '威力＋' または '味方威力＋'
-         * @param {number} charId - 現在のキャラクターID
-         * @returns {number} - 固有アビリティの効果値の合計
-         */
         function getNativeAbilityValue(armorName, armorType, selectedConditions, abilityType, charId) {
             const nativeAbilityMap = armorType === 'main' ? mainNativeAbilities : subNativeAbilities;
             if (!nativeAbilityMap.has(armorName)) return 0;
-            
             const selectedSeries = document.getElementById(`series-select-${charId}`).value;
             let totalValue = 0;
             const abilities = nativeAbilityMap.get(armorName);
-
             for (const ability of abilities) {
                 let shouldAddValue = true;
-
-                // シリーズ装備のシリーズ一致判定
                 if (armorName.includes('名将の鎧') || armorName.includes('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
-                    if (selectedSeries === '未選択') {
-                        shouldAddValue = false;
-                    } else {
+                    if (selectedSeries === '未選択') shouldAddValue = false;
+                    else {
                         const armorSeriesMatch = armorName.match(/\(([^)]+)\)/);
                         if (armorSeriesMatch) {
                             const armorSeriesStr = armorSeriesMatch[1];
-                            if (armorName.includes('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') && armorSeriesStr === 'US・ES・IS') {
-                                if (!['US', 'ES', 'IS'].includes(selectedSeries)) {
-                                    shouldAddValue = false;
-                                }
-                            } else {
-                                const armorSeriesList = armorSeriesStr.split(/[&＆]/).map(s => s.trim());
-                                if (!armorSeriesList.includes(selectedSeries)) {
-                                    shouldAddValue = false;
-                                }
-                            }
+                            if (armorName.includes('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') && armorSeriesStr === 'US・ES・IS') { if (!['US', 'ES', 'IS'].includes(selectedSeries)) shouldAddValue = false; }
+                            else { const armorSeriesList = armorSeriesStr.split(/[&＆]/).map(s => s.trim()); if (!armorSeriesList.includes(selectedSeries)) shouldAddValue = false; }
                         }
                     }
                 }
-
                 if (shouldAddValue) {
-                    const nativeAbilityTarget = ability.target;
-                    
-                    // キャラクターの選択アビリティに応じて加算するCSV値を切り替える
-                    if (abilityType === '味方威力＋') {
-                        // 「味方威力＋」選択時は、対象が「味方威力」のCSV値のみ加算
-                        if (nativeAbilityTarget === '味方威力') {
-                            totalValue += ability.value;
-                        }
-                    } else { // '威力＋' の場合
-                        // 「威力＋」選択時は、対象が「威力」「味方威力」または選択条件に合致するものを加算
-                        const isUnconditional = nativeAbilityTarget === '威力' || nativeAbilityTarget === '味方威力';
-                        const isConditionMet = selectedConditions.includes(nativeAbilityTarget);
-                        if (isUnconditional || isConditionMet) {
-                            totalValue += ability.value;
-                        }
-                    }
+                    const { target, value } = ability;
+                    if (abilityType === '味方威力＋') { if (target === '味方威力') totalValue += value; }
+                    else { if (target === '威力' || target === '味方威力' || selectedConditions.includes(target)) totalValue += value; }
                 }
             }
             return totalValue;
         }
 
-        /**
-         * JSON値とCSV値を合算した総合値で最適な防具を見つける関数
-         * @param {string} armorType - 'main' or 'sub'
-         * @param {object} character - The character config object
-         * @param {Set<string>} excludedItems - 既に装備済みの防具名のSet
-         * @param {object[]} partyConfig - パーティ全体の設定配列
-         * @returns {object} - 最適な防具の情報 (nativeValue含む)
-         */
         function findBestArmorWithNativeAbilities(armorType, character, excludedItems, partyConfig) {
             const { abilityType, selectedConditions, charId, series } = character;
             const candidates = [];
-
-            const availableArmor = armorData.filter(item =>
-                item.armorType === armorType &&
-                !excludedItems.has(item.armorName)
-            );
-
+            const availableArmor = armorData.filter(item => item.armorType === armorType && !excludedItems.has(item.armorName));
             for (const armor of availableArmor) {
                 const jsonAbilityCondition = getConditionFromAbilityName(armor.abilityName);
                 const jsonAbilityType = armor.abilityName.includes('味方威力＋') ? '味方威力＋' : '威力＋';
-                
-                let typeMatch = (abilityType === jsonAbilityType);
-                if (abilityType === '威力＋' && jsonAbilityType === '味方威力＋') {
-                    typeMatch = true;
-                }
-
+                let typeMatch = (abilityType === jsonAbilityType) || (abilityType === '威力＋' && jsonAbilityType === '味方威力＋');
                 if (typeMatch && selectedConditions.includes(jsonAbilityCondition)) {
                     const jsonValue = armor.value;
                     const nativeValue = getNativeAbilityValue(armor.armorName, armorType, selectedConditions, abilityType, charId);
-                    
                     let combinedValue;
                     if (abilityType === '味方威力＋' && armor.armorName.includes('名将の鎧') && armor.armorType === 'main') {
                         let isBeneficialToParty = false;
@@ -1117,66 +930,39 @@
                                 if (armorSeries.includes(series)) {
                                     for (const member of partyConfig) {
                                         if (member.charId === charId) continue;
-                                        if (member.abilityType === '威力＋' && member.series === series) {
-                                            isBeneficialToParty = true;
-                                            break;
-                                        }
+                                        if (member.abilityType === '威力＋' && member.series === series) { isBeneficialToParty = true; break; }
                                     }
                                 }
                             }
                         }
                         combinedValue = isBeneficialToParty ? (jsonValue + nativeValue) : jsonValue;
-                    } else {
-                        combinedValue = jsonValue + nativeValue;
-                    }
-
+                    } else combinedValue = jsonValue + nativeValue;
                     candidates.push({ ...armor, combinedValue });
                 }
             }
-
-            if (candidates.length === 0) {
-                return { armorName: '該当なし', value: 0, abilityName: '-' };
-            }
-
+            if (candidates.length === 0) return { armorName: '該当なし', value: 0, abilityName: '-' };
             candidates.sort((a, b) => b.combinedValue - a.combinedValue);
             return candidates[0];
         }
         
         function runIterativeSolver(partyConfig, lockedEquipment = new Map()) {
-            let partyLoadout = Array(5).fill(null);
-            let lastLoadoutStr = "";
-            let iterations = 0;
-
+            let partyLoadout = Array(5).fill(null), lastLoadoutStr = "", iterations = 0;
             while (JSON.stringify(partyLoadout) !== lastLoadoutStr && iterations < 5) {
                 lastLoadoutStr = JSON.stringify(partyLoadout);
                 iterations++;
-
                 const equippedThisPass = new Set();
                 lockedEquipment.forEach(loadout => {
                     if (loadout.mainArmor) equippedThisPass.add(loadout.mainArmor.armorName);
                     if (loadout.subArmor) equippedThisPass.add(loadout.subArmor.armorName);
                 });
-
                 const nextLoadout = [];
-
                 for (const character of partyConfig) {
                     const { charId } = character;
                     let mainArmor, subArmor;
-
-                    if (lockedEquipment.has(charId) && lockedEquipment.get(charId).mainArmor) {
-                        mainArmor = lockedEquipment.get(charId).mainArmor;
-                    } else {
-                         mainArmor = findBestArmorWithNativeAbilities('main', character, equippedThisPass, partyConfig);
-                    }
+                    if (lockedEquipment.has(charId) && lockedEquipment.get(charId).mainArmor) mainArmor = lockedEquipment.get(charId).mainArmor; else mainArmor = findBestArmorWithNativeAbilities('main', character, equippedThisPass, partyConfig);
                     if (mainArmor.armorName !== '該当なし') equippedThisPass.add(mainArmor.armorName);
-                    
-                    if (lockedEquipment.has(charId) && lockedEquipment.get(charId).subArmor) {
-                        subArmor = lockedEquipment.get(charId).subArmor;
-                    } else {
-                        subArmor = findBestArmorWithNativeAbilities('sub', character, equippedThisPass, partyConfig);
-                    }
+                    if (lockedEquipment.has(charId) && lockedEquipment.get(charId).subArmor) subArmor = lockedEquipment.get(charId).subArmor; else subArmor = findBestArmorWithNativeAbilities('sub', character, equippedThisPass, partyConfig);
                     if (subArmor.armorName !== '該当なし') equippedThisPass.add(subArmor.armorName);
-                    
                     nextLoadout[charId - 1] = { mainArmor, subArmor };
                 }
                 partyLoadout = nextLoadout;
@@ -1186,90 +972,78 @@
 
         function calculateFinalResults(partyLoadout, partyConfig) {
             const characterResults = [];
-            // Step 1: 装備構成に基づいて、各装備の正確な固有アビリティ効果値（nativeValue）を計算し、結果を補強する
             for (const character of partyConfig) {
                 const { charId, abilityType, selectedConditions } = character;
                 const equipment = partyLoadout[charId - 1];
-                if (!equipment) { 
-                    characterResults.push({ charId, abilityType, selectedConditions, mainArmor: {armorName: 'エラー'}, subArmor: {armorName: 'エラー'}, totals: {grand: -1}});
-                    continue;
-                }
+                if (!equipment) { characterResults.push({ charId, abilityType, selectedConditions, mainArmor: {armorName: 'エラー'}, subArmor: {armorName: 'エラー'}, totals: {grand: -1}}); continue; }
                 const { mainArmor, subArmor } = equipment;
-
-                // 各装備が持つポテンシャルとしての固有アビリティ値を計算
                 mainArmor.nativeValue = getNativeAbilityValue(mainArmor.armorName, 'main', selectedConditions, abilityType, charId);
                 subArmor.nativeValue = getNativeAbilityValue(subArmor.armorName, 'sub', selectedConditions, abilityType, charId);
-
                 characterResults.push({ ...character, mainArmor, subArmor });
             }
 
-            // Step 2: 全員の装備と効果値が確定した状態で、各キャラクターの最終的な合計値を計算する
             for (const receiver of characterResults) {
-                // 自身の装備による効果を計算
-                const selfValue = (receiver.mainArmor.value || 0) + (receiver.subArmor.value || 0) + (receiver.mainArmor.nativeValue || 0) + (receiver.subArmor.nativeValue || 0);
+                let selfJsonValue = 0;
+                const mainCond = getConditionFromAbilityName(receiver.mainArmor.abilityName);
+                if (!mainCond || receiver.selectedConditions.includes(mainCond)) selfJsonValue += receiver.mainArmor.value || 0;
+                const subCond = getConditionFromAbilityName(receiver.subArmor.abilityName);
+                if (!subCond || receiver.selectedConditions.includes(subCond)) selfJsonValue += receiver.subArmor.value || 0;
+                const selfValue = selfJsonValue + (receiver.mainArmor.nativeValue || 0) + (receiver.subArmor.nativeValue || 0);
 
-                // 他のキャラクターからの「味方威力＋」による効果を計算
                 let partyValue = 0;
                 for (const provider of characterResults) {
-                    if (receiver.charId === provider.charId) continue; // 自分自身からのバフは含めない
-
-                    // receiverとproviderで共通の条件がなければ、バフは発生しない
-                    const commonConditions = receiver.selectedConditions.filter(c => provider.selectedConditions.includes(c));
-                    if (commonConditions.length === 0) continue;
-
+                    if (receiver.charId === provider.charId) continue;
                     let contribution = 0;
-                    // --- 主防具からの貢献 ---
-                    const mainCond = getConditionFromAbilityName(provider.mainArmor.abilityName);
-                    if (provider.mainArmor.abilityName.includes("味方威力＋") && provider.selectedConditions.includes(mainCond)) {
-                        contribution += provider.mainArmor.value;
+                    
+                    const provMainJsonAbility = provider.mainArmor.abilityName;
+                    if (provMainJsonAbility && provMainJsonAbility.includes("味方威力＋")) {
+                        const cond = getConditionFromAbilityName(provMainJsonAbility);
+                        if (receiver.selectedConditions.includes(cond)) {
+                            contribution += provider.mainArmor.value;
+                        }
                     }
-                    // 固有アビリティ(CSV)に「味方威力」がある場合の貢献
-                    if (mainNativeAbilities.has(provider.mainArmor.armorName) && mainNativeAbilities.get(provider.mainArmor.armorName).some(a => a.target === '味方威力')) {
-                        const hasMeisho = provider.mainArmor.armorName.includes('名将の鎧');
-                        if (hasMeisho) {
-                            let isMatch = false;
-                            // 名将の鎧の場合、providerとreceiverのシリーズが一致し、かつ装備のシリーズ指定とも一致する必要がある
-                            if (receiver.series !== '未選択' && receiver.series === provider.series) {
-                                const armorSeriesMatch = provider.mainArmor.armorName.match(/\(([^)]+)\)/);
-                                if (armorSeriesMatch) {
-                                    const armorSeriesList = armorSeriesMatch[1].split(/[&＆]/).map(s => s.trim());
-                                    if (armorSeriesList.includes(receiver.series)) {
-                                        isMatch = true;
-                                    }
-                                }
-                            }
-                            if (isMatch) {
-                                contribution += provider.mainArmor.nativeValue;
-                            }
-                        } else {
-                            // 名将の鎧以外で「味方威力」を持つ装備の場合
-                            contribution += provider.mainArmor.nativeValue;
+                    const provSubJsonAbility = provider.subArmor.abilityName;
+                    if (provSubJsonAbility && provSubJsonAbility.includes("味方威力＋")) {
+                        const cond = getConditionFromAbilityName(provSubJsonAbility);
+                        if (receiver.selectedConditions.includes(cond)) {
+                            contribution += provider.subArmor.value;
                         }
                     }
 
-                    // --- 副防具からの貢献 ---
-                    const subCond = getConditionFromAbilityName(provider.subArmor.abilityName);
-                    if (provider.subArmor.abilityName.includes("味方威力＋") && provider.selectedConditions.includes(subCond)) {
-                        contribution += provider.subArmor.value;
-                    }
-                    if (subNativeAbilities.has(provider.subArmor.armorName) && subNativeAbilities.get(provider.subArmor.armorName).some(a => a.target === '味方威力')) {
-                        contribution += provider.subArmor.nativeValue;
-                    }
+                    const getNativeContribution = (armorName, armorType) => {
+                        const nativeMap = armorType === 'main' ? mainNativeAbilities : subNativeAbilities;
+                        if (!nativeMap.has(armorName)) return 0;
+                        let value = 0;
+                        for (const ability of nativeMap.get(armorName)) {
+                            if (ability.target === '味方威力') {
+                                if (armorName.includes('名将の鎧')) {
+                                    if (receiver.series !== '未選択' && receiver.series === provider.series) {
+                                        const seriesMatch = armorName.match(/\(([^)]+)\)/);
+                                        if (seriesMatch && seriesMatch[1].split(/[&＆]/).map(s => s.trim()).includes(receiver.series)) {
+                                            value += ability.value;
+                                        }
+                                    }
+                                } else {
+                                    value += ability.value;
+                                }
+                            }
+                        }
+                        return value;
+                    };
+                    contribution += getNativeContribution(provider.mainArmor.armorName, 'main');
+                    contribution += getNativeContribution(provider.subArmor.armorName, 'sub');
                     
                     partyValue += contribution;
                 }
                 
-                // 最終的な合計値を格納
                 if (receiver.abilityType === '威力＋') {
                     receiver.totals = { self: selfValue, party: partyValue, grand: selfValue + partyValue };
-                } else { // '味方威力＋'
+                } else {
                     const hasMeisho = receiver.mainArmor.armorName.includes('名将の鎧');
                     if (hasMeisho) {
-                        const normalValue = (receiver.mainArmor.value || 0) + (receiver.subArmor.value || 0) + (receiver.subArmor.nativeValue || 0);
+                        const normalValue = selfJsonValue + getNativeContribution(receiver.subArmor.armorName, 'sub');
                         receiver.totals = { isMeisho: true, meishoTotal: selfValue, normalTotal: normalValue };
-                    } else {
-                        receiver.totals = { self: selfValue };
-                    }
+                    } else receiver.totals = { self: selfValue };
                 }
             }
             return characterResults;
@@ -1277,189 +1051,150 @@
 
         function calculateAllCharacters() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            // Step 1: UIから現在のパーティ設定を読み込む
             const partyConfig = [];
             let primaryAttacker = null;
             for (let i = 1; i <= 5; i++) {
-                const charConfig = {
-                    charId: i,
-                    abilityType: document.querySelector(`input[name="ability-type-${i}"]:checked`).value,
-                    selectedConditions: Array.from(document.querySelectorAll(`input[name="condition-${i}"]:checked`)).map(cb => cb.value),
-                    series: document.getElementById(`series-select-${i}`).value
-                };
+                const charConfig = { charId: i, abilityType: document.querySelector(`input[name="ability-type-${i}"]:checked`).value, selectedConditions: Array.from(document.querySelectorAll(`input[name="condition-${i}"]:checked`)).map(cb => cb.value), series: document.getElementById(`series-select-${i}`).value };
                 partyConfig.push(charConfig);
-                // 最初の「威力＋」キャラをプライマリアタッカーとして設定
-                if (charConfig.abilityType === '威力＋' && !primaryAttacker) {
-                    primaryAttacker = charConfig;
-                }
+                if (charConfig.abilityType === '威力＋' && !primaryAttacker) primaryAttacker = charConfig;
             }
-
-            // アタッカーがいない場合は、単純な最適化のみ実行して終了
             if (!primaryAttacker) {
                 const loadout = runIterativeSolver(partyConfig);
                 const results = calculateFinalResults(loadout, partyConfig);
                 results.forEach(r => displayResult(r));
+                setupRealtimeListeners();
                 return;
             }
-
-            let bestLoadout = null;
-            let bestTotal = -1;
-
-            // Step 2: アタッカーが装備しうる主防具の候補をリストアップ
+            let bestLoadout = null, bestTotal = -1;
             const attackerCandidates = [];
             const availableMainArmor = armorData.filter(item => item.armorType === 'main');
-
             for (const armor of availableMainArmor) {
                 const jsonAbilityCondition = getConditionFromAbilityName(armor.abilityName);
                 if (primaryAttacker.selectedConditions.includes(jsonAbilityCondition)) {
                     const jsonAbilityType = armor.abilityName.includes('味方威力＋') ? '味方威力＋' : '威力＋';
-                    // アタッカーは「威力＋」と「味方威力＋」の両方を装備候補にできる
-                    if (jsonAbilityType === '威力＋' || jsonAbilityType === '味方威力＋') {
-                         attackerCandidates.push(armor);
-                    }
+                    if (jsonAbilityType === '威力＋' || jsonAbilityType === '味方威力＋') attackerCandidates.push(armor);
                 }
             }
-
-            // Step 3: 試すべきシナリオを生成する
-            // 候補を「威力+」「味方威力+」に分類し、それぞれの効果値（JSON値+CSV値）でソート
-            const powerPlusCandidates = attackerCandidates
-                .filter(a => !a.abilityName.includes('味方威力＋'))
-                .map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) }))
-                .sort((a, b) => b.totalValue - a.totalValue);
-
-            const partyBuffCandidates = attackerCandidates
-                .filter(a => a.abilityName.includes('味方威力＋'))
-                .map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) }))
-                .sort((a, b) => b.totalValue - a.totalValue);
-
-            // テストするシナリオ: 「威力+」上位2つ、「味方威力+」上位3つ
-            const scenariosToTest = [
-                ...powerPlusCandidates.slice(0, 2),
-                ...partyBuffCandidates.slice(0, 3)
-            ];
-            
+            const powerPlusCandidates = attackerCandidates.filter(a => !a.abilityName.includes('味方威力＋')).map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) })).sort((a, b) => b.totalValue - a.totalValue);
+            const partyBuffCandidates = attackerCandidates.filter(a => a.abilityName.includes('味方威力＋')).map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) })).sort((a, b) => b.totalValue - a.totalValue);
+            const scenariosToTest = [ ...powerPlusCandidates.slice(0, 2), ...partyBuffCandidates.slice(0, 3) ];
             const uniqueScenarios = [...new Map(scenariosToTest.map(item => [item.armorName, item])).values()];
-            // 「ロックなし」のケースを追加。これにより、ソルバーが自由に選択するベースラインも評価される
             uniqueScenarios.push(null); 
-
-            // Step 4: 各シナリオをテスト実行
             for (const attackerMainArmor of uniqueScenarios) {
                 const lockedEquipment = new Map();
-                // アタッカーの主防具をシナリオ通りに固定（nullの場合は固定しない）
-                if (attackerMainArmor) {
-                    lockedEquipment.set(primaryAttacker.charId, { mainArmor: attackerMainArmor, subArmor: null });
-                }
-                
-                // このロック状態で、パーティ全体の最適な装備構成を計算
+                if (attackerMainArmor) lockedEquipment.set(primaryAttacker.charId, { mainArmor: attackerMainArmor, subArmor: null });
                 const scenarioLoadout = runIterativeSolver(partyConfig, lockedEquipment);
                 const scenarioResults = calculateFinalResults(scenarioLoadout, partyConfig);
                 const scenarioAttackerResult = scenarioResults.find(r => r.charId === primaryAttacker.charId);
-                
-                // アタッカーの最終合計値（grand total）を比較し、最良の結果を更新
                 if (scenarioAttackerResult && scenarioAttackerResult.totals && scenarioAttackerResult.totals.grand > bestTotal) {
                     bestTotal = scenarioAttackerResult.totals.grand;
                     bestLoadout = scenarioLoadout;
                 }
             }
-
-            // Step 5: 全シナリオの中で最も良かった結果を表示
             if (bestLoadout) {
                 const finalResults = calculateFinalResults(bestLoadout, partyConfig);
                 finalResults.forEach(r => displayResult(r));
+                setupRealtimeListeners();
             } else {
-                // 万が一、適切な装備が一つも見つからなかった場合
                 partyConfig.forEach(c => displayEmptyResult(c.charId));
+            }
+        }
+        
+        function getArmorTextStyleClass(armorName) {
+            if (!armorName || armorName === '該当なし') return 'armor-text-none';
+            if (armorName.includes('名将の鎧') || armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) return 'armor-text-special';
+            if (mainNativeAbilities.has(armorName) || subNativeAbilities.has(armorName)) return 'armor-text-native';
+            return 'armor-text-default';
+        }
+
+        function updateLinkedDropdowns(charId, armorType, armorSelect, abilitySelect, valueSelect) {
+            const selectedArmorName = armorSelect.value;
+            armorSelect.className = 'armor-select ' + getArmorTextStyleClass(selectedArmorName);
+            abilitySelect.innerHTML = '';
+            valueSelect.innerHTML = '';
+            if (selectedArmorName === '該当なし') {
+                abilitySelect.innerHTML = '<option value="-">-</option>';
+                valueSelect.innerHTML = '<option value="0">0%</option>';
+                return;
+            }
+            const abilitiesForArmor = armorData.filter(item => item.armorName === selectedArmorName && item.armorType === armorType);
+            if (abilitiesForArmor.length > 0) {
+                 abilitiesForArmor.forEach(ability => { abilitySelect.innerHTML += `<option value="${ability.abilityName}">${ability.abilityName}</option>`; });
+                valueSelect.innerHTML = `<option value="${abilitiesForArmor[0].value}">${abilitiesForArmor[0].value}%</option>`;
+            } else {
+                abilitySelect.innerHTML = '<option value="-">-</option>';
+                valueSelect.innerHTML = '<option value="0">0%</option>';
             }
         }
         
         function displayResult(result) {
             const { charId, mainArmor, subArmor, totals } = result;
             const resultArea = document.getElementById(`result-area-${charId}`);
-            
-            let mainArmorNameStyle = '';
-            if (!mainArmor || mainArmor.armorName === '該当なし') {
-                mainArmorNameStyle = 'style="color: red;"';
-            } else if (mainArmor.armorName.includes('名将の鎧') || mainArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
-                mainArmorNameStyle = 'style="color: magenta;"';
-            } else if (mainArmor.nativeValue > 0) {
-                mainArmorNameStyle = 'style="color: orange;"';
-            }
-            const mainArmorNameText = mainArmor.nativeValue > 0 && mainArmor.armorName !== '該当なし' ? `${mainArmor.armorName}(+${mainArmor.nativeValue})` : mainArmor.armorName;
-            
-            let subArmorNameStyle = '';
-             if (!subArmor || subArmor.armorName === '該当なし') {
-                subArmorNameStyle = 'style="color: red;"';
-            } else if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
-                subArmorNameStyle = 'style="color: magenta;"';
-            } else if (subArmor.nativeValue > 0) {
-                subArmorNameStyle = 'style="color: orange;"';
-            }
-            const subArmorNameText = subArmor.nativeValue > 0 && subArmor.armorName !== '該当なし' ? `${subArmor.armorName}(+${subArmor.nativeValue})` : subArmor.armorName;
-
-            let totalHTML = '';
-
-            if (totals.isMeisho) {
-                totalHTML = `
-                    <div class="total-container">
-                        <div class="total-row"><span class="label">名将:</span><span class="value">${totals.meishoTotal}%</span></div>
-                        <div class="total-row final-total"><span class="label">通常:</span><span class="value">${totals.normalTotal}%</span></div>
-                    </div>
-                `;
-            } else if (totals.grand !== undefined) { 
-                totalHTML = `
-                    <div class="total-container">
-                        <div class="total-row"><span class="label">自身:</span><span class="value">${totals.self}%</span></div>
-                        <div class="total-row"><span class="label">味方:</span><span class="value">${totals.party}%</span></div>
-                        <div class="total-row final-total"><span class="label">合計:</span><span class="value">${totals.grand}%</span></div>
-                    </div>
-                `;
-            } else { 
-                totalHTML = `
-                    <div class="total-container">
-                        <div class="total-row final-total"><span class="label">合計:</span><span class="value">${totals.self}%</span></div>
-                    </div>
-                `;
-            }
-
-            resultArea.innerHTML = `
-                <div class="result-details">
-                    <table class="result-table">
-                        <tbody>
-                            <tr>
-                                <td class="col-heading"><span class="heading-text">主防具</span></td>
-                                <td class="col-armor">
-                                    <span class="data-label">装備:</span><span class="armor-text" ${mainArmorNameStyle}>${mainArmorNameText || ''}</span>
-                                </td>
-                                <td class="col-ability">
-                                    <span class="data-label">アビリティ:</span><span class="ability-text">${mainArmor.abilityName || '-'}</span>
-                                </td>
-                                <td class="col-value">
-                                    <span class="data-label">効果値:</span><span class="value-text">${mainArmor.value || 0}%</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="col-heading"><span class="heading-text">副防具</span></td>
-                                <td class="col-armor">
-                                    <span class="data-label">装備:</span><span class="armor-text" ${subArmorNameStyle}>${subArmorNameText || ''}</span>
-                                </td>
-                                <td class="col-ability">
-                                    <span class="data-label">アビリティ:</span><span class="ability-text">${subArmor.abilityName || '-'}</span>
-                                </td>
-                                <td class="col-value">
-                                    <span class="data-label">効果値:</span><span class="value-text">${subArmor.value || 0}%</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                ${totalHTML}
-            `;
+            const mainArmorOptions = uniqueMainArmorNames.map(name => `<option value="${name}" class="${getArmorTextStyleClass(name)}" ${name === mainArmor.armorName ? 'selected' : ''}>${name}</option>`).join('');
+            const subArmorOptions = uniqueSubArmorNames.map(name => `<option value="${name}" class="${getArmorTextStyleClass(name)}" ${name === subArmor.armorName ? 'selected' : ''}>${name}</option>`).join('');
+            resultArea.innerHTML = `<div class="result-details"><table class="result-table"><tbody><tr><td class="col-heading"><span class="heading-text">主防具</span></td><td class="col-armor"><div class="td-flex-container"><span class="data-label">装備:</span><select id="main-armor-select-${charId}">${mainArmorOptions}</select></div></td><td class="col-ability"><div class="td-flex-container"><span class="data-label">アビリティ:</span><select id="main-ability-select-${charId}"></select></div></td><td class="col-value"><div class="td-flex-container"><span class="data-label">効果値:</span><select id="main-value-select-${charId}" class="value-select"></select></div></td></tr><tr><td class="col-heading"><span class="heading-text">副防具</span></td><td class="col-armor"><div class="td-flex-container"><span class="data-label">装備:</span><select id="sub-armor-select-${charId}">${subArmorOptions}</select></div></td><td class="col-ability"><div class="td-flex-container"><span class="data-label">アビリティ:</span><select id="sub-ability-select-${charId}"></select></div></td><td class="col-value"><div class="td-flex-container"><span class="data-label">効果値:</span><select id="sub-value-select-${charId}" class="value-select"></select></div></td></tr></tbody></table></div><div class="total-container" id="total-container-${charId}"></div>`;
+            const mainArmorSelect = document.getElementById(`main-armor-select-${charId}`), mainAbilitySelect = document.getElementById(`main-ability-select-${charId}`), mainValueSelect = document.getElementById(`main-value-select-${charId}`);
+            updateLinkedDropdowns(charId, 'main', mainArmorSelect, mainAbilitySelect, mainValueSelect);
+            mainAbilitySelect.value = mainArmor.abilityName || '-';
+            mainAbilitySelect.dispatchEvent(new Event('change'));
+            const subArmorSelect = document.getElementById(`sub-armor-select-${charId}`), subAbilitySelect = document.getElementById(`sub-ability-select-${charId}`), subValueSelect = document.getElementById(`sub-value-select-${charId}`);
+            updateLinkedDropdowns(charId, 'sub', subArmorSelect, subAbilitySelect, subValueSelect);
+            subAbilitySelect.value = subArmor.abilityName || '-';
+            subAbilitySelect.dispatchEvent(new Event('change'));
+            updateTotalsDisplay(charId, totals);
         }
 
+        function updateTotalsDisplay(charId, totals) {
+            const totalContainer = document.getElementById(`total-container-${charId}`);
+            if (!totals) return;
+            let totalHTML = '';
+            if (totals.isMeisho) totalHTML = `<div class="total-row"><span class="label">名将:</span><span class="value">${totals.meishoTotal}%</span></div><div class="total-row final-total"><span class="label">通常:</span><span class="value">${totals.normalTotal}%</span></div>`;
+            else if (totals.grand !== undefined) totalHTML = `<div class="total-row"><span class="label">自身:</span><span class="value">${totals.self}%</span></div><div class="total-row"><span class="label">味方:</span><span class="value">${totals.party}%</span></div><div class="total-row final-total"><span class="label">合計:</span><span class="value">${totals.grand}%</span></div>`;
+            else totalHTML = `<div class="total-row final-total"><span class="label">合計:</span><span class="value">${totals.self}%</span></div>`;
+            totalContainer.innerHTML = totalHTML;
+        }
+
+        function recalculateAndUpdateAllTotals() {
+            if (armorData.length === 0) return;
+            const partyConfig = [], partyLoadout = [];
+            for (let i = 1; i <= 5; i++) {
+                partyConfig.push({ charId: i, abilityType: document.querySelector(`input[name="ability-type-${i}"]:checked`).value, selectedConditions: Array.from(document.querySelectorAll(`input[name="condition-${i}"]:checked`)).map(cb => cb.value), series: document.getElementById(`series-select-${i}`).value });
+                const mainArmorName = document.getElementById(`main-armor-select-${i}`).value, mainAbilityName = document.getElementById(`main-ability-select-${i}`).value;
+                const mainArmorEntry = armorData.find(a => a.armorName === mainArmorName && a.abilityName === mainAbilityName);
+                const mainValue = mainArmorEntry ? mainArmorEntry.value : 0;
+                const subArmorName = document.getElementById(`sub-armor-select-${i}`).value, subAbilityName = document.getElementById(`sub-ability-select-${i}`).value;
+                const subArmorEntry = armorData.find(a => a.armorName === subArmorName && a.abilityName === subAbilityName);
+                const subValue = subArmorEntry ? subArmorEntry.value : 0;
+                partyLoadout.push({ mainArmor: { armorName: mainArmorName, abilityName: mainAbilityName, value: mainValue }, subArmor: { armorName: subArmorName, abilityName: subAbilityName, value: subValue } });
+            }
+            const finalResults = calculateFinalResults(partyLoadout, partyConfig);
+            finalResults.forEach(r => updateTotalsDisplay(r.charId, r.totals));
+        }
+
+        function setupRealtimeListeners() {
+            for (let i = 1; i <= 5; i++) {
+                document.querySelectorAll(`input[name="ability-type-${i}"], input[name="condition-${i}"], #series-select-${i}`).forEach(input => input.addEventListener('change', recalculateAndUpdateAllTotals));
+                document.querySelectorAll(`input[name="ability-type-${i}"]`).forEach(radio => radio.addEventListener('change', () => handleConditionSync(i, 'radio-change')));
+                document.querySelectorAll(`input[name="condition-${i}"]`).forEach(checkbox => checkbox.addEventListener('change', () => handleConditionSync(i, 'checkbox-change')));
+                const mainArmorSelect = document.getElementById(`main-armor-select-${i}`), mainAbilitySelect = document.getElementById(`main-ability-select-${i}`), mainValueSelect = document.getElementById(`main-value-select-${i}`);
+                const subArmorSelect = document.getElementById(`sub-armor-select-${i}`), subAbilitySelect = document.getElementById(`sub-ability-select-${i}`), subValueSelect = document.getElementById(`sub-value-select-${i}`);
+                mainArmorSelect.addEventListener('change', () => { updateLinkedDropdowns(i, 'main', mainArmorSelect, mainAbilitySelect, mainValueSelect); recalculateAndUpdateAllTotals(); });
+                mainAbilitySelect.addEventListener('change', () => {
+                    const selectedAbility = armorData.find(a => a.armorName === mainArmorSelect.value && a.abilityName === mainAbilitySelect.value);
+                    mainValueSelect.innerHTML = `<option value="${selectedAbility ? selectedAbility.value : 0}">${selectedAbility ? selectedAbility.value : 0}%</option>`;
+                    recalculateAndUpdateAllTotals();
+                });
+                subArmorSelect.addEventListener('change', () => { updateLinkedDropdowns(i, 'sub', subArmorSelect, subAbilitySelect, subValueSelect); recalculateAndUpdateAllTotals(); });
+                subAbilitySelect.addEventListener('change', () => {
+                    const selectedAbility = armorData.find(a => a.armorName === subArmorSelect.value && a.abilityName === subAbilitySelect.value);
+                    subValueSelect.innerHTML = `<option value="${selectedAbility ? selectedAbility.value : 0}">${selectedAbility ? selectedAbility.value : 0}%</option>`;
+                    recalculateAndUpdateAllTotals();
+                });
+            }
+        }
+        
         function displayEmptyResult(charId) {
-            const resultArea = document.getElementById(`result-area-${charId}`);
-            resultArea.innerHTML = `<p>条件を選択して計算を実行してください。</p>`;
+            document.getElementById(`result-area-${charId}`).innerHTML = `<p>条件を選択して計算を実行してください。</p>`;
         }
 
         calculateAllButton.addEventListener('click', calculateAllCharacters);

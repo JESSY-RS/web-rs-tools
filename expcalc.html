@@ -278,7 +278,40 @@
   <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
   <!-- サイドメニュー -->
-  <div id="sidemenu-container"></div>
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a class="menu-item" href="kiokucalc.html">記憶再戦時間計算</a><br>
+    <a class="menu-item" href="kiokucalc2.html">記憶再戦回数計算</a><br>
+    </br>
+    <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
+    <a class="menu-item" href="raidcalc.html">レイド周回効率比較ツール</a><br>
+    </br>
+    <a class="menu-item" href="renma-armor.html">練磨(防具)リスト</a><br>
+    <a class="menu-item" href="armor-top5.html">練磨(防具)TOP5確認</a><br>
+    <a class="menu-item" href="armor-calc.html">練磨(防具)自動選定ツール</a><br>
+    </br>
+    <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
+    <div id="linkList1">
+      ├ <a class="menu-item" href="checker-4gen.html">四元像ピアスチェッカー</a></br>
+      ├ <a class="menu-item" href="checker-stella.html">ステライヤリングチェッカー</a></br>
+      └ <a class="menu-item" href="checker-niji.html">虹瑠璃の腕輪チェッカー</a></br>
+    </div>
+    <span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span>
+    <div id="linkList2">
+      ├ <a class="menu-item" href="report-4gen.html">四元像ピアス報告用</a></br>
+      ├ <a class="menu-item" href="report-stella.html">ステライヤリング報告用</a></br>
+      └ <a class="menu-item" href="report-niji.html">虹瑠璃の腕輪報告用</a></br>
+    </div>
+    </br>
+    <a class="menu-item" href="expcalc.html">EXPスタンプ必要数計算</a><br>
+    <a class="menu-item" href="https://jessy-rs.github.io/Multi-Stage-Slash/">多段斬りアプリ</a><br>
+    </br>
+    <a class="menu-item"  href="armor.html">装備候補検索ツール</a><br>
+    <a class="menu-item"  href="style-info.html">スタイル情報ビューア</a><br>
+    <br>
+    <a class="menu-item" href="index.html">インデックスページ</a><br>
+    </br>
+  </div>
 
   <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
@@ -299,31 +332,6 @@
 
       <!-- 2から99までのオプションを生成 -->
       <script>
-
-    // サイドメニューを呼び出す関数
-    function loadSideMenu() {
-      fetch('sidemenu.html')
-        .then(response => response.text())
-        .then(data => {
-          document.getElementById('sidemenu-container').innerHTML = data;
-
-          // メニュー読み込み後に、メニュー内のトグルボタンのイベントリスナーを再設定する
-          var toggleButtons = document.querySelectorAll(".toggle-button");
-          toggleButtons.forEach(function(button) {
-            var targetId = button.getAttribute("data-target");
-            var list = document.getElementById(targetId);
-            // list.style.display = "none"; // 初期状態はCSSで制御されているため不要
-
-            button.addEventListener("click", function(){
-              if (list.style.display === "block") {
-                list.style.display = "none";
-              } else {
-                list.style.display = "block";
-              }
-            });
-          });
-        });
-    }
         for (let i = 2; i <= 99; i++) {
           document.write('<option value="' + i + '">' + i + '</option>');
         }
@@ -350,35 +358,9 @@
 
   <script>
 
-    // サイドメニューを呼び出す関数
-    function loadSideMenu() {
-      fetch('sidemenu.html')
-        .then(response => response.text())
-        .then(data => {
-          document.getElementById('sidemenu-container').innerHTML = data;
-
-          // メニュー読み込み後に、メニュー内のトグルボタンのイベントリスナーを再設定する
-          var toggleButtons = document.querySelectorAll(".toggle-button");
-          toggleButtons.forEach(function(button) {
-            var targetId = button.getAttribute("data-target");
-            var list = document.getElementById(targetId);
-            // list.style.display = "none"; // 初期状態はCSSで制御されているため不要
-
-            button.addEventListener("click", function(){
-              if (list.style.display === "block") {
-                list.style.display = "none";
-              } else {
-                list.style.display = "block";
-              }
-            });
-          });
-        });
-    }
-
     // ハンバーガーメニューの関数
     function toggleMenu() {
         const sideMenu = document.getElementById('sideMenu');
-        if (!sideMenu) return;
         const menuOverlay = document.getElementById('menuOverlay');
 
         if (sideMenu.classList.contains('open')) {
@@ -391,11 +373,12 @@
 
     function closeMenu() {
         const sideMenu = document.getElementById('sideMenu');
-        if (!sideMenu) return;
         const menuOverlay = document.getElementById('menuOverlay');
+        const menuClose = document.getElementById('menuClose');
 
         sideMenu.classList.remove('open');
         menuOverlay.classList.remove('open');
+        menuClose.style.color = '#eee';
     }
 
     // フリックでメニュー開閉（スクロール誤作動対策版）
@@ -633,11 +616,6 @@
         });
       });
     });
-
-    // ページをリロードしたらサイドメニューを呼び出す
-    window.onload = function () {
-        loadSideMenu();
-    }
 
   </script>
 
