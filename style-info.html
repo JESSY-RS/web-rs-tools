@@ -1487,9 +1487,18 @@
         const isAbilityScope = document.querySelector('.search-scope-btn[data-scope="ability"]').classList.contains('active');
         const isAddInfoScope = document.querySelector('.search-scope-btn[data-scope="addInfo"]').classList.contains('active');
         const isAnyScopeActiveForSearch = isSkillScope || isAbilityScope || isAddInfoScope;
-        const showCsvTagArea = isSkillScope || isAbilityScope || isAddInfoScope;
+        
         const csvTagArea = document.getElementById('csvTagArea');
-        if (csvTagArea) csvTagArea.style.display = showCsvTagArea ? 'block' : 'none';
+        if (csvTagArea) {
+            const isHiddenByUser = document.getElementById('toggleVisibilityBtn').classList.contains('active');
+            const showCsvTagArea = isSkillScope || isAbilityScope;
+            if (showCsvTagArea && !isHiddenByUser) {
+                 csvTagArea.style.display = 'block';
+            } else {
+                 csvTagArea.style.display = 'none';
+            }
+        }
+        
         const keywordSearchBtn = document.getElementById('keywordSearchBtn');
         if (keywordSearchBtn) keywordSearchBtn.disabled = !isAnyScopeActiveForSearch;
     }
@@ -1546,6 +1555,23 @@
             container.appendChild(p);
         }
     }
+
+    function resetSkillFilters() {
+        document.querySelectorAll('#skillSearchOptionsContainer .skill-filter-btn.active').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const bpInput = document.getElementById('bpSearchInput');
+        if (bpInput) bpInput.value = '';
+        document.querySelectorAll('#skillSearchOptionsContainer .bp-op-btn.active').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
+
+    function resetCommonFilters() {
+        document.querySelectorAll('#csvTagArea .tag-btn.active').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
     
     function generateSearchTags() {
         const container = document.getElementById('searchTagContainer');
@@ -1569,30 +1595,46 @@
                 skillOptionsContainer.style.display = isSkillScopeActive ? 'block' : 'none';
             }
         };
+
         document.querySelectorAll('.search-scope-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const clickedBtn = e.currentTarget;
+                const scope = clickedBtn.dataset.scope;
                 clickedBtn.classList.toggle('active');
                 const isActive = clickedBtn.classList.contains('active');
+                
                 const skillBtn = document.querySelector('.search-scope-btn[data-scope="skill"]');
                 const abilityBtn = document.querySelector('.search-scope-btn[data-scope="ability"]');
                 const addInfoBtn = document.querySelector('.search-scope-btn[data-scope="addInfo"]');
-                if ((clickedBtn === skillBtn || clickedBtn === abilityBtn) && !isActive) {
-                    if (!skillBtn.classList.contains('active') && !abilityBtn.classList.contains('active') && addInfoBtn.classList.contains('active')) {
+                const isSkillActive = skillBtn.classList.contains('active');
+                const isAbilityActive = abilityBtn.classList.contains('active');
+                const isAddInfoActive = addInfoBtn.classList.contains('active');
+
+                if (scope === 'skill' && !isActive) {
+                    resetSkillFilters();
+                }
+                if (!isSkillActive && !isAbilityActive) {
+                    resetCommonFilters();
+                }
+
+                if ((scope === 'skill' || scope === 'ability') && !isActive) {
+                    if (!isSkillActive && !isAbilityActive && isAddInfoActive) {
                         addInfoBtn.classList.remove('active');
                     }
                 }
-                if (clickedBtn === addInfoBtn && isActive) {
-                    if (!skillBtn.classList.contains('active') && !abilityBtn.classList.contains('active')) {
+                if (scope === 'addInfo' && isActive) {
+                    if (!isSkillActive && !isAbilityActive) {
                         skillBtn.classList.add('active');
                     }
                 }
+                
                 toggleSkillOptions();
                 updateSearchUIState();
                 updateAutoExtractedTags();
                 performTagSearch();
             });
         });
+
         toggleSkillOptions();
         const searchScopeCategory = document.getElementById('searchScopeCategory');
         const logicCategory = document.createElement('div');
@@ -1736,18 +1778,17 @@
         updateAutoExtractedTags();
 
         const toggleVisibilityBtn = document.getElementById('toggleVisibilityBtn');
-        const csvTagArea = document.getElementById('csvTagArea');
         toggleVisibilityBtn.addEventListener('click', () => {
             toggleVisibilityBtn.classList.toggle('active');
             const isHidden = toggleVisibilityBtn.classList.contains('active');
             if (isHidden) {
-                csvTagArea.style.display = 'none';
                 toggleVisibilityBtn.textContent = '候補表示';
             } else {
-                csvTagArea.style.display = 'block';
                 toggleVisibilityBtn.textContent = '候補非表示';
             }
             toggleSkillOptions();
+            updateSearchUIState();
+            performTagSearch();
         });
     }
     
