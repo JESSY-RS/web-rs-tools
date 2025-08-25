@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>スタイル情報ビューア</title>
+    <title>★スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1525,7 +1525,14 @@
         itemsToScan.forEach(item => {
             if (item && item['効果詳細']) {
                 const matches = item['効果詳細'].match(regex);
-                if (matches) matches.forEach(match => timingKeywords.add(match));
+                if (matches) {
+                    matches.forEach(match => {
+                        // [特効: で始まるものを除外
+                        if (!match.startsWith('[特効:')) {
+                            timingKeywords.add(match);
+                        }
+                    });
+                }
             }
         });
         const newButtonsDiv = document.createElement('div');
