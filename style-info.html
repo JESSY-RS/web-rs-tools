@@ -877,7 +877,7 @@
     // グローバル変数
     // --------------------------------------------------
     let zoomLevel = 1;
-    let db = { styles: [], skills: {}, abilities: {}, addInfo: {}, searchTags: [], autoTagExclusions: [] };
+    let db = { styles: [], skills: {}, abilities: {}, addInfo: {}, searchTags: [], autoTagExclusions: [], characterOrder: [] };
     let additionalExclusionList = [];
     let allExclusionKeywords = [];
     let addInfoOrderedKeys = [];
@@ -959,7 +959,8 @@
                 loadCsv('data/ability.csv', 'abilities'),
                 loadCsv('data/add_info.csv', 'addInfo'),
                 loadCsv('data/search-tags.csv', 'searchTags'),
-                loadCsv('data/auto-tag-exclusions.csv', 'autoTagExclusions')
+                loadCsv('data/auto-tag-exclusions.csv', 'autoTagExclusions'),
+                loadCsv('data/character.csv', 'characterOrder')
             ]);
             
             grayTextPhrases = db.autoTagExclusions.map(row => row.text_to_exclude).filter(Boolean);
@@ -1002,7 +1003,6 @@
         const saveBtns = document.querySelectorAll('.save-btn');
         clearDisplays();
 
-        // スタイル名が無効な場合はリセット
         if (!styleName || styleName === '---') {
             styleSelect.value = '---';
             styleSelect.classList.add('is-placeholder');
@@ -1021,7 +1021,6 @@
             return;
         }
 
-        // --- UIの状態をデータに同期 ---
         const characterName = selectedStyle['キャラ名'];
         if (charaSelect.value !== characterName) {
             charaSelect.value = characterName;
@@ -1032,14 +1031,12 @@
         charaSelect.classList.remove('is-placeholder');
         saveBtns.forEach(btn => btn.disabled = false);
 
-        // --- URLとタイトルを更新 ---
         const grade = selectedStyle['グレード'];
         const baseTitle = originalTitle.replace(/（統合版）/g, '').trim();
         const newTitle = `${baseTitle} - ${characterName} [${grade}] ${styleName}`;
         const hash = `${characterName}_${grade}_${styleName}`;
         const newHash = '#' + encodeURIComponent(hash);
 
-        // 履歴操作でない、かつ現在のURLと異なる場合のみ履歴を追加
         if (!fromHistory && location.hash !== newHash) {
             history.pushState({ styleName: styleName }, newTitle, newHash);
         }
@@ -1048,7 +1045,6 @@
             document.title = newTitle;
         });
 
-        // --- 詳細情報を描画 ---
         const skillsToShow = [selectedStyle['スキル1'], selectedStyle['スキル2'], selectedStyle['スキル3']].filter(Boolean);
         const abilitiesToShow = [selectedStyle['アビリティ1'], selectedStyle['アビリティ2'], selectedStyle['アビリティ3']].filter(Boolean);
         const allInitialItems = new Set([...skillsToShow, ...abilitiesToShow]);
@@ -1061,10 +1057,14 @@
         [...allInitialItems].forEach(name => {
              const detailText = findDetailText(name);
              if (!detailText) return;
+             
              [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
-                 if (!allInitialItems.has(keyword) && !fixedExclusionList.has(keyword) && !additionalExclusionList.includes(keyword)) {
-                     keywordsToProcess.add(keyword);
-                 }
+                const parsedKeyword = parseName(keyword);
+                const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+
+                if (existsInDb && !allInitialItems.has(parsedKeyword.fullName) && !fixedExclusionList.has(parsedKeyword.fullName) && !additionalExclusionList.includes(parsedKeyword.baseName)) {
+                    keywordsToProcess.add(parsedKeyword.fullName);
+                }
              });
         });
         
@@ -1072,13 +1072,21 @@
         while(keywordsToProcess.size > 0){
             const currentKeyword = [...keywordsToProcess][0];
             processedKeywords.add(currentKeyword);
+            
             displayInfo('addInfo', currentKeyword, allInitialItems, displayedAddInfo);
-            const detailText = findDetailText(currentKeyword);
+            
+            const parsedCurrent = parseName(currentKeyword);
+            const detailText = findDetailText(parsedCurrent.baseName);
+            
             keywordsToProcess.delete(currentKeyword);
             if (!detailText) continue;
+
             [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
-                if(!allInitialItems.has(keyword) && !fixedExclusionList.has(keyword) && !processedKeywords.has(keyword) && !additionalExclusionList.includes(keyword)){
-                    keywordsToProcess.add(keyword);
+                const parsedKeyword = parseName(keyword);
+                const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+
+                if(existsInDb && !allInitialItems.has(parsedKeyword.fullName) && !fixedExclusionList.has(parsedKeyword.fullName) && !processedKeywords.has(parsedKeyword.fullName) && !additionalExclusionList.includes(parsedKeyword.baseName)){
+                    keywordsToProcess.add(parsedKeyword.fullName);
                 }
             });
         }
@@ -1151,12 +1159,10 @@
             try {
                 const hash = decodeURIComponent(window.location.hash.substring(1));
                 
-                // 内部アンカーリンクは無視する
                 if (hash.startsWith('card-')) {
                     return;
                 }
                 
-                // タグ検索トップへのアンカーの場合
                 if (hash === 'search-controls-top') {
                     openSearchView(true);
                     return;
@@ -1177,6 +1183,20 @@
     }
 
     // --- 補助関数 ---
+
+    /**
+     * キーワードを解析し、ベース名と回数部分を分離するヘルパー関数
+     * @param {string} name - 解析対象のキーワード (例: "傷痕(陽)(3回)")
+     * @returns {{fullName: string, baseName: string, count: string|null}}
+     */
+    function parseName(name) {
+        const variableMatch = name.match(/(.+)(\((\d+)回\))$/);
+        return {
+            fullName: name,
+            baseName: variableMatch ? variableMatch[1] : name,
+            count: variableMatch ? variableMatch[3] : null
+        };
+    }
 
     function populateStyleSelect(characterName) {
         const styleSelect = document.getElementById('styleSelect');
@@ -1199,12 +1219,39 @@
     function populateCharacterSelect() {
         const charaSelect = document.getElementById('characterSelect');
         const styleSelect = document.getElementById('styleSelect');
-        const uniqueCharacters = [...new Set(db.styles.map(item => item['キャラ名']))].filter(Boolean);
-        charaSelect.innerHTML = `<option value="---">現在の登録数: ${uniqueCharacters.length}</option>`;
+
+        // style.csv に実際に存在する全キャラクターのリストを先に取得
+        const allUniqueCharacters = [...new Set(db.styles.map(item => item['キャラ名']))].filter(Boolean);
+        let finalList = [];
+
+        // character.csv が読み込まれ、中身がある場合のみカスタムソートを適用
+        if (db.characterOrder && db.characterOrder.length > 0) {
+            const orderedNames = db.characterOrder.map(row => row['キャラ名']);
+            const existingCharsSet = new Set(allUniqueCharacters);
+
+            // character.csv の順番通りに、存在するキャラクターを並べる
+            const sortedList = orderedNames.filter(name => existingCharsSet.has(name));
+            const sortedSet = new Set(sortedList);
+            
+            // character.csv に記載がなかったキャラクターをリストアップ
+            const remainingCharacters = allUniqueCharacters.filter(name => !sortedSet.has(name));
+            // 記載がなかったキャラクターは、五十音順にソート
+            remainingCharacters.sort((a,b) => a.localeCompare(b, 'ja'));
+
+            // 最終的な表示リストを結合
+            finalList = [...sortedList, ...remainingCharacters];
+        } else {
+            // character.csv がない、または空の場合は、従来通りの五十音順ソート
+            finalList = allUniqueCharacters.sort((a,b) => a.localeCompare(b, 'ja'));
+        }
+
+        // プルダウンメニューを生成
+        charaSelect.innerHTML = `<option value="---">現在の登録数: ${allUniqueCharacters.length}</option>`;
         charaSelect.classList.add('is-placeholder');
-        uniqueCharacters.sort((a,b) => a.localeCompare(b, 'ja')).forEach(chara => {
+        finalList.forEach(chara => {
             charaSelect.innerHTML += `<option value="${chara}">${chara}</option>`;
         });
+        
         styleSelect.innerHTML = `<option value="---">現在の登録数: ${db.styles.length}</option>`;
         styleSelect.classList.add('is-placeholder');
     }
@@ -1254,7 +1301,9 @@
             if (!response.ok) throw new Error(`${fileName} が見つかりません`);
             const csvText = await response.text();
             const results = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-            if (['styles', 'searchTags', 'autoTagExclusions'].includes(dbKey)) {
+            
+            // ▼▼▼ この行の配列に 'characterOrder' を追加します ▼▼▼
+            if (['styles', 'searchTags', 'autoTagExclusions', 'characterOrder'].includes(dbKey)) {
                 db[dbKey] = results.data;
             } else {
                 if (dbKey === 'addInfo') addInfoOrderedKeys = [];
@@ -1309,6 +1358,14 @@
         if (data['制限'] && !(type === 'addInfo' && data['制限'] === '1')) {
             summaryParts.push(`[使用回数制限:バトル中${data['制限']}回]`);
         }
+        
+        // ▼▼▼ ここから追加 ▼▼▼
+        // CSVの「特殊」項目に内容があれば、それを最後に追加する
+        if (data['特殊'] && data['特殊'].trim() !== '') {
+            summaryParts.push(`${data['特殊']}`);
+        }
+        // ▲▲▲ ここまで追加 ▲▲▲
+
         const summaryLine = summaryParts.join(' ').trim();
         const bpPart = (type !== 'addInfo') ? ` / <strong>BP:</strong> ${data['BP'] || ''}` : '';
         html += `<div class="summary-line"><strong>種別:</strong> ${data['属性'] || ''}${data['技術'] || ''} / <strong>威力:</strong> ${data['威力'] || ''}${bpPart}</div>`;
@@ -1317,36 +1374,80 @@
     }
     
     function displayInfo(type, name, allInitialItems, displayedAddInfo) {
-        if (type === 'addInfo' && (displayedAddInfo.has(name) || additionalExclusionList.includes(name))) return; 
-        let data, containerId, isSkill = false;
-        if (type === 'skill') { data = db.skills[name]; containerId = 'skillDisplay'; isSkill = true; }
-        else if (type === 'ability') { data = db.abilities[name]; containerId = 'abilityDisplay'; }
-        else if (type === 'addInfo') { 
-             data = db.addInfo[name] || db.skills[name] || db.abilities[name];
-             containerId = 'addInfoDisplay';
-             if (!data) return;
-             if (db.skills[name]) isSkill = true;
+        const parsedName = parseName(name);
+
+        if (type === 'addInfo' && (displayedAddInfo.has(parsedName.fullName) || additionalExclusionList.includes(parsedName.baseName))) {
+            return;
         }
+
+        let data, containerId, isSkill = false;
+
+        if (type === 'skill') {
+            data = db.skills[parsedName.baseName];
+            containerId = 'skillDisplay';
+            isSkill = true;
+        } else if (type === 'ability') {
+            data = db.abilities[parsedName.baseName];
+            containerId = 'abilityDisplay';
+        } else if (type === 'addInfo') {
+            data = db.addInfo[parsedName.baseName] || db.skills[parsedName.baseName] || db.abilities[parsedName.baseName];
+            containerId = 'addInfoDisplay';
+            if (!data) return;
+            if (db.skills[parsedName.baseName]) isSkill = true;
+        }
+
         if (!data) return;
-        if (type === 'addInfo') displayedAddInfo.add(name);
+
+        const cardData = parsedName.count ? { ...data } : data;
+
+        if (type === 'addInfo') {
+            displayedAddInfo.add(parsedName.fullName);
+        }
+
         const container = document.getElementById(containerId);
         const card = document.createElement('div');
         card.className = 'card';
-        card.id = `card-${name.replace(/ /g, "_")}`;
-        let content = `<h3>${name}</h3>`;
-        if(isSkill){
-            content += generateSkillDetailHtml(data, type);
+        card.id = `card-${parsedName.fullName.replace(/[ ()]/g, "_")}`;
+
+        let content = `<h3>${parsedName.fullName}</h3>`;
+
+        if (isSkill) {
+            content += generateSkillDetailHtml(cardData, type);
         }
-        let detailText = data['効果詳細'] || '(効果詳細なし)';
+
+        let detailText = cardData['効果詳細'] || '(効果詳細なし)';
+
+        if (parsedName.count && detailText !== '(効果詳細なし)') {
+            const lines = detailText.split('\n');
+            const addition = `(上限回数:${parsedName.count}回)`;
+            if (lines.length > 0) {
+                if (lines[0].trim().startsWith('[')) {
+                    if (lines.length > 1) {
+                        lines[1] = lines[1].trim() + addition;
+                    } else {
+                        lines.push(addition);
+                    }
+                } else {
+                    lines[0] = lines[0].trim() + addition;
+                }
+                detailText = lines.join('\n');
+            }
+        }
+
         detailText = applyGrayTextStyle(detailText);
+
         const linkedDetailText = detailText.replace(/「([^」]+)」/g, (match, keyword) => {
-            if (fixedExclusionList.has(keyword) || keyword === name || allInitialItems.has(keyword) || additionalExclusionList.includes(keyword)) {
+            const parsedKeyword = parseName(keyword);
+            const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+
+            if (!existsInDb || fixedExclusionList.has(parsedKeyword.fullName) || parsedKeyword.fullName === name || allInitialItems.has(parsedKeyword.fullName) || additionalExclusionList.includes(parsedKeyword.baseName)) {
                 return match;
             }
-            const sourceCardId = `card-${name.replace(/ /g, "_")}`;
-            const targetCardId = `card-${keyword.replace(/ /g, "_")}`;
-            return `「<a class="keyword-link" data-source-id="${sourceCardId}" href="#${targetCardId}">${keyword}</a>」`;
+            const sourceCardId = `card-${name.replace(/[ ()]/g, "_")}`;
+            const targetCardId = `card-${parsedKeyword.fullName.replace(/[ ()]/g, "_")}`;
+            return `「<a class="keyword-link" data-source-id="${sourceCardId}" href="#${targetCardId}">${parsedKeyword.fullName}</a>」`;
         });
+
         content += `<div class="detail-line">${linkedDetailText.replace(/\n/g, '<br>')}</div>`;
         card.innerHTML = content;
         container.appendChild(card);
@@ -1454,20 +1555,61 @@
             const linkedInfoItems = new Map();
             const itemsToScan = [...styleSkills, ...styleAbilities];
             const scannedKeywords = new Set([...styleSkills.map(s => s['スキル名']), ...styleAbilities.map(a => a['アビリティ名'])]);
+            
             while (itemsToScan.length > 0) {
                 const currentItem = itemsToScan.shift();
                 const detailText = currentItem['効果詳細'] || '';
+                
                 const linkedKeywords = [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]);
+                
                 for (const keyword of linkedKeywords) {
-                    if (scannedKeywords.has(keyword)) continue;
-                    const infoData = db.addInfo[keyword] || db.skills[keyword] || db.abilities[keyword];
+                    const parsedKeyword = parseName(keyword);
+
+                    if (scannedKeywords.has(parsedKeyword.fullName)) continue;
+                    
+                    const infoData = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+                    
                     if (infoData) {
-                        const infoName = infoData['スキル名'] || infoData['アビリティ名'] || infoData['名称'];
-                        if (!linkedInfoItems.has(infoName)) {
-                            linkedInfoItems.set(infoName, { ...infoData });
+                        scannedKeywords.add(parsedKeyword.fullName);
+                        
+                        // 検索データ用に、キーワードのフルネームと変更後の詳細を持つ新しいオブジェクトを作成
+                        const instanceData = { ...infoData };
+                        
+                        // 名称をフルネームに書き換える
+                        if (instanceData.hasOwnProperty('名称')) {
+                            instanceData['名称'] = parsedKeyword.fullName;
+                        } else if (instanceData.hasOwnProperty('スキル名')) {
+                            instanceData['スキル名'] = parsedKeyword.fullName;
+                        } else if (instanceData.hasOwnProperty('アビリティ名')) {
+                            instanceData['アビリティ名'] = parsedKeyword.fullName;
+                        }
+
+                        // 回数がある場合、検索対象の効果詳細も書き換える
+                        if (parsedKeyword.count) {
+                            let detail = instanceData['効果詳細'] || '(効果詳細なし)';
+                            if (detail !== '(効果詳細なし)') {
+                                const lines = detail.split('\n');
+                                const addition = `(上限回数:${parsedKeyword.count}回)`;
+                                if (lines.length > 0) {
+                                    if (lines[0].trim().startsWith('[')) {
+                                        if (lines.length > 1) {
+                                            lines[1] = lines[1].trim() + addition;
+                                        } else {
+                                            lines.push(addition);
+                                        }
+                                    } else {
+                                        lines[0] = lines[0].trim() + addition;
+                                    }
+                                    instanceData['効果詳細'] = lines.join('\n');
+                                }
+                            }
+                        }
+
+                        if (!linkedInfoItems.has(parsedKeyword.fullName)) {
+                            linkedInfoItems.set(parsedKeyword.fullName, instanceData);
+                            // 次の探索には、書き換え前のオリジナルデータを渡す
                             itemsToScan.push(infoData);
                         }
-                        scannedKeywords.add(keyword);
                     }
                 }
             }
@@ -1670,7 +1812,7 @@
             '行動順': ['ファスト', 'ディレイ'],
             '対象': ['味方', '敵'],
             '範囲': ['単体', '全体'],
-            'その他': { field: 'misc', values: { 'リキャスト技': '再使用', '使用回数制限あり': '制限' } }
+            'その他': { field: 'misc', values: { 'リキャスト技': '再使用', '使用回数制限あり': '制限', '体術技特殊タイプ(知)': '特殊' } }
         };
         const createButtons = (category, options) => {
             const categoryDiv = document.createElement('div');
@@ -1710,7 +1852,13 @@
                 bpCategory.className = 'tag-category single-line-layout';
                 bpCategory.innerHTML = `<div class="tag-category-title">BP:</div><div class="tag-buttons"><input type="number" id="bpSearchInput" placeholder="BP値"><button class="tag-btn bp-op-btn" data-op="equal">一致</button><button class="tag-btn bp-op-btn" data-op="gte">以上</button><button class="tag-btn bp-op-btn" data-op="lte">以下</button></div>`;
                 skillOptionsContainer.appendChild(bpCategory);
-                document.getElementById('bpSearchInput').addEventListener('input', performTagSearch);
+                const bpInput = document.getElementById('bpSearchInput');
+                bpInput.addEventListener('input', performTagSearch);
+                // ▼▼▼ ここから追加 ▼▼▼
+                bpInput.addEventListener('focus', () => {
+                    bpInput.select();
+                });
+                // ▲▲▲ ここまで追加 ▲▲▲
             } else {
                  skillOptionsContainer.appendChild(createButtons(category, options));
             }
@@ -1942,20 +2090,50 @@
     }
 
     function generateItemCardHTML(itemName, keywords = [], contextCharacter, contextStyleName, searchContext) {
-        const itemData = db.skills[itemName] || db.abilities[itemName] || db.addInfo[itemName];
+        const parsedName = parseName(itemName);
+        const itemData = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName] || db.addInfo[parsedName.baseName];
+
         if (!itemData) return '';
-        const itemType = db.skills[itemName] ? 'スキル' : (db.abilities[itemName] ? 'アビリティ' : '追加情報');
+
+        // 検索結果表示用に、オリジナルのデータから一時的な表示用データを作成する
+        const renderData = { ...itemData };
+
+        // 回数指定がある場合、表示用のデータも動的に書き換える
+        if (parsedName.count) {
+            let detail = renderData['効果詳細'] || '(効果詳細なし)';
+            if (detail !== '(効果詳細なし)') {
+                const lines = detail.split('\n');
+                const addition = `(上限回数:${parsedName.count}回)`;
+                if (lines.length > 0) {
+                    if (lines[0].trim().startsWith('[')) {
+                        if (lines.length > 1) {
+                            lines[1] = lines[1].trim() + addition;
+                        } else {
+                            lines.push(addition);
+                        }
+                    } else {
+                        lines[0] = lines[0].trim() + addition;
+                    }
+                    renderData['効果詳細'] = lines.join('\n');
+                }
+            }
+        }
+        
+        const itemType = db.skills[parsedName.baseName] ? 'スキル' : (db.abilities[parsedName.baseName] ? 'アビリティ' : '追加情報');
         let typeTextClass, typeTextColorStyle = '';
         if (itemType === 'スキル') typeTextClass = 'search-result-skill-type';
         else if (itemType === 'アビリティ') typeTextClass = 'search-result-ability-type';
         else typeTextColorStyle = `color: var(--addinfo-col-text); font-size: 0.8em; font-weight: normal;`;
+        
         const typeSpan = typeTextClass ? `<span class="${typeTextClass}">(${itemType})</span>` : `<span style="${typeTextColorStyle}">(${itemType})</span>`;
+        
         let summaryHtml = '';
-        if (itemType === 'スキル' || (itemType === '追加情報' && db.skills[itemName])) {
-            summaryHtml = generateSkillDetailHtml(itemData);
+        if (itemType === 'スキル' || (itemType === '追加情報' && db.skills[parsedName.baseName])) {
+            summaryHtml = generateSkillDetailHtml(renderData);
         }
         summaryHtml = summaryHtml.replace(/\n/g, '<br>');
         const highlightedSummary = highlightKeywords(summaryHtml, keywords);
+        
         let referenceInfo = '';
         let parents = reverseIndex[itemName];
         if (parents && contextCharacter && contextStyleName) {
@@ -1978,8 +2156,11 @@
             }).join(' ／ ');
             referenceInfo = `<div class="summary-line">参照元: ${parentLinks}</div>`;
         }
-        const styledDetail = applyGrayTextStyle(itemData['効果詳細'] || '').replace(/\n/g, '<br>');
+        
+        const styledDetail = applyGrayTextStyle(renderData['効果詳細'] || '').replace(/\n/g, '<br>');
         const finalDetailHtml = highlightKeywords(styledDetail, keywords);
+        
+        // 見出しには元のフルネーム(itemName)を使用する
         return `<h3>${itemName} ${typeSpan}</h3>${referenceInfo}${highlightedSummary}<div class="detail-line">${finalDetailHtml}</div>`;
     }
 
