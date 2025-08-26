@@ -1309,13 +1309,36 @@
                 }
             });
 
+            // ▼▼▼ 最終修正箇所 Part 1 of 2 ▼▼▼
             document.addEventListener('input', (e) => {
                 if (e.target.classList.contains('dropdown-search-input')) {
                     const searchTerm = hiraganaToKatakana(e.target.value).toLowerCase();
-                    const optionsList = e.target.nextElementSibling;
+                    
+                    // 以前の方法(nextElementSibling)は不安定な場合があるため、より確実な方法でリストを取得します。
+                    const panel = e.target.closest('.custom-dropdown-panel');
+                    if (!panel) return;
+                    const optionsList = panel.querySelector('.dropdown-options-list');
+                    if (!optionsList) return;
+
                     optionsList.querySelectorAll('.dropdown-option').forEach(option => {
-                        const optionText = hiraganaToKatakana(option.textContent).toLowerCase();
-                        option.classList.toggle('hidden', !optionText.includes(searchTerm));
+                        let textToCompare = '';
+                        
+                        if (option.dataset.hasSubmenu) {
+                            const textSpan = option.querySelector('span:first-child');
+                            textToCompare = textSpan ? textSpan.textContent : '';
+                        } else {
+                            textToCompare = option.textContent;
+                        }
+                        
+                        const optionText = hiraganaToKatakana(textToCompare).toLowerCase();
+                        
+                        // CSSクラスではなく、直接styleを操作して表示/非表示を切り替えます。
+                        // これにより、他のCSS設定による影響を完全に排除します。
+                        if (optionText.includes(searchTerm)) {
+                            option.style.display = ''; 
+                        } else {
+                            option.style.display = 'none';
+                        }
                     });
                 }
             });
@@ -1403,7 +1426,15 @@
                     } else {
                         const searchInput = panel.querySelector('.dropdown-search-input');
                         if (searchInput) searchInput.value = '';
-                        panel.querySelectorAll('.dropdown-option.hidden').forEach(opt => opt.classList.remove('hidden'));
+                        
+                        // ▼▼▼ 最終修正箇所 Part 2 of 2 ▼▼▼
+                        // inputイベントでstyle.displayを直接変更したため、
+                        // ドロップダウンを開き直した際に、そのスタイルをリセットする必要があります。
+                        panel.querySelectorAll('.dropdown-option').forEach(opt => {
+                            opt.style.display = ''; // 直接指定したdisplayプロパティを解除
+                            opt.classList.remove('hidden'); // hiddenクラスも念のため解除
+                        });
+                        // ▲▲▲ 最終修正箇所 ▲▲▲
 
                         const optionsList = panel.querySelector('.dropdown-options-list');
                         optionsList.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
@@ -1419,7 +1450,6 @@
                                 const match = selectedText.match(/(.+)\(.*\)/);
                                 let parentText = match ? match[1] : null;
 
-                                // ★★★ 変更点: 半角のﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽを全角に戻して比較する ★★★
                                 if (parentText) {
                                     parentText = parentText.replace('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ', 'バトルヴァンブレイス');
                                 }
