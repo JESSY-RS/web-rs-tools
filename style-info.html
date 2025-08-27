@@ -1165,8 +1165,6 @@
                 updateView(null, true);
             }
         } else {
-            // ページロード時、ハッシュがなければ初期表示状態を維持
-            // updateView(null, true) を呼ばないことで、初期テキストが'---'に上書きされるのを防ぐ
             if (document.readyState === 'complete') {
                  updateView(null, true);
             }
@@ -1187,15 +1185,38 @@
     // スタイル選択カスタムプルダウンの初期化
     function initializeStyleSelect() {
         const btn = document.getElementById('styleBtn');
+        const text = document.getElementById('styleText');
         const dropdown = document.getElementById('styleDropdown');
         const searchInput = document.getElementById('styleSearch');
+        const optionsContainer = document.getElementById('styleOptions');
         
         btn.addEventListener('click', () => {
             const isOpen = dropdown.style.display === 'flex';
             dropdown.style.display = isOpen ? 'none' : 'flex';
             if (!isOpen) {
-                searchInput.focus();
-                searchInput.select();
+                const currentStyleName = btn.dataset.value;
+                const currentStyleText = text.textContent;
+
+                // 値が選択されている場合のみ、選択中の項目をハイライト
+                if (currentStyleName && currentStyleName !== '---' && !currentStyleText.startsWith('現在の登録数')) {
+                    const options = optionsContainer.querySelectorAll('.custom-select-option');
+                    for (const option of options) {
+                        if (option.dataset.value === currentStyleName) {
+                            option.classList.add('focused');
+                            option.scrollIntoView({ block: 'nearest' });
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        optionsContainer.addEventListener('mouseover', (e) => {
+            if (e.target.classList.contains('custom-select-option')) {
+                const currentlyFocused = optionsContainer.querySelector('.custom-select-option.focused');
+                if (currentlyFocused) {
+                    currentlyFocused.classList.remove('focused');
+                }
             }
         });
 
@@ -1334,11 +1355,9 @@
             dropdown.style.display = isOpen ? 'none' : 'flex';
             if (!isOpen) {
                 renderCharacterOptions(searchInput.value);
-                searchInput.focus();
-                searchInput.select();
-
-                // 現在選択中のキャラにフォーカスを当てる
                 const currentCharacterName = selectedText.textContent;
+                
+                // 値が選択されている場合（プレースホルダーではない場合）のみ、選択中の項目をハイライト
                 if (currentCharacterName && !currentCharacterName.startsWith('現在の登録数')) {
                     const options = optionsContainer.querySelectorAll('.custom-select-option');
                     for (const option of options) {
