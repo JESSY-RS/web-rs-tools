@@ -21,6 +21,8 @@
             --select-text: #000;
             --select-border: #ccc;
             --select-disabled-bg: #ccc;
+            --select-focus-bg: #007bff;
+            --select-focus-text: #fff;
             --skill-col-bg: #e7f3ff;
             --skill-col-text: #0056b3;
             --ability-col-bg: #e8f5e9;
@@ -53,6 +55,8 @@
             --select-text: #f2f2f2;
             --select-border: #666;
             --select-disabled-bg: #555;
+            --select-focus-bg: #1D9BF0;
+            --select-focus-text: #fff;
             --skill-col-bg: #1e293b;
             --skill-col-text: #93c5fd;
             --ability-col-bg: #163318;
@@ -214,29 +218,79 @@
             padding-top: 15px;
             border-top: 1px solid var(--controls-border);
         }
-        select {
+        .custom-select-container {
+            position: relative;
+            width: 100%;
+        }
+        .custom-select-button {
             width: 100%;
             padding: 10px;
             border-radius: 4px;
             border: 1px solid var(--select-border);
-            font-size: 1.1em;
             background-color: var(--select-bg);
-            color: var(--select-text);
+            color: var(--main-text);
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             height: 45px;
             box-sizing: border-box;
+            font-size: 1.1em;
         }
-        select:disabled {
-            background-color: var(--select-disabled-bg);
-        }
-        select.is-placeholder {
-            color: #999;
-        }
-        [data-theme="dark"] select.is-placeholder {
-            color: #aaa;
-        }
-        #characterSelect.is-placeholder,
-        #styleSelect.is-placeholder {
+        .custom-select-button.is-empty,
+        .custom-select-button.is-placeholder {
             color: var(--main-text);
+        }
+        [data-theme="dark"] .custom-select-button.is-empty,
+        [data-theme="dark"] .custom-select-button.is-placeholder {
+            color: var(--main-text);
+        }
+        .custom-select-button:disabled {
+            background-color: var(--select-disabled-bg);
+            cursor: not-allowed;
+        }
+        .custom-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            border: 1px solid var(--select-border);
+            background: var(--select-bg);
+            color: var(--main-text);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+        .custom-select-search {
+            margin: 8px;
+            padding: 8px;
+            width: calc(100% - 24px);
+            box-sizing: border-box;
+            border: 1px solid var(--select-border);
+            background-color: var(--select-bg);
+            color: var(--main-text);
+            font-size: 1.1em;
+        }
+        .custom-select-option {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        #deselectAllExclusions {
+            border-bottom: 1px solid var(--select-border);
+        }
+        .custom-select-option:hover, .custom-select-option.focused {
+            background-color: var(--select-focus-bg);
+            color: var(--select-focus-text);
+        }
+        #additionalExclusionOptions {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        #characterOptions,
+        #styleOptions {
+            max-height: 320px;
+            overflow-y: auto;
         }
         .container {
             display: grid;
@@ -362,65 +416,6 @@
             background-color: #ccc;
             cursor: not-allowed;
             opacity: 0.7;
-        }
-        .custom-select-container {
-            position: relative;
-            width: 100%;
-        }
-        .custom-select-button {
-            width: 100%;
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid var(--select-border);
-            background-color: var(--select-bg);
-            color: var(--main-text);
-            text-align: left;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 45px;
-            box-sizing: border-box;
-            font-size: 1.1em;
-        }
-        .custom-select-button.is-empty {
-            background-color: var(--select-disabled-bg);
-        }
-        .custom-select-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            border: 1px solid var(--select-border);
-            background: var(--select-bg);
-            color: var(--main-text);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-        }
-        .custom-select-search {
-            margin: 8px;
-            padding: 8px;
-            width: calc(100% - 24px);
-            box-sizing: border-box;
-            border: 1px solid var(--select-border);
-            background-color: var(--select-bg);
-            color: var(--main-text);
-            font-size: 1.1em;
-        }
-        .custom-select-option {
-            padding: 8px 12px;
-            cursor: pointer;
-        }
-        #deselectAllExclusions {
-            border-bottom: 1px solid var(--select-border);
-        }
-        .custom-select-option:hover {
-            background-color: var(--controls-bg);
-        }
-        #additionalExclusionOptions {
-            max-height: 250px;
-            overflow-y: auto;
         }
         .profile-btn {
             flex: 1;
@@ -785,12 +780,30 @@
     <div class="controls-wrapper">
         <div id="viewModeControls">
             <div class="control-group">
-                <label for="characterSelect">キャラ名:</label>
-                <select id="characterSelect" disabled><option>---</option></select>
+                <label for="characterBtn">キャラ名:</label>
+                <div class="custom-select-container" id="characterContainer">
+                    <button class="custom-select-button" id="characterBtn" disabled>
+                        <span id="characterText">---</span>
+                        <span>▼</span>
+                    </button>
+                    <div class="custom-select-dropdown" id="characterDropdown" style="display: none;">
+                        <input type="text" class="custom-select-search" id="characterSearch" placeholder="検索...">
+                        <div id="characterOptions"></div>
+                    </div>
+                </div>
             </div>
             <div class="control-group">
-                <label for="styleSelect">スタイル名:</label>
-                <select id="styleSelect" disabled><option>---</option></select>
+                <label for="styleBtn">スタイル名:</label>
+                <div class="custom-select-container" id="styleContainer">
+                    <button class="custom-select-button" id="styleBtn" disabled>
+                        <span id="styleText">---</span>
+                        <span>▼</span>
+                    </button>
+                    <div class="custom-select-dropdown" id="styleDropdown" style="display: none;">
+                        <input type="text" class="custom-select-search" id="styleSearch" placeholder="検索...">
+                        <div id="styleOptions"></div>
+                    </div>
+                </div>
             </div>
             
             <div class="control-group control-group-separator">
@@ -877,7 +890,15 @@
     // グローバル変数
     // --------------------------------------------------
     let zoomLevel = 1;
-    let db = { styles: [], skills: {}, abilities: {}, addInfo: {}, searchTags: [], autoTagExclusions: [], characterOrder: [] };
+    let db = { 
+        styles: [], 
+        skills: {}, 
+        abilities: {}, 
+        addInfo: {}, 
+        searchTags: [], 
+        autoTagExclusions: [], 
+        characterOrder: [] // { 'キャラ名': '最終皇帝(男)', 'フリガナ': 'サイシュウコウテイオトコ' } のようなオブジェクトの配列になる
+    };
     let additionalExclusionList = [];
     let allExclusionKeywords = [];
     let addInfoOrderedKeys = [];
@@ -886,13 +907,16 @@
     let reverseIndex = {};
     let itemToStyleMap = {};
     const fixedExclusionList = new Set(["攻撃", "アビリティ効果により発動する技・術", "特殊状態の効果により発動する技・術", "技・術の効果により発動する技・術", "溜め技・術", "溜め状態を付与する技・術", "カウンター効果による反撃技・術", "\"追撃\"により発動する技・術"]);
-    let originalTitle = ""; // 初期化はDOMContentLoadedで行う
+    let originalTitle = "";
+
+    // ひらがなをカタカナに変換する関数
+    const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
 
     // --------------------------------------------------
     // 初期化処理
     // --------------------------------------------------
     document.addEventListener('DOMContentLoaded', async () => {
-        originalTitle = document.title; // DOM読み込み完了後に初期化
+        originalTitle = document.title;
         
         // --- テキスト選択と右クリックの制御 ---
         const pageTitle = document.title;
@@ -904,7 +928,6 @@
                 screenshotSection.style.display = 'none';
             }
         }
-        // --- 制御ここまで ---
         
         // --- Theme switcher logic ---
         const themeToggleButton = document.getElementById('theme-toggle-button');
@@ -919,7 +942,8 @@
             }
         };
         const handleThemeChange = () => {
-            const selectedTheme = localStorage.getItem('theme') || 'system';
+            // ローカルストレージに設定がなければ 'light' をデフォルトにする
+            const selectedTheme = localStorage.getItem('theme') || 'light';
             applyTheme(selectedTheme);
             for (const radio of themeRadios) {
                 if (radio.value === selectedTheme) {
@@ -944,7 +968,7 @@
             });
         });
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-            const selectedTheme = localStorage.getItem('theme') || 'system';
+            const selectedTheme = localStorage.getItem('theme') || 'light';
             if (selectedTheme === 'system') {
                 applyTheme('system');
             }
@@ -967,12 +991,9 @@
             buildReverseIndex();
             prepareSearchData();
             buildItemToStyleMap();
-            populateCharacterSelect();
-            document.getElementById('characterSelect').disabled = false;
             
-            // イベントリスナーを新しい構造に合わせて設定
-            document.getElementById('characterSelect').addEventListener('change', handleCharacterChange);
-            document.getElementById('styleSelect').addEventListener('change', handleStyleChange);
+            initializeCharacterSelect();
+            initializeStyleSelect();
             window.addEventListener('popstate', handlePopState);
             
             generateSearchTags();
@@ -982,7 +1003,7 @@
             initializeResetButton();
             document.getElementById('searchResults').addEventListener('click', handleSearchResultClick);
             
-            handleUrlHash(); // URLハッシュに基づいて初期表示
+            handleUrlHash();
 
         } catch (error) {
             console.error(`初期化エラー: ${error.message}`);
@@ -992,20 +1013,16 @@
 
     // --- ▼▼▼ 表示・URL・タイトル更新のロジック ▼▼▼ ---
 
-    /**
-     * 表示更新、URL更新、タイトル更新を担う中心的な関数
-     * @param {string | null} styleName - 表示するスタイル名。nullの場合はリセット。
-     * @param {boolean} fromHistory - history.back/forwardによる呼び出しかどうか。
-     */
     function updateView(styleName, fromHistory = false) {
-        const charaSelect = document.getElementById('characterSelect');
-        const styleSelect = document.getElementById('styleSelect');
+        const charaBtn = document.getElementById('characterBtn');
+        const charaText = document.getElementById('characterText');
+        const styleBtn = document.getElementById('styleBtn');
+        const styleText = document.getElementById('styleText');
         const saveBtns = document.querySelectorAll('.save-btn');
         clearDisplays();
 
         if (!styleName || styleName === '---') {
-            styleSelect.value = '---';
-            styleSelect.classList.add('is-placeholder');
+            styleBtn.classList.add('is-placeholder');
             saveBtns.forEach(btn => btn.disabled = true);
             
             if (!fromHistory && (location.hash || history.state)) {
@@ -1022,13 +1039,17 @@
         }
 
         const characterName = selectedStyle['キャラ名'];
-        if (charaSelect.value !== characterName) {
-            charaSelect.value = characterName;
+        if (charaText.textContent !== characterName) {
+            charaText.textContent = characterName;
             populateStyleSelect(characterName);
         }
-        styleSelect.value = styleName;
-        styleSelect.classList.remove('is-placeholder');
-        charaSelect.classList.remove('is-placeholder');
+        
+        const displayStyleName = `[${selectedStyle['グレード']}] ${selectedStyle['スタイル名']}`;
+        styleText.textContent = displayStyleName;
+        styleBtn.dataset.value = selectedStyle['スタイル名'];
+
+        styleBtn.classList.remove('is-placeholder');
+        charaBtn.classList.remove('is-placeholder');
         saveBtns.forEach(btn => btn.disabled = false);
 
         const grade = selectedStyle['グレード'];
@@ -1041,9 +1062,7 @@
             history.pushState({ styleName: styleName }, newTitle, newHash);
         }
 
-        requestAnimationFrame(() => {
-            document.title = newTitle;
-        });
+        requestAnimationFrame(() => { document.title = newTitle; });
 
         const skillsToShow = [selectedStyle['スキル1'], selectedStyle['スキル2'], selectedStyle['スキル3']].filter(Boolean);
         const abilitiesToShow = [selectedStyle['アビリティ1'], selectedStyle['アビリティ2'], selectedStyle['アビリティ3']].filter(Boolean);
@@ -1057,11 +1076,9 @@
         [...allInitialItems].forEach(name => {
              const detailText = findDetailText(name);
              if (!detailText) return;
-             
              [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
                 const parsedKeyword = parseName(keyword);
                 const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
-
                 if (existsInDb && !allInitialItems.has(parsedKeyword.fullName) && !fixedExclusionList.has(parsedKeyword.fullName) && !additionalExclusionList.includes(parsedKeyword.baseName)) {
                     keywordsToProcess.add(parsedKeyword.fullName);
                 }
@@ -1072,19 +1089,14 @@
         while(keywordsToProcess.size > 0){
             const currentKeyword = [...keywordsToProcess][0];
             processedKeywords.add(currentKeyword);
-            
             displayInfo('addInfo', currentKeyword, allInitialItems, displayedAddInfo);
-            
             const parsedCurrent = parseName(currentKeyword);
             const detailText = findDetailText(parsedCurrent.baseName);
-            
             keywordsToProcess.delete(currentKeyword);
             if (!detailText) continue;
-
             [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
                 const parsedKeyword = parseName(keyword);
                 const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
-
                 if(existsInDb && !allInitialItems.has(parsedKeyword.fullName) && !fixedExclusionList.has(parsedKeyword.fullName) && !processedKeywords.has(parsedKeyword.fullName) && !additionalExclusionList.includes(parsedKeyword.baseName)){
                     keywordsToProcess.add(parsedKeyword.fullName);
                 }
@@ -1092,7 +1104,6 @@
         }
     }
 
-    /** タグ検索ビューを開き、状態を更新する関数 */
     function openSearchView(fromHistory = false) {
         const searchPanel = document.getElementById('searchTagContainer');
         const mainContainer = document.getElementById('mainContainer');
@@ -1117,29 +1128,12 @@
         
         const targetElement = document.getElementById('search-controls-top');
         if (targetElement) {
-            setTimeout(() => {
-                targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
-            }, 0); 
+            setTimeout(() => { targetElement.scrollIntoView({ behavior: 'auto', block: 'start' }); }, 0); 
         }
     }
 
     // --- イベントハンドラ ---
-
-    /** キャラクタードロップダウンが変更された時の処理 */
-    function handleCharacterChange(e) {
-        const selectedCharacter = e.target.value;
-        populateStyleSelect(selectedCharacter);
-        
-        clearDisplays();
-        document.querySelectorAll('.save-btn').forEach(btn => btn.disabled = true);
-    }
-
-    /** スタイルドロップダウンが変更された時の処理 */
-    function handleStyleChange(e) {
-        updateView(e.target.value, false);
-    }
     
-    /** ブラウザの戻る/進むが押された時の処理 */
     function handlePopState(event) {
         const state = event.state;
         if (state && state.styleName) {
@@ -1153,24 +1147,17 @@
         }
     }
     
-    /** URLハッシュに基づいて表示を更新する処理 */
     function handleUrlHash() {
         if (window.location.hash) {
             try {
                 const hash = decodeURIComponent(window.location.hash.substring(1));
-                
-                if (hash.startsWith('card-')) {
-                    return;
-                }
-                
+                if (hash.startsWith('card-')) return;
                 if (hash === 'search-controls-top') {
                     openSearchView(true);
                     return;
                 }
-
                 const parts = hash.split('_');
                 if (parts.length < 3) throw new Error("不正なURLハッシュ形式");
-                
                 const styleName = parts.slice(2).join('_');
                 updateView(styleName, true);
             } catch (e) {
@@ -1178,17 +1165,16 @@
                 updateView(null, true);
             }
         } else {
-            updateView(null, true);
+            // ページロード時、ハッシュがなければ初期表示状態を維持
+            // updateView(null, true) を呼ばないことで、初期テキストが'---'に上書きされるのを防ぐ
+            if (document.readyState === 'complete') {
+                 updateView(null, true);
+            }
         }
     }
 
     // --- 補助関数 ---
-
-    /**
-     * キーワードを解析し、ベース名と回数部分を分離するヘルパー関数
-     * @param {string} name - 解析対象のキーワード (例: "傷痕(陽)(3回)")
-     * @returns {{fullName: string, baseName: string, count: string|null}}
-     */
+    
     function parseName(name) {
         const variableMatch = name.match(/(.+)(\((\d+)回\))$/);
         return {
@@ -1198,62 +1184,194 @@
         };
     }
 
-    function populateStyleSelect(characterName) {
-        const styleSelect = document.getElementById('styleSelect');
-        if (!characterName || characterName === '---') {
-            styleSelect.innerHTML = `<option value="---">現在の登録数: ${db.styles.length}</option>`;
-            styleSelect.classList.add('is-placeholder');
-            styleSelect.disabled = true;
-        } else {
-            styleSelect.innerHTML = `<option value="---">---</option>`;
-            styleSelect.classList.add('is-placeholder');
-            const stylesForCharacter = db.styles.filter(style => style['キャラ名'] === characterName);
-            stylesForCharacter.forEach(style => {
-                const displayName = `[${style['グレード']}] ${style['スタイル名']}`;
-                styleSelect.innerHTML += `<option value="${style['スタイル名']}">${displayName}</option>`;
-            });
-            styleSelect.disabled = false;
-        }
+    // スタイル選択カスタムプルダウンの初期化
+    function initializeStyleSelect() {
+        const btn = document.getElementById('styleBtn');
+        const dropdown = document.getElementById('styleDropdown');
+        const searchInput = document.getElementById('styleSearch');
+        
+        btn.addEventListener('click', () => {
+            const isOpen = dropdown.style.display === 'flex';
+            dropdown.style.display = isOpen ? 'none' : 'flex';
+            if (!isOpen) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        });
+
+        searchInput.addEventListener('input', () => {
+            const charaText = document.getElementById('characterText').textContent;
+            populateStyleSelect(charaText, searchInput.value);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('styleContainer').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
     }
 
-    function populateCharacterSelect() {
-        const charaSelect = document.getElementById('characterSelect');
-        const styleSelect = document.getElementById('styleSelect');
-
-        // style.csv に実際に存在する全キャラクターのリストを先に取得
-        const allUniqueCharacters = [...new Set(db.styles.map(item => item['キャラ名']))].filter(Boolean);
-        let finalList = [];
-
-        // character.csv が読み込まれ、中身がある場合のみカスタムソートを適用
-        if (db.characterOrder && db.characterOrder.length > 0) {
-            const orderedNames = db.characterOrder.map(row => row['キャラ名']);
-            const existingCharsSet = new Set(allUniqueCharacters);
-
-            // character.csv の順番通りに、存在するキャラクターを並べる
-            const sortedList = orderedNames.filter(name => existingCharsSet.has(name));
-            const sortedSet = new Set(sortedList);
-            
-            // character.csv に記載がなかったキャラクターをリストアップ
-            const remainingCharacters = allUniqueCharacters.filter(name => !sortedSet.has(name));
-            // 記載がなかったキャラクターは、五十音順にソート
-            remainingCharacters.sort((a,b) => a.localeCompare(b, 'ja'));
-
-            // 最終的な表示リストを結合
-            finalList = [...sortedList, ...remainingCharacters];
-        } else {
-            // character.csv がない、または空の場合は、従来通りの五十音順ソート
-            finalList = allUniqueCharacters.sort((a,b) => a.localeCompare(b, 'ja'));
+    // スタイル選択カスタムプルダウンのオプションを生成・更新
+    function populateStyleSelect(characterName, filter = '') {
+        const btn = document.getElementById('styleBtn');
+        const text = document.getElementById('styleText');
+        const optionsContainer = document.getElementById('styleOptions');
+        optionsContainer.innerHTML = '';
+        
+        if (!characterName || characterName.startsWith('現在の登録数')) {
+            text.textContent = `現在の登録数: ${db.styles.length}`;
+            btn.classList.add('is-placeholder');
+            btn.disabled = true;
+            return;
         }
+        
+        const searchTerm = hiraganaToKatakana(filter);
+        const stylesForCharacter = db.styles
+            .filter(style => style['キャラ名'] === characterName)
+            .filter(style => {
+                const displayName = `[${style['グレード']}] ${style['スタイル名']}`;
+                const kanaName = hiraganaToKatakana(displayName);
+                // 漢字とカタカナの両方を含むため、元の表示名でも検索
+                return kanaName.includes(searchTerm) || displayName.includes(searchTerm);
+            });
 
-        // プルダウンメニューを生成
-        charaSelect.innerHTML = `<option value="---">現在の登録数: ${allUniqueCharacters.length}</option>`;
-        charaSelect.classList.add('is-placeholder');
-        finalList.forEach(chara => {
-            charaSelect.innerHTML += `<option value="${chara}">${chara}</option>`;
+        if (stylesForCharacter.length > 0) {
+            stylesForCharacter.forEach(style => {
+                const displayName = `[${style['グレード']}] ${style['スタイル名']}`;
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'custom-select-option';
+                optionDiv.textContent = displayName;
+                optionDiv.dataset.value = style['スタイル名'];
+
+                optionDiv.addEventListener('click', (e) => {
+                    const selectedStyleName = e.target.dataset.value;
+                    text.textContent = e.target.textContent;
+                    btn.dataset.value = selectedStyleName;
+                    btn.classList.remove('is-placeholder');
+                    document.getElementById('styleDropdown').style.display = 'none';
+                    updateView(selectedStyleName);
+                });
+                optionsContainer.appendChild(optionDiv);
+            });
+        } else {
+             optionsContainer.innerHTML = '<div class="custom-select-option" style="color: #999;">該当なし</div>';
+        }
+        
+        btn.disabled = false;
+    }
+
+    // キャラクター選択カスタムプルダウンの初期化
+    function initializeCharacterSelect() {
+        const btn = document.getElementById('characterBtn');
+        const dropdown = document.getElementById('characterDropdown');
+        const searchInput = document.getElementById('characterSearch');
+        const optionsContainer = document.getElementById('characterOptions');
+        const selectedText = document.getElementById('characterText');
+        const styleBtn = document.getElementById('styleBtn');
+        const styleText = document.getElementById('styleText');
+
+        // character.csv から読み込んだキャラ順とフリガナを保持
+        const characterListWithFurigana = db.characterOrder.map(row => ({
+            name: row['キャラ名'],
+            furigana: row['フリガナ'] || ''
+        }));
+        
+        const allUniqueCharactersInStyles = new Set(db.styles.map(item => item['キャラ名']));
+        
+        // character.csv の順番を維持しつつ、style.csv に存在するキャラのみをリストアップ
+        const sortedList = characterListWithFurigana.filter(char => allUniqueCharactersInStyles.has(char.name));
+        const sortedSet = new Set(sortedList.map(char => char.name));
+
+        // character.csv にいないが style.csv にはいるキャラを末尾に追加
+        const remainingCharacters = [...allUniqueCharactersInStyles]
+            .filter(name => !sortedSet.has(name))
+            .sort((a,b) => a.localeCompare(b, 'ja'))
+            .map(name => ({ name: name, furigana: '' })); // フリガナがないので空文字
+
+        const finalList = [...sortedList, ...remainingCharacters];
+
+        selectedText.textContent = `現在の登録数: ${allUniqueCharactersInStyles.size}`;
+        btn.classList.add('is-placeholder');
+        styleText.textContent = `現在の登録数: ${db.styles.length}`;
+        styleBtn.classList.add('is-placeholder');
+
+        const renderCharacterOptions = (filter = '') => {
+            optionsContainer.innerHTML = '';
+            const searchTerm = hiraganaToKatakana(filter);
+            
+            const filteredList = finalList.filter(char => {
+                // 検索語がフリガナに含まれるか、またはキャラ名自体に含まれるかチェック
+                const furiganaMatch = char.furigana && char.furigana.includes(searchTerm);
+                const nameMatch = char.name.includes(searchTerm);
+                return furiganaMatch || nameMatch;
+            });
+
+            filteredList.forEach(char => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'custom-select-option';
+                optionDiv.textContent = char.name;
+                optionDiv.dataset.value = char.name;
+
+                optionDiv.addEventListener('click', (e) => {
+                    const selectedCharacter = e.target.dataset.value;
+                    selectedText.textContent = selectedCharacter;
+                    btn.classList.remove('is-placeholder');
+                    dropdown.style.display = 'none';
+                    
+                    styleText.textContent = '---';
+                    styleBtn.dataset.value = '---';
+                    styleBtn.classList.add('is-placeholder');
+                    populateStyleSelect(selectedCharacter);
+                    clearDisplays();
+                    document.querySelectorAll('.save-btn').forEach(btn => btn.disabled = true);
+                });
+                optionsContainer.appendChild(optionDiv);
+            });
+        };
+
+        btn.addEventListener('click', () => {
+            const isOpen = dropdown.style.display === 'flex';
+            dropdown.style.display = isOpen ? 'none' : 'flex';
+            if (!isOpen) {
+                renderCharacterOptions(searchInput.value);
+                searchInput.focus();
+                searchInput.select();
+
+                // 現在選択中のキャラにフォーカスを当てる
+                const currentCharacterName = selectedText.textContent;
+                if (currentCharacterName && !currentCharacterName.startsWith('現在の登録数')) {
+                    const options = optionsContainer.querySelectorAll('.custom-select-option');
+                    for (const option of options) {
+                        if (option.dataset.value === currentCharacterName) {
+                            option.classList.add('focused');
+                            option.scrollIntoView({ block: 'nearest' });
+                            break;
+                        }
+                    }
+                }
+            }
         });
         
-        styleSelect.innerHTML = `<option value="---">現在の登録数: ${db.styles.length}</option>`;
-        styleSelect.classList.add('is-placeholder');
+        // マウスオーバーで初期フォーカスを解除する
+        optionsContainer.addEventListener('mouseover', (e) => {
+            if (e.target.classList.contains('custom-select-option')) {
+                const currentlyFocused = optionsContainer.querySelector('.custom-select-option.focused');
+                if (currentlyFocused) {
+                    currentlyFocused.classList.remove('focused');
+                }
+            }
+        });
+
+        searchInput.addEventListener('input', () => renderCharacterOptions(searchInput.value));
+
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('characterContainer').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+        
+        renderCharacterOptions();
+        btn.disabled = false;
     }
     
     function buildReverseIndex() {
@@ -1302,7 +1420,6 @@
             const csvText = await response.text();
             const results = Papa.parse(csvText, { header: true, skipEmptyLines: true });
             
-            // ▼▼▼ この行の配列に 'characterOrder' を追加します ▼▼▼
             if (['styles', 'searchTags', 'autoTagExclusions', 'characterOrder'].includes(dbKey)) {
                 db[dbKey] = results.data;
             } else {
@@ -1359,12 +1476,9 @@
             summaryParts.push(`[使用回数制限:バトル中${data['制限']}回]`);
         }
         
-        // ▼▼▼ ここから追加 ▼▼▼
-        // CSVの「特殊」項目に内容があれば、それを最後に追加する
         if (data['特殊'] && data['特殊'].trim() !== '') {
             summaryParts.push(`${data['特殊']}`);
         }
-        // ▲▲▲ ここまで追加 ▲▲▲
 
         const summaryLine = summaryParts.join(' ').trim();
         const bpPart = (type !== 'addInfo') ? ` / <strong>BP:</strong> ${data['BP'] || ''}` : '';
@@ -1510,13 +1624,19 @@
         searchResults.innerHTML = '';
         mainContainer.style.display = 'grid';
         viewModeControls.style.display = 'block';
-        const charaSelect = document.getElementById('characterSelect');
-        const styleSelect = document.getElementById('styleSelect');
-        charaSelect.value = '---';
-        charaSelect.classList.add('is-placeholder');
-        styleSelect.innerHTML = `<option value="---">現在の登録数: ${db.styles.length}</option>`;
-        styleSelect.classList.add('is-placeholder');
-        styleSelect.disabled = true;
+        
+        const charaBtn = document.getElementById('characterBtn');
+        const charaText = document.getElementById('characterText');
+        const allUniqueCharacters = [...new Set(db.styles.map(item => item['キャラ名']))].filter(Boolean);
+        charaText.textContent = `現在の登録数: ${allUniqueCharacters.length}`;
+        charaBtn.classList.add('is-placeholder');
+        
+        const styleBtn = document.getElementById('styleBtn');
+        const styleText = document.getElementById('styleText');
+        styleText.textContent = `現在の登録数: ${db.styles.length}`;
+        styleBtn.classList.add('is-placeholder');
+        styleBtn.disabled = true;
+
         clearDisplays();
         document.querySelectorAll('.save-btn').forEach(btn => btn.disabled = true);
         toggleBtn.textContent = 'タグ検索を開く';
@@ -1531,7 +1651,11 @@
         toggleBtn.addEventListener('click', () => {
             const isSearchPanelHidden = searchPanel.style.display === 'none';
             if (isSearchPanelHidden) {
-                document.getElementById('characterSelect').value = '---';
+                const charaBtn = document.getElementById('characterBtn');
+                const charaText = document.getElementById('characterText');
+                const allUniqueCharacters = [...new Set(db.styles.map(item => item['キャラ名']))].filter(Boolean);
+                charaText.textContent = `現在の登録数: ${allUniqueCharacters.length}`;
+                charaBtn.classList.add('is-placeholder');
                 populateStyleSelect(null);
                 clearDisplays();
                 openSearchView(false);
@@ -1572,10 +1696,8 @@
                     if (infoData) {
                         scannedKeywords.add(parsedKeyword.fullName);
                         
-                        // 検索データ用に、キーワードのフルネームと変更後の詳細を持つ新しいオブジェクトを作成
                         const instanceData = { ...infoData };
                         
-                        // 名称をフルネームに書き換える
                         if (instanceData.hasOwnProperty('名称')) {
                             instanceData['名称'] = parsedKeyword.fullName;
                         } else if (instanceData.hasOwnProperty('スキル名')) {
@@ -1584,7 +1706,6 @@
                             instanceData['アビリティ名'] = parsedKeyword.fullName;
                         }
 
-                        // 回数がある場合、検索対象の効果詳細も書き換える
                         if (parsedKeyword.count) {
                             let detail = instanceData['効果詳細'] || '(効果詳細なし)';
                             if (detail !== '(効果詳細なし)') {
@@ -1607,7 +1728,6 @@
 
                         if (!linkedInfoItems.has(parsedKeyword.fullName)) {
                             linkedInfoItems.set(parsedKeyword.fullName, instanceData);
-                            // 次の探索には、書き換え前のオリジナルデータを渡す
                             itemsToScan.push(infoData);
                         }
                     }
@@ -1669,7 +1789,6 @@
                 const matches = item['効果詳細'].match(regex);
                 if (matches) {
                     matches.forEach(match => {
-                        // [特効: で始まるものを除外
                         if (!match.startsWith('[特効:')) {
                             timingKeywords.add(match);
                         }
@@ -1854,11 +1973,9 @@
                 skillOptionsContainer.appendChild(bpCategory);
                 const bpInput = document.getElementById('bpSearchInput');
                 bpInput.addEventListener('input', performTagSearch);
-                // ▼▼▼ ここから追加 ▼▼▼
                 bpInput.addEventListener('focus', () => {
                     bpInput.select();
                 });
-                // ▲▲▲ ここまで追加 ▲▲▲
             } else {
                  skillOptionsContainer.appendChild(createButtons(category, options));
             }
@@ -2095,10 +2212,8 @@
 
         if (!itemData) return '';
 
-        // 検索結果表示用に、オリジナルのデータから一時的な表示用データを作成する
         const renderData = { ...itemData };
 
-        // 回数指定がある場合、表示用のデータも動的に書き換える
         if (parsedName.count) {
             let detail = renderData['効果詳細'] || '(効果詳細なし)';
             if (detail !== '(効果詳細なし)') {
@@ -2160,7 +2275,6 @@
         const styledDetail = applyGrayTextStyle(renderData['効果詳細'] || '').replace(/\n/g, '<br>');
         const finalDetailHtml = highlightKeywords(styledDetail, keywords);
         
-        // 見出しには元のフルネーム(itemName)を使用する
         return `<h3>${itemName} ${typeSpan}</h3>${referenceInfo}${highlightedSummary}<div class="detail-line">${finalDetailHtml}</div>`;
     }
 
@@ -2360,12 +2474,16 @@
 
     function saveColumnAsImage(type) {
         let element, title;
-        const chara = document.getElementById('characterSelect').value;
-        const style = document.getElementById('styleSelect').value;
+        const chara = document.getElementById('characterText').textContent;
+        const style = document.getElementById('styleBtn').dataset.value;
         switch(type) {
             case 'skill': element = document.querySelector('.skill-column'); title = 'スキル'; break;
             case 'ability': element = document.querySelector('.ability-column'); title = 'アビリティ'; break;
             case 'addInfo': element = document.querySelector('.add-info-column'); title = '追加情報'; break;
+        }
+        if (!chara || !style || chara.startsWith('現在の登録数') || style === '---') {
+            alert('キャラクターとスタイルを選択してください。');
+            return;
         }
         const fileName = `${chara}_${style}_${title}.png`;
         if (element) {
