@@ -1194,6 +1194,10 @@
             const isOpen = dropdown.style.display === 'flex';
             dropdown.style.display = isOpen ? 'none' : 'flex';
             if (!isOpen) {
+                searchInput.value = ''; // 検索ボックスを初期化
+                const charaText = document.getElementById('characterText').textContent;
+                populateStyleSelect(charaText); // フィルタなしでオプションを再描画
+
                 const currentStyleName = btn.dataset.value;
                 const currentStyleText = text.textContent;
 
@@ -1354,7 +1358,8 @@
             const isOpen = dropdown.style.display === 'flex';
             dropdown.style.display = isOpen ? 'none' : 'flex';
             if (!isOpen) {
-                renderCharacterOptions(searchInput.value);
+                searchInput.value = ''; // 検索ボックスを初期化
+                renderCharacterOptions(); // 常にフィルタなしでオプションを再描画
                 const currentCharacterName = selectedText.textContent;
                 
                 // 値が選択されている場合（プレースホルダーではない場合）のみ、選択中の項目をハイライト
@@ -1571,7 +1576,7 @@
 
         const linkedDetailText = detailText.replace(/「([^」]+)」/g, (match, keyword) => {
             const parsedKeyword = parseName(keyword);
-            const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+            const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedName.baseName];
 
             if (!existsInDb || fixedExclusionList.has(parsedKeyword.fullName) || parsedKeyword.fullName === name || allInitialItems.has(parsedKeyword.fullName) || additionalExclusionList.includes(parsedKeyword.baseName)) {
                 return match;
@@ -2450,7 +2455,10 @@
         };
         btn.addEventListener('click', () => {
             dropdown.style.display = dropdown.style.display === 'none' ? 'flex' : 'none';
-            if (dropdown.style.display === 'flex') renderOptions(searchInput.value);
+            if (dropdown.style.display === 'flex') {
+                searchInput.value = '';
+                renderOptions();
+            }
         });
         searchInput.addEventListener('input', () => renderOptions(searchInput.value));
         selectAllCheckbox.addEventListener('change', (e) => {
