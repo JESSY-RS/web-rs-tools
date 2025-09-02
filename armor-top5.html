@@ -7,7 +7,9 @@
     <link rel="shortcut icon" href="favicon-renma.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
-    <title>練磨(防具)アビリティ TOP5</title> <!-- Created by じぇ -->
+    <title>練磨(防具)アビリティ TOP5</title> 
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         /* --- 全体 --- */
@@ -137,10 +139,19 @@
             color: #fff;
         }
         
-        /* セル結合されたアビリティ名のスタイル */
         td.merged-ability-cell {
-            vertical-align: top; /* 上揃え */
+            vertical-align: top;
             color: #98fb98;
+            border-bottom: none; 
+        }
+
+        .ability-total-cell {
+            font-size: inherit;
+            font-weight: bold;
+            color: #f0e68c;
+            vertical-align: bottom;
+            border-top: none;
+            text-align: right; /* ★変更点: テキストを右揃えに */
         }
 
         /* 列幅の指定 */
@@ -413,7 +424,9 @@
   </div>
 
     <header>
-        <h1><span class="hamburger" onclick="toggleMenu()">☰</span>練磨(防具)アビリティ TOP5</h1>
+        <h1>
+            <span class="hamburger" onclick="toggleMenu()">☰</span>練磨(防具)アビリティ TOP5<span id="screenshot-btn" style="cursor: pointer; margin-left: 10px;"></span>
+        </h1>
     </header>
 
     <div class="zoom-buttons">
@@ -581,6 +594,8 @@
 
             // CSVデータを読み込む
             loadUniqueAbilities();
+
+            initializeScreenshot();
         });
 
         // CSVファイルを非同期で読み込みパースする
@@ -760,45 +775,49 @@
 
                 cat.abilities.forEach(abilityName => {
                     const items = cat.data[abilityName] || [];
+                    const showTotal = abilityName.startsWith('味方威力＋');
                     
+                    let abilityTotal = 0;
+                    if (showTotal) {
+                        for (let i = 0; i < 5; i++) {
+                            if (items[i]) abilityTotal += items[i].value;
+                        }
+                    }
+
                     for (let i = 0; i < 5; i++) {
                         const item = items[i];
                         const row = tbody.insertRow();
                         
+                        let firstCellHTML = '';
+                        if (i === 0) {
+                            const rowspan = showTotal ? 4 : 5;
+                            firstCellHTML = `<td class="merged-ability-cell" rowspan="${rowspan}">${abilityName}</td>`;
+                        }
+                        else if (i === 4 && showTotal) {
+                            firstCellHTML = `<td class="ability-total-cell">合計: ${abilityTotal}%</td>`;
+                        }
+
                         let armorCellHTML = '&nbsp;';
                         let valueCellHTML = '&nbsp;';
                         let valueCellClass = 'value-col';
 
                         if (item) {
-                            // 装備名セルのHTMLを生成
                             if (item.isCombined) {
-                                // 加算あり(オレンジ色)
                                 armorCellHTML = `<span class="combined-armor-name">${item.armorName} (+${item.addedValue})</span>`;
-                                valueCellClass += ' combined-value'; // 効果値を赤色に
+                                valueCellClass += ' combined-value';
                             } else if (item.armorName.includes("名将の鎧") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ")) {
-                                // 特定装備(紫色)
                                 armorCellHTML = `<span class="special-armor-name">${item.armorName}</span>`;
                             } else {
-                                // 通常
                                 armorCellHTML = item.armorName;
                             }
-                            
-                            // 効果値セルのHTMLを生成
                             valueCellHTML = item.value + '%';
                         }
-
-                        if (i === 0) {
-                            row.innerHTML = `
-                                <td class="merged-ability-cell" rowspan="5">${abilityName}</td>
-                                <td>${armorCellHTML}</td>
-                                <td class="${valueCellClass}">${valueCellHTML}</td>
-                            `;
-                        } else {
-                            row.innerHTML = `
-                                <td>${armorCellHTML}</td>
-                                <td class="${valueCellClass}">${valueCellHTML}</td>
-                            `;
-                        }
+                        
+                        row.innerHTML = `
+                            ${firstCellHTML}
+                            <td>${armorCellHTML}</td>
+                            <td class="${valueCellClass}">${valueCellHTML}</td>
+                        `;
                     }
                 });
                 container.appendChild(table);
@@ -822,6 +841,52 @@
         });
       });
     });
+
+    function initializeScreenshot() {
+        const screenshotBtn = document.getElementById('screenshot-btn');
+        if (screenshotBtn) {
+            screenshotBtn.addEventListener('click', takeScreenshot);
+        }
+    }
+
+    async function takeScreenshot() {
+        const targetElements = document.querySelectorAll('.category-container');
+        if (targetElements.length === 0) {
+            alert('撮影対象のエリアが見つかりません。');
+            return;
+        }
+
+        const screenshotBtn = document.getElementById('screenshot-btn');
+        const originalText = screenshotBtn.textContent;
+        screenshotBtn.textContent = '撮影中...';
+        screenshotBtn.style.cursor = 'default';
+
+        try {
+            for (const element of targetElements) {
+                const titleElement = element.querySelector('h2');
+                const titleText = titleElement.firstChild.textContent.trim().replace('■', '').trim();
+                const fileName = `練磨防具_${titleText.replace(/ /g, '_').replace(/[()]/g, '').replace('＋', '')}.png`;
+
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    backgroundColor: getComputedStyle(document.body).backgroundColor,
+                });
+
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+        } catch (error) {
+            console.error('スクリーンショットの撮影に失敗しました:', error);
+        } finally {
+            screenshotBtn.textContent = originalText;
+            screenshotBtn.style.cursor = 'pointer';
+        }
+    }
 
   </script>
 
