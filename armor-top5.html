@@ -790,11 +790,18 @@
                         
                         let firstCellHTML = '';
                         if (i === 0) {
-                            const rowspan = showTotal ? 4 : 5;
+                            // ★修正点1: rowspanを常に4に固定
+                            const rowspan = 4;
                             firstCellHTML = `<td class="merged-ability-cell" rowspan="${rowspan}">${abilityName}</td>`;
                         }
-                        else if (i === 4 && showTotal) {
-                            firstCellHTML = `<td class="ability-total-cell">合計: ${abilityTotal}%</td>`;
+                        // ★修正点2: 5行目(i=4)の処理を全テーブルで実行するように変更
+                        else if (i === 4) {
+                            if (showTotal) {
+                                firstCellHTML = `<td class="ability-total-cell">合計: ${abilityTotal}%</td>`;
+                            } else {
+                                // 「威力＋」系テーブル用に、罫線を表示させるための空セルを挿入
+                                firstCellHTML = `<td class="ability-total-cell">&nbsp;</td>`;
+                            }
                         }
 
                         let armorCellHTML = '&nbsp;';
