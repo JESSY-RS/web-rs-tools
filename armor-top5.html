@@ -578,6 +578,9 @@
         let currentZoom = pageSettings[zoomKey];
     
         currentZoom += delta;
+
+        currentZoom = Math.round(currentZoom * 10) / 10;
+
         if (currentZoom < 0.5) currentZoom = 0.5;
         if (currentZoom > 2.0) currentZoom = 2.0;
         
