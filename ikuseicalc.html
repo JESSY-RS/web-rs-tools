@@ -367,9 +367,13 @@
     <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
     <a class="menu-item" href="raidcalc.html">レイド周回効率比較ツール</a><br>
     </br>
-    <a class="menu-item" href="renma-armor.html">練磨(防具)リスト</a><br>
-    <a class="menu-item" href="armor-top5.html">練磨(防具)TOP5確認</a><br>
-    <a class="menu-item" href="armor-calc.html">練磨(防具)自動選定ツール</a><br>
+    <a class="menu-item" href="renma-armor.html">練磨(防具)統合ツール</a><br>
+    <span class="toggle-button" data-target="linkList3">練磨(防具)個別ページ</span>
+    <div id="linkList3">
+      ├ <a class="menu-item" href="armor-renma.html">練磨(防具)リスト</a><br>
+      ├ <a class="menu-item" href="armor-top5.html">練磨(防具)TOP5確認</a><br>
+      └ <a class="menu-item" href="armor-calc.html">練磨(防具)自動選定ツール</a><br>
+    </div>
     </br>
     <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
     <div id="linkList1">
@@ -669,14 +673,52 @@
     }
 
     // 拡大縮小の関数
-    let zoomLevel = 1;
-
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    
+    let pageSettings = { 'ikuseicalc_zoom': 1.0 };
+    
     function changeZoom(delta) {
-      zoomLevel += delta;
-      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
-      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
-      document.body.style.zoom = zoomLevel;
+        const zoomKey = 'ikuseicalc_zoom';
+        let currentZoom = pageSettings[zoomKey];
+    
+        currentZoom += delta;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        // 画面の表示に反映
+        document.body.style.zoom = currentZoom;
+        
+        // 設定オブジェクトの値を更新
+        pageSettings[zoomKey] = currentZoom;
+        
+        // localStorageに保存
+        savePageSettings();
     }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                // 保存済みの設定があれば、デフォルト値と結合して上書きします。
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['ikuseicalc_zoom'];
+    });
 
     const gradeValues = {
       0: 1.00,

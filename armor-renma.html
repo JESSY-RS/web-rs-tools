@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="favicon-renma.ico">
+    <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
+    <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
+    <title>練磨(防具)リスト</title> <!-- Created by じぇ -->
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #2A2A2A;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+        header {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 15px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #555;
+        }
+        h1 {
+            font-size: 1.8em;
+            color: #50b4f0; 
+            margin: 0;
+            text-align: left;
+        }
+        .header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-controls .left-buttons,
+        .header-controls .right-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: background-color: 0.3s;
+        }
+        #import-btn, #import-btn-footer { background-color: hotpink; color: white; }
+        #export-btn, #export-btn-footer { background-color: orange; color: white; }
+        #edit-mode-btn, #edit-mode-btn-footer { background-color: #007bff; color: white; }
+        #edit-mode-btn.active, #edit-mode-btn-footer.active { background-color: #dc3545; }
+        #import-file-input { display: none; }
+        #parts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 12px;
+        }
+        .armor-part {
+            background-color: #424242;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 18px 50px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* --- 検索・並び替えパネルの専用スタイル --- */
+        #search-panel, #sort-panel {
+            background-color: #2A2A2A;
+            border-color: #555;
+        }
+        #search-panel.is-collapsed, #sort-panel.is-collapsed {
+            min-height: 50px;
+            padding-top: 0;
+            padding-bottom: 0;
+            cursor: pointer;
+        }
+        #search-panel.is-collapsed .favorite-toggle,
+        #sort-panel.is-collapsed .favorite-toggle,
+        #search-panel.is-collapsed .value-sort-btn,
+        #sort-panel.is-collapsed .value-sort-btn {
+            display: none; 
+        }
+        #search-panel .part-content.collapsed,
+        #sort-panel .part-content.collapsed {
+            display: none;
+        }
+        .search-panel-info, .sort-panel-info {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 40px;
+            transform: translateY(-50%);
+            color: #bbb;
+            font-style: italic;
+            white-space: nowrap;
+        }
+        #filter-btn {
+            background-color: #28a745;
+            color: white;
+            width: 120px;
+            min-height: 40px;
+        }
+        #filter-btn.is-active {
+            background-color: #dc3545;
+        }
+        #sort-btn {
+            background-color: darkviolet;
+            color: white;
+            width: 120px;
+            min-height: 40px;
+        }
+        #sort-btn:active {
+            background-color: #6a6a6a;
+        }
+        
+        /* --- アイコンボタンの共通スタイル --- */
+        .toggle-collapse-btn,
+        .add-part-inline-btn, 
+        .delete-btn {
+            position: absolute;
+            right: 10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            line-height: 1;
+            font-size: 1.5em;
+            font-weight: bold;
+            user-select: none;
+        }
+        .toggle-collapse-btn {
+            top: 4px;
+            background: transparent;
+            color: white;
+            font-size: 1.2em;
+        }
+        #search-panel.is-collapsed .toggle-collapse-btn,
+        #sort-panel.is-collapsed .toggle-collapse-btn {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .delete-btn { top: 4px; background: transparent; color: white; }
+        .add-part-inline-btn { bottom: 10px; background-color: #28a745; color: white; }
+        
+        /* --- 効果値ソートボタンのスタイル --- */
+        .value-sort-btn {
+            position: absolute;
+            right: 10px;
+            bottom: 5px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            color: gray;
+            user-select: none;
+            border-radius: 5px;
+        }
+        .value-sort-btn.active {
+            color: dodgerblue;
+        }
+
+
+        /* --- ☆/★ボタンとドラッグハンドルのスタイル --- */
+        .drag-handle, .favorite-toggle {
+            position: absolute; left: 5px; top: 50%;
+            transform: translateY(-50%); font-size: 1.5em;
+            padding: 5px; user-select: none;
+        }
+        .drag-handle { color: white; cursor: grab; display: none; }
+        .drag-handle.is-favorite { color: gold; }
+        .favorite-toggle { color: #eee; cursor: pointer; transition: color 0.2s; }
+        .favorite-toggle.is-favorite { color: gold; }
+        
+        footer { 
+            margin-top: 12px; 
+            padding-top: 10px; 
+            border-top: 2px solid #555; 
+            text-align: left; 
+            font-size: 1em; 
+            color: white; 
+        }
+
+        /* --- フォームコントロール共通スタイル --- */
+        .custom-dropdown-button, select {
+            min-height: 40px; box-sizing: border-box; background-color: #555;
+            color: white; border: 1px solid #777; border-radius: 4px;
+            font-size: 1em; padding: 8px;
+        }
+        .ability-select { height: 40px; }
+        input[type="number"].ability-value {
+            width: 120px; min-height: 40px; box-sizing: border-box; background-color: #555;
+            color: white; border: 1px solid #777; border-radius: 4px; font-size: 1.1em;
+            padding: 8px; text-align: right; letter-spacing: 2px;
+        }
+
+    /* コンテナのスタイル */
+    .container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    /* 各アビリティセクションのスタイル */
+    .ability-section {
+        margin-top: 10px;
+        background-color: #2A2A2A; /* セクションの背景 */
+        overflow: hidden;
+    }
+
+    /* 見出しのスタイル */
+    h2 {
+        padding: 8px 12px;
+        margin: 0 0 -1px 0;
+        font-size: 1.2em;
+        text-align: left;
+        border: 1px solid #ccc;
+    }
+    
+    /* テーブルのスタイル */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    th, td {
+        padding: 6px 12px;
+        text-align: left;
+        word-wrap: break-word;
+        border: 1px solid #ccc;
+    }
+
+    thead th {
+        font-weight: bold;
+        background-color: #333; /* thの背景 */
+    }
+
+    /* --- ここからダークモード用の変更 --- */
+
+    /* セクションごとの見出しの背景色 */
+    .ss-ability h2 { background-color: #C99004; color: #e0e0e0; }
+    .s-ability h2 { background-color: #616161; color: #e0e0e0; }
+    .a-ability h2 { background-color: #c62828; color: #e0e0e0; }
+
+    /* 「種類」ごとの行の背景色（ダークモード用） */
+    .type-keigen { background-color: #2a3a4a; }       /* 濃い水色 */
+    .type-iryoku { background-color: #5c3c3c; }       /* 濃いピンク */
+    .type-mikata-iryoku { background-color: #6b4a37; } /* 濃いオレンジ */
+    .type-nouryoku { background-color: #394a34; }     /* 濃い緑 */
+    .type-joutai-ijou { background-color: #4a3f5a; }   /* 濃い紫 */
+
+    /* 最大値の列の配置 */
+    th:nth-child(3) {
+        text-align: left;  /* 項目名は左寄せ */
+    }
+    td:nth-child(3) {
+        text-align: right; /* 数値は右寄せ */
+    }
+    
+    /* --- ここまでダークモード用の変更 --- */
+
+    /* レスポンシブ対応：画面幅が768px以下の場合 */
+    @media (max-width: 768px) {
+        .container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+        /* --- レイアウトコンテナ --- */
+        .part-content, .form-section, .controls-wrapper { display: flex; gap: 8px; }
+        .group-label { font-weight: bold; white-space: nowrap; min-width: 70px; text-align: right; margin-right: 2px; }
+        .radio-group { display: flex; align-items: center; flex-shrink: 0; }
+        .checkbox-group { display: flex; align-items: center; gap: 5px; min-height: 40px; justify-content: flex-end; width: 100%;}
+        .checkbox-group label { cursor: pointer; }
+        
+        /* --- 小さい画面のレイアウト (< 769px) --- */
+        .part-content { flex-direction: column; }
+        .form-section { display: grid; grid-template-columns: 80px 1fr; align-items: flex-start; }
+        .controls-wrapper { flex-direction: column; align-items: flex-start; width: 100%; }
+        .custom-dropdown, select { width: 100%; }
+        .group-label { padding-top: 8px; }
+        
+        .form-section:has(#approx-search-check), .form-section:has(#save-sort-check) {
+            align-items: center;
+        }
+        .form-section:has(#approx-search-check) > .group-label,
+        .form-section:has(#save-sort-check) > .group-label {
+            padding-top: 0;
+        }
+        .search-panel-info, .sort-panel-info {
+            font-size: 1.0em;
+        }
+
+        /* --- 中くらいの画面のレイアウト (769px以上) --- */
+        @media (min-width: 769px) {
+            .form-section { display: flex; flex-direction: row; align-items: center; }
+            .controls-wrapper { flex-direction: row; align-items: center; width: auto; }
+            .custom-dropdown, select { min-width: 270px; width: auto; }
+            .group-label { padding-top: 0; }
+        }
+        .search-panel-info, .sort-panel-info {
+            font-size: 1.0em;
+        }
+        /* --- 大きい画面のレイアウト (1281px以上) --- */
+        @media (min-width: 1281px) {
+            .part-content { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 16px; }
+        }
+        /* --- 特に狭い画面用の追加修正 (480px以下) --- */
+        @media (max-width: 480px) {
+            .armor-part { padding-left: 40px; padding-right: 20px; }
+            .search-panel-info, .sort-panel-info { font-size: 0.8em; }
+            .form-section { grid-template-columns: 65px 1fr; }
+            .custom-dropdown, select { min-width: 0; }
+        }
+        .search-panel-info, .sort-panel-info {
+            font-size: 1.0em;
+        }
+
+        /* --- 並び替えパネル用スタイル --- */
+        .sort-checkbox-group {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 5px;
+            width: 100%;
+        }
+        .sort-checkbox-group label { cursor: pointer; }
+
+
+        /* --- その他フォーム部品 --- */
+        .radio-group input[type="radio"] { display: none; }
+        .radio-group label {
+            padding: 5px 15px; border: 1px solid #777; border-radius: 20px; cursor: pointer;
+            background-color: #555; color: white; transition: all 0.2s; margin-right: 5px;
+        }
+        .radio-group input[type="radio"]:checked + label { background-color: #007bff; color: white; border-color: #007bff; }
+        .value-input-group { display: flex; align-items: center; gap: 5px; }
+        .value-input-group .symbol { font-size: 1.2em; font-weight: bold; color: white; display: none; }
+        
+        /* --- Custom Dropdown --- */
+        .custom-dropdown { position: relative; }
+        .custom-dropdown-button { width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; font-weight: normal; }
+        .custom-dropdown-button .button-arrow:after { content: '▼'; margin-left: 8px; font-size: 0.8em; }
+        .custom-dropdown-panel {
+            display: none; position: absolute; top: 100%; left: 0; width: 100%;
+            max-height: 380px;
+            background-color: #3a3a3a; border: 1px solid #777; border-radius: 4px; z-index: 100;
+            margin-top: 4px; flex-direction: column; box-sizing: border-box;
+        }
+        .custom-dropdown-panel.show { display: flex; }
+        .dropdown-search-input {
+            width: calc(100% - 16px); margin: 8px; padding: 8px; border: 1px solid #777;
+            border-radius: 4px; background-color: #555; color: white; box-sizing: border-box; font-size: 1em;
+        }
+        .dropdown-options-list { overflow-y: auto; flex-grow: 1; }
+        .dropdown-option { padding: 8px 12px; cursor: pointer; font-size: 1em; }
+        .dropdown-option:hover, .dropdown-option.focused { background-color: #007bff; }
+        .dropdown-option.hidden { display: none; }
+        
+        /* --- Submenu Styles --- */
+        .custom-dropdown-submenu {
+            display: none;
+            position: absolute;
+            left: 100%;
+            width: 200px;
+            background-color: #3a3a3a;
+            border: 1px solid #777;
+            border-radius: 4px;
+            z-index: 101;
+            overflow-y: auto;
+            margin-top: 4px;
+        }
+        .dropdown-option[data-has-submenu] {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .submenu-arrow {
+            color: #aaa;
+            font-size: 0.8em;
+        }
+
+
+        .zoom-buttons { position: absolute; top: 24px; right: 20px; display: flex; flex-direction: row; gap: 5px; z-index: 1000; }
+        .zoom-buttons button { color: #000; background-color: #eee; padding: 5px 10px; font-size: 16px; cursor: pointer; border-radius: 5px; }
+    
+        /* リンクのスタイル */
+        a:link {
+          color: #1D9BF0;
+          text-decoration: underline;
+        }
+
+        a:visited {
+          color: #7755FF;
+          text-decoration: underline;
+        }
+
+        a:hover {
+          color: #0CFF57;
+        }
+
+        a:active {
+          color: #FF0000;
+          text-decoration: underline;
+        }
+
+        .bottom {
+            margin-top: 20px;
+            font-size: 16pt;
+            line-height: 2;
+        }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      cursor: pointer;
+      margin-right: 10px;
+      user-select: none;
+      color: #eee;
+      display: inline-block;
+    }
+    
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 320px;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1001;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: #FF6E3D;
+    }
+
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: inline-block;
+      padding: 6px 0;
+      color: #eee;
+      text-decoration: none;
+    }
+    .menu-item:hover {
+      color: #0CFF57;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
+    .toggle-button {
+      cursor: pointer;
+      color: #7755FF;
+      text-decoration: underline;
+      font-size: 18px;
+      text-align: left;
+      display: block;
+      padding: 6px 0;
+      user-select: none;
+    }
+
+    .toggle-button:hover {
+      color: #0CFF57;
+      text-decoration: underline;
+    }
+
+    #linkList {
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList1 {
+      font-size: 18px;
+      text-align: left;
+      padding-bottom: 6px;
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList2 {
+      font-size: 18px;
+      text-align: left;
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList a {
+      display: inline-block;
+      text-decoration: none;
+      color: #7755FF;
+    }
+
+    #linkList a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    #linkList a:hover {
+      text-decoration: underline;
+      color: #0CFF57;
+    }
+
+    #linkList a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+    </style>
+</head>
+<body>
+
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a class="menu-item" href="kiokucalc.html">記憶再戦時間計算</a><br>
+    <a class="menu-item" href="kiokucalc2.html">記憶再戦回数計算</a><br>
+    </br>
+    <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
+    <a class="menu-item" href="raidcalc.html">レイド周回効率比較ツール</a><br>
+    </br>
+    <a class="menu-item" href="renma-armor.html">練磨(防具)統合ツール</a><br>
+    <span class="toggle-button" data-target="linkList3">練磨(防具)個別ページ</span>
+    <div id="linkList3">
+      ├ <a class="menu-item" href="armor-renma.html">練磨(防具)リスト</a><br>
+      ├ <a class="menu-item" href="armor-top5.html">練磨(防具)TOP5確認</a><br>
+      └ <a class="menu-item" href="armor-calc.html">練磨(防具)自動選定ツール</a><br>
+    </div>
+    </br>
+    <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
+    <div id="linkList1">
+      ├ <a class="menu-item" href="checker-4gen.html">四元像ピアスチェッカー</a></br>
+      ├ <a class="menu-item" href="checker-stella.html">ステライヤリングチェッカー</a></br>
+      └ <a class="menu-item" href="checker-niji.html">虹瑠璃の腕輪チェッカー</a></br>
+    </div>
+    <span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span>
+    <div id="linkList2">
+      ├ <a class="menu-item" href="report-4gen.html">四元像ピアス報告用</a></br>
+      ├ <a class="menu-item" href="report-stella.html">ステライヤリング報告用</a></br>
+      └ <a class="menu-item" href="report-niji.html">虹瑠璃の腕輪報告用</a></br>
+    </div>
+    </br>
+    <a class="menu-item" href="expcalc.html">EXPスタンプ必要数計算</a><br>
+    <a class="menu-item" href="https://jessy-rs.github.io/Multi-Stage-Slash/">多段斬りアプリ</a><br>
+    </br>
+    <a class="menu-item"  href="armor.html">装備候補検索ツール</a><br>
+    <a class="menu-item"  href="style-info.html">スタイル情報ビューア</a><br>
+    <br>
+    <a class="menu-item" href="index.html">インデックスページ</a><br>
+    </br>
+  </div>
+
+    <header>
+        <h1><span class="hamburger" onclick="toggleMenu()">☰</span>練磨(防具)リスト</h1>
+        <div class="header-controls">
+            <div class="left-buttons">
+                <button id="import-btn">インポート</button>
+                <input type="file" id="import-file-input" accept=".json">
+                <button id="export-btn">エクスポート</button>
+            </div>
+            <div class="right-buttons">
+                <button id="edit-mode-btn">編集モード開始</button>
+            </div>
+        </div>
+    </header>
+    
+    <div class="zoom-buttons">
+        <button onclick="changeZoom(-0.1)">－</button>
+        <button onclick="changeZoom(0.1)">＋</button>
+    </div>
+
+    <main>
+        <div id="search-panel" class="armor-part">
+            <div class="drag-handle" style="visibility: hidden;">☰</div>
+            <div class="favorite-toggle" data-favorite="false">☆</div>
+            <div class="part-content">
+                <div class="form-section">
+                    <span class="group-label">防具種別:</span>
+                    <div class="controls-wrapper">
+                        <div class="radio-group">
+                            <input type="radio" id="search-type-main" name="search-armor-type" value="main"><label for="search-type-main">主防具</label>
+                            <input type="radio" id="search-type-sub" name="search-armor-type" value="sub"><label for="search-type-sub">副防具</label>
+                        </div>
+                        <div class="custom-dropdown armor-name-dropdown">
+                            <button class="custom-dropdown-button" data-value=""><span class="button-label">防具を選択</span><span class="button-arrow"></span></button>
+                            <div class="custom-dropdown-panel">
+                                <input type="text" class="dropdown-search-input" placeholder="検索...">
+                                <div class="dropdown-options-list"></div>
+                            </div>
+                            <div class="custom-dropdown-submenu"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <span class="group-label">練磨アビ:</span>
+                    <div class="controls-wrapper">
+                        <div class="radio-group">
+                            <input type="radio" id="search-grade-ss" name="search-ability-grade" value="SS"><label for="search-grade-ss">SS</label>
+                            <input type="radio" id="search-grade-s" name="search-ability-grade" value="S"><label for="search-grade-s">S</label>
+                            <input type="radio" id="search-grade-a" name="search-ability-grade" value="A"><label for="search-grade-a">A</label>
+                        </div>
+                        <select class="ability-select"><option value="">アビリティを選択</option></select>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <span class="group-label">
+                         <div class="checkbox-group">
+                            <input type="checkbox" id="approx-search-check">
+                            <label for="approx-search-check">近似</label>
+                         </div>
+                    </span>
+                    <div class="controls-wrapper">
+                         <button id="filter-btn">絞り込み</button>
+                    </div>
+                </div>
+            </div>
+            <div class="search-panel-info">クリックして検索パネルを開く</div>
+            <button class="toggle-collapse-btn">▼</button>
+            <div id="search-value-sort" class="value-sort-btn" title="効果値で並び替え">9↓</div>
+        </div>
+        
+        <div id="sort-panel" class="armor-part" style="display: none;">
+            <div class="drag-handle" style="visibility: hidden;">☰</div>
+            <div class="favorite-toggle" data-favorite="false">☆</div>
+            <div class="part-content">
+                <div class="form-section">
+                    <span class="group-label">
+                        <div class="sort-checkbox-group">
+                           <input type="checkbox" id="sort-type-asc"><label for="sort-type-asc">昇順</label>
+                        </div>
+                    </span>
+                    <div class="controls-wrapper">
+                        <div class="radio-group">
+                            <input type="radio" id="sort-type-main" name="sort-armor-type" value="main"><label for="sort-type-main">主防具</label>
+                            <input type="radio" id="sort-type-sub" name="sort-armor-type" value="sub"><label for="sort-type-sub">副防具</label>
+                        </div>
+                        <div class="custom-dropdown armor-name-dropdown">
+                            <button class="custom-dropdown-button" data-value=""><span class="button-label">防具を選択</span><span class="button-arrow"></span></button>
+                            <div class="custom-dropdown-panel">
+                                <input type="text" class="dropdown-search-input" placeholder="検索...">
+                                <div class="dropdown-options-list"></div>
+                            </div>
+                            <div class="custom-dropdown-submenu"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <span class="group-label">
+                        <div class="sort-checkbox-group">
+                           <input type="checkbox" id="sort-ability-asc"><label for="sort-ability-asc">昇順</label>
+                        </div>
+                    </span>
+                    <div class="controls-wrapper">
+                        <div class="radio-group">
+                            <input type="radio" id="sort-grade-ss" name="sort-ability-grade" value="SS"><label for="sort-grade-ss">SS</label>
+                            <input type="radio" id="sort-grade-s" name="sort-ability-grade" value="S"><label for="sort-grade-s">S</label>
+                            <input type="radio" id="sort-grade-a" name="sort-ability-grade" value="A"><label for="sort-grade-a">A</label>
+                        </div>
+                        <select class="ability-select"><option value="">アビリティを選択</option></select>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <span class="group-label">
+                         <div class="sort-checkbox-group">
+                            <input type="checkbox" id="save-sort-check">
+                            <label for="save-sort-check">保存</label>
+                         </div>
+                    </span>
+                    <div class="controls-wrapper">
+                         <button id="sort-btn">並び替え</button>
+                    </div>
+                </div>
+            </div>
+            <div class="sort-panel-info">クリックして並び替えパネルを開く</div>
+            <button class="toggle-collapse-btn">▼</button>
+            <div id="sort-value-sort" class="value-sort-btn" title="効果値で並び替え">9↓</div>
+        </div>
+
+
+        <div id="parts-container"></div>
+    </main>
+
+    <template id="armor-part-template">
+        <div class="armor-part" draggable="false">
+            <div class="drag-handle">☰</div>
+            <div class="favorite-toggle" data-favorite="false">☆</div>
+            <div class="part-content">
+                <div class="form-section">
+                    <span class="group-label">防具種別:</span>
+                    <div class="controls-wrapper">
+                        <div class="radio-group">
+                            <input type="radio" id="armor-main" name="armor-type" value="main" checked><label for="armor-main">主防具</label>
+                            <input type="radio" id="armor-sub" name="armor-type" value="sub"><label for="armor-sub">副防具</label>
+                        </div>
+                        <div class="custom-dropdown armor-name-dropdown">
+                            <button class="custom-dropdown-button" data-value=""><span class="button-label">防具を選択</span><span class="button-arrow"></span></button>
+                            <div class="custom-dropdown-panel">
+                                <input type="text" class="dropdown-search-input" placeholder="検索..."><div class="dropdown-options-list"></div>
+                            </div>
+                            <div class="custom-dropdown-submenu"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <span class="group-label">練磨アビ:</span>
+                    <div class="controls-wrapper">
+                        <div class="radio-group">
+                            <input type="radio" id="grade-ss" name="ability-grade" value="SS" checked><label for="grade-ss">SS</label>
+                            <input type="radio" id="grade-s" name="ability-grade" value="S"><label for="grade-s">S</label>
+                            <input type="radio" id="grade-a" name="ability-grade" value="A"><label for="grade-a">A</label>
+                        </div>
+                        <select class="ability-select"><option value="">アビリティを選択</option></select>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <span class="group-label">効果値:</span>
+                    <div class="controls-wrapper">
+                        <div class="value-input-group">
+                            <span class="symbol prefix">+</span>
+                            <input type="number" class="ability-value">
+                            <span class="symbol suffix">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="delete-btn">×</button>
+            <button class="add-part-inline-btn">+</button>
+        </div>
+    </template>
+
+    <footer>
+        <div class="header-controls" style="margin-bottom: 20px;">
+            <div class="left-buttons">
+                <button id="import-btn-footer">インポート</button>
+                <input type="file" id="import-file-input-footer" accept=".json" style="display: none;">
+                <button id="export-btn-footer">エクスポート</button>
+            </div>
+            <div class="right-buttons">
+                <button id="edit-mode-btn-footer">編集モード開始</button>
+            </div>
+        </div>
+        <div id="footer-normal-notes">
+            ※使用は自己責任にて。<br>
+            ※アビリティの表記が実際のゲーム内の表記と異なる場合があります。<br>
+            ※検索で星が☆の状態の場合は★も検索対象に含まれます。<br>
+            ※検索で防具種別および練磨アビで、選択されているものを再度クリックすると、全選択解除されます。この状態では検索対象は”すべて”になります。<br>
+        </div>
+        <div id="footer-edit-notes" style="display: none;">
+            ※使用は自己責任にて。<br>
+            ※アビリティの表記が実際のゲーム内の表記と異なる場合があります。<br>
+            ※並び替え機能で昇順のチェックがオフの場合は降順で並び替えられます。<br>
+            ※並び替え機能で保存のチェックがオフの場合はプレビューとして、並び順が希望の順番になっていれば、保存のチェックをオンにして、再び並び替えボタンを押して状態を反映させてください。並び順が希望の順番になっていない場合は、編集モードを一度終了させる事でキャンセル出来ます。<br>
+        </div>
+    </footer>
+
+<div class="bottom">
+    <a href="#">▲TOPへ戻る</a><br>
+<a href="index.html">■INDEXへ戻る</a>　<a href="armor-top5.html">■自身のTOP5</a>　<a href="armor-calc.html">■自動選定ツール</a><br>
+    <span id="toggle-max-value" style="cursor: pointer; color: dodgerblue; text-decoration: underline;">▼最大値確認</span>　
+</div>
+
+<div class="container" style="display: none;">
+    <div class="ability-section ss-ability">
+        <h2>SSアビリティ</h2>
+        <table>
+            <colgroup>
+                <col style="width: 40%;">
+                <col style="width: 35%;">
+                <col style="width: 25%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>種類</th>
+                    <th>分類</th>
+                    <th>最大値</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="type-keigen"><td>軽減</td><td>全</td><td>10%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>全</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>全</td><td>30%</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>全</td><td>+50</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/器/速/知</td><td>+75</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/精/愛/魅</td><td>+75</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="ability-section s-ability">
+        <h2>Sアビリティ</h2>
+        <table>
+            <colgroup>
+                <col style="width: 40%;">
+                <col style="width: 35%;">
+                <col style="width: 25%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>種類</th>
+                    <th>分類</th>
+                    <th>最大値</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="type-keigen"><td>軽減</td><td>斬打突</td><td>15%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>熱冷雷陽陰</td><td>15%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>HP満タン時</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>瀕死時</td><td>40%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>HP満タン時</td><td>400%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>瀕死時</td><td>600%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>カウンター</td><td>600%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>HP満タン時</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>瀕死時</td><td>200%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>カウンター</td><td>200%</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/体</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/器</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/速</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/知</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/精</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/速</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/知</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/精</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器/速</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器/知</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器/精</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>速/知</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>速/精</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>速/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>速/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>知/精</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>知/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>知/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>精/愛</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>精/魅</td><td>+100</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>愛/魅</td><td>+100</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>すべて</td><td>+100</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="ability-section a-ability">
+        <h2>Aアビリティ</h2>
+        <table>
+            <colgroup>
+                <col style="width: 40%;">
+                <col style="width: 35%;">
+                <col style="width: 25%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>種類</th>
+                    <th>分類</th>
+                    <th>最大値</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="type-keigen"><td>軽減</td><td>斬</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>打</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>突</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>熱</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>冷</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>雷</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>陽</td><td>30%</td></tr>
+                <tr class="type-keigen"><td>軽減</td><td>陰</td><td>30%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>斬</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>打</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>突</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>熱</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>冷</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>雷</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>陽</td><td>300%</td></tr>
+                <tr class="type-iryoku"><td>威力＋</td><td>陰</td><td>300%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>斬</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>打</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>突</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>熱</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>冷</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>雷</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>陽</td><td>100%</td></tr>
+                <tr class="type-mikata-iryoku"><td>味方威力＋</td><td>陰</td><td>100%</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>力</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>体</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>器</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>速</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>知</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>精</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>愛</td><td>+150</td></tr>
+                <tr class="type-nouryoku"><td>能力＋</td><td>魅</td><td>+150</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>毒</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>暗闇</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>スタン</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>マヒ</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>眠り</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>石化</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>混乱</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>魅了</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>狂戦士</td><td>+250</td></tr>
+                <tr class="type-joutai-ijou"><td>状態異常耐性＋</td><td>気絶</td><td>+250</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<div class="bottom">
+<span id="toggle-max-value-bottom" style="cursor: pointer; color: dodgerblue; text-decoration: underline; display: none;">×確認を終了</span>
+</div>
+
+    <script>
+
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        }
+    }
+
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const menuClose = document.getElementById('menuClose');
+
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+        menuClose.style.color = '#eee';
+    }
+
+    // フリックでメニュー開閉（スクロール誤作動対策版）
+    let startX = 0, startY = 0;
+    let endX = 0, endY = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      // タッチ開始時のX座標とY座標を記録
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      // タッチ終了時のX座標とY座標を記録
+      endX = e.changedTouches[0].screenX;
+      endY = e.changedTouches[0].screenY;
+      handleGesture(); // ジェスチャーを判定する関数を呼び出し
+    }, false);
+
+    function handleGesture() {
+      const diffX = endX - startX; // 水平方向の移動量
+      const diffY = endY - startY; // 垂直方向の移動量
+
+      // 条件1: 水平方向の移動量が、垂直方向の移動量よりも大きい場合のみ処理（スワイプかスクロールかを判定）
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+
+        // 条件2-1: 右へのスワイプ（50px以上移動し、かつ画面の左端30px以内から開始）
+        if (diffX > 50 && startX < 30) {
+          // 右にフリックしてメニューを開く
+          toggleMenu();
+        } 
+        // 条件2-2: 左へのスワイプ（50px以上移動）
+        else if (diffX < -50) {
+          // 左にフリックしてメニューを閉じる
+          closeMenu();
+        }
+      }
+      // 垂直方向の移動量が大きい場合は、何もしない（ブラウザの標準スクロールに任せる）
+    }
+
+    // 拡大縮小の関数
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    
+    let pageSettings = { 'armor-renma_zoom': 1.0 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'armor-renma_zoom';
+        let currentZoom = pageSettings[zoomKey];
+    
+        currentZoom += delta;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        // 画面の表示に反映
+        document.body.style.zoom = currentZoom;
+        
+        // 設定オブジェクトの値を更新
+        pageSettings[zoomKey] = currentZoom;
+        
+        // localStorageに保存
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                // 保存済みの設定があれば、デフォルト値と結合して上書きします。
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPageSettings();
+
+            const toggleMaxValueBtn = document.getElementById('toggle-max-value');
+            const toggleMaxValueBottomBtn = document.getElementById('toggle-max-value-bottom');
+            const maxValueContainer = document.querySelector('.container');
+
+            const hideMaxValueSection = () => {
+                maxValueContainer.style.display = 'none';
+                toggleMaxValueBottomBtn.style.display = 'none';
+                toggleMaxValueBtn.textContent = '▼最大値確認';
+            };
+            
+            const showMaxValueSection = () => {
+                maxValueContainer.style.display = 'grid';
+                toggleMaxValueBottomBtn.style.display = 'inline';
+                toggleMaxValueBtn.textContent = '×確認を終了';
+            };
+
+            toggleMaxValueBtn.addEventListener('click', () => {
+                const isHidden = maxValueContainer.style.display === 'none';
+                if (isHidden) {
+                    showMaxValueSection();
+                } else {
+                    hideMaxValueSection();
+                }
+            });
+
+            toggleMaxValueBottomBtn.addEventListener('click', hideMaxValueSection);
+
+            let armorMainData = [], armorSubData = [], renmaAbilityData = [], allArmorData = [];
+            let isEditMode = false, sortableInstance = null;
+            let originalPartOrder = [];
+            let valueSortState = 0; // 0: off, 1: desc, 2: asc
+
+            const partsContainer = document.getElementById('parts-container');
+            const searchPanel = document.getElementById('search-panel');
+            const sortPanel = document.getElementById('sort-panel');
+            const editModeBtn = document.getElementById('edit-mode-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const importBtn = document.getElementById('import-btn');
+            const importFileInput = document.getElementById('import-file-input');
+            const template = document.getElementById('armor-part-template');
+            
+            const warlordArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'];
+            const vanbraceArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US・ES・IS','SSG','SaGaRS','SaGaEB'];
+
+            let applyFilterFunction = () => {};
+            
+            const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
+            const toHalfWidthBattleVanbrace = (str) => str.replace('バトルヴァンブレイス', 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+
+            async function loadCSV(filePath) {
+                try {
+                    const response = await fetch(filePath);
+                    if (!response.ok) throw new Error(`Network response was not ok`);
+                    const text = await response.text();
+                    const rows = text.trim().split(/\r\n|\n/);
+                    const header = rows.shift().split(',');
+                    return rows.map(row => {
+                        const values = row.split(',');
+                        let obj = {};
+                        header.forEach((key, i) => { obj[key.trim()] = values[i] ? values[i].trim() : ''; });
+                        return obj;
+                    });
+                } catch (error) {
+                    console.error(`Error loading CSV from ${filePath}:`, error);
+                    return [];
+                }
+            }
+
+            function setupDropdown(part, armorType, options = {}) {
+                const { addNone = false, addListOrder = false } = options;
+                const dropdown = part.querySelector('.armor-name-dropdown');
+                const button = dropdown.querySelector('.custom-dropdown-button');
+                const label = button.querySelector('.button-label');
+                const optionsList = dropdown.querySelector('.dropdown-options-list');
+                const isControlPanel = part.id === 'search-panel' || part.id === 'sort-panel';
+
+                let data = [];
+                if (armorType) {
+                    data = (armorType === 'main' ? armorMainData : armorSubData);
+                } else if (!isControlPanel) {
+                    data = allArmorData;
+                }
+                
+                label.textContent = '防具を選択';
+                button.dataset.value = '';
+                optionsList.innerHTML = '';
+
+                if (addNone) {
+                    const noneOption = document.createElement('div');
+                    noneOption.className = 'dropdown-option';
+                    noneOption.textContent = '※指定しない';
+                    noneOption.dataset.value = 'none';
+                    optionsList.appendChild(noneOption);
+                }
+                if (addListOrder) {
+                    const listOrderOption = document.createElement('div');
+                    listOrderOption.className = 'dropdown-option';
+                    listOrderOption.textContent = '※メニューの順番で並び替え';
+                    listOrderOption.dataset.value = 'list_order';
+                    optionsList.appendChild(listOrderOption);
+                }
+
+                data.forEach(item => {
+                    if (item.名称) {
+                         if (item.名称 === '◆名将の鎧' || item.名称 === '☆バトルヴァンブレイス') {
+                            const optionEl = document.createElement('div');
+                            optionEl.className = 'dropdown-option';
+                            optionEl.dataset.hasSubmenu = 'true';
+                            
+                            const textSpan = document.createElement('span');
+                            textSpan.textContent = item.名称;
+                            
+                            const arrowSpan = document.createElement('span');
+                            arrowSpan.className = 'submenu-arrow';
+                            arrowSpan.textContent = '▶';
+
+                            optionEl.appendChild(textSpan);
+                            optionEl.appendChild(arrowSpan);
+                            optionsList.appendChild(optionEl);
+                        } else {
+                            const optionEl = document.createElement('div');
+                            optionEl.className = 'dropdown-option';
+                            optionEl.textContent = item.名称;
+                            optionEl.dataset.value = item.名称;
+                            optionsList.appendChild(optionEl);
+                        }
+                    }
+                });
+            }
+
+            function setupAbilityDropdown(part, grade, options = {}) {
+                const { addNone = false, addListOrder = false } = options;
+                const selectEl = part.querySelector('.ability-select');
+                const isControlPanel = part.id === 'search-panel' || part.id === 'sort-panel';
+
+                let filteredData = [];
+                if (grade) {
+                    filteredData = renmaAbilityData.filter(item => item.グレード === grade);
+                } else if (!isControlPanel) {
+                    filteredData = renmaAbilityData;
+                }
+                
+                selectEl.innerHTML = isControlPanel ? '' : '<option value="">アビリティを選択</option>';
+                
+                if (addNone) {
+                    const noneOption = document.createElement('option');
+                    noneOption.value = 'none';
+                    noneOption.textContent = '※指定しない';
+                    selectEl.appendChild(noneOption);
+                }
+                 if (addListOrder) {
+                    const listOrderOption = document.createElement('option');
+                    listOrderOption.value = 'list_order';
+                    listOrderOption.textContent = '※メニューの順番で並び替え';
+                    selectEl.appendChild(listOrderOption);
+                }
+
+                filteredData.forEach(item => {
+                    if (item.種類) {
+                        if (isControlPanel && item.種類 === "アビリティを選択") {
+                            return; 
+                        }
+                        const optionEl = document.createElement('option');
+                        optionEl.value = item.種類;
+                        optionEl.textContent = item.種類;
+                        selectEl.appendChild(optionEl);
+                    }
+                });
+                if (!isControlPanel) updateValueSymbol(part, '');
+            }
+
+
+            function updateValueSymbol(part, abilityName) {
+                const prefix = part.querySelector('.symbol.prefix');
+                const suffix = part.querySelector('.symbol.suffix');
+                const ability = renmaAbilityData.find(item => item.種類 === abilityName);
+                prefix.style.display = 'none';
+                suffix.style.display = 'none';
+                if (ability && ability.最大値) {
+                    if (ability.最大値.includes('%')) suffix.style.display = 'inline';
+                    else prefix.style.display = 'inline';
+                }
+            }
+            function addNewPart(data = null, basePart = null) { 
+                const newPart = template.content.cloneNode(true).querySelector('.armor-part');
+                const uniqueId = Date.now() + Math.random();
+                newPart.querySelectorAll('input[type="radio"]').forEach(radio => {
+                    const oldId = radio.id;
+                    const newId = `${oldId}-${uniqueId}`;
+                    radio.id = newId;
+                    radio.name = `${radio.name}-${uniqueId}`;
+                    const label = newPart.querySelector(`label[for="${oldId}"]`);
+                    if(label) label.htmlFor = newId;
+                });
+                newPart.querySelector('.drag-handle').style.display = isEditMode ? 'block' : 'none';
+                newPart.querySelector('.favorite-toggle').style.display = isEditMode ? 'none' : 'block';
+                newPart.dataset.originalIndex = partsContainer.children.length;
+
+                if (basePart) {
+                    basePart.after(newPart);
+                } else {
+                    partsContainer.appendChild(newPart);
+                }
+
+                if (data) {
+                    const armorTypeRadio = newPart.querySelector(`input[name*="armor-type"][value="${data.armorType}"]`);
+                    if (armorTypeRadio) armorTypeRadio.checked = true;
+                    setupDropdown(newPart, data.armorType);
+                    const armorBtn = newPart.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                    
+                    const armorName = data.armorName || '';
+                    armorBtn.querySelector('.button-label').textContent = armorName || '防具を選択';
+                    armorBtn.dataset.value = armorName;
+
+                    const gradeRadio = newPart.querySelector(`input[name*="ability-grade"][value="${data.grade}"]`);
+                    if (gradeRadio) gradeRadio.checked = true;
+                    setupAbilityDropdown(newPart, data.grade);
+                    newPart.querySelector('.ability-select').value = data.abilityName;
+                    updateValueSymbol(newPart, data.abilityName);
+                    newPart.querySelector('.ability-value').value = data.value;
+                    const favoriteToggle = newPart.querySelector('.favorite-toggle');
+                    if (data.favorite) {
+                        favoriteToggle.textContent = '★';
+                        favoriteToggle.dataset.favorite = 'true';
+                        favoriteToggle.classList.add('is-favorite');
+                    }
+                } else {
+                    setupDropdown(newPart, 'main');
+                    setupAbilityDropdown(newPart, 'SS');
+                }
+            }
+            
+            document.addEventListener('focusin', (e) => {
+                if (e.target.classList.contains('ability-value')) {
+                    e.target.select();
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.custom-dropdown')) {
+                    document.querySelectorAll('.custom-dropdown-panel.show').forEach(panel => {
+                        panel.classList.remove('show');
+                        panel.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
+                        const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
+                        if (submenu) {
+                            submenu.style.display = 'none';
+                        }
+                    });
+                }
+            });
+
+            // ▼▼▼ 最終修正箇所 Part 1 of 2 ▼▼▼
+            document.addEventListener('input', (e) => {
+                if (e.target.classList.contains('dropdown-search-input')) {
+                    const searchTerm = hiraganaToKatakana(e.target.value).toLowerCase();
+                    
+                    // 以前の方法(nextElementSibling)は不安定な場合があるため、より確実な方法でリストを取得します。
+                    const panel = e.target.closest('.custom-dropdown-panel');
+                    if (!panel) return;
+                    const optionsList = panel.querySelector('.dropdown-options-list');
+                    if (!optionsList) return;
+
+                    optionsList.querySelectorAll('.dropdown-option').forEach(option => {
+                        let textToCompare = '';
+                        
+                        if (option.dataset.hasSubmenu) {
+                            const textSpan = option.querySelector('span:first-child');
+                            textToCompare = textSpan ? textSpan.textContent : '';
+                        } else {
+                            textToCompare = option.textContent;
+                        }
+                        
+                        const optionText = hiraganaToKatakana(textToCompare).toLowerCase();
+                        
+                        // CSSクラスではなく、直接styleを操作して表示/非表示を切り替えます。
+                        // これにより、他のCSS設定による影響を完全に排除します。
+                        if (optionText.includes(searchTerm)) {
+                            option.style.display = ''; 
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    });
+                }
+            });
+            
+            document.addEventListener('change', e => {
+                const part = e.target.closest('.armor-part');
+                if(!part) return;
+                const isSearchPanel = part.id === 'search-panel';
+                const isSortPanel = part.id === 'sort-panel';
+
+                if(e.target.matches('.ability-select')){
+                    if (!isSearchPanel && !isSortPanel) updateValueSymbol(part, e.target.value);
+                } else if (e.target.matches('input[name*="armor-type"]')) {
+                    const checkedRadio = e.target.closest('.radio-group').querySelector('input:checked');
+                    const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel && !!checkedRadio };
+                    setupDropdown(part, checkedRadio ? checkedRadio.value : null, options);
+                    
+                    if (isSearchPanel) {
+                        const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                        armorBtn.dataset.value = 'none';
+                        armorBtn.querySelector('.button-label').textContent = '※指定しない';
+                        if (document.getElementById('filter-btn').classList.contains('is-active')) {
+                            applyFilterFunction();
+                        }
+                    } else if (isSortPanel) {
+                        const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                        armorBtn.dataset.value = 'none';
+                        armorBtn.querySelector('.button-label').textContent = '※指定しない';
+                    } else {
+                        const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                        armorBtn.dataset.value = '';
+                        armorBtn.querySelector('.button-label').textContent = '防具を選択';
+                    }
+
+                } else if (e.target.matches('input[name*="ability-grade"]')) {
+                    const checkedRadio = e.target.closest('.radio-group').querySelector('input:checked');
+                    const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel && !!checkedRadio };
+                    setupAbilityDropdown(part, checkedRadio ? checkedRadio.value : null, options);
+                    
+                    if (isSearchPanel) {
+                        part.querySelector('.ability-select').value = 'none';
+                         if (document.getElementById('filter-btn').classList.contains('is-active')) {
+                            applyFilterFunction();
+                        }
+                    } else if (isSortPanel) {
+                         part.querySelector('.ability-select').value = 'none';
+                    } else {
+                         part.querySelector('.ability-select').value = '';
+                    }
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                const target = e.target;
+                const part = target.closest('.armor-part');
+
+                if (target.matches('.favorite-toggle') && !isEditMode && !target.closest('#search-panel') && !target.closest('#sort-panel')) {
+                    const isFavorite = target.dataset.favorite === 'true';
+                    target.dataset.favorite = String(!isFavorite);
+                    target.textContent = isFavorite ? '☆' : '★';
+                    target.classList.toggle('is-favorite');
+                    return;
+                }
+                
+                if (target.closest('.custom-dropdown-button')) {
+                    const button = target.closest('.custom-dropdown-button');
+                    const panel = button.nextElementSibling;
+                    const isOpening = !panel.classList.contains('show');
+                    
+                    document.querySelectorAll('.custom-dropdown-submenu').forEach(submenu => submenu.style.display = 'none');
+                    
+                    document.querySelectorAll('.custom-dropdown-panel.show').forEach(p => {
+                        if (p !== panel) {
+                            p.classList.remove('show');
+                            p.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
+                        }
+                    });
+                    
+                    panel.classList.toggle('show');
+
+                    if (!isOpening) {
+                        panel.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
+                        const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
+                        if (submenu) submenu.style.display = 'none';
+                    } else {
+                        const searchInput = panel.querySelector('.dropdown-search-input');
+                        if (searchInput) searchInput.value = '';
+                        
+                        // ▼▼▼ 最終修正箇所 Part 2 of 2 ▼▼▼
+                        // inputイベントでstyle.displayを直接変更したため、
+                        // ドロップダウンを開き直した際に、そのスタイルをリセットする必要があります。
+                        panel.querySelectorAll('.dropdown-option').forEach(opt => {
+                            opt.style.display = ''; // 直接指定したdisplayプロパティを解除
+                            opt.classList.remove('hidden'); // hiddenクラスも念のため解除
+                        });
+                        // ▲▲▲ 最終修正箇所 ▲▲▲
+
+                        const optionsList = panel.querySelector('.dropdown-options-list');
+                        optionsList.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
+
+                        const selectedValue = button.dataset.value;
+                        let selectedOption = null;
+
+                        if (selectedValue && selectedValue !== 'none' && selectedValue !== 'list_order') {
+                            const selectedText = button.querySelector('.button-label').textContent;
+                            selectedOption = optionsList.querySelector(`.dropdown-option[data-value="${selectedValue}"]`);
+
+                            if (!selectedOption) {
+                                const match = selectedText.match(/(.+)\(.*\)/);
+                                let parentText = match ? match[1] : null;
+
+                                if (parentText) {
+                                    parentText = parentText.replace('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ', 'バトルヴァンブレイス');
+                                }
+
+                                if (parentText) {
+                                    const parentOptions = optionsList.querySelectorAll('.dropdown-option[data-has-submenu]');
+                                    for (const opt of parentOptions) {
+                                        const optText = opt.querySelector('span')?.textContent;
+                                        if (optText === parentText) {
+                                            selectedOption = opt;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (selectedOption) {
+                            selectedOption.classList.add('focused');
+                            selectedOption.scrollIntoView({ block: 'nearest' });
+                        } else {
+                            optionsList.scrollTop = 0;
+                        }
+                    }
+                }
+                else if (target.matches('.dropdown-option') && !target.dataset.hasSubmenu) {
+                    const dropdown = target.closest('.custom-dropdown');
+                    const button = dropdown.querySelector('.custom-dropdown-button');
+                    const label = button.querySelector('.button-label');
+                    let value, text;
+
+                    if (target.dataset.parent) {
+                        let parentName = target.dataset.parent;
+                        const valueText = target.textContent;
+
+                        if (target.dataset.value && (target.dataset.value.includes('(全対象)') || target.dataset.value.includes('(シリーズ順)'))) {
+                             text = target.dataset.value;
+                             value = target.dataset.value;
+                        } else {
+                            if (parentName === '☆バトルヴァンブレイス') {
+                                parentName = toHalfWidthBattleVanbrace(parentName);
+                            }
+                            text = `${parentName}(${valueText})`;
+                            value = text;
+                        }
+                    } else {
+                        text = target.textContent;
+                        value = target.dataset.value;
+                    }
+
+                    label.textContent = text;
+                    button.dataset.value = value;
+                    
+                    const mainPanel = dropdown.querySelector('.custom-dropdown-panel');
+                    const submenu = dropdown.querySelector('.custom-dropdown-submenu');
+                    if (mainPanel) {
+                        mainPanel.classList.remove('show');
+                        mainPanel.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
+                    }
+                    if (submenu) submenu.style.display = 'none';
+                }
+                else if (part && target.matches('.add-part-inline-btn')) {
+                    addNewPart(null, part);
+                    if (isEditMode) {
+                        originalPartOrder = Array.from(partsContainer.children);
+                    }
+                }
+                else if (part && target.matches('.delete-btn')) {
+                    const deletablePanelCount = document.querySelectorAll('.armor-part .delete-btn').length;
+
+                    if (deletablePanelCount > 1) {
+                        part.remove();
+                        if (isEditMode) {
+                            originalPartOrder = Array.from(partsContainer.children);
+                        }
+                    }
+                }
+            });
+
+            document.addEventListener('mouseover', e => {
+                const option = e.target.closest('.dropdown-option');
+                if (!option) return;
+
+                const optionsList = option.closest('.dropdown-options-list');
+                if (optionsList) {
+                    optionsList.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
+                }
+
+                const panel = option.closest('.custom-dropdown-panel');
+                if (!panel) return;
+
+                const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
+                if (!submenu) return;
+
+                if (option.dataset.hasSubmenu) {
+                    submenu.innerHTML = '';
+                    const parentText = option.querySelector('span').textContent;
+                    let sublist = [];
+                    let formattedParentText = parentText;
+
+                    if (parentText === '◆名将の鎧') {
+                        sublist = warlordArmorSublist;
+                    } else if (parentText === '☆バトルヴァンブレイス') {
+                        sublist = vanbraceArmorSublist;
+                        formattedParentText = toHalfWidthBattleVanbrace(parentText);
+                    }
+
+                    const parentPart = option.closest('.armor-part');
+                    if (parentPart && (parentPart.id === 'search-panel' || parentPart.id === 'sort-panel')) {
+                        const allSeriesOption = document.createElement('div');
+                        allSeriesOption.className = 'dropdown-option';
+                        allSeriesOption.textContent = '全対象';
+                        allSeriesOption.dataset.value = `${formattedParentText}(全対象)`;
+                        allSeriesOption.dataset.parent = parentText;
+                        submenu.appendChild(allSeriesOption);
+
+                        if (parentPart.id === 'sort-panel') {
+                            const seriesOrderOption = document.createElement('div');
+                            seriesOrderOption.className = 'dropdown-option';
+                            seriesOrderOption.textContent = 'シリーズ順';
+                            seriesOrderOption.dataset.value = `${formattedParentText}(シリーズ順)`;
+                            seriesOrderOption.dataset.parent = parentText;
+                            submenu.appendChild(seriesOrderOption);
+                        }
+                    }
+                    
+                    sublist.forEach(subItemText => {
+                        const subOption = document.createElement('div');
+                        subOption.className = 'dropdown-option';
+                        subOption.textContent = subItemText;
+                        subOption.dataset.value = subItemText;
+                        subOption.dataset.parent = parentText;
+                        submenu.appendChild(subOption);
+                    });
+                    
+                    submenu.style.display = 'block';
+
+                    const listRect = optionsList.getBoundingClientRect();
+                    const optionRect = option.getBoundingClientRect();
+                    const buffer = 5; 
+
+                    if (optionRect.bottom > listRect.bottom - buffer) {
+                        optionsList.scrollTop += (optionRect.bottom - listRect.bottom + buffer);
+                    } else if (optionRect.top < listRect.top + buffer) {
+                        optionsList.scrollTop -= (listRect.top - optionRect.top + buffer);
+                    }
+
+                } else if (!e.target.closest('.custom-dropdown-submenu')) {
+                    submenu.style.display = 'none';
+                }
+            });
+
+            function exportData() {
+                const partsData = [];
+                document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                    partsData.push({
+                        armorType: part.querySelector('input[name*="armor-type"]:checked').value,
+                        armorName: part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value,
+                        grade: part.querySelector('input[name*="ability-grade"]:checked').value,
+                        abilityName: part.querySelector('.ability-select').value,
+                        value: part.querySelector('.ability-value').value,
+                        favorite: part.querySelector('.favorite-toggle').dataset.favorite === 'true'
+                    });
+                });
+                const jsonString = JSON.stringify(partsData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = '練磨_防具_リスト.json';
+                a.click();
+                URL.revokeObjectURL(a.href);
+            }
+
+            function importData(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (!Array.isArray(data)) throw new Error("JSON is not an array.");
+                        
+                        if (isEditMode) {
+                            toggleEditMode();
+                        }
+
+                        partsContainer.innerHTML = '';
+                        data.forEach(partData => addNewPart(partData));
+                        originalPartOrder = Array.from(partsContainer.children);
+
+                    } catch (error) {
+                        console.error(error);
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+
+            function setupRadioDeselection(panel) {
+                panel.querySelectorAll('.radio-group').forEach(group => {
+                    if (group.dataset.radioToggleHandler) return;
+                    group.dataset.radioToggleHandler = 'true';
+                    
+                    let wasCheckedOnMousedown = false;
+
+                    group.addEventListener('mousedown', e => {
+                        const el = e.target;
+                        if (el.tagName !== 'INPUT' && el.tagName !== 'LABEL') return;
+
+                        const radio = el.type === 'radio' ? el : document.getElementById(el.htmlFor);
+                        if (radio) {
+                            wasCheckedOnMousedown = radio.checked;
+                        }
+                    });
+
+                    group.addEventListener('click', e => {
+                        const el = e.target;
+                        if (el.tagName !== 'INPUT' && el.tagName !== 'LABEL') return;
+
+                        if (wasCheckedOnMousedown) {
+                            const radio = el.type === 'radio' ? el : document.getElementById(el.htmlFor);
+                            if (radio) {
+                                e.preventDefault();
+                                radio.checked = false;
+                                radio.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
+                        }
+                    });
+                });
+            }
+            
+            function setupSearchPanel() {
+                const filterBtn = document.getElementById('filter-btn');
+                const collapseBtn = searchPanel.querySelector('.toggle-collapse-btn');
+                const content = searchPanel.querySelector('.part-content');
+                const infoText = searchPanel.querySelector('.search-panel-info');
+                const approxCheck = document.getElementById('approx-search-check');
+
+                searchPanel.querySelectorAll('input[type=radio]').forEach(radio => radio.checked = false);
+                approxCheck.checked = false;
+                
+                function deactivateFilter() {
+                    const filterBtn = document.getElementById('filter-btn');
+                    if (filterBtn.classList.contains('is-active')) {
+                        originalPartOrder.forEach(part => partsContainer.appendChild(part));
+                        document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                            part.style.display = '';
+                        });
+                        filterBtn.textContent = '絞り込み';
+                        filterBtn.classList.remove('is-active');
+                        updateInfoText();
+                        resetValueSortButtons();
+                    }
+                }
+                window.deactivateFilter = deactivateFilter;
+
+                function applyFilter() {
+                    const checkedArmorTypeRadio = searchPanel.querySelector('input[name="search-armor-type"]:checked');
+                    const filterArmorType = checkedArmorTypeRadio ? checkedArmorTypeRadio.value : null;
+                    
+                    const armorDropdown = searchPanel.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                    const filterArmorName = armorDropdown.dataset.value === 'none' ? '' : armorDropdown.dataset.value;
+
+                    const checkedGradeRadio = searchPanel.querySelector('input[name="search-ability-grade"]:checked');
+                    const filterGrade = checkedGradeRadio ? checkedGradeRadio.value : null;
+                    
+                    const abilitySelect = searchPanel.querySelector('.ability-select');
+                    const filterAbilityName = abilitySelect.value === 'none' ? '' : abilitySelect.value;
+                    
+                    const isApprox = approxCheck.checked;
+                    const filterFavorite = searchPanel.querySelector('.favorite-toggle').dataset.favorite === 'true';
+                    
+                    let visibleParts = [];
+                    originalPartOrder.forEach(part => {
+                        partsContainer.appendChild(part);
+                        const partArmorType = part.querySelector('input[name*="armor-type"]:checked').value;
+                        const partArmorName = part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
+                        const partGrade = part.querySelector('input[name*="ability-grade"]:checked').value;
+                        const partAbilityName = part.querySelector('.ability-select').value;
+                        const partFavorite = part.querySelector('.favorite-toggle').dataset.favorite === 'true';
+
+                        const typeMatch = !filterArmorType || filterArmorType === partArmorType;
+                        
+                        let nameMatch = false;
+                        if (!filterArmorName) {
+                            nameMatch = true; 
+                        } else if (filterArmorName === '◆名将の鎧(全対象)') {
+                            nameMatch = partArmorName.startsWith('◆名将の鎧');
+                        } else if (filterArmorName === '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ(全対象)') {
+                            nameMatch = partArmorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                        } else {
+                            const parentArmorMatch = partArmorName.match(/(.+)\((.+)\)/);
+                            if (parentArmorMatch) {
+                                const parentName = parentArmorMatch[1];
+                                nameMatch = filterArmorName === parentName || filterArmorName === partArmorName;
+                            } else {
+                                nameMatch = filterArmorName === partArmorName;
+                            }
+                        }
+
+                        const gradeMatch = !filterGrade || filterGrade === partGrade;
+                        const favoriteMatch = !filterFavorite || partFavorite;
+                        
+                        let abilityMatch = false;
+                        if (isApprox && filterAbilityName && partAbilityName) {
+                            const searchTerm = filterAbilityName.split('(')[0];
+                            abilityMatch = partAbilityName.startsWith(searchTerm);
+                        } else {
+                            abilityMatch = (filterAbilityName === "" || filterAbilityName === partAbilityName);
+                        }
+
+                        const isVisible = typeMatch && nameMatch && gradeMatch && abilityMatch && favoriteMatch;
+                        part.style.display = isVisible ? '' : 'none';
+                        if (isVisible) {
+                            visibleParts.push(part);
+                        }
+                    });
+
+                    if (valueSortState > 0) {
+                        visibleParts.sort((a, b) => {
+                            const valA = parseFloat(a.querySelector('.ability-value').value) || 0;
+                            const valB = parseFloat(b.querySelector('.ability-value').value) || 0;
+                            return valueSortState === 1 ? valB - valA : valA - valB;
+                        });
+                        visibleParts.forEach(part => partsContainer.appendChild(part));
+                    }
+                }
+                applyFilterFunction = applyFilter;
+                
+                function triggerLiveFilter() {
+                    if (filterBtn.classList.contains('is-active')) {
+                        applyFilter();
+                    }
+                }
+
+                function updateInfoText() {
+                    const isFilterActive = filterBtn.classList.contains('is-active');
+                    if (searchPanel.classList.contains('is-collapsed')) {
+                        if (isFilterActive) {
+                            infoText.textContent = '絞り込み中...';
+                            infoText.style.color = 'red';
+                        } else {
+                            infoText.textContent = 'クリックして検索パネルを開く';
+                            infoText.style.color = '#bbb';
+                        }
+                        infoText.style.display = 'block';
+                    } else {
+                        infoText.style.display = 'none';
+                    }
+                }
+
+                function toggleCollapse(shouldCollapse) {
+                    searchPanel.classList.toggle('is-collapsed', shouldCollapse);
+                    content.style.display = shouldCollapse ? 'none' : '';
+                    collapseBtn.textContent = shouldCollapse ? '▼' : '▲';
+                    updateInfoText();
+                }
+
+                searchPanel.addEventListener('click', (e) => {
+                    const target = e.target;
+                    if (searchPanel.classList.contains('is-collapsed') && !target.closest('button')) {
+                        toggleCollapse(false);
+                    } else if (target.matches('.dropdown-option') && target.closest('#search-panel')) {
+                        setTimeout(triggerLiveFilter, 0);
+                    } else if (target.matches('.favorite-toggle')) {
+                        const isFavorite = target.dataset.favorite === 'true';
+                        target.dataset.favorite = String(!isFavorite);
+                        target.textContent = isFavorite ? '☆' : '★';
+                        target.classList.toggle('is-favorite');
+                        triggerLiveFilter();
+                    }
+                });
+
+                searchPanel.addEventListener('change', triggerLiveFilter);
+
+                collapseBtn.addEventListener('click', () => {
+                     toggleCollapse(!searchPanel.classList.contains('is-collapsed'));
+                });
+                
+                setupDropdown(searchPanel, null, { addNone: true });
+                setupAbilityDropdown(searchPanel, null, { addNone: true });
+                setupRadioDeselection(searchPanel);
+                
+                const armorBtn = searchPanel.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                armorBtn.dataset.value = 'none';
+                armorBtn.querySelector('.button-label').textContent = '※指定しない';
+                searchPanel.querySelector('.ability-select').value = 'none';
+
+
+                filterBtn.addEventListener('click', () => {
+                    const isActive = filterBtn.classList.contains('is-active');
+                    if(!isActive) {
+                       originalPartOrder = Array.from(partsContainer.children);
+                       applyFilter();
+                       filterBtn.textContent = '解除';
+                    } else {
+                        originalPartOrder.forEach(part => partsContainer.appendChild(part));
+                        document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                            part.style.display = '';
+                        });
+                        filterBtn.textContent = '絞り込み';
+                        resetValueSortButtons();
+                    }
+                    filterBtn.classList.toggle('is-active');
+                    updateInfoText();
+                });
+                
+                toggleCollapse(true);
+            }
+
+            function setupSortPanel() {
+                const collapseBtn = sortPanel.querySelector('.toggle-collapse-btn');
+                const content = sortPanel.querySelector('.part-content');
+                const infoText = sortPanel.querySelector('.sort-panel-info');
+                const sortBtn = document.getElementById('sort-btn');
+                
+                function toggleCollapse(shouldCollapse) {
+                    sortPanel.classList.toggle('is-collapsed', shouldCollapse);
+                    content.style.display = shouldCollapse ? 'none' : '';
+                    infoText.style.display = shouldCollapse ? 'block' : 'none';
+                    collapseBtn.textContent = shouldCollapse ? '▼' : '▲';
+
+                    if (sortableInstance) {
+                        sortableInstance.option('disabled', !shouldCollapse);
+                    }
+                    
+                    document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                        const addButton = part.querySelector('.add-part-inline-btn');
+                        const deleteButton = part.querySelector('.delete-btn');
+                        const buttonDisplayStyle = shouldCollapse ? '' : 'none';
+                        if (addButton) addButton.style.display = buttonDisplayStyle;
+                        if (deleteButton) deleteButton.style.display = buttonDisplayStyle;
+                        
+                        const handle = part.querySelector('.drag-handle');
+                        const favorite = part.querySelector('.favorite-toggle');
+                        if (shouldCollapse) {
+                            handle.textContent = '☰';
+                            handle.style.cursor = 'grab';
+                            handle.classList.remove('is-favorite');
+                        } else {
+                            handle.textContent = favorite.textContent;
+                            handle.style.cursor = 'default';
+                            handle.classList.toggle('is-favorite', favorite.dataset.favorite === 'true');
+                        }
+                    });
+                }
+
+                sortPanel.addEventListener('click', (e) => {
+                    const target = e.target;
+                     if (sortPanel.classList.contains('is-collapsed') && !target.closest('button')) {
+                        toggleCollapse(false);
+                    } else if (target.matches('.favorite-toggle')) {
+                        const isFavorite = target.dataset.favorite === 'true';
+                        target.dataset.favorite = String(!isFavorite);
+                        target.textContent = isFavorite ? '☆' : '★';
+                        target.classList.toggle('is-favorite');
+                    }
+                });
+
+                collapseBtn.addEventListener('click', () => {
+                     toggleCollapse(!sortPanel.classList.contains('is-collapsed'));
+                });
+
+                sortBtn.addEventListener('click', performSort);
+
+                setupRadioDeselection(sortPanel);
+
+                toggleCollapse(true);
+                resetSortPanel();
+            }
+
+            function resetSortPanel(keepOpen = false) {
+                sortPanel.querySelector('.favorite-toggle').textContent = '☆';
+                sortPanel.querySelector('.favorite-toggle').dataset.favorite = 'false';
+                sortPanel.querySelector('.favorite-toggle').classList.remove('is-favorite');
+
+                document.getElementById('sort-type-asc').checked = true;
+                document.getElementById('sort-ability-asc').checked = true;
+                document.getElementById('save-sort-check').checked = false;
+                
+                sortPanel.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
+                
+                const sortOptions = { addNone: true, addListOrder: false };
+                setupDropdown(sortPanel, null, sortOptions);
+                setupAbilityDropdown(sortPanel, null, sortOptions);
+
+                const armorBtn = sortPanel.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                armorBtn.dataset.value = 'none';
+                armorBtn.querySelector('.button-label').textContent = '※指定しない';
+                sortPanel.querySelector('.ability-select').value = 'none';
+
+                if (!keepOpen) {
+                    sortPanel.classList.add('is-collapsed');
+                    sortPanel.querySelector('.part-content').style.display = 'none';
+                    sortPanel.querySelector('.sort-panel-info').style.display = 'block';
+                    sortPanel.querySelector('.toggle-collapse-btn').textContent = '▼';
+                }
+            }
+            
+            function performSort() {
+                const sortFavorite = sortPanel.querySelector('.favorite-toggle').dataset.favorite === 'true';
+                
+                const sortArmorTypeRadio = sortPanel.querySelector('input[name="sort-armor-type"]:checked');
+                const sortArmorType = sortArmorTypeRadio ? sortArmorTypeRadio.value : null;
+                const sortArmorAsc = document.getElementById('sort-type-asc').checked;
+                const sortArmorName = sortPanel.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
+
+                const sortAbilityGradeRadio = sortPanel.querySelector('input[name="sort-ability-grade"]:checked');
+                const sortAbilityGrade = sortAbilityGradeRadio ? sortAbilityGradeRadio.value : null;
+                const sortAbilityAsc = document.getElementById('sort-ability-asc').checked;
+                const sortAbilityName = sortPanel.querySelector('.ability-select').value;
+                
+                let parts = Array.from(partsContainer.children);
+                
+                parts.sort((a, b) => {
+                    const aData = getPartData(a);
+                    const bData = getPartData(b);
+                    
+                    if (sortFavorite) {
+                        const aVal = aData.favorite ? 1 : 0;
+                        const bVal = bData.favorite ? 1 : 0;
+                        if (aVal !== bVal) return bVal - aVal;
+                    }
+
+                    if (sortArmorType) {
+                        const direction = sortArmorAsc ? 1 : -1;
+                        let result = 0;
+                        
+                        const aIsType = aData.armorType === sortArmorType;
+                        const bIsType = bData.armorType === sortArmorType;
+                        if (aIsType !== bIsType) {
+                           result = aIsType ? -1 : 1;
+                           return result * direction;
+                        }
+
+                        if (sortArmorName && sortArmorName !== 'none') {
+                           if (sortArmorName.endsWith('(シリーズ順)')) {
+                                const isWarlord = sortArmorName.startsWith('◆名将の鎧');
+                                const isVanbrace = sortArmorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                const prefix = isWarlord ? '◆名将の鎧' : '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ';
+                                const sublist = isWarlord ? warlordArmorSublist : vanbraceArmorSublist;
+
+                                const aIsTarget = aData.armorName.startsWith(prefix);
+                                const bIsTarget = bData.armorName.startsWith(prefix);
+
+                                if (aIsTarget !== bIsTarget) {
+                                    result = aIsTarget ? -1 : 1;
+                                } else if (aIsTarget && bIsTarget) {
+                                    const regex = /\(([^)]+)\)/;
+                                    const aMatch = aData.armorName.match(regex);
+                                    const bMatch = bData.armorName.match(regex);
+                                    const aIndex = aMatch ? sublist.indexOf(aMatch[1]) : -1;
+                                    const bIndex = bMatch ? sublist.indexOf(bMatch[1]) : -1;
+                                    result = aIndex - bIndex;
+                                }
+                            } else if (sortArmorName === 'list_order') {
+                                const aIsWarlord = aData.armorName.startsWith('◆名将の鎧');
+                                const bIsWarlord = bData.armorName.startsWith('◆名将の鎧');
+                                const aIsVanbrace = aData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                const bIsVanbrace = bData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                const regex = /\(([^)]+)\)/;
+
+                                if (aIsWarlord && bIsWarlord) {
+                                    const aMatch = aData.armorName.match(regex);
+                                    const bMatch = bData.armorName.match(regex);
+                                    const aSeriesIndex = aMatch ? warlordArmorSublist.indexOf(aMatch[1]) : -1;
+                                    const bSeriesIndex = bMatch ? warlordArmorSublist.indexOf(bMatch[1]) : -1;
+                                    if(aSeriesIndex !== bSeriesIndex) result = aSeriesIndex - bSeriesIndex;
+                                } else if (aIsVanbrace && bIsVanbrace) {
+                                    const aMatch = aData.armorName.match(regex);
+                                    const bMatch = bData.armorName.match(regex);
+                                    const aSeriesIndex = aMatch ? vanbraceArmorSublist.indexOf(aMatch[1]) : -1;
+                                    const bSeriesIndex = bMatch ? vanbraceArmorSublist.indexOf(bMatch[1]) : -1;
+                                    if(aSeriesIndex !== bSeriesIndex) result = aSeriesIndex - bSeriesIndex;
+                                } else {
+                                    const aIndex = allArmorData.findIndex(item => item.名称 === aData.armorName);
+                                    const bIndex = allArmorData.findIndex(item => item.名称 === bData.armorName);
+                                    if (aIndex !== bIndex) result = aIndex - bIndex;
+                                }
+                            } else if (sortArmorName === '◆名将の鎧(全対象)') {
+                                const aIsTarget = aData.armorName.startsWith('◆名将の鎧');
+                                const bIsTarget = bData.armorName.startsWith('◆名将の鎧');
+                                if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
+                            } else if (sortArmorName === '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ(全対象)') {
+                                const aIsTarget = aData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                const bIsTarget = bData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
+                            } else {
+                                const aIsTarget = aData.armorName === sortArmorName;
+                                const bIsTarget = bData.armorName === sortArmorName;
+                                if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
+                            }
+                            if (result !== 0) return result * direction;
+                        }
+                    }
+
+                    if (sortAbilityGrade) {
+                         const direction = sortAbilityAsc ? 1 : -1;
+                         let result = 0;
+
+                        const aIsGrade = aData.grade === sortAbilityGrade;
+                        const bIsGrade = bData.grade === sortAbilityGrade;
+                         if (aIsGrade !== bIsGrade) {
+                            result = aIsGrade ? -1 : 1;
+                            return result * direction;
+                         }
+                        
+                        if (sortAbilityName && sortAbilityName !== 'none') {
+                            if (sortAbilityName === 'list_order') {
+                                const aIndex = renmaAbilityData.findIndex(item => item.種類 === aData.abilityName);
+                                const bIndex = renmaAbilityData.findIndex(item => item.種類 === bData.abilityName);
+                                if (aIndex !== bIndex) result = aIndex - bIndex;
+                            } else {
+                                const aIsTarget = aData.abilityName === sortAbilityName;
+                                const bIsTarget = bData.abilityName === sortAbilityName;
+                                if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
+                            }
+                            if (result !== 0) return result * direction;
+                        }
+                    }
+                    
+                    if (valueSortState > 0) {
+                        const valA = parseFloat(aData.value) || 0;
+                        const valB = parseFloat(bData.value) || 0;
+                        if (valA !== valB) {
+                            return valueSortState === 1 ? valB - valA : valA - valB;
+                        }
+                    }
+
+                    return 0;
+                });
+
+                parts.forEach(p => partsContainer.appendChild(p));
+                
+                const isSave = document.getElementById('save-sort-check').checked;
+                if(isSave) {
+                    originalPartOrder = Array.from(partsContainer.children);
+                    resetSortPanel(true);
+                    resetValueSortButtons();
+                }
+            }
+
+            function getPartData(part) {
+                return {
+                    armorType: part.querySelector('input[name*="armor-type"]:checked')?.value,
+                    armorName: part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value,
+                    grade: part.querySelector('input[name*="ability-grade"]:checked')?.value,
+                    abilityName: part.querySelector('.ability-select').value,
+                    value: part.querySelector('.ability-value').value,
+                    favorite: part.querySelector('.favorite-toggle').dataset.favorite === 'true'
+                };
+            }
+
+            function resetValueSortButtons() {
+                const btns = document.querySelectorAll('.value-sort-btn');
+                btns.forEach(btn => {
+                    btn.textContent = '9↓';
+                    btn.classList.remove('active');
+                });
+                valueSortState = 0;
+            }
+
+            function handleValueSort(event) {
+                const btn = event.currentTarget;
+                valueSortState = (valueSortState + 1) % 3;
+
+                switch (valueSortState) {
+                    case 0:
+                        btn.textContent = '9↓';
+                        btn.classList.remove('active');
+                        break;
+                    case 1:
+                        btn.textContent = '9↓';
+                        btn.classList.add('active');
+                        break;
+                    case 2:
+                        btn.textContent = '1↓';
+                        btn.classList.add('active');
+                        break;
+                }
+                
+                if (document.getElementById('filter-btn').classList.contains('is-active')) {
+                    if (valueSortState === 0) {
+                        applyFilter();
+                    } else {
+                        const visibleParts = Array.from(partsContainer.children).filter(p => p.style.display !== 'none');
+                        visibleParts.sort((a, b) => {
+                            const valA = parseFloat(a.querySelector('.ability-value').value) || 0;
+                            const valB = parseFloat(b.querySelector('.ability-value').value) || 0;
+                            return valueSortState === 1 ? valB - valA : valA - valB;
+                        });
+                        visibleParts.forEach(part => partsContainer.appendChild(part));
+                    }
+                }
+            }
+
+
+            async function initialize() {
+                [armorMainData, armorSubData, renmaAbilityData] = await Promise.all([
+                    loadCSV('data/armor-main.csv'),
+                    loadCSV('data/armor-sub.csv'),
+                    loadCSV('data/renma-armor.csv')
+                ]);
+                allArmorData = [...armorMainData, ...armorSubData];
+                setupSearchPanel();
+                setupSortPanel();
+                addNewPart(); 
+                originalPartOrder = Array.from(partsContainer.children);
+                
+                editModeBtn.addEventListener('click', toggleEditMode);
+                exportBtn.addEventListener('click', exportData);
+                importBtn.addEventListener('click', () => importFileInput.click());
+                importFileInput.addEventListener('change', importData);
+
+                document.getElementById('edit-mode-btn-footer').addEventListener('click', toggleEditMode);
+                document.getElementById('export-btn-footer').addEventListener('click', exportData);
+                document.getElementById('import-btn-footer').addEventListener('click', () => document.getElementById('import-file-input-footer').click());
+                document.getElementById('import-file-input-footer').addEventListener('change', importData);
+                
+                document.getElementById('search-value-sort').addEventListener('click', handleValueSort);
+                document.getElementById('sort-value-sort').addEventListener('click', handleValueSort);
+
+                resetValueSortButtons();
+            }
+
+            function toggleEditMode() {
+                isEditMode = !isEditMode;
+                
+                if (window.deactivateFilter) window.deactivateFilter();
+                searchPanel.style.display = isEditMode ? 'none' : 'block';
+                sortPanel.style.display = isEditMode ? 'block' : 'none';
+                document.getElementById('footer-normal-notes').style.display = isEditMode ? 'none' : 'block';
+                document.getElementById('footer-edit-notes').style.display = isEditMode ? 'block' : 'none';
+
+                if (isEditMode) {
+                   originalPartOrder = Array.from(partsContainer.children);
+                   resetSortPanel();
+                   resetValueSortButtons();
+                } else {
+                   if (!document.getElementById('save-sort-check').checked) {
+                        originalPartOrder.forEach(part => partsContainer.appendChild(part));
+                   }
+                   document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                        const addButton = part.querySelector('.add-part-inline-btn');
+                        const deleteButton = part.querySelector('.delete-btn');
+                        if (addButton) addButton.style.display = '';
+                        if (deleteButton) deleteButton.style.display = '';
+                   });
+                }
+
+                document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+                    part.querySelector('.drag-handle').style.display = isEditMode ? 'block' : 'none';
+                    part.querySelector('.favorite-toggle').style.display = isEditMode ? 'none' : 'block';
+                    
+                    const handle = part.querySelector('.drag-handle');
+                    handle.textContent = '☰';
+                    handle.classList.remove('is-favorite');
+                });
+                
+                const allEditModeBtns = document.querySelectorAll('#edit-mode-btn, #edit-mode-btn-footer');
+                allEditModeBtns.forEach(btn => {
+                    btn.textContent = isEditMode ? '編集モード終了' : '編集モード開始';
+                    btn.classList.toggle('active', isEditMode);
+                });
+
+                if (isEditMode) {
+                    if (!sortableInstance) {
+                         sortableInstance = new Sortable(partsContainer, { 
+                            animation: 150, 
+                            handle: '.drag-handle',
+                            onEnd: function(evt) {
+                                originalPartOrder = Array.from(partsContainer.children);
+                            }
+                        });
+                    }
+                    sortableInstance.option('disabled', false);
+                } else {
+                    if(sortableInstance) sortableInstance.option('disabled', true);
+                }
+            }
+            document.body.style.zoom = pageSettings['armor-renma_zoom'];
+            initialize();
+        });
+
+    document.addEventListener("DOMContentLoaded", function(){
+      var toggleButtons = document.querySelectorAll(".toggle-button");
+    
+      toggleButtons.forEach(function(button) {
+        var targetId = button.getAttribute("data-target");
+        var list = document.getElementById(targetId);
+        list.style.display = "none";
+    
+        button.addEventListener("click", function(){
+          if (list.style.display === "block") {
+            list.style.display = "none";
+          } else {
+            list.style.display = "block";
+          }
+        });
+      });
+    });
+
+  </script>
+
+</body>
+</html>

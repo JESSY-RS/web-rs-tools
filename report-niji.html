@@ -422,15 +422,53 @@
     // 初期表示の時点でも集計実行
     updateSummary();
 
-    let zoomLevel = 1;
-
     // 拡大縮小の関数
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    
+    let pageSettings = { 'report-niji_zoom': 1.0 };
+    
     function changeZoom(delta) {
-      zoomLevel += delta;
-      if (zoomLevel < 0.5) zoomLevel = 0.5;  // 最小倍率0.5倍
-      if (zoomLevel > 2.0) zoomLevel = 2.0;  // 最大倍率2倍
-      document.body.style.zoom = zoomLevel;
+        const zoomKey = 'report-niji_zoom';
+        let currentZoom = pageSettings[zoomKey];
+    
+        currentZoom += delta;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        // 画面の表示に反映
+        document.body.style.zoom = currentZoom;
+        
+        // 設定オブジェクトの値を更新
+        pageSettings[zoomKey] = currentZoom;
+        
+        // localStorageに保存
+        savePageSettings();
     }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                // 保存済みの設定があれば、デフォルト値と結合して上書きします。
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['report-niji_zoom'];
+    });
 
     // ページをリロードしたらサイドメニューを呼び出す
     window.onload = function () {

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>スタイル情報ビューア</title>
+    <title>★スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -886,10 +886,52 @@
     </div>
 
 <script>
+    // 拡大縮小の関数
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    
+    let pageSettings = { 'style-info_zoom': 1.0 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'style-info_zoom';
+        let currentZoom = pageSettings[zoomKey];
+    
+        currentZoom += delta;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        // 画面の表示に反映
+        document.body.style.zoom = currentZoom;
+        
+        // 設定オブジェクトの値を更新
+        pageSettings[zoomKey] = currentZoom;
+        
+        // localStorageに保存
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                // 保存済みの設定があれば、デフォルト値と結合して上書きします。
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+
     // --------------------------------------------------
     // グローバル変数
     // --------------------------------------------------
-    let zoomLevel = 1;
     let db = { 
         styles: [], 
         skills: {}, 
@@ -916,6 +958,8 @@
     // 初期化処理
     // --------------------------------------------------
     document.addEventListener('DOMContentLoaded', async () => {
+        loadPageSettings();
+
         originalTitle = document.title;
         
         // --- テキスト選択と右クリックの制御 ---
@@ -1009,6 +1053,7 @@
             console.error(`初期化エラー: ${error.message}`);
             alert(`データの読み込みに失敗しました。ファイルが所定の場所にあるか確認してください。\nエラー: ${error.message}`);
         }
+        document.body.style.zoom = pageSettings['style-info_zoom'];
     });
 
     // --- ▼▼▼ 表示・URL・タイトル更新のロジック ▼▼▼ ---
@@ -1430,11 +1475,6 @@
                 if (!exists) itemToStyleMap[itemName].push(context);
             }
         }
-    }
-
-    function changeZoom(delta) {
-        zoomLevel = Math.max(0.5, Math.min(2.0, zoomLevel + delta));
-        document.body.style.zoom = zoomLevel;
     }
 
     async function loadCsv(fileName, dbKey) {
