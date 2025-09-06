@@ -5,7 +5,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>装備候補検索ツール</title> <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <title>装備候補検索ツール</title> <!-- Created by じぇ -->
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
@@ -40,6 +42,11 @@
 </head>
 <body>
 
+    <div class="zoom-buttons">
+        <button onclick="changeZoom(-0.1)">－</button>
+        <button onclick="changeZoom(0.1)">＋</button>
+    </div>
+
     <div id="root"></div>
 
     <script type="text/babel">
@@ -48,8 +55,10 @@
         const additionalAttributes = ['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
         const totalAttributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰', '毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
 
+        // ===== ここから変更 =====
         // useLayoutEffect をReactからインポート
         const { useState, useEffect, useLayoutEffect, useRef, useCallback } = React;
+        // ===== ここまで変更 =====
 
         // ひらがなをカタカナに変換するヘルパー関数
         const hiraganaToKatakana = (str) => {
@@ -61,67 +70,6 @@
         };
 
         const ArmorCombinationAnalyzer = () => {
-          
-          // ===== 拡大縮小機能（ここから）=====
-          const PAGE_SETTING_KEY = 'PageSettings';
-          const [zoom, setZoom] = useState(1.0);
-
-          // コンポーネントのマウント時にlocalStorageから設定を読み込む
-          useEffect(() => {
-              try {
-                  const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
-                  if (savedSettings) {
-                      const parsedSettings = JSON.parse(savedSettings);
-                      // armor.html用のキー `armor_zoom` を使用
-                      if (parsedSettings.armor_zoom) {
-                          setZoom(parsedSettings.armor_zoom);
-                      }
-                  }
-              } catch (error) {
-                  console.error("ページ設定の読み込みに失敗しました:", error);
-              }
-          }, []); // 初回の一度だけ実行
-
-          // zoomの値が変更されたら、OSを判定して最適な方法で画面表示とlocalStorageを更新
-          useEffect(() => {
-              // bodyに直接適用する
-              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-              if (isIOS) {
-                  // iOSの場合：transformプロパティを使用
-                  document.body.style.transform = `scale(${zoom})`;
-                  document.body.style.transformOrigin = 'top left';
-                  document.body.style.zoom = ''; // 念のため、もう一方のプロパティをクリア
-              } else {
-                  // それ以外のOS（PC, Androidなど）の場合：zoomプロパティを使用
-                  document.body.style.zoom = zoom;
-                  document.body.style.transform = ''; // 念のため、もう一方のプロパティをクリア
-                  document.body.style.transformOrigin = '';
-              }
-              
-              // localStorageへの保存処理
-              try {
-                  const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
-                  const currentSettings = savedSettings ? JSON.parse(savedSettings) : {};
-                  currentSettings.armor_zoom = zoom; // armor.html用のキーで保存
-                  localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(currentSettings));
-              } catch (error) {
-                  console.error("ページ設定の保存に失敗しました:", error);
-              }
-          }, [zoom]); // zoomが変更されるたびに実行
-
-          // 拡大率を変更するための関数
-          const changeZoom = (delta) => {
-              setZoom(prevZoom => {
-                  let newZoom = prevZoom + delta;
-                  newZoom = Math.round(newZoom * 10) / 10;
-                  if (newZoom < 0.5) newZoom = 0.5;
-                  if (newZoom > 2.0) newZoom = 2.0;
-                  return newZoom;
-              });
-          };
-          // ===== 拡大縮小機能（ここまで）=====
-
           const [excludeProfileExists, setExcludeProfileExists] = useState({ main: false, sub: false, deco: false });
           const [mainArmor, setMainArmor] = useState([]);
           const [subArmor, setSubArmor] = useState([]);
@@ -141,6 +89,57 @@
           // プルダウン内の選択中項目へ自動スクロール/フォーカスするためのstateとref
           const [focusedItem, setFocusedItem] = useState(null); // { type: string, name: string }
           const itemRefs = useRef({}); // 各リスト項目のDOM参照を保持
+
+    // 拡大縮小の関数
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    
+    let pageSettings = { 'armor_zoom': 1.0 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'armor_zoom';
+        let currentZoom = pageSettings[zoomKey];
+    
+        currentZoom += delta;
+
+        currentZoom = Math.round(currentZoom * 10) / 10;
+
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        // 画面の表示に反映
+        document.body.style.zoom = currentZoom;
+        
+        // 設定オブジェクトの値を更新
+        pageSettings[zoomKey] = currentZoom;
+        
+        // localStorageに保存
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                // 保存済みの設定があれば、デフォルト値と結合して上書きします。
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['armor_zoom'];
+    });
 
           const [countdown, setCountdown] = useState(0);
           const countdownIntervalRef = useRef(null);
@@ -552,7 +551,7 @@ const saveExcludeProfile = (type) => {
   setExcludeSaving(prev => ({ ...prev, [category]: true }));
   try {
     localStorage.setItem(key, JSON.stringify(data));
-    setExcludeProfileExists(prev => ({ ...prev, [category]: true }));
+    setExcludeProfileExists(prev => ({ ...prev, [category]: true })); // この行を追加
   }
   catch (e) { console.error(`${type}除外設定の保存に失敗しました`, e); }
   finally { setTimeout(() => { setExcludeSaving(prev => ({ ...prev, [category]: false })); }, 800); }
@@ -569,7 +568,7 @@ const deleteExcludeProfile = (type) => {
   setExcludeSettings(prev => ({ ...prev, [category]: [] }));
   try {
     localStorage.removeItem(key);
-    setExcludeProfileExists(prev => ({ ...prev, [category]: false }));
+    setExcludeProfileExists(prev => ({ ...prev, [category]: false })); // この行を追加
   }
   catch (e) { console.error(`${type}除外設定の削除に失敗`, e); }
   finally { setTimeout(() => { setExcludeDeleting(prev => ({ ...prev, [category]: false })); }, 800); }
@@ -839,6 +838,7 @@ useEffect(() => {
   setExcludeSettings(prev => ({ ...prev, main, sub, deco }));
 }, []);
           
+          // ===== ここから変更 =====
           // プルダウンが開かれたときに選択項目へスクロールしフォーカスする
           // useEffectをuseLayoutEffectに変更し、setTimeoutを削除
           useLayoutEffect(() => {
@@ -868,6 +868,7 @@ useEffect(() => {
             if (showBulkDropdown.deco) scrollAndFocus('decoBulk', bulkDecorationSelect);
 
           }, [showCharacterDropdown, showFixedDropdown, showBulkDropdown, selectedCharacters, fixedEquipments, bulkMainArmorSelect, bulkSubArmorSelect, bulkDecorationSelect, activeTab]);
+          // ===== ここまで変更 =====
 
           // すべての関連プルダウンが閉じたときにフォーカス状態をリセットするuseEffect
           useEffect(() => {
@@ -1342,7 +1343,7 @@ useEffect(() => {
             const newCharacterValues = { ...characterValues };
             ['キャラ１', 'キャラ２', 'キャラ３', 'キャラ４', 'キャラ５'].forEach(charName => {
               newCharacterValues[charName] = {};
-              attributes.forEach(attr => { newCharacterValues[charName][attr] = String(baseData[attr] || '0'); });
+              attributes.forEach(attr => { newCharacterValues[charName][attr] = String(baseData[attr] || '0'); }); // Corrected line
             });
             setCharacterValues(newCharacterValues);
 
