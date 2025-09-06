@@ -90,45 +90,20 @@
           const [focusedItem, setFocusedItem] = useState(null); // { type: string, name: string }
           const itemRefs = useRef({}); // 各リスト項目のDOM参照を保持
 
-    // 拡大縮小の関数
-    const PAGE_SETTING_KEY = 'PageSettings';
+  const [zoomLevel, setZoomLevel] = useState(1);
 
-    const [zoom, setZoom] = useState(() => {
-      try {
-        const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
-        if (savedSettings) {
-          const parsedSettings = JSON.parse(savedSettings);
-          // armor_zoom の値が 0.5 未満、または 2.0 より大きい場合はデフォルト値の 1.0 を返す
-          if (parsedSettings.armor_zoom && parsedSettings.armor_zoom >= 0.5 && parsedSettings.armor_zoom <= 2.0) {
-            return parsedSettings.armor_zoom;
-          }
-        }
-      } catch (error) {
-        console.error("ページ設定の読み込みに失敗しました:", error);
-      }
-      return 1.0; // デフォルト値
+  useEffect(() => {
+    document.body.style.zoom = zoomLevel;
+  }, [zoomLevel]);
+
+  const changeZoom = (delta) => {
+    setZoomLevel(prevZoom => {
+      const newZoom = prevZoom + delta;
+      if (newZoom < 0.5) return 0.5;
+      if (newZoom > 2.0) return 2.0;
+      return newZoom;
     });
-
-    useEffect(() => {
-      // zoom stateが変更されるたびに、画面表示とlocalStorageを更新
-      document.body.style.zoom = zoom;
-      try {
-        const currentSettings = JSON.parse(localStorage.getItem(PAGE_SETTING_KEY) || '{}');
-        const newSettings = { ...currentSettings, armor_zoom: zoom };
-        localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(newSettings));
-      } catch (error) {
-        console.error("ページ設定の保存に失敗しました:", error);
-      }
-    }, [zoom]); // zoomの値が変わった時だけ実行
-
-    const changeZoom = (delta) => {
-      setZoom(prevZoom => {
-        let newZoom = Math.round((prevZoom + delta) * 10) / 10;
-        if (newZoom < 0.5) newZoom = 0.5;
-        if (newZoom > 2.0) newZoom = 2.0;
-        return newZoom;
-      });
-    };
+  };
 
           const [countdown, setCountdown] = useState(0);
           const countdownIntervalRef = useRef(null);
@@ -1397,15 +1372,15 @@ useEffect(() => {
       <button onClick={() => changeZoom(0.1)}>＋</button>
     </div>
               <div className={`${currentThemeColors.wholeTxt} p-6`}>
-                <h1 className={`text-3xl font-bold mb-6 ${currentThemeColors.titleTxt} relative`}>
+                <h1 className={`text-2xl font-bold mb-6 ${currentThemeColors.titleTxt} relative`}>
                   <span
                     id="title-star"
-                    className="cursor-pointer text-yellow-500"
+                    className="cursor-pointer text-yellow-500 text-2xl"
                     onClick={() => setShowThemeOptions(!showThemeOptions)}
                   >
                   ★
                   </span>
-                  装備候補検索ツール
+                  装備候補検索ツール ver.2025/08/22
                   {showThemeOptions && (
                     <div ref={themeOptionsRef} className={`absolute left-0 mt-2 p-4 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded-lg shadow-lg z-20`}>
                       <div className="flex flex-col space-y-2">
