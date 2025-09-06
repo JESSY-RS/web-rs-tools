@@ -43,7 +43,7 @@
         
         .main-header {
             position: relative; /* 拡大・縮小ボタンの基準位置 */
-            padding-bottom: 7px; /* 常に7pxの余白を確保 */
+            padding-bottom: 7px;
         }
 
         /* --- ヘッダー固定用のスタイル (ピン留め機能) --- */
@@ -54,16 +54,11 @@
             background-color: #2A2A2A; /* スクロール時に下のコンテンツが透けないように背景色を指定 */
         }
         
-        /* ピン留め時はtabsのマージンを無くし、ヘッダーのpaddingで余白を制御 */
-        .main-header.pinned .tabs {
-            margin-bottom: 0px;
-        }
-
         /* --- タブUI --- */
         .tabs {
             display: flex;
             border-bottom: 2px solid #555;
-            margin-bottom: 0; /* 余白管理をheaderのpaddingとcontentのmarginに集約 */
+            margin-bottom: 0;
             flex-wrap: nowrap;
         }
         .tab-button {
@@ -177,10 +172,10 @@
         /* ============================================= */
         /* === 1. リスト (renma-armor.html) のスタイル === */
         /* ============================================= */
-        #tab-list > header {
+        #tab-list header {
             display: flex; flex-direction: column; align-items: stretch;
             gap: 15px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #555;
-            margin-top: 8px; /* レイアウト維持用の余白 */
+            margin-top: 8px; /* この行を追加 */
         }
         #tab-list .header-controls {
             display: flex; justify-content: space-between; align-items: center; gap: 10px;
@@ -342,7 +337,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 8px; /* レイアウト維持用の余白 */
+            margin-top: 8px; /* この行を追加 */
         }
         #tab-top5 .controls-container { text-align: center; border-radius: 8px;}
         #tab-top5 .checkbox-container { padding-top: 5px; margin-bottom: 20px; font-size: 16px; }
@@ -392,9 +387,9 @@
         /* ==================================================== */
         /* === 3. 自動選定ツール (armor-calc.html) のスタイル === */
         /* ==================================================== */
-        #tab-calc > .file-input-container {
+        #tab-calc .file-input-container {
             border-radius: 8px; padding-top: 5px; margin-bottom: 20px; box-sizing: border-box; text-align: center;
-            margin-top: 8px; /* レイアウト維持用の余白 */
+            margin-top: 8px; /* この行を追加 */
         }
         #file-status { margin-top: 0px; color: #ffd700; font-size: 1em; }
         #tab-calc .character-grid { margin-top: 0px; display: flex; flex-direction: column; gap: 20px; width: 100%; }
@@ -1143,11 +1138,14 @@
             }
         }, false);
         
-        // ▼▼▼ 変更点: ページ離脱時の警告機能を追加 ▼▼▼
+        // ▼▼▼ 変更点: ページ離脱時の警告機能 ▼▼▼
         window.addEventListener('beforeunload', (event) => {
+            // isDataDirtyがtrueの場合（未保存の変更がある場合）のみ警告を表示
             if (isDataDirty) {
+                // 最新のブラウザ仕様に準拠した方法。
+                // これを実行すると、ブラウザが標準の確認ダイアログを表示します。
+                // カスタムメッセージの表示はセキュリティ上の理由からできません。
                 event.preventDefault();
-                event.returnValue = ''; // 標準的なブラウザの警告を表示
             }
         });
         // ▲▲▲ 変更点 ▲▲▲
@@ -2833,7 +2831,7 @@
                 if (mainArmor.armorName !== '該当なし') equippedThisPass.add(mainArmor.armorName);
                 
                 if (lockedEquipment.has(charId) && lockedEquipment.get(charId).subArmor) subArmor = lockedEquipment.get(charId).subArmor;
-                else subArmor = findBestArmorWithNativeAbilities_calc('sub', character, excludedItems, partyConfig);
+                else subArmor = findBestArmorWithNativeAbilities_calc('sub', character, equippedThisPass, partyConfig);
                 if (subArmor.armorName !== '該当なし') equippedThisPass.add(subArmor.armorName);
                 
                 nextLoadout[charId - 1] = { mainArmor, subArmor };
