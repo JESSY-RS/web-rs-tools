@@ -5,9 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>装備候補検索ツール</title> <!-- Created by じぇ --> 
-
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <title>装備候補検索ツール</title> <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
@@ -51,17 +49,12 @@
 
     <script type="text/babel">
 
-        let zoomLevel = 1;
-        function changeZoom(delta) {
-          zoomLevel = (zoomLevel + delta < 0.5) ? 0.5 : (zoomLevel + delta > 2.0) ? 2.0 : zoomLevel + delta;
-          document.body.style.zoom = zoomLevel;
-        }
-
         const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
         const additionalAttributes = ['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
         const totalAttributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰', '毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
 
-        const { useState, useEffect, useRef, useCallback } = React;
+        // useLayoutEffect をReactからインポート
+        const { useState, useEffect, useLayoutEffect, useRef, useCallback } = React;
 
         // ひらがなをカタカナに変換するヘルパー関数
         const hiraganaToKatakana = (str) => {
@@ -73,6 +66,7 @@
         };
 
         const ArmorCombinationAnalyzer = () => {
+          const [excludeProfileExists, setExcludeProfileExists] = useState({ main: false, sub: false, deco: false });
           const [mainArmor, setMainArmor] = useState([]);
           const [subArmor, setSubArmor] = useState([]);
           const [decorations, setDecorations] = useState([]);
@@ -87,6 +81,49 @@
           const [searching, setSearching] = useState({});
           const [activeTab, setActiveTab] = useState('キャラ１');
           const dropdownRefs = useRef({});
+
+          // プルダウン内の選択中項目へ自動スクロール/フォーカスするためのstateとref
+          const [focusedItem, setFocusedItem] = useState(null); // { type: string, name: string }
+          const itemRefs = useRef({}); // 各リスト項目のDOM参照を保持
+
+          // 拡大縮小の関数 (Reactフック版)
+          const PAGE_SETTING_KEY = 'PageSettings';
+
+          const [zoom, setZoom] = useState(() => {
+            try {
+              const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+              if (savedSettings) {
+                const parsedSettings = JSON.parse(savedSettings);
+                if (parsedSettings.armor_zoom && parsedSettings.armor_zoom >= 0.5 && parsedSettings.armor_zoom <= 2.0) {
+                  return parsedSettings.armor_zoom;
+                }
+              }
+            } catch (error) {
+              console.error("ページ設定の読み込みに失敗しました:", error);
+            }
+            return 1.0; // デフォルト値
+          });
+
+          useEffect(() => {
+            // zoom stateが変更されるたびに、画面表示とlocalStorageを更新
+            document.body.style.zoom = zoom;
+            try {
+              const currentSettings = JSON.parse(localStorage.getItem(PAGE_SETTING_KEY) || '{}');
+              const newSettings = { ...currentSettings, armor_zoom: zoom };
+              localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(newSettings));
+            } catch (error) {
+              console.error("ページ設定の保存に失敗しました:", error);
+            }
+          }, [zoom]); // zoomの値が変わった時だけ実行
+
+          const changeZoom = (delta) => {
+            setZoom(prevZoom => {
+              let newZoom = Math.round((prevZoom + delta) * 10) / 10;
+              if (newZoom < 0.5) newZoom = 0.5;
+              if (newZoom > 2.0) newZoom = 2.0;
+              return newZoom;
+            });
+          };
 
           const [countdown, setCountdown] = useState(0);
           const countdownIntervalRef = useRef(null);
@@ -110,6 +147,23 @@
             return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'system' : 'system'; // Default to system
           });
           const [showThemeOptions, setShowThemeOptions] = useState(false);
+
+          // OSのダークモード設定を追跡するための新しいstate
+          const [systemTheme, setSystemTheme] = useState(
+            () => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          );
+
+          // OSの設定変更を監視し、stateを更新するuseEffect
+          useEffect(() => {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            const handleChange = (e) => {
+              // OSの変更を検知したら、直接DOMを操作するのではなく、Reactのstateを更新する
+              setSystemTheme(e.matches ? 'dark' : 'light');
+            };
+            mediaQuery.addEventListener('change', handleChange);
+            // コンポーネントが不要になったら監視を解除する
+            return () => mediaQuery.removeEventListener('change', handleChange);
+          }, []); // このuseEffectは最初に一度だけ実行する
 
           const themes = {
             light: {
@@ -361,29 +415,15 @@
             document.body.classList.remove(themes.light.wholeBak, themes.dark.wholeBak);
             let currentThemeClass;
             if (theme === 'system') {
-              currentThemeClass = window.matchMedia('(prefers-color-scheme: dark)').matches ? themes.dark.wholeBak : themes.light.wholeBak;
+              // systemTheme stateからクラスを決定
+              currentThemeClass = systemTheme === 'dark' ? themes.dark.wholeBak : themes.light.wholeBak;
             } else if (theme === 'dark') {
               currentThemeClass = themes.dark.wholeBak;
             } else {
               currentThemeClass = themes.light.wholeBak;
             }
             document.body.classList.add(currentThemeClass);
-          }, [theme, themes]);
-
-          // Effect to listen for system theme changes if 'system' is selected
-          useEffect(() => {
-            if (theme === 'system') {
-              const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-              const handleChange = () => {
-                // Re-apply the current theme to reflect system change
-                document.body.classList.remove(themes.light.wholeBak, themes.dark.wholeBak);
-                const currentThemeClass = mediaQuery.matches ? themes.dark.wholeBak : themes.light.wholeBak;
-                document.body.classList.add(currentThemeClass);
-              };
-              mediaQuery.addEventListener('change', handleChange);
-              return () => mediaQuery.removeEventListener('change', handleChange);
-            }
-          }, [theme, themes]);
+          }, [theme, systemTheme]); // theme または systemTheme が変わった時に実行
 
           const dataFiles = {
             mainArmor: './data/armor-main.csv',
@@ -393,7 +433,8 @@
           };
 
           // Determine active theme colors based on the theme state
-          const currentThemeColors = theme === 'dark' ? themes.dark : theme === 'light' ? themes.light : window.matchMedia('(prefers-color-scheme: dark)').matches ? themes.dark : themes.light;
+          const effectiveTheme = theme === 'system' ? systemTheme : theme;
+          const currentThemeColors = themes[effectiveTheme];
 
           const characterNames = ['キャラ１', 'キャラ２', 'キャラ３', 'キャラ４', 'キャラ５', '５人１組'];
 
@@ -487,33 +528,39 @@
           const characterDropdownRef = useRef(null);
 
 
-          const saveExcludeProfile = (type) => {
-            let key = '';
-            let data = [];
-            let category = '';
-            if (type === '主防具') { key = 'exclude_main'; data = [...excludeSettings.main]; category = 'main'; }
-            else if (type === '副防具') { key = 'exclude_sub'; data = [...excludeSettings.sub]; category = 'sub'; }
-            else if (type === '装飾品') { key = 'exclude_deco'; data = [...excludeSettings.deco]; category = 'deco'; }
+const saveExcludeProfile = (type) => {
+  let key = '';
+  let data = [];
+  let category = '';
+  if (type === '主防具') { key = 'exclude_main'; data = [...excludeSettings.main]; category = 'main'; }
+  else if (type === '副防具') { key = 'exclude_sub'; data = [...excludeSettings.sub]; category = 'sub'; }
+  else if (type === '装飾品') { key = 'exclude_deco'; data = [...excludeSettings.deco]; category = 'deco'; }
 
-            setExcludeSaving(prev => ({ ...prev, [category]: true }));
-            try { localStorage.setItem(key, JSON.stringify(data)); }
-            catch (e) { console.error(`${type}除外設定の保存に失敗しました`, e); }
-            finally { setTimeout(() => { setExcludeSaving(prev => ({ ...prev, [category]: false })); }, 800); }
-          };
+  setExcludeSaving(prev => ({ ...prev, [category]: true }));
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    setExcludeProfileExists(prev => ({ ...prev, [category]: true })); // この行を追加
+  }
+  catch (e) { console.error(`${type}除外設定の保存に失敗しました`, e); }
+  finally { setTimeout(() => { setExcludeSaving(prev => ({ ...prev, [category]: false })); }, 800); }
+};
 
-          const deleteExcludeProfile = (type) => {
-            let key = '';
-            let category = '';
-            if (type === '主防具') { key = 'exclude_main'; category = 'main'; }
-            else if (type === '副防具') { key = 'exclude_sub'; category = 'sub'; }
-            else if (type === '装飾品') { key = 'exclude_deco'; category = 'deco'; }
+const deleteExcludeProfile = (type) => {
+  let key = '';
+  let category = '';
+  if (type === '主防具') { key = 'exclude_main'; category = 'main'; }
+  else if (type === '副防具') { key = 'exclude_sub'; category = 'sub'; }
+  else if (type === '装飾品') { key = 'exclude_deco'; category = 'deco'; }
 
-            setExcludeDeleting(prev => ({ ...prev, [category]: true }));
-            setExcludeSettings(prev => ({ ...prev, [category]: [] }));
-            try { localStorage.removeItem(key); }
-            catch (e) { console.error(`${type}除外設定の削除に失敗`, e); }
-            finally { setTimeout(() => { setExcludeDeleting(prev => ({ ...prev, [category]: false })); }, 800); }
-          };
+  setExcludeDeleting(prev => ({ ...prev, [category]: true }));
+  setExcludeSettings(prev => ({ ...prev, [category]: [] }));
+  try {
+    localStorage.removeItem(key);
+    setExcludeProfileExists(prev => ({ ...prev, [category]: false })); // この行を追加
+  }
+  catch (e) { console.error(`${type}除外設定の削除に失敗`, e); }
+  finally { setTimeout(() => { setExcludeDeleting(prev => ({ ...prev, [category]: false })); }, 800); }
+};
 
           const [profileName, setProfileName] = useState('');
           const [savedProfiles, setSavedProfiles] = useState({});
@@ -762,12 +809,62 @@
             }
           }, []);
 
+useEffect(() => {
+  const mainData = localStorage.getItem('exclude_main');
+  const subData = localStorage.getItem('exclude_sub');
+  const decoData = localStorage.getItem('exclude_deco');
+
+  setExcludeProfileExists({
+    main: mainData !== null,
+    sub: subData !== null,
+    deco: decoData !== null
+  });
+
+  const main = JSON.parse(mainData || '[]');
+  const sub = JSON.parse(subData || '[]');
+  const deco = JSON.parse(decoData || '[]');
+  setExcludeSettings(prev => ({ ...prev, main, sub, deco }));
+}, []);
+          
+          // プルダウンが開かれたときに選択項目へスクロールしフォーカスする
+          // useEffectをuseLayoutEffectに変更し、setTimeoutを削除
+          useLayoutEffect(() => {
+            const scrollAndFocus = (type, selectedValue) => {
+                if (!selectedValue) {
+                    setFocusedItem(null); // 選択がない場合はフォーカスをクリア
+                    return;
+                }
+
+                // 新しいプルダウンが開かれるたびにフォーカスを設定
+                setFocusedItem({ type, name: selectedValue });
+                const selectedItemRef = itemRefs.current[type]?.[selectedValue];
+
+                if (selectedItemRef) {
+                    // タイムラグなしでスクロールを実行
+                    selectedItemRef.scrollIntoView({ block: 'nearest' });
+                }
+            };
+
+            // 各プルダウンの表示状態を監視し、対応する処理を呼び出す
+            if (showCharacterDropdown) scrollAndFocus('character', selectedCharacters[activeTab]);
+            if (showFixedDropdown.main) scrollAndFocus('mainFixed', fixedEquipments[activeTab].main);
+            if (showFixedDropdown.sub) scrollAndFocus('subFixed', fixedEquipments[activeTab].sub);
+            if (showFixedDropdown.deco) scrollAndFocus('decoFixed', fixedEquipments[activeTab].deco);
+            if (showBulkDropdown.main) scrollAndFocus('mainBulk', bulkMainArmorSelect);
+            if (showBulkDropdown.sub) scrollAndFocus('subBulk', bulkSubArmorSelect);
+            if (showBulkDropdown.deco) scrollAndFocus('decoBulk', bulkDecorationSelect);
+
+          }, [showCharacterDropdown, showFixedDropdown, showBulkDropdown, selectedCharacters, fixedEquipments, bulkMainArmorSelect, bulkSubArmorSelect, bulkDecorationSelect, activeTab]);
+
+          // すべての関連プルダウンが閉じたときにフォーカス状態をリセットするuseEffect
           useEffect(() => {
-            const main = JSON.parse(localStorage.getItem('exclude_main') || '[]');
-            const sub = JSON.parse(localStorage.getItem('exclude_sub') || '[]');
-            const deco = JSON.parse(localStorage.getItem('exclude_deco') || '[]');
-            setExcludeSettings(prev => ({ ...prev, main, sub, deco }));
-          }, []);
+            const anyDropdownOpen = showCharacterDropdown || 
+                                  showFixedDropdown.main || showFixedDropdown.sub || showFixedDropdown.deco ||
+                                  showBulkDropdown.main || showBulkDropdown.sub || showBulkDropdown.deco;
+            if (!anyDropdownOpen) {
+                setFocusedItem(null);
+            }
+          }, [showCharacterDropdown, showFixedDropdown, showBulkDropdown]);
 
           useEffect(() => {
             const handleClickOutside = (event) => {
@@ -1291,17 +1388,21 @@
 
 
           return (
-            <div className={`max-w-8xl mx-auto p-0`}>
+            <div className={`max-w-8xl mx-auto p-0 relative`}>
+    <div className="zoom-buttons">
+      <button onClick={() => changeZoom(-0.1)}>－</button>
+      <button onClick={() => changeZoom(0.1)}>＋</button>
+    </div>
               <div className={`${currentThemeColors.wholeTxt} p-6`}>
-                <h1 className={`text-2xl font-bold mb-6 ${currentThemeColors.titleTxt} relative`}>
+                <h1 className={`text-3xl font-bold mb-6 ${currentThemeColors.titleTxt} relative`}>
                   <span
                     id="title-star"
-                    className="cursor-pointer text-yellow-500 text-2xl"
+                    className="cursor-pointer text-yellow-500"
                     onClick={() => setShowThemeOptions(!showThemeOptions)}
                   >
                   ★
                   </span>
-                  装備候補検索ツール ver.2025/08/16
+                  装備候補検索ツール
                   {showThemeOptions && (
                     <div ref={themeOptionsRef} className={`absolute left-0 mt-2 p-4 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded-lg shadow-lg z-20`}>
                       <div className="flex flex-col space-y-2">
@@ -1792,9 +1893,9 @@
 
                           <button
                             onClick={() => deleteExcludeProfile('主防具')}
-                            disabled={excludeSaving.main || excludeSettings.main.length === 0}
+                            disabled={excludeDeleting.main || !excludeProfileExists.main}
                             className={`w-full ${currentThemeColors.btnsdTxt} px-4 py-2 rounded ${
-                              excludeDeleting.main || excludeSettings.main.length === 0
+                              excludeDeleting.main || !excludeProfileExists.main
                                 ? `${currentThemeColors.btnsdDis}`
                                 : `${currentThemeColors.btDelBak}`
                             }`}
@@ -1819,9 +1920,9 @@
 
                           <button
                             onClick={() => deleteExcludeProfile('副防具')}
-                            disabled={excludeSaving.sub || excludeSettings.sub.length === 0}
-                            className={`w-full ${currentThemeColors.btnsdTxt} px-4 py-21 rounded ${
-                              excludeDeleting.sub || excludeSettings.sub.length === 0
+                            disabled={excludeDeleting.sub || !excludeProfileExists.sub}
+                            className={`w-full ${currentThemeColors.btnsdTxt} px-4 py-2 rounded ${
+                              excludeDeleting.sub || !excludeProfileExists.sub
                                 ? `${currentThemeColors.btnsdDis}`
                                 : `${currentThemeColors.btDelBak}`
                             }`}
@@ -1845,9 +1946,9 @@
 
                           <button
                             onClick={() => deleteExcludeProfile('装飾品')}
-                            disabled={excludeSaving.deco || excludeSettings.deco.length === 0}
+                            disabled={excludeDeleting.deco || !excludeProfileExists.deco}
                             className={`w-full ${currentThemeColors.btnsdTxt} px-4 py-2 rounded ${
-                              excludeDeleting.deco || excludeSettings.deco.length === 0
+                              excludeDeleting.deco || !excludeProfileExists.deco
                                 ? `${currentThemeColors.btnsdDis}`
                                 : `${currentThemeColors.btDelBak}`
                             }`}
@@ -1956,12 +2057,15 @@
                                 <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                               </button>
                               {showCharacterDropdown && (
-                                  <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}>
+                                  <div
+                                    className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
+                                    onMouseMove={() => focusedItem && setFocusedItem(null)}
+                                  >
                                       <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                           <input type="text" placeholder="検索..." value={characterSearch} onChange={e => { e.stopPropagation(); setCharacterSearch(e.target.value); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                       </div>
                                       <div className="overflow-y-auto">
-                                          <div onClick={() => { handleCharacterSelect(activeTab, ''); setShowCharacterDropdown(false); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>(未指定)</div>
+                                          <div onClick={() => { handleCharacterSelect(activeTab, ''); setShowCharacterDropdown(false); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>(未指定)</div>
                                           {characterResistances
                                             .filter(char => {
                                                 if (!char['登録名']) return false;
@@ -1970,7 +2074,17 @@
                                                 return charName.includes(searchTerm);
                                             })
                                             .map((char, index) => (
-                                                <div key={index} onClick={() => { handleCharacterSelect(activeTab, char['登録名']); setShowCharacterDropdown(false); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{char['登録名']}</div>
+                                                <div
+                                                  key={index}
+                                                  ref={el => {
+                                                    if (!itemRefs.current.character) itemRefs.current.character = {};
+                                                    itemRefs.current.character[char['登録名']] = el;
+                                                  }}
+                                                  onClick={() => { handleCharacterSelect(activeTab, char['登録名']); setShowCharacterDropdown(false); }}
+                                                  className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'character' && focusedItem.name === char['登録名'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}
+                                                >
+                                                  {char['登録名']}
+                                                </div>
                                           ))}
                                       </div>
                                   </div>
@@ -2140,13 +2254,14 @@
                             <div
                               className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
                               ref={(el) => (fixedDropdownRefs.current.main = el)}
+                              onMouseMove={() => focusedItem && setFocusedItem(null)}
                             >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                     <input type="text" placeholder="検索..." value={fixedSearch.main} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                 </div>
                                 <div className="overflow-y-auto">
-                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: '' }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                    {mainArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.main).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div>))}
+                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: '' }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                    {mainArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.main).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} ref={el => { if (!itemRefs.current.mainFixed) itemRefs.current.mainFixed = {}; itemRefs.current.mainFixed[item['名称']] = el; }} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], main: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'mainFixed' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div>))}
                                 </div>
                             </div>
                           )}
@@ -2170,13 +2285,14 @@
                             <div
                               className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
                               ref={(el) => (fixedDropdownRefs.current.sub = el)}
+                              onMouseMove={() => focusedItem && setFocusedItem(null)}
                             >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                     <input type="text" placeholder="検索..." value={fixedSearch.sub} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                 </div>
                                 <div className="overflow-y-auto">
-                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: '' }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                    {subArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.sub).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div>))}
+                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: '' }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                    {subArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.sub).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} ref={el => { if (!itemRefs.current.subFixed) itemRefs.current.subFixed = {}; itemRefs.current.subFixed[item['名称']] = el; }} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], sub: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'subFixed' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div>))}
                                 </div>
                             </div>
                           )}
@@ -2200,13 +2316,14 @@
                             <div
                               className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
                               ref={(el) => (fixedDropdownRefs.current.deco = el)}
+                              onMouseMove={() => focusedItem && setFocusedItem(null)}
                             >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                     <input type="text" placeholder="検索..." value={fixedSearch.deco} onChange={e => { e.stopPropagation(); setFixedSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                 </div>
                                 <div className="overflow-y-auto">
-                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: '' }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                    {decorations.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.deco).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div>))}
+                                    <div onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: '' }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                    {decorations.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(fixedSearch.deco).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => (<div key={idx} ref={el => { if (!itemRefs.current.decoFixed) itemRefs.current.decoFixed = {}; itemRefs.current.decoFixed[item['名称']] = el; }} onClick={() => { setFixedEquipments(prev => ({...prev, [activeTab]: { ...prev[activeTab], deco: item['名称'] }})); setShowFixedDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'decoFixed' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div>))}
                                 </div>
                             </div>
                           )}
@@ -2232,13 +2349,13 @@
                                               <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                           </button>
                                           {showBulkDropdown.main && (
-                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.main = el)}>
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.main = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                       <input type="text" placeholder="検索..." value={bulkSearch.main} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                   </div>
                                                   <div className="overflow-y-auto">
-                                                      <div onClick={() => { setBulkMainArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                                      {availableBulkMainArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.main).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} onClick={() => { setBulkMainArmorSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div> ))}
+                                                      <div onClick={() => { setBulkMainArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                                      {availableBulkMainArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.main).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} ref={el => { if (!itemRefs.current.mainBulk) itemRefs.current.mainBulk = {}; itemRefs.current.mainBulk[item['名称']] = el; }} onClick={() => { setBulkMainArmorSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, main: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'mainBulk' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div> ))}
                                                   </div>
                                               </div>
                                           )}
@@ -2262,13 +2379,13 @@
                                               <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                           </button>
                                           {showBulkDropdown.sub && (
-                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.sub = el)}>
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.sub = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                       <input type="text" placeholder="検索..." value={bulkSearch.sub} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                   </div>
                                                   <div className="overflow-y-auto">
-                                                      <div onClick={() => { setBulkSubArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                                      {availableBulkSubArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.sub).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} onClick={() => { setBulkSubArmorSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div> ))}
+                                                      <div onClick={() => { setBulkSubArmorSelect(''); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                                      {availableBulkSubArmor.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.sub).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} ref={el => { if (!itemRefs.current.subBulk) itemRefs.current.subBulk = {}; itemRefs.current.subBulk[item['名称']] = el; }} onClick={() => { setBulkSubArmorSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, sub: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'subBulk' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div> ))}
                                                   </div>
                                               </div>
                                           )}
@@ -2292,13 +2409,13 @@
                                               <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                           </button>
                                           {showBulkDropdown.deco && (
-                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.deco = el)}>
+                                              <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.deco = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
                                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                       <input type="text" placeholder="検索..." value={bulkSearch.deco} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                   </div>
                                                   <div className="overflow-y-auto">
-                                                      <div onClick={() => { setBulkDecorationSelect(''); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} ${currentThemeColors.pullNone}`}>（未指定）</div>
-                                                      {availableBulkDecorations.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.deco).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} onClick={() => { setBulkDecorationSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.pullmHov} whitespace-nowrap truncate`}>{item['名称']}</div> ))}
+                                                      <div onClick={() => { setBulkDecorationSelect(''); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} ${currentThemeColors.pullNone}`}>（未指定）</div>
+                                                      {availableBulkDecorations.filter(item => { if (!item['名称']) return false; const searchTerm = hiraganaToKatakana(bulkSearch.deco).toLowerCase(); const itemName = hiraganaToKatakana(item['名称']).toLowerCase(); return itemName.includes(searchTerm); }).map((item, idx) => ( <div key={idx} ref={el => { if (!itemRefs.current.decoBulk) itemRefs.current.decoBulk = {}; itemRefs.current.decoBulk[item['名称']] = el; }} onClick={() => { setBulkDecorationSelect(item['名称']); setShowBulkDropdown(prev => ({ ...prev, deco: false })); }} className={`p-2 cursor-pointer ${currentThemeColors.itemOver} whitespace-nowrap truncate ${focusedItem?.type === 'decoBulk' && focusedItem.name === item['名称'] ? currentThemeColors.itemOver.replace('hover:', '') : ''}`}>{item['名称']}</div> ))}
                                                   </div>
                                               </div>
                                           )}
@@ -2575,6 +2692,7 @@
                   </div>
                 )}
               </div>
+
               <footer className={`border-t ${currentThemeColors.underBdr} ${currentThemeColors.underTxt}`}>
                 ※使用は自己責任にて。<br/>
                 ※目標値の属性名をダブルクリックすると値が-999→0→35の順でループして切り替わります。<br/>
