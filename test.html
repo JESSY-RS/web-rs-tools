@@ -2319,7 +2319,7 @@
                         const warningDiv = document.createElement('div');
                         warningDiv.id = 'backup-warning';
                         warningDiv.style.color = 'red';
-                        warningDiv.style.backgroundColor = '#4d2e2e';
+                        warningDiv.style.backgroundColor = 'rgb(67, 46, 46)';
                         warningDiv.style.padding = '10px';
                         warningDiv.style.margin = '10px 0';
                         warningDiv.style.border = '1px solid red';
@@ -2348,9 +2348,10 @@
                                addNewPart(null, null, false);
                             }
                             
-                            // バックアップをクリア
-                            setDataDirty(false); 
-                            alert('データを復元しました。');
+                            // 復元後は未保存状態にする
+                            setDataDirty(true);
+                            // 警告メッセージはsetDataDirty(true)では消えないため、手動で削除
+                            warningDiv.remove();
                         });
                         
                         // Delete button event listener
