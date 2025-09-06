@@ -40,11 +40,6 @@
 </head>
 <body>
 
-    <div class="zoom-buttons">
-        <button onclick="changeZoom(-0.1)">－</button>
-        <button onclick="changeZoom(0.1)">＋</button>
-    </div>
-
     <div id="root"></div>
 
     <script type="text/babel">
@@ -66,6 +61,51 @@
         };
 
         const ArmorCombinationAnalyzer = () => {
+          
+          // ===== 拡大縮小機能（ここから）=====
+          const PAGE_SETTING_KEY = 'PageSettings';
+          const [zoom, setZoom] = useState(1.0); // 1. 拡大率をReactのstateで管理
+
+          // 2. コンポーネントのマウント時にlocalStorageから設定を読み込む
+          useEffect(() => {
+              try {
+                  const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+                  if (savedSettings) {
+                      const parsedSettings = JSON.parse(savedSettings);
+                      if (parsedSettings.armor_zoom) {
+                          setZoom(parsedSettings.armor_zoom);
+                      }
+                  }
+              } catch (error) {
+                  console.error("ページ設定の読み込みに失敗しました:", error);
+              }
+          }, []); // 空の配列を指定することで、初回の一度だけ実行される
+
+          // 3. zoomの値が変更されたら、画面表示とlocalStorageを更新
+          useEffect(() => {
+              document.body.style.zoom = zoom;
+              try {
+                  const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+                  const currentSettings = savedSettings ? JSON.parse(savedSettings) : {};
+                  currentSettings.armor_zoom = zoom;
+                  localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(currentSettings));
+              } catch (error) {
+                  console.error("ページ設定の保存に失敗しました:", error);
+              }
+          }, [zoom]); // zoomが変更されるたびに実行
+
+          // 4. 拡大率を変更するための新しい関数
+          const changeZoom = (delta) => {
+              setZoom(prevZoom => {
+                  let newZoom = prevZoom + delta;
+                  newZoom = Math.round(newZoom * 10) / 10;
+                  if (newZoom < 0.5) newZoom = 0.5;
+                  if (newZoom > 2.0) newZoom = 2.0;
+                  return newZoom;
+              });
+          };
+          // ===== 拡大縮小機能（ここまで）=====
+
           const [excludeProfileExists, setExcludeProfileExists] = useState({ main: false, sub: false, deco: false });
           const [mainArmor, setMainArmor] = useState([]);
           const [subArmor, setSubArmor] = useState([]);
@@ -85,45 +125,6 @@
           // プルダウン内の選択中項目へ自動スクロール/フォーカスするためのstateとref
           const [focusedItem, setFocusedItem] = useState(null); // { type: string, name: string }
           const itemRefs = useRef({}); // 各リスト項目のDOM参照を保持
-
-          // 拡大縮小の関数 (Reactフック版)
-          const PAGE_SETTING_KEY = 'PageSettings';
-
-          const [zoom, setZoom] = useState(() => {
-            try {
-              const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
-              if (savedSettings) {
-                const parsedSettings = JSON.parse(savedSettings);
-                if (parsedSettings.armor_zoom && parsedSettings.armor_zoom >= 0.5 && parsedSettings.armor_zoom <= 2.0) {
-                  return parsedSettings.armor_zoom;
-                }
-              }
-            } catch (error) {
-              console.error("ページ設定の読み込みに失敗しました:", error);
-            }
-            return 1.0; // デフォルト値
-          });
-
-          useEffect(() => {
-            // zoom stateが変更されるたびに、画面表示とlocalStorageを更新
-            document.body.style.zoom = zoom;
-            try {
-              const currentSettings = JSON.parse(localStorage.getItem(PAGE_SETTING_KEY) || '{}');
-              const newSettings = { ...currentSettings, armor_zoom: zoom };
-              localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(newSettings));
-            } catch (error) {
-              console.error("ページ設定の保存に失敗しました:", error);
-            }
-          }, [zoom]); // zoomの値が変わった時だけ実行
-
-          const changeZoom = (delta) => {
-            setZoom(prevZoom => {
-              let newZoom = Math.round((prevZoom + delta) * 10) / 10;
-              if (newZoom < 0.5) newZoom = 0.5;
-              if (newZoom > 2.0) newZoom = 2.0;
-              return newZoom;
-            });
-          };
 
           const [countdown, setCountdown] = useState(0);
           const countdownIntervalRef = useRef(null);
@@ -147,23 +148,6 @@
             return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'system' : 'system'; // Default to system
           });
           const [showThemeOptions, setShowThemeOptions] = useState(false);
-
-          // OSのダークモード設定を追跡するための新しいstate
-          const [systemTheme, setSystemTheme] = useState(
-            () => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-          );
-
-          // OSの設定変更を監視し、stateを更新するuseEffect
-          useEffect(() => {
-            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            const handleChange = (e) => {
-              // OSの変更を検知したら、直接DOMを操作するのではなく、Reactのstateを更新する
-              setSystemTheme(e.matches ? 'dark' : 'light');
-            };
-            mediaQuery.addEventListener('change', handleChange);
-            // コンポーネントが不要になったら監視を解除する
-            return () => mediaQuery.removeEventListener('change', handleChange);
-          }, []); // このuseEffectは最初に一度だけ実行する
 
           const themes = {
             light: {
@@ -415,15 +399,29 @@
             document.body.classList.remove(themes.light.wholeBak, themes.dark.wholeBak);
             let currentThemeClass;
             if (theme === 'system') {
-              // systemTheme stateからクラスを決定
-              currentThemeClass = systemTheme === 'dark' ? themes.dark.wholeBak : themes.light.wholeBak;
+              currentThemeClass = window.matchMedia('(prefers-color-scheme: dark)').matches ? themes.dark.wholeBak : themes.light.wholeBak;
             } else if (theme === 'dark') {
               currentThemeClass = themes.dark.wholeBak;
             } else {
               currentThemeClass = themes.light.wholeBak;
             }
             document.body.classList.add(currentThemeClass);
-          }, [theme, systemTheme]); // theme または systemTheme が変わった時に実行
+          }, [theme, themes]);
+
+          // Effect to listen for system theme changes if 'system' is selected
+          useEffect(() => {
+            if (theme === 'system') {
+              const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+              const handleChange = () => {
+                // Re-apply the current theme to reflect system change
+                document.body.classList.remove(themes.light.wholeBak, themes.dark.wholeBak);
+                const currentThemeClass = mediaQuery.matches ? themes.dark.wholeBak : themes.light.wholeBak;
+                document.body.classList.add(currentThemeClass);
+              };
+              mediaQuery.addEventListener('change', handleChange);
+              return () => mediaQuery.removeEventListener('change', handleChange);
+            }
+          }, [theme, themes]);
 
           const dataFiles = {
             mainArmor: './data/armor-main.csv',
@@ -433,8 +431,7 @@
           };
 
           // Determine active theme colors based on the theme state
-          const effectiveTheme = theme === 'system' ? systemTheme : theme;
-          const currentThemeColors = themes[effectiveTheme];
+          const currentThemeColors = theme === 'dark' ? themes.dark : theme === 'light' ? themes.light : window.matchMedia('(prefers-color-scheme: dark)').matches ? themes.dark : themes.light;
 
           const characterNames = ['キャラ１', 'キャラ２', 'キャラ３', 'キャラ４', 'キャラ５', '５人１組'];
 
