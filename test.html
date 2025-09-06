@@ -175,7 +175,7 @@
         #tab-list header {
             display: flex; flex-direction: column; align-items: stretch;
             gap: 15px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #555;
-            margin-top: 8px; /* この行を追加 */
+            margin-top: 8px;
         }
         #tab-list .header-controls {
             display: flex; justify-content: space-between; align-items: center; gap: 10px;
@@ -190,7 +190,6 @@
         #edit-mode-btn, #edit-mode-btn-footer { background-color: #007bff; color: white; }
         #edit-mode-btn.active, #edit-mode-btn-footer.active { background-color: #dc3545; }
         
-        /* ▼▼▼ 変更点: 未保存時のエクスポートボタンのスタイルを追加 ▼▼▼ */
         #export-btn.needs-export, #export-btn-footer.needs-export {
             background-color: #ff4500; /* オレンジレッド */
             animation: pulse 1.5s infinite;
@@ -201,7 +200,6 @@
             70% { box-shadow: 0 0 0 10px rgba(255, 69, 0, 0); }
             100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); }
         }
-        /* ▲▲▲ 変更点 ▲▲▲ */
 
         #import-file-input { display: none; }
         #parts-container { display: flex; flex-direction: column; gap: 15px; margin-top: 12px; }
@@ -337,7 +335,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: 8px; /* この行を追加 */
+            margin-top: 8px;
         }
         #tab-top5 .controls-container { text-align: center; border-radius: 8px;}
         #tab-top5 .checkbox-container { padding-top: 5px; margin-bottom: 20px; font-size: 16px; }
@@ -389,7 +387,7 @@
         /* ==================================================== */
         #tab-calc .file-input-container {
             border-radius: 8px; padding-top: 5px; margin-bottom: 20px; box-sizing: border-box; text-align: center;
-            margin-top: 8px; /* この行を追加 */
+            margin-top: 8px;
         }
         #file-status { margin-top: 0px; color: #ffd700; font-size: 1em; }
         #tab-calc .character-grid { margin-top: 0px; display: flex; flex-direction: column; gap: 20px; width: 100%; }
@@ -873,9 +871,7 @@
     let sharedArmorData = []; // 3つのタブで共有するJSONデータ
     let tabScrollPositions = { list: 0, top5: 0, calc: 0 };
 
-    // ▼▼▼ 変更点: 未保存の変更を管理するフラグを追加 ▼▼▼
     let isDataDirty = false;
-    // ▲▲▲ 変更点 ▲▲▲
     
     // --- CSVデータ用のグローバル変数 ---
     let armorMainData = [], armorSubData = [], renmaAbilityData = [], allArmorData = [];
@@ -884,6 +880,8 @@
     let uniqueAbilities = {};            // TOP5確認用
 
     const PAGE_SETTING_KEY = 'PageSettings';
+    const BACKUP_SETTINGS_KEY = 'RenmaArmorBackupSettings';
+    const UNSAVED_DATA_KEY = 'RenmaArmorUnsavedData';
     let activeTab = 'list'; // 現在アクティブなタブを管理
 
     // 全ての設定をこのオブジェクトで管理
@@ -920,7 +918,6 @@
         }
     }
 
-    // ▼▼▼ 変更点: データ変更状態を管理する関数を追加 ▼▼▼
     function setDataDirty(isDirty) {
         isDataDirty = isDirty;
         const exportButtons = document.querySelectorAll('#export-btn, #export-btn-footer');
@@ -933,8 +930,24 @@
                 button.textContent = 'エクスポート';
             }
         });
+
+        if (isDirty) {
+            // 未保存の変更があるため、バックアップを保存
+            syncDataFromListTab();
+            localStorage.setItem(UNSAVED_DATA_KEY, JSON.stringify(sharedArmorData));
+            localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: true }));
+        } else {
+            // データが保存されたとみなし、バックアップを削除
+            localStorage.removeItem(UNSAVED_DATA_KEY);
+            localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: false }));
+            
+            // 警告メッセージが存在すれば削除
+            const existingWarning = document.getElementById('backup-warning');
+            if (existingWarning) {
+                existingWarning.remove();
+            }
+        }
     }
-    // ▲▲▲ 変更点 ▲▲▲
 
 
     // [新規] 「リスト管理」タブのデータを読み取り、共有データ変数を更新する関数
@@ -1138,17 +1151,12 @@
             }
         }, false);
         
-        // ▼▼▼ 変更点: ページ離脱時の警告機能 ▼▼▼
+        // ページ離脱時の警告機能
         window.addEventListener('beforeunload', (event) => {
-            // isDataDirtyがtrueの場合（未保存の変更がある場合）のみ警告を表示
             if (isDataDirty) {
-                // 最新のブラウザ仕様に準拠した方法。
-                // これを実行すると、ブラウザが標準の確認ダイアログを表示します。
-                // カスタムメッセージの表示はセキュリティ上の理由からできません。
                 event.preventDefault();
             }
         });
-        // ▲▲▲ 変更点 ▲▲▲
     }
     
     // =========================================================================
@@ -1307,7 +1315,7 @@
                 else prefix.style.display = 'inline';
             }
         }
-        function addNewPart(data = null, basePart = null) { 
+        function addNewPart(data = null, basePart = null, setDirty = true) { 
             const newPart = template.content.cloneNode(true).querySelector('.armor-part');
             const uniqueId = Date.now() + Math.random();
             newPart.querySelectorAll('input[type="radio"]').forEach(radio => {
@@ -1355,8 +1363,9 @@
                 setupAbilityDropdown(newPart, 'SS');
             }
             
-            // ▼▼▼ 変更点: データ変更フラグを立てる ▼▼▼
-            setDataDirty(true);
+            if (setDirty) {
+                setDataDirty(true);
+            }
         }
         
         function importData(event) {
@@ -1374,14 +1383,15 @@
                     }
                     
                     partsContainer.innerHTML = '';
-                    data.forEach(partData => addNewPart(partData));
+                    // インポート時はsetDirtyをfalseにして、最後にまとめて状態管理する
+                    data.forEach(partData => addNewPart(partData, null, false));
                     originalPartOrder = Array.from(partsContainer.children);
 
                     syncDataFromListTab();
                     updateTop5Tab(sharedArmorData);
                     updateCalcTab(sharedArmorData);
                     
-                    // ▼▼▼ 変更点: インポート直後は「保存済み」状態にする ▼▼▼
+                    // インポート成功時は「保存済み」状態にする（バックアップもクリア）
                     setDataDirty(false);
 
                 } catch (error) {
@@ -1413,13 +1423,11 @@
             }
         });
 
-        // ▼▼▼ 変更点: データが変更されたらフラグを立てるリスナーを追加 ▼▼▼
         document.getElementById('tab-list').addEventListener('input', (e) => {
             if(e.target.closest('.armor-part') && !e.target.closest('#search-panel') && !e.target.closest('#sort-panel')) {
                 setDataDirty(true);
             }
         });
-        // ▲▲▲ 変更点 ▲▲▲
 
         document.getElementById('tab-list').addEventListener('input', (e) => {
             if (e.target.classList.contains('dropdown-search-input')) {
@@ -1453,11 +1461,9 @@
             const isSearchPanel = part.id === 'search-panel';
             const isSortPanel = part.id === 'sort-panel';
 
-            // ▼▼▼ 変更点: 検索/ソートパネル以外での変更時にフラグを立てる ▼▼▼
             if (!isSearchPanel && !isSortPanel) {
                 setDataDirty(true);
             }
-            // ▲▲▲ 変更点 ▲▲▲
 
             if(e.target.matches('.ability-select')){
                 if (!isSearchPanel && !isSortPanel) updateValueSymbol(part, e.target.value);
@@ -1510,7 +1516,7 @@
                 target.dataset.favorite = String(!isFavorite);
                 target.textContent = isFavorite ? '☆' : '★';
                 target.classList.toggle('is-favorite');
-                setDataDirty(true); // ▼▼▼ 変更点 ▼▼▼
+                setDataDirty(true);
                 return;
             }
             
@@ -1607,13 +1613,11 @@
                     value = target.dataset.value;
                 }
 
-                // ▼▼▼ 変更点: 値が変更されたらフラグを立てる ▼▼▼
                 if (button.dataset.value !== value) {
                     if (button.closest('.armor-part') && !button.closest('#search-panel') && !button.closest('#sort-panel')) {
                         setDataDirty(true);
                     }
                 }
-                // ▲▲▲ 変更点 ▲▲▲
 
                 label.textContent = text;
                 button.dataset.value = value;
@@ -1638,7 +1642,7 @@
                     if (isEditMode) {
                         originalPartOrder = Array.from(partsContainer.children);
                     }
-                    setDataDirty(true); // ▼▼▼ 変更点 ▼▼▼
+                    setDataDirty(true);
                     window.scrollTo(0, scrollY);
                 }
             }
@@ -1726,7 +1730,7 @@
             a.download = '練磨_防具_リスト.json';
             a.click();
             URL.revokeObjectURL(a.href);
-            // ▼▼▼ 変更点: エクスポート後は「保存済み」状態にする ▼▼▼
+            // エクスポート後は「保存済み」状態にする（バックアップもクリア）
             setDataDirty(false);
         }
 
@@ -2171,7 +2175,7 @@
                 originalPartOrder = Array.from(partsContainer.children);
                 resetSortPanel(true);
                 resetValueSortButtons();
-                setDataDirty(true); // ▼▼▼ 変更点 ▼▼▼
+                setDataDirty(true);
             }
             window.scrollTo(0, scrollY);
         }
@@ -2281,7 +2285,7 @@
                         handle: '.drag-handle',
                         onEnd: function(evt) {
                             originalPartOrder = Array.from(partsContainer.children);
-                            setDataDirty(true); // ▼▼▼ 変更点 ▼▼▼
+                            setDataDirty(true);
                         }
                     });
                 }
@@ -2306,10 +2310,66 @@
             toggleMaxValueBtn.textContent = '▼最大値確認';
         });
 
+        function checkForUnsavedBackup() {
+            try {
+                const settings = JSON.parse(localStorage.getItem(BACKUP_SETTINGS_KEY));
+                if (settings && settings.hasUnsavedChanges) {
+                    const backupData = localStorage.getItem(UNSAVED_DATA_KEY);
+                    if (backupData) {
+                        const warningDiv = document.createElement('div');
+                        warningDiv.id = 'backup-warning';
+                        warningDiv.style.color = 'red';
+                        warningDiv.style.backgroundColor = '#4d2e2e';
+                        warningDiv.style.padding = '10px';
+                        warningDiv.style.margin = '10px 0';
+                        warningDiv.style.border = '1px solid red';
+                        warningDiv.style.borderRadius = '5px';
+                        warningDiv.style.textAlign = 'center';
+                        
+                        warningDiv.innerHTML = `
+                            前回、エクスポートされていないデータがあります。
+                            <button id="restore-backup-btn" style="margin-left: 15px; padding: 5px 10px; cursor: pointer;">データの復元</button>
+                            <button id="delete-backup-btn" style="margin-left: 10px; padding: 5px 10px; cursor: pointer;">データの削除</button>
+                        `;
+                        
+                        const mainElement = document.querySelector('#tab-list main');
+                        mainElement.insertBefore(warningDiv, mainElement.firstChild);
+
+                        // Restore button event listener
+                        document.getElementById('restore-backup-btn').addEventListener('click', () => {
+                            const restoredData = JSON.parse(backupData);
+                            
+                            partsContainer.innerHTML = '';
+                            
+                            // 復元時はsetDirtyをfalseにして、最後にまとめて状態管理する
+                            if (restoredData && restoredData.length > 0) {
+                               restoredData.forEach(partData => addNewPart(partData, null, false));
+                            } else {
+                               addNewPart(null, null, false);
+                            }
+                            
+                            // バックアップをクリア
+                            setDataDirty(false); 
+                            alert('データを復元しました。');
+                        });
+                        
+                        // Delete button event listener
+                        document.getElementById('delete-backup-btn').addEventListener('click', () => {
+                            if (window.confirm('バックアップデータを本当に削除しますか？この操作は元に戻せません。')) {
+                                // バックアップをクリア
+                                setDataDirty(false); 
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to check for unsaved backup:', error);
+            }
+        }
+
         setupSearchPanel();
         setupSortPanel();
-        addNewPart();
-        setDataDirty(false); // ▼▼▼ 変更点: 初期表示時は未変更状態にする ▼▼▼
+        addNewPart(null, null, false); // 初期表示時はDirtyフラグを立てない
         originalPartOrder = Array.from(partsContainer.children);
         
         document.getElementById('edit-mode-btn').addEventListener('click', toggleEditMode);
@@ -2326,6 +2386,7 @@
         document.getElementById('sort-value-sort').addEventListener('click', handleValueSort);
 
         resetValueSortButtons();
+        checkForUnsavedBackup(); // ページ読み込み時にバックアップを確認
     }
 
 
