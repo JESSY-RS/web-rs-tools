@@ -60,9 +60,6 @@
           const PAGE_SETTING_KEY = 'PageSettings';
           const zoomKey = 'armor_zoom';
           
-          const heightAdjustmentContainerRef = useRef(null); // 親コンテナの参照
-          const scaledContentRef = useRef(null); // スケールされるコンテンツの参照
-
           // 初期ズームレベルをlocalStorageから読み込む
           useEffect(() => {
               try {
@@ -90,15 +87,6 @@
               }
           }, [zoomLevel]);
 
-          // ズームレベルまたはコンテンツ（検索結果）が変更されたときに高さを再計算して適用
-          useEffect(() => {
-              if (scaledContentRef.current && heightAdjustmentContainerRef.current) {
-                  const contentHeight = scaledContentRef.current.offsetHeight;
-                  const newContainerHeight = contentHeight * zoomLevel;
-                  heightAdjustmentContainerRef.current.style.height = `${newContainerHeight}px`;
-              }
-          }, [zoomLevel, combinations]); // ズームレベルと検索結果(combinations)の変更を監視
-
           const changeZoom = (delta) => {
               setZoomLevel(currentZoom => {
                   let newZoom = currentZoom + delta;
@@ -109,10 +97,9 @@
               });
           };
 
+          // scaledContentStyleで transform: scale() の代わりに zoom を使用
           const scaledContentStyle = {
-              transform: `scale(${zoomLevel})`,
-              transformOrigin: 'top left',
-              width: `${100 / zoomLevel}%`
+              zoom: zoomLevel,
           };
           // ===== ここまで拡大縮小機能の修正 =====
 
@@ -1391,64 +1378,65 @@ useEffect(() => {
 
 
 return (
-            <div ref={heightAdjustmentContainerRef}>
-                <div ref={scaledContentRef} style={scaledContentStyle}>
-                    <div className={`max-w-8xl mx-auto p-0 relative`}>
-                        <div className="zoom-buttons">
-                            <button onClick={() => changeZoom(-0.1)}>－</button>
-                            <button onClick={() => changeZoom(0.1)}>＋</button>
-                        </div>
-                        {/* ここから下の内容は前のバージョンと全く同じです */}
-                        <div className={`${currentThemeColors.wholeTxt} p-6`}>
-                          <h1 className={`text-3xl font-bold mb-6 ${currentThemeColors.titleTxt} relative`}>
-                            <span
-                              id="title-star"
-                              className="cursor-pointer text-yellow-500"
-                              onClick={() => setShowThemeOptions(!showThemeOptions)}
-                            >
-                            ★
-                            </span>
-                            装備候補検索ツール
-                            {showThemeOptions && (
-                              <div ref={themeOptionsRef} className={`absolute left-0 mt-2 p-4 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded-lg shadow-lg z-20`}>
-                                <div className="flex flex-col space-y-2">
-                                  <label className="inline-flex items-center">
-                                    <input
-                                      type="radio"
-                                      name="theme"
-                                      value="system"
-                                      checked={theme === 'system'}
-                                      onChange={() => handleThemeChange('system')}
-                                      className="form-radio text-blue-600"
-                                    />
-                                    <span className={`text-xl ml-2 ${currentThemeColors.wholeTxt}`}>端末の設定を使う</span>
-                                  </label>
-                                  <label className="inline-flex items-center">
-                                    <input
-                                      type="radio"
-                                      name="theme"
-                                      value="dark"
-                                      checked={theme === 'dark'}
-                                      onChange={() => handleThemeChange('dark')}
-                                      className="form-radio text-blue-600"
-                                    />
-                                    <span className={`text-xl ml-2 ${currentThemeColors.wholeTxt}`}>ダークモード ON</span>
-                                  </label>
-                                  <label className="inline-flex items-center">
-                                    <input
-                                      type="radio"
-                                      name="theme"
-                                      value="light"
-                                      checked={theme === 'light'}
-                                      onChange={() => handleThemeChange('light')}
-                                      className="form-radio text-blue-600"
-                                    />
-                                    <span className={`text-xl ml-2 ${currentThemeColors.wholeTxt}`}>ダークモード OFF</span>
-                                  </label>
-                                </div>
-                              </div>
-                            )}
-                          </h1>
+            // ▼▼▼ 修正箇所 ▼▼▼
+            // 外側の高さを調整するためのdivを削除し、一つのdivにまとめる
+            <div style={scaledContentStyle} className="relative">
+                <div className={`max-w-8xl mx-auto p-0`}>
+                {/* ▲▲▲ 修正箇所 ▲▲▲ */}
+                    <div className="zoom-buttons">
+                        <button onClick={() => changeZoom(-0.1)}>－</button>
+                        <button onClick={() => changeZoom(0.1)}>＋</button>
+                    </div>
+                    <div className={`${currentThemeColors.wholeTxt} p-6`}>
+                      <h1 className={`text-3xl font-bold mb-6 ${currentThemeColors.titleTxt} relative`}>
+                        <span
+                          id="title-star"
+                          className="cursor-pointer text-yellow-500"
+                          onClick={() => setShowThemeOptions(!showThemeOptions)}
+                        >
+                        ★
+                        </span>
+                        装備候補検索ツール
+                        {showThemeOptions && (
+                          <div ref={themeOptionsRef} className={`absolute left-0 mt-2 p-4 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded-lg shadow-lg z-20 will-change-transform`}>
+                            <div className="flex flex-col space-y-2">
+                              <label className="inline-flex items-center">
+                                <input
+                                  type="radio"
+                                  name="theme"
+                                  value="system"
+                                  checked={theme === 'system'}
+                                  onChange={() => handleThemeChange('system')}
+                                  className="form-radio text-blue-600"
+                                />
+                                <span className={`text-xl ml-2 ${currentThemeColors.wholeTxt}`}>端末の設定を使う</span>
+                              </label>
+                              <label className="inline-flex items-center">
+                                <input
+                                  type="radio"
+                                  name="theme"
+                                  value="dark"
+                                  checked={theme === 'dark'}
+                                  onChange={() => handleThemeChange('dark')}
+                                  className="form-radio text-blue-600"
+                                />
+                                <span className={`text-xl ml-2 ${currentThemeColors.wholeTxt}`}>ダークモード ON</span>
+                              </label>
+                              <label className="inline-flex items-center">
+                                <input
+                                  type="radio"
+                                  name="theme"
+                                  value="light"
+                                  checked={theme === 'light'}
+                                  onChange={() => handleThemeChange('light')}
+                                  className="form-radio text-blue-600"
+                                />
+                                <span className={`text-xl ml-2 ${currentThemeColors.wholeTxt}`}>ダークモード OFF</span>
+                              </label>
+                            </div>
+                          </div>
+                        )}
+                      </h1>
 
                   {loading && (
                     <div className={`mb-6 p-4 ${currentThemeColors.basicBak} rounded-lg`}>
@@ -1647,7 +1635,7 @@ return (
 
                             {excludeSettings.showMain && (
                               <div
-                                className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
+                                className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] left-0 right-0 flex flex-col will-change-transform`}
                                 ref={(el) => (excludeDropdownRefs.current.main = el)}
                               >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
@@ -1734,7 +1722,7 @@ return (
 
                             {excludeSettings.showSub && (
                               <div
-                                className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
+                                className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] left-0 right-0 flex flex-col will-change-transform`}
                                 ref={(el) => (excludeDropdownRefs.current.sub = el)}
                               >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
@@ -1821,7 +1809,7 @@ return (
 
                             {excludeSettings.showDeco && (
                                <div
-                                className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
+                                className={`absolute z-10 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] left-0 right-0 flex flex-col will-change-transform`}
                                 ref={(el) => (excludeDropdownRefs.current.deco = el)}
                               >
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
@@ -2064,7 +2052,7 @@ return (
                                 </button>
                                 {showCharacterDropdown && (
                                     <div
-                                      className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
+                                      className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] left-0 right-0 flex flex-col will-change-transform`}
                                       onMouseMove={() => focusedItem && setFocusedItem(null)}
                                     >
                                         <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
@@ -2112,7 +2100,7 @@ return (
                               </button>
 
                               {statusAilmentSettings[activeTab].showDropdown && (
-                                <div className={`absolute top-full left-0 mt-1 ${currentThemeColors.pullmBak} border ${characterColors[activeTab].border} rounded shadow-lg z-10 w-full`}>
+                                <div className={`absolute top-full left-0 mt-1 ${currentThemeColors.pullmBak} border ${characterColors[activeTab].border} rounded shadow-lg z-10 right-0 will-change-transform`}>
                                   <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                     <label className="flex items-center gap-2 cursor-pointer">
                                       <input
@@ -2258,7 +2246,7 @@ return (
                             </button>
                             {showFixedDropdown.main && (
                               <div
-                                className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
+                                className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] left-0 right-0 flex flex-col will-change-transform`}
                                 ref={(el) => (fixedDropdownRefs.current.main = el)}
                                 onMouseMove={() => focusedItem && setFocusedItem(null)}
                               >
@@ -2289,7 +2277,7 @@ return (
                             </button>
                             {showFixedDropdown.sub && (
                               <div
-                                className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
+                                className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] left-0 right-0 flex flex-col will-change-transform`}
                                 ref={(el) => (fixedDropdownRefs.current.sub = el)}
                                 onMouseMove={() => focusedItem && setFocusedItem(null)}
                               >
@@ -2320,7 +2308,7 @@ return (
                             </button>
                             {showFixedDropdown.deco && (
                               <div
-                                className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`}
+                                className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] left-0 right-0 flex flex-col will-change-transform`}
                                 ref={(el) => (fixedDropdownRefs.current.deco = el)}
                                 onMouseMove={() => focusedItem && setFocusedItem(null)}
                               >
@@ -2355,7 +2343,7 @@ return (
                                                 <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                             </button>
                                             {showBulkDropdown.main && (
-                                                <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.main = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
+                                                <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] left-0 right-0 flex flex-col will-change-transform`} ref={el => (bulkDropdownRefs.current.main = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
                                                     <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                         <input type="text" placeholder="検索..." value={bulkSearch.main} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, main: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                     </div>
@@ -2385,7 +2373,7 @@ return (
                                                 <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                             </button>
                                             {showBulkDropdown.sub && (
-                                                <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.sub = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
+                                                <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] left-0 right-0 flex flex-col will-change-transform`} ref={el => (bulkDropdownRefs.current.sub = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
                                                     <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                         <input type="text" placeholder="検索..." value={bulkSearch.sub} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, sub: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                     </div>
@@ -2415,7 +2403,7 @@ return (
                                                 <span className={`${currentThemeColors.pullmTri}`}>▼</span>
                                             </button>
                                             {showBulkDropdown.deco && (
-                                                <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] w-full flex flex-col`} ref={el => (bulkDropdownRefs.current.deco = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
+                                                <div className={`absolute z-20 mt-1 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded shadow-lg max-h-[420px] left-0 right-0 flex flex-col will-change-transform`} ref={el => (bulkDropdownRefs.current.deco = el)} onMouseMove={() => focusedItem && setFocusedItem(null)}>
                                                     <div className={`p-2 border-b ${currentThemeColors.pullSepa}`}>
                                                         <input type="text" placeholder="検索..." value={bulkSearch.deco} onChange={e => { e.stopPropagation(); setBulkSearch(prev => ({ ...prev, deco: e.target.value })); }} onClick={e => e.stopPropagation()} className={`w-full px-2 py-1 border rounded ${currentThemeColors.basicBdr} ${currentThemeColors.inputBak} ${currentThemeColors.inputTxt}`}/>
                                                     </div>
@@ -2698,20 +2686,18 @@ return (
                     </div>
                   )}
                 </div>
-
-                        <footer className={`border-t ${currentThemeColors.underBdr} ${currentThemeColors.underTxt}`}>
-                          ※使用は自己責任にて。<br/>
-                          ※目標値の属性名をダブルクリックすると値が-999→0→35の順でループして切り替わります。<br/>
-                          ※キャラのスタイル補正値と目標値個別修正の属性名ダブルクリックで目標値個別修正の値を5増減出来ます。<br/>
-                          ※装飾品は基本的には耐性値が全項目ゼロのものはリストから除外しています。<br/>
-                          ※各装備の一括指定リストは基本的には入手が５個以上可能なもののみ表示しています。<br/>
-                        </footer>
-
-                        <bottom>
-                          <a href="index.html" className={`web-link ${currentThemeColors.linkTagN} ${currentThemeColors.linkTagNV} ${currentThemeColors.linkTagH} ${currentThemeColors.linkTagA}`}>INDEXへ戻る</a>
-                        </bottom>
                     </div>
-                </div>
+                <footer className={`border-t ${currentThemeColors.underBdr} ${currentThemeColors.underTxt}`}>
+                  ※使用は自己責任にて。<br/>
+                  ※目標値の属性名をダブルクリックすると値が-999→0→35の順でループして切り替わります。<br/>
+                  ※キャラのスタイル補正値と目標値個別修正の属性名ダブルクリックで目標値個別修正の値を5増減出来ます。<br/>
+                  ※装飾品は基本的には耐性値が全項目ゼロのものはリストから除外しています。<br/>
+                  ※各装備の一括指定リストは基本的には入手が５個以上可能なもののみ表示しています。<br/>
+                </footer>
+
+                <bottom>
+                  <a href="index.html" className={`web-link ${currentThemeColors.linkTagN} ${currentThemeColors.linkTagNV} ${currentThemeColors.linkTagH} ${currentThemeColors.linkTagA}`}>INDEXへ戻る</a>
+                </bottom>
             </div>
           );
         };
