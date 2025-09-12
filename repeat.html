@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="favicon-kiokucalc.ico">
+    <link rel="apple-touch-icon" href="apple-touch-icon-kiokucalc.png">
+    <link rel="icon" type="image/png" href="android-chrome-144x144-kiokucalc.png">
+    <title>ロマサガRS周回編成参考</title> <!-- Created by じぇ -->
+
+    <style>
+        body {
+            font-family: sans-serif; line-height: 1.6; margin: 0 auto;
+            max-width: 1200px; padding: 15px;
+            background: #fff; color: #333; transition: background 0.3s, color 0.3s;
+        }
+        body.dark {
+            background: #2A2A2A; color: #e0e0e0;
+        }
+        a { color: #0056b3; }
+        body.dark a { color: #8ab4f8; }
+        h1 {
+            display: flex; align-items: center; border-bottom: 2px solid #ccc;
+            position: relative;
+        }
+        body.dark h1, body.dark h2 { border-bottom-color: #444; }
+        
+        h2, h3 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .heading-top-link {
+            font-size: 0.8em;
+            font-weight: normal;
+            white-space: nowrap;
+            margin-left: 1em;
+        }
+        
+        h2 { margin-top: 40px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        
+        h3 {
+            margin-top: 30px;
+            padding: 5px 10px;
+            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            border-left: 5px solid #ccc;
+            border-right: 5px solid #ccc;
+        }
+        body.dark h3 {
+            border-color: #555;
+        }
+        
+        .toc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; list-style: none; padding: 0; margin-bottom: 40px; }
+        @media (min-width: 1200px) { .toc { grid-template-columns: repeat(8, 1fr); } }
+        .toc li { border-radius: 5px; transition: filter 0.2s; }
+        .toc li:hover { filter: brightness(105%); }
+        .toc a { text-decoration: none; font-weight: bold; display: block; padding: 10px; color: #333; }
+        body.dark .toc a { color: #e0e0e0; }
+        blockquote.twitter-tweet { margin: 20px auto !important; }
+        
+        /* TOC Light Colors */
+        .group-tan2r { background-color: #ffe4e1; } .group-zen2r { background-color: #e0f7fa; }
+        .group-tate2r { background-color: #e8f5e9; } .group-yoko2r { background-color: #fff3e0; }
+        .group-tan1r { background-color: #f3e5f5; } .group-zen1r { background-color: #e1f5fe; }
+        .group-tate1r { background-color: #fffde7; } .group-yoko1r { background-color: #fce4ec; }
+        .group-kanmon { background-color: #f5f5f5; }
+        
+        /* TOC Dark Colors */
+        body.dark .group-tan2r { background-color: #5c2b29; } body.dark .group-zen2r { background-color: #1e454d; }
+        body.dark .group-tate2r { background-color: #28442a; } body.dark .group-yoko2r { background-color: #5e4328; }
+        body.dark .group-tan1r { background-color: #4e2f54; } body.dark .group-zen1r { background-color: #224554; }
+        body.dark .group-tate1r { background-color: #5e5b29; } body.dark .group-yoko1r { background-color: #5c2a3d; }
+        body.dark .group-kanmon { background-color: #333333; }
+
+        /* New Popup Styles */
+        #theme-toggle-button {
+            cursor: pointer;
+            color: #f5c542; 
+            user-select: none;
+            margin-right: -2px;
+        }
+        #theme-options {
+            display: none;
+            position: absolute;
+            left: 0;
+            margin-top: 8px;
+            padding: 1rem;
+            background-color: #fff;
+            border: 1px solid #a0aec0;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 20;
+            top: 100%;
+        }
+        body.dark #theme-options {
+            background-color: #4a4a4a;
+            border-color: #666;
+        }
+        #theme-options .flex-col {
+            display: flex;
+            flex-direction: column;
+        }
+        #theme-options .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+        #theme-options .inline-flex { display: inline-flex; }
+        #theme-options .items-center { align-items: center; }
+        #theme-options .form-radio {
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: #fff;
+            margin-top: 0;
+            font-family: inherit;
+            color: currentColor;
+            width: 1.15em;
+            height: 1.15em;
+            border: 0.15em solid currentColor;
+            border-radius: 50%;
+            transform: translateY(-0.075em);
+            display: grid;
+            place-content: center;
+        }
+        body.dark #theme-options .form-radio {
+            background-color: #4a4a4a;
+        }
+        #theme-options .form-radio::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em #2563eb;
+        }
+        #theme-options .form-radio:checked::before {
+            transform: scale(1);
+        }
+        #theme-options .text-xl { font-size: 1.25rem; }
+        #theme-options .ml-2 { margin-left: 0.5rem; }
+    </style>
+</head>
+<body id="top">
+    <h1>
+        <span id="theme-toggle-button">★</span>
+        ロマサガRS周回編成参考
+        <div id="theme-options">
+            <div class="flex-col space-y-2">
+                <label class="inline-flex items-center">
+                    <input type="radio" name="theme" value="system" class="form-radio">
+                    <span class="text-xl ml-2">端末の設定を使う</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="radio" name="theme" value="dark" class="form-radio">
+                    <span class="text-xl ml-2">ダークモード ON</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="radio" name="theme" value="light" class="form-radio">
+                    <span class="text-xl ml-2">ダークモード OFF</span>
+                </label>
+            </div>
+        </div>
+    </h1>
+    
+    <h2>目次</h2>
+    <ul class="toc">
+        <li class="group-tan2r"><a href="#--2r">斬単2R</a></li>
+        <li class="group-tan2r"><a href="#--2r">打単2R</a></li>
+        <li class="group-tan2r"><a href="#--2r">突単2R</a></li>
+        <li class="group-tan2r"><a href="#--2r">熱単2R</a></li>
+        <li class="group-tan2r"><a href="#--2r">冷単2R</a></li>
+        <li class="group-tan2r"><a href="#--2r">雷単2R</a></li>
+        <li class="group-tan2r"><a href="#--2r">陽単2R</a></li>
+        <li class="group-tan2r"><a href="#--2r">陰単2R</a></li>
+        <li class="group-zen2r"><a href="#--2r">斬全2R</a></li>
+        <li class="group-zen2r"><a href="#--2r">打全2R</a></li>
+        <li class="group-zen2r"><a href="#--2r">突全2R</a></li>
+        <li class="group-zen2r"><a href="#--2r">熱全2R</a></li>
+        <li class="group-zen2r"><a href="#--2r">冷全2R</a></li>
+        <li class="group-zen2r"><a href="#--2r">雷全2R</a></li>
+        <li class="group-zen2r"><a href="#--2r">陽全2R</a></li>
+        <li class="group-zen2r"><a href="#--2r">陰全2R</a></li>
+        <li class="group-tate2r"><a href="#--2r">斬縦2R</a></li>
+        <li class="group-tate2r"><a href="#--2r">打縦2R</a></li>
+        <li class="group-tate2r"><a href="#--2r">突縦2R</a></li>
+        <li class="group-tate2r"><a href="#--2r">熱縦2R</a></li>
+        <li class="group-tate2r"><a href="#--2r">冷縦2R</a></li>
+        <li class="group-tate2r"><a href="#--2r">雷縦2R</a></li>
+        <li class="group-tate2r"><a href="#--2r">陽縦2R</a></li>
+        <li class="group-tate2r"><a href="#--2r">陰縦2R</a></li>
+        <li class="group-yoko2r"><a href="#--2r">斬横2R</a></li>
+        <li class="group-yoko2r"><a href="#--2r">打横2R</a></li>
+        <li class="group-yoko2r"><a href="#--2r">突横2R</a></li>
+        <li class="group-yoko2r"><a href="#--2r">熱横2R</a></li>
+        <li class="group-yoko2r"><a href="#--2r">冷横2R</a></li>
+        <li class="group-yoko2r"><a href="#--2r">雷横2R</a></li>
+        <li class="group-yoko2r"><a href="#--2r">陽横2R</a></li>
+        <li class="group-yoko2r"><a href="#--2r">陰横2R</a></li>
+        <li class="group-yoko1r"><a href="#--1r">斬横1R</a></li>
+        <li class="group-yoko1r"><a href="#--1r">打横1R</a></li>
+        <li class="group-yoko1r"><a href="#--1r">突横1R</a></li>
+        <li class="group-yoko1r"><a href="#--1r">熱横1R</a></li>
+        <li class="group-yoko1r"><a href="#--1r">冷横1R</a></li>
+        <li class="group-yoko1r"><a href="#--1r">雷横1R</a></li>
+        <li class="group-yoko1r"><a href="#--1r">陽横1R</a></li>
+        <li class="group-yoko1r"><a href="#--1r">陰横1R</a></li>
+        <li class="group-tan1r"><a href="#--1r">斬単1R</a></li>
+        <li class="group-tan1r"><a href="#--1r">打単1R</a></li>
+        <li class="group-tan1r"><a href="#--1r">突単1R</a></li>
+        <li class="group-tan1r"><a href="#--1r">熱単1R</a></li>
+        <li class="group-tan1r"><a href="#--1r">冷単1R</a></li>
+        <li class="group-tan1r"><a href="#--1r">雷単1R</a></li>
+        <li class="group-tan1r"><a href="#--1r">陽単1R</a></li>
+        <li class="group-tan1r"><a href="#--1r">陰単1R</a></li>
+        <li class="group-zen1r"><a href="#--1r">斬全1R</a></li>
+        <li class="group-zen1r"><a href="#--1r">打全1R</a></li>
+        <li class="group-zen1r"><a href="#--1r">突全1R</a></li>
+        <li class="group-zen1r"><a href="#--1r">熱全1R</a></li>
+        <li class="group-zen1r"><a href="#--1r">冷全1R</a></li>
+        <li class="group-zen1r"><a href="#--1r">雷全1R</a></li>
+        <li class="group-zen1r"><a href="#--1r">陽全1R</a></li>
+        <li class="group-zen1r"><a href="#--1r">陰全1R</a></li>
+        <li class="group-tate1r"><a href="#--1r">斬縦1R</a></li>
+        <li class="group-tate1r"><a href="#--1r">打縦1R</a></li>
+        <li class="group-tate1r"><a href="#--1r">突縦1R</a></li>
+        <li class="group-tate1r"><a href="#--1r">熱縦1R</a></li>
+        <li class="group-tate1r"><a href="#--1r">冷縦1R</a></li>
+        <li class="group-tate1r"><a href="#--1r">雷縦1R</a></li>
+        <li class="group-tate1r"><a href="#--1r">陽縦1R</a></li>
+        <li class="group-tate1r"><a href="#--1r">陰縦1R</a></li>
+        <li class="group-kanmon"><a href="#------">関門クエスト</a></li>
+        <li class="group-kanmon"><a href="#------------">ロックブーケ</a></li>
+        <li class="group-kanmon"><a href="#-----">ビューネイ</a></li>
+        <li class="group-kanmon"><a href="#-----------">せいりゅう</a></li>
+        <li class="group-kanmon"><a href="#-----">アディリス</a></li>
+        <li class="group-kanmon"><a href="#--------">デス</a></li>
+        <li class="group-kanmon"><a href="#-------">ブラッククロス</a></li>
+        <li class="group-kanmon"><a href="#-----">死せる賢者</a></li>
+        <li class="group-kanmon"><a href="#---">ミロク</a></li>
+    </ul>
+    <h2 id="--2r">▼斬単2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>記憶再戦14秒・自由枠０</p>
+<blockquote class="twitter-tweet" data-dnt="true"><p lang="ja" dir="ltr">SaGa共同戦線　SSGフロア　周回<br><br>記憶再戦14秒・自由枠０<br><br>推しＰは一部断念して<br>毛色の違う所<br>こんなところかなと😅<br><br>可能ならヴァルドーか<br>所持が多い？メロセロが<br>バフ盛メンツも<br>替えが効くだろうし<br>最適解と思われます👍️<a href="https://twitter.com/hashtag/%E3%83%AD%E3%83%9E%E3%82%B5%E3%82%ACRS?src=hash&amp;ref_src=twsrc%5Etfw">#ロマサガRS</a> <a href="https://t.co/A1t4aBjNWc">pic.twitter.com/A1t4aBjNWc</a></p>&mdash; じぇ (@jessy_romasaga) <a href="https://twitter.com/jessy_romasaga/status/1834205679428796830?ref_src=twsrc%5Etfw">September 12, 2024</a></blockquote>
+
+
+    <p>記憶再戦15秒or16秒・自由枠０～？</p>
+<blockquote class="twitter-tweet" data-dnt="true"><p lang="ja" dir="ltr">SaGa共同戦線　RS3フロア　周回(没案)<br><br>記憶再戦15秒or16秒・自由枠０～？<br><br>シウグナスは<br>昨日のティフォンの考え方？で<br>配布スタイルに継承したけど<br>変わらず😢<br><br>ウェンズデイは<br>３回攻撃予定だと遅く<br>さらに時間が延びる<a href="https://twitter.com/hashtag/%E3%83%AD%E3%83%9E%E3%82%B5%E3%82%ACRS?src=hash&amp;ref_src=twsrc%5Etfw">#ロマサガRS</a> <a href="https://t.co/TYAA51zAim">https://t.co/TYAA51zAim</a> <a href="https://t.co/NeUlYEHOKY">pic.twitter.com/NeUlYEHOKY</a></p>&mdash; じぇ (@jessy_romasaga) <a href="https://twitter.com/jessy_romasaga/status/1834797418753540429?ref_src=twsrc%5Etfw">September 14, 2024</a></blockquote>
+
+
+    <p>記憶再戦15秒・自由枠０～？</p>
+<blockquote class="twitter-tweet" data-dnt="true"><p lang="ja" dir="ltr">SaGa共同戦線　RS3フロア　周回(余興)<br><br>記憶再戦15秒・自由枠０～？<br>記憶再戦16秒・自由枠４<br><br>無駄にLPガチャに挑むｗ(Take 8)<br><br>いや、速さ求めるなら<br>前回の鬼八でいいんですけどねｗ<br><br>けど斬単体なら<br>他にも候補いそうだなあ😋<a href="https://twitter.com/hashtag/%E3%83%AD%E3%83%9E%E3%82%B5%E3%82%ACRS?src=hash&amp;ref_src=twsrc%5Etfw">#ロマサガRS</a> <a href="https://t.co/xqoXMxLSfl">https://t.co/xqoXMxLSfl</a> <a href="https://t.co/Nnmnf0f4YX">pic.twitter.com/Nnmnf0f4YX</a></p>&mdash; じぇ (@jessy_romasaga) <a href="https://twitter.com/jessy_romasaga/status/1834780447118967274?ref_src=twsrc%5Etfw">September 14, 2024</a></blockquote>
+
+
+    <h2 id="--2r">▼打単2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼突単2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼熱単2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼冷単2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼雷単2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼陽単2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼陰単2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼斬全2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼打全2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼突全2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼熱全2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼冷全2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼雷全2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼陽全2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼陰全2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼斬縦2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼打縦2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼突縦2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼熱縦2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼冷縦2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼雷縦2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼陽縦2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼陰縦2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼斬横2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼打横2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼突横2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼熱横2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼冷横2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼雷横2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼陽横2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--2r">▼陰横2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼斬横1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼打横1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼突横1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼熱横1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼冷横1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼雷横1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼陽横1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼陰横1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼斬単1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼打単1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼突単1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼熱単1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼冷単1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼雷単1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼陽単1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼陰単1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼斬全1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼打全1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼突全1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼熱全1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼冷全1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼雷全1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼陽全1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼陰全1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼斬縦1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼打縦1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼突縦1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼熱縦1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼冷縦1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼雷縦1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼陽縦1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="--1r">▼陰縦1R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <p>TOPへ戻る</p>
+    <h2 id="------">▼関門クエスト<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
+    <h3 id="------------">▼ロックブーケ　★更新終了<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
+<blockquote class="twitter-tweet" data-dnt="true"><p lang="ja" dir="ltr">関門ブーケ　0:19<br><br>要ステラ＆名将(雲海EB50層)<br><br>けっこうカツカツですが<br>さらにタイム縮めれました⏱️<br><br>ステラはSS3か<br>人間＆女性のSS2で<br><br>雲海はバフ役<br>デューンの前ナルセスで<br>撃ち漏らしがあったので<br>極限まで上げました💪<br><br>※この前のビューネイのと<br>文面ほぼ同じです😉<a href="https://twitter.com/hashtag/%E3%83%AD%E3%83%9E%E3%82%B5%E3%82%ACRS?src=hash&amp;ref_src=twsrc%5Etfw">#ロマサガRS</a> <a href="https://t.co/Qrd3A7yBkH">https://t.co/Qrd3A7yBkH</a> <a href="https://t.co/VpLfJHV4OP">pic.twitter.com/VpLfJHV4OP</a></p>&mdash; じぇ (@jessy_romasaga) <a href="https://twitter.com/jessy_romasaga/status/1921391638837862846?ref_src=twsrc%5Etfw">May 11, 2025</a></blockquote>
+
+
+    <p>TOPへ戻る</p>
+    <h3 id="-----">▼ビューネイ<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
+<blockquote class="twitter-tweet" data-dnt="true"><p lang="ja" dir="ltr">関門ビューネイ　0:19<br><br>要ステラ＆名将(雲海EB50層)<br><br>けっこうカツカツですが<br>さらにタイム縮めれました⏱️<br><br>ステラはSS3か<br>女性＆浮遊のSS2で<br><br>雲海はブーケ時にバフ役<br>デューンの前ナルセスで<br>撃ち漏らしがあったので<br>極限まで上げました💪<br><br>※このあとのブーケのと<br>文面ほぼ同じです😉<a href="https://twitter.com/hashtag/%E3%83%AD%E3%83%9E%E3%82%B5%E3%82%ACRS?src=hash&amp;ref_src=twsrc%5Etfw">#ロマサガRS</a> <a href="https://t.co/6PeYwCpxzK">https://t.co/6PeYwCpxzK</a> <a href="https://t.co/CO80AS8ByA">pic.twitter.com/CO80AS8ByA</a></p>&mdash; じぇ (@jessy_romasaga) <a href="https://twitter.com/jessy_romasaga/status/1921391321085788436?ref_src=twsrc%5Etfw">May 11, 2025</a></blockquote>
+
+
+    <p>TOPへ戻る</p>
+    <h3 id="-----------">▼せいりゅう　★更新終了<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
+    <p>TOPへ戻る</p>
+    <h3 id="-----">▼アディリス<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
+    <p>TOPへ戻る</p>
+    <h3 id="--------">▼デス　★更新終了<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
+    <p>TOPへ戻る</p>
+    <h3 id="-------">▼ブラッククロス<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
+    <p>TOPへ戻る</p>
+    <h3 id="-----">▼死せる賢者<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
+    <p>TOPへ戻る</p>
+    <h3 id="---">▼ミロク<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
+    <p>TOPへ戻る</p>
+
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8" id="twitter-wjs"></script>
+    <script>
+        // --- New theme switcher logic ---
+        document.addEventListener("DOMContentLoaded", function() {
+            const body = document.body;
+            const themeToggleButton = document.getElementById('theme-toggle-button');
+            const themeOptions = document.getElementById('theme-options');
+            const themeRadios = document.querySelectorAll('input[name="theme"]');
+
+            // テーマを適用するメイン関数
+            function applyTheme(theme) {
+                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                body.classList.remove("dark");
+
+                if (theme === "dark" || (theme === "system" && prefersDark)) {
+                    body.classList.add("dark");
+                }
+                // ツイートのテーマも更新
+                updateTweetTheme();
+            }
+
+            // ポップアップ表示/非表示
+            themeToggleButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                themeOptions.style.display = themeOptions.style.display === 'block' ? 'none' : 'block';
+            });
+            document.addEventListener('click', (e) => {
+                if (!themeOptions.contains(e.target) && e.target !== themeToggleButton) {
+                    themeOptions.style.display = 'none';
+                }
+            });
+
+            // テーマ選択ラジオボタンのイベント
+            themeRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const newTheme = e.target.value;
+                    localStorage.setItem('theme', newTheme);
+                    applyTheme(newTheme);
+                });
+            });
+
+            // ページ読み込み時に保存されたテーマを適用
+            const savedTheme = localStorage.getItem("theme") || "system";
+            applyTheme(savedTheme);
+            for (const radio of themeRadios) {
+                if (radio.value === savedTheme) {
+                    radio.checked = true;
+                }
+            }
+
+            // OSのテーマ変更を監視
+            window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", e => {
+                const currentTheme = localStorage.getItem("theme") || "system";
+                if (currentTheme === "system") {
+                    applyTheme("system");
+                }
+            });
+        });
+        
+        // --- 埋め込みツイートのテーマを更新する機能 ---
+        function getTweetTheme() {
+            const savedTheme = localStorage.getItem("theme") || "system";
+            if (savedTheme === 'light') return 'light';
+            if (savedTheme === 'dark') return 'dark';
+            // systemの場合
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        
+        function updateTweetTheme() {
+            const theme = getTweetTheme();
+            document.querySelectorAll('.twitter-tweet iframe').forEach(iframe => {
+                const src = new URL(iframe.src);
+                if (src.searchParams.get('theme') !== theme) {
+                    src.searchParams.set('theme', theme);
+                    iframe.src = src.toString();
+                }
+            });
+        }
+        
+        // X(Twitter)のJSが読み込まれた後にツイートのテーマを更新
+        window.twttr = (function(d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0], t = window.twttr || {};
+            if (d.getElementById(id)) return t;
+            js = d.createElement(s); js.id = id; js.src = "https://platform.twitter.com/widgets.js";
+            fjs.parentNode.insertBefore(js, fjs);
+            t._e = []; t.ready = function(f) { t._e.push(f); };
+            return t;
+        }(document, "script", "twitter-wjs"));
+
+        twttr.ready(() => {
+            updateTweetTheme();
+        });
+    </script>
+</body>
+</html>
