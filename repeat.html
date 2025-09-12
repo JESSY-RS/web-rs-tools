@@ -722,26 +722,49 @@
 
     <script async src="https://platform.twitter.com/widgets.js" charset="utf-8" id="twitter-wjs"></script>
     <script>
-        // --- New theme switcher logic ---
         document.addEventListener("DOMContentLoaded", function() {
             const body = document.body;
             const themeToggleButton = document.getElementById('theme-toggle-button');
             const themeOptions = document.getElementById('theme-options');
             const themeRadios = document.querySelectorAll('input[name="theme"]');
 
-            // テーマを適用するメイン関数
-            function applyTheme(theme) {
-                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                body.classList.remove("dark");
+            // --- ★★★ ここから下のスクリプトを全面的に書き換え ★★★ ---
 
-                if (theme === "dark" || (theme === "system" && prefersDark)) {
-                    body.classList.add("dark");
-                }
-                // ツイートのテーマも更新
-                updateTweetTheme();
+            // 1. 現在のテーマ設定（'light' or 'dark'）を取得する関数
+            function getCurrentTheme() {
+                const savedTheme = localStorage.getItem("theme") || "system";
+                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                if (savedTheme === 'dark') return 'dark';
+                if (savedTheme === 'light') return 'light';
+                return prefersDark ? 'dark' : 'light';
             }
 
-            // ポップアップ表示/非表示
+            // 2. ページ本体のテーマ（背景色など）を適用する関数
+            function applyPageTheme() {
+                if (getCurrentTheme() === 'dark') {
+                    body.classList.add("dark");
+                } else {
+                    body.classList.remove("dark");
+                }
+            }
+
+            // 3. ★核心★ Twitterウィジェット用のmetaタグを制御する関数
+            function setTwitterMetaTheme() {
+                const theme = getCurrentTheme();
+                let metaTag = document.querySelector('meta[name="twitter:widgets:theme"]');
+                
+                // metaタグがなければ新しく作成してheadに追加
+                if (!metaTag) {
+                    metaTag = document.createElement('meta');
+                    metaTag.name = 'twitter:widgets:theme';
+                    document.head.appendChild(metaTag);
+                }
+                // metaタグのcontentに現在のテーマを設定
+                metaTag.content = theme;
+            }
+
+            // --- イベントリスナー設定 ---
+
             themeToggleButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 themeOptions.style.display = themeOptions.style.display === 'block' ? 'none' : 'block';
@@ -752,65 +775,48 @@
                 }
             });
 
-            // テーマ選択ラジオボタンのイベント
             themeRadios.forEach(radio => {
                 radio.addEventListener('change', (e) => {
                     const newTheme = e.target.value;
                     localStorage.setItem('theme', newTheme);
-                    applyTheme(newTheme);
+                    
+                    // ページとTwitterのテーマを更新
+                    applyPageTheme();
+                    setTwitterMetaTheme();
+
+                    // Twitterのウィジェットに新しい設定を反映させるため、再読み込みを指示
+                    if (window.twttr && window.twttr.widgets) {
+                        // body全体を対象にウィジェットを再描画
+                        window.twttr.widgets.load(document.body);
+                    }
                 });
             });
 
-            // ページ読み込み時に保存されたテーマを適用
-            const savedTheme = localStorage.getItem("theme") || "system";
-            applyTheme(savedTheme);
+            window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+                // OSのテーマ変更時も同様に更新
+                const currentSetting = localStorage.getItem("theme") || "system";
+                if (currentSetting === "system") {
+                    applyPageTheme();
+                    setTwitterMetaTheme();
+                    if (window.twttr && window.twttr.widgets) {
+                        window.twttr.widgets.load(document.body);
+                    }
+                }
+            });
+            
+            // --- 初期化処理 ---
+            
+            // ページ読み込み時に、Twitterのスクリプトが読み込まれる「前」に設定を完了させる
+            applyPageTheme();
+            setTwitterMetaTheme();
+
+            // 保存されている設定をラジオボタンに反映
+            const savedRadioValue = localStorage.getItem("theme") || "system";
             for (const radio of themeRadios) {
-                if (radio.value === savedTheme) {
+                if (radio.value === savedRadioValue) {
                     radio.checked = true;
                 }
             }
-
-            // OSのテーマ変更を監視
-            window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", e => {
-                const currentTheme = localStorage.getItem("theme") || "system";
-                if (currentTheme === "system") {
-                    applyTheme("system");
-                }
-            });
-        });
-        
-        // --- 埋め込みツイートのテーマを更新する機能 ---
-        function getTweetTheme() {
-            const savedTheme = localStorage.getItem("theme") || "system";
-            if (savedTheme === 'light') return 'light';
-            if (savedTheme === 'dark') return 'dark';
-            // systemの場合
-            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-        
-        function updateTweetTheme() {
-            const theme = getTweetTheme();
-            document.querySelectorAll('.twitter-tweet iframe').forEach(iframe => {
-                const src = new URL(iframe.src);
-                if (src.searchParams.get('theme') !== theme) {
-                    src.searchParams.set('theme', theme);
-                    iframe.src = src.toString();
-                }
-            });
-        }
-        
-        // X(Twitter)のJSが読み込まれた後にツイートのテーマを更新
-        window.twttr = (function(d, s, id) {
-            var js, fjs = d.getElementsByTagName(s)[0], t = window.twttr || {};
-            if (d.getElementById(id)) return t;
-            js = d.createElement(s); js.id = id; js.src = "https://platform.twitter.com/widgets.js";
-            fjs.parentNode.insertBefore(js, fjs);
-            t._e = []; t.ready = function(f) { t._e.push(f); };
-            return t;
-        }(document, "script", "twitter-wjs"));
-
-        twttr.ready(() => {
-            updateTweetTheme();
         });
     </script>
 </body>
