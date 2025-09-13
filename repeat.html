@@ -760,23 +760,21 @@
                                 }
 
                                 if (isAppleSafari && anchorTargetId) {
+                                    // ★ 変更点: デバッグのため1秒待つ
                                     setTimeout(() => {
                                         if (!anchorTargetId) return;
 
                                         try {
                                             const targetElement = document.getElementById(anchorTargetId);
                                             if (targetElement) {
-                                                const rect = targetElement.getBoundingClientRect();
-                                                if (rect.top > 1) {
-                                                    // ★ 変更点: 座標計算をやめ、よりシンプルなscrollIntoViewを再実行
-                                                    targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
-                                                }
+                                                // ★ 変更点: デバッグのため、ズレチェックを無効化し強制実行
+                                                targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
                                             }
                                         } catch (e) {
                                             console.error("Error finding target element for scroll correction:", e);
                                             anchorTargetId = null;
                                         }
-                                    }, 100);
+                                    }, 1000); // 1秒に延長
                                 }
                             });
                             observer.unobserve(placeholder);
