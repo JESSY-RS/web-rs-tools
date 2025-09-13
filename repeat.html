@@ -760,17 +760,16 @@
                                 }
 
                                 if (isAppleSafari && anchorTargetId) {
-                                    // ★ 変更点: 補正処理を100ミリ秒遅延させる
                                     setTimeout(() => {
-                                        if (!anchorTargetId) return; // 遅延実行中にリセットされた場合は何もしない
+                                        if (!anchorTargetId) return;
 
                                         try {
                                             const targetElement = document.getElementById(anchorTargetId);
                                             if (targetElement) {
                                                 const rect = targetElement.getBoundingClientRect();
                                                 if (rect.top > 1) {
-                                                    const elementTop = rect.top + window.scrollY;
-                                                    window.scrollTo({ top: elementTop, left: 0, behavior: 'auto' });
+                                                    // ★ 変更点: 座標計算をやめ、よりシンプルなscrollIntoViewを再実行
+                                                    targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
                                                 }
                                             }
                                         } catch (e) {
