@@ -9,7 +9,7 @@
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
     <title>練磨(防具)アビリティ TOP5</title> 
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/2.10.1/dom-to-image-more.min.js"></script>
 
     <style>
         /* --- 全体 --- */
@@ -423,13 +423,15 @@
     <a class="menu-item"  href="armor.html">装備候補検索ツール</a><br>
     <a class="menu-item"  href="style-info.html">スタイル情報ビューア</a><br>
     <br>
+    <a class="menu-item"  href="repeat.html">周回編成まとめ</a><br>
+    <br>
     <a class="menu-item" href="index.html">インデックスページ</a><br>
     </br>
   </div>
 
     <header>
         <h1>
-            <span class="hamburger" onclick="toggleMenu()">☰</span>練磨(防具)アビリティ TOP5<span id="screenshot-btn" style="cursor: pointer; margin-left: 10px;"></span>
+            <span class="hamburger" onclick="toggleMenu()">☰</span>練磨(防具)アビリティ TOP5<span id="screenshot-btn" style="cursor: pointer; margin-left: 10px;">📷</span>
         </h1>
     </header>
 
@@ -902,6 +904,7 @@
         }
     }
 
+    // dom-to-image-more を使用するように修正
     async function takeScreenshot() {
         const targetElements = document.querySelectorAll('.category-container');
         if (targetElements.length === 0) {
@@ -920,14 +923,22 @@
                 const titleText = titleElement.firstChild.textContent.trim().replace('■', '').trim();
                 const fileName = `練磨防具_${titleText.replace(/ /g, '_').replace(/[()]/g, '').replace('＋', '')}.png`;
 
-                const canvas = await html2canvas(element, {
-                    scale: 2,
-                    backgroundColor: getComputedStyle(document.body).backgroundColor,
-                });
+                const options = {
+                    bgcolor: getComputedStyle(document.body).backgroundColor,
+                    width: element.clientWidth * 2,
+                    height: element.clientHeight * 2,
+                    style: {
+                        transform: 'scale(2)',
+                        transformOrigin: 'top left',
+                        margin: 0
+                    }
+                };
+
+                const dataUrl = await domtoimage.toPng(element, options);
 
                 const link = document.createElement('a');
                 link.download = fileName;
-                link.href = canvas.toDataURL('image/png');
+                link.href = dataUrl;
                 link.click();
                 
                 await new Promise(resolve => setTimeout(resolve, 300));
@@ -935,6 +946,7 @@
 
         } catch (error) {
             console.error('スクリーンショットの撮影に失敗しました:', error);
+            alert('スクリーンショットの撮影に失敗しました。\n' + error);
         } finally {
             screenshotBtn.textContent = originalText;
             screenshotBtn.style.cursor = 'pointer';
