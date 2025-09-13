@@ -673,7 +673,6 @@
                     anchor.addEventListener('click', function(e) {
                         const href = this.getAttribute('href');
                         if (href && href.startsWith('#')) {
-                            // ★ 変更点: decodeURIComponentを削除
                             anchorTargetId = href.substring(1);
 
                             if (scrollCorrectionTimeout) {
@@ -764,7 +763,9 @@
                                     try {
                                         const targetElement = document.getElementById(anchorTargetId);
                                         if (targetElement) {
-                                            targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+                                            // ★ 変更点: scrollIntoViewから、より正確なscrollToへ変更
+                                            const elementTop = targetElement.getBoundingClientRect().top + window.scrollY;
+                                            window.scrollTo({ top: elementTop, left: 0, behavior: 'auto' });
                                         }
                                     } catch (e) {
                                         console.error("Error finding target element for scroll correction:", e);
