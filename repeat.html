@@ -7,7 +7,7 @@
     <link rel="shortcut icon" href="favicon-kiokucalc.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-kiokucalc.png">
     <link rel="icon" type="image/png" href="android-chrome-144x144-kiokucalc.png">
-    <title>ロマサガRS周回編成参考</title> <style>
+    <title>周回編成まとめ</title> <style>
         body {
             font-family: sans-serif; line-height: 1.6; margin: 0 auto;
             max-width: 1200px; padding: 15px;
@@ -21,6 +21,8 @@
         h1 {
             display: flex; align-items: center; border-bottom: 2px solid #ccc;
             position: relative;
+            margin-top: 0;
+            font-size: 2em;
         }
         body.dark h1, body.dark h2 { border-bottom-color: #444; }
         
@@ -36,7 +38,7 @@
             margin-left: 1em;
         }
         
-        h2 { margin-top: 40px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        h2 { margin-top: 30px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
         
         h3 {
             margin-top: 30px;
@@ -52,13 +54,30 @@
         
         .toc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; list-style: none; padding: 0; margin-bottom: 40px; }
         @media (min-width: 1200px) { .toc { grid-template-columns: repeat(8, 1fr); } }
-        .toc li { border-radius: 5px; transition: filter 0.2s; }
-        .toc li:hover { filter: brightness(105%); }
+        .toc li { border-radius: 5px; transition: filter 0.2s, opacity 0.2s; }
+        .toc li:not(.disabled):hover { filter: brightness(105%); }
         .toc a { text-decoration: none; font-weight: bold; display: block; padding: 10px; color: #333; }
         body.dark .toc a { color: #e0e0e0; }
         
+        .toc li.disabled {
+            background-color: #f8f9fa !important;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .toc li.disabled a {
+            color: #adb5bd;
+            pointer-events: none;
+        }
+        body.dark .toc li.disabled {
+            background-color: #343a40 !important;
+            opacity: 0.5;
+        }
+        body.dark .toc li.disabled a {
+            color: #adb5bd;
+        }
+
         blockquote.twitter-tweet {
-             margin: 20px 0 !important;
+             margin: 10px 0 20px 0 !important;
         }
         
         .lazy-tweet {
@@ -67,34 +86,45 @@
             border-radius: 12px;
             display: flex;
             align-items: center;
-            margin: 20px 0;
+            margin: 10px 0 20px 0;
         }
         .lazy-tweet p {
             padding-left: 1em;
+            white-space: nowrap;
         }
         body.dark .lazy-tweet {
             border-color: #555;
         }
         
-        /* TOC Light Colors */
-        .group-tan2r { background-color: #ffe4e1; } .group-zen2r { background-color: #e0f7fa; }
-        .group-tate2r { background-color: #e8f5e9; } .group-yoko2r { background-color: #fff3e0; }
-        .group-tan1r { background-color: #f3e5f5; } .group-zen1r { background-color: #e1f5fe; }
-        .group-tate1r { background-color: #fffde3; } .group-yoko1r { background-color: #fce4ec; }
-        .group-kanmon { background-color: #efefef; }
+        p + .lazy-tweet {
+            margin-top: -11px;
+        }
+        
+        .group-tan2r { background-color: #ffcdd2; }
+        .group-zen2r { background-color: #b2ebf2; }
+        .group-tate2r { background-color: #c8e6c9; }
+        .group-yoko2r { background-color: #ffe0b2; }
+        .group-tan1r { background-color: #e1bee7; }
+        .group-zen1r { background-color: #b3e5fc; }
+        .group-tate1r { background-color: #fff9c4; }
+        .group-yoko1r { background-color: #f8bbd0; }
+        .group-kanmon { background-color: #e8e8e8; }
 
-        /* TOC Dark Colors */
-        body.dark .group-tan2r { background-color: #5c2b29; } body.dark .group-zen2r { background-color: #1e454d; }
-        body.dark .group-tate2r { background-color: #28442a; } body.dark .group-yoko2r { background-color: #5e4328; }
-        body.dark .group-tan1r { background-color: #4e2f54; } body.dark .group-zen1r { background-color: #224554; }
-        body.dark .group-tate1r { background-color: #5e5b29; } body.dark .group-yoko1r { background-color: #5c2a3d; }
+        body.dark .group-tan2r { background-color: #5c2b29; }
+        body.dark .group-zen2r { background-color: #1e454d; }
+        body.dark .group-tate2r { background-color: #28442a; }
+        body.dark .group-yoko2r { background-color: #5e4328; }
+        body.dark .group-tan1r { background-color: #4e2f54; }
+        body.dark .group-zen1r { background-color: #224554; }
+        body.dark .group-tate1r { background-color: #5e5b29; }
+        body.dark .group-yoko1r { background-color: #5c2a3d; }
         body.dark .group-kanmon { background-color: #555555; }
 
         #theme-toggle-button {
             cursor: pointer;
             color: #f5c542; 
             user-select: none;
-            margin-right: -1px;
+            margin-right: -10px;
         }
         #theme-options {
             display: none;
@@ -120,18 +150,44 @@
             margin-left: 0.5rem;
             font-size: 1rem;
         }
+        
+        .zoom-buttons {
+            position: absolute;
+            top: 0; 
+            right: 0;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+            margin-top: 5px;
+        }
+        .zoom-buttons button {
+            color: #000;
+            background-color: #eee;
+            padding: 5px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
     </style>
 </head>
 <body id="top">
     <h1>
-        <span id="theme-toggle-button">★</span>
-        ロマサガRS周回編成参考
+        <div style="flex-grow: 1;">
+            <span id="theme-toggle-button">★</span>
+            周回編成まとめ
+        </div>
         <div id="theme-options">
             <div>
                 <label><input type="radio" name="theme" value="system"><span>端末の設定を使う</span></label>
                 <label><input type="radio" name="theme" value="dark"><span>ダークモード ON</span></label>
                 <label><input type="radio" name="theme" value="light"><span>ダークモード OFF</span></label>
             </div>
+        </div>
+        <div class="zoom-buttons">
+            <button onclick="changeZoom(-0.1)">－</button>
+            <button onclick="changeZoom(0.1)">＋</button>
         </div>
     </h1>
     
@@ -141,10 +197,10 @@
         <li class="group-tan2r"><a href="#%E6%89%93%E5%8D%982R">打単2R</a></li>
         <li class="group-tan2r"><a href="#%E7%AA%81%E5%8D%982R">突単2R</a></li>
         <li class="group-tan2r"><a href="#%E7%86%B1%E5%8D%982R">熱単2R</a></li>
-        <li class="group-tan2r"><a href="#%E5%86%B7%E5%8D%982R">冷単2R</a></li>
+        <li class="group-tan2r disabled"><a href="#%E5%86%B7%E5%8D%982R">冷単2R</a></li>
         <li class="group-tan2r"><a href="#%E9%9B%B7%E5%8D%982R">雷単2R</a></li>
         <li class="group-tan2r"><a href="#%E9%99%BD%E5%8D%982R">陽単2R</a></li>
-        <li class="group-tan2r"><a href="#%E9%99%B0%E5%8D%982R">陰単2R</a></li>
+        <li class="group-tan2r disabled"><a href="#%E9%99%B0%E5%8D%982R">陰単2R</a></li>
         <li class="group-zen2r"><a href="#%E6%96%AC%E5%85%A82R">斬全2R</a></li>
         <li class="group-zen2r"><a href="#%E6%89%93%E5%85%A82R">打全2R</a></li>
         <li class="group-zen2r"><a href="#%E7%AA%81%E5%85%A82R">突全2R</a></li>
@@ -154,53 +210,53 @@
         <li class="group-zen2r"><a href="#%E9%99%BD%E5%85%A82R">陽全2R</a></li>
         <li class="group-zen2r"><a href="#%E9%99%B0%E5%85%A82R">陰全2R</a></li>
         <li class="group-tate2r"><a href="#%E6%96%AC%E7%B8%A62R">斬縦2R</a></li>
-        <li class="group-tate2r"><a href="#%E6%89%93%E7%B8%A62R">打縦2R</a></li>
+        <li class="group-tate2r disabled"><a href="#%E6%89%93%E7%B8%A62R">打縦2R</a></li>
         <li class="group-tate2r"><a href="#%E7%AA%81%E7%B8%A62R">突縦2R</a></li>
-        <li class="group-tate2r"><a href="#%E7%86%B1%E7%B8%A62R">熱縦2R</a></li>
-        <li class="group-tate2r"><a href="#%E5%86%B7%E7%B8%A62R">冷縦2R</a></li>
-        <li class="group-tate2r"><a href="#%E9%9B%B7%E7%B8%A62R">雷縦2R</a></li>
-        <li class="group-tate2r"><a href="#%E9%99%BD%E7%B8%A62R">陽縦2R</a></li>
+        <li class="group-tate2r disabled"><a href="#%E7%86%B1%E7%B8%A62R">熱縦2R</a></li>
+        <li class="group-tate2r disabled"><a href="#%E5%86%B7%E7%B8%A62R">冷縦2R</a></li>
+        <li class="group-tate2r disabled"><a href="#%E9%9B%B7%E7%B8%A62R">雷縦2R</a></li>
+        <li class="group-tate2r disabled"><a href="#%E9%99%BD%E7%B8%A62R">陽縦2R</a></li>
         <li class="group-tate2r"><a href="#%E9%99%B0%E7%B8%A62R">陰縦2R</a></li>
         <li class="group-yoko2r"><a href="#%E6%96%AC%E6%A8%AA2R">斬横2R</a></li>
-        <li class="group-yoko2r"><a href="#%E6%89%93%E6%A8%AA2R">打横2R</a></li>
+        <li class="group-yoko2r disabled"><a href="#%E6%89%93%E6%A8%AA2R">打横2R</a></li>
         <li class="group-yoko2r"><a href="#%E7%AA%81%E6%A8%AA2R">突横2R</a></li>
-        <li class="group-yoko2r"><a href="#%E7%86%B1%E6%A8%AA2R">熱横2R</a></li>
-        <li class="group-yoko2r"><a href="#%E5%86%B7%E6%A8%AA2R">冷横2R</a></li>
+        <li class="group-yoko2r disabled"><a href="#%E7%86%B1%E6%A8%AA2R">熱横2R</a></li>
+        <li class="group-yoko2r disabled"><a href="#%E5%86%B7%E6%A8%AA2R">冷横2R</a></li>
         <li class="group-yoko2r"><a href="#%E9%9B%B7%E6%A8%AA2R">雷横2R</a></li>
         <li class="group-yoko2r"><a href="#%E9%99%BD%E6%A8%AA2R">陽横2R</a></li>
-        <li class="group-yoko2r"><a href="#%E9%99%B0%E6%A8%AA2R">陰横2R</a></li>
-        <li class="group-yoko1r"><a href="#%E6%96%AC%E6%A8%AA1R">斬横1R</a></li>
-        <li class="group-yoko1r"><a href="#%E6%89%93%E6%A8%AA1R">打横1R</a></li>
-        <li class="group-yoko1r"><a href="#%E7%AA%81%E6%A8%AA1R">突横1R</a></li>
-        <li class="group-yoko1r"><a href="#%E7%86%B1%E6%A8%AA1R">熱横1R</a></li>
-        <li class="group-yoko1r"><a href="#%E5%86%B7%E6%A8%AA1R">冷横1R</a></li>
-        <li class="group-yoko1r"><a href="#%E9%9B%B7%E6%A8%AA1R">雷横1R</a></li>
-        <li class="group-yoko1r"><a href="#%E9%99%BD%E6%A8%AA1R">陽横1R</a></li>
-        <li class="group-yoko1r"><a href="#%E9%99%B0%E6%A8%AA1R">陰横1R</a></li>
+        <li class="group-yoko2r disabled"><a href="#%E9%99%B0%E6%A8%AA2R">陰横2R</a></li>
+        <li class="group-yoko1r disabled"><a href="#%E6%96%AC%E6%A8%AA1R">斬横1R</a></li>
+        <li class="group-yoko1r disabled"><a href="#%E6%89%93%E6%A8%AA1R">打横1R</a></li>
+        <li class="group-yoko1r disabled"><a href="#%E7%AA%81%E6%A8%AA1R">突横1R</a></li>
+        <li class="group-yoko1r disabled"><a href="#%E7%86%B1%E6%A8%AA1R">熱横1R</a></li>
+        <li class="group-yoko1r disabled"><a href="#%E5%86%B7%E6%A8%AA1R">冷横1R</a></li>
+        <li class="group-yoko1r disabled"><a href="#%E9%9B%B7%E6%A8%AA1R">雷横1R</a></li>
+        <li class="group-yoko1r disabled"><a href="#%E9%99%BD%E6%A8%AA1R">陽横1R</a></li>
+        <li class="group-yoko1r disabled"><a href="#%E9%99%B0%E6%A8%AA1R">陰横1R</a></li>
         <li class="group-tan1r"><a href="#%E6%96%AC%E5%8D%981R">斬単1R</a></li>
         <li class="group-tan1r"><a href="#%E6%89%93%E5%8D%981R">打単1R</a></li>
         <li class="group-tan1r"><a href="#%E7%AA%81%E5%8D%981R">突単1R</a></li>
-        <li class="group-tan1r"><a href="#%E7%86%B1%E5%8D%981R">熱単1R</a></li>
-        <li class="group-tan1r"><a href="#%E5%86%B7%E5%8D%981R">冷単1R</a></li>
+        <li class="group-tan1r disabled"><a href="#%E7%86%B1%E5%8D%981R">熱単1R</a></li>
+        <li class="group-tan1r disabled"><a href="#%E5%86%B7%E5%8D%981R">冷単1R</a></li>
         <li class="group-tan1r"><a href="#%E9%9B%B7%E5%8D%981R">雷単1R</a></li>
         <li class="group-tan1r"><a href="#%E9%99%BD%E5%8D%981R">陽単1R</a></li>
         <li class="group-tan1r"><a href="#%E9%99%B0%E5%8D%981R">陰単1R</a></li>
         <li class="group-zen1r"><a href="#%E6%96%AC%E5%85%A81R">斬全1R</a></li>
         <li class="group-zen1r"><a href="#%E6%89%93%E5%85%A81R">打全1R</a></li>
-        <li class="group-zen1r"><a href="#%E7%AA%81%E5%85%A81R">突全1R</a></li>
-        <li class="group-zen1r"><a href="#%E7%86%B1%E5%85%A81R">熱全1R</a></li>
-        <li class="group-zen1r"><a href="#%E5%86%B7%E5%85%A81R">冷全1R</a></li>
-        <li class="group-zen1r"><a href="#%E9%9B%B7%E5%85%A81R">雷全1R</a></li>
-        <li class="group-zen1r"><a href="#%E9%99%BD%E5%85%A81R">陽全1R</a></li>
-        <li class="group-zen1r"><a href="#%E9%99%B0%E5%85%A81R">陰全1R</a></li>
-        <li class="group-tate1r"><a href="#%E6%96%AC%E7%B8%A61R">斬縦1R</a></li>
-        <li class="group-tate1r"><a href="#%E6%89%93%E7%B8%A61R">打縦1R</a></li>
-        <li class="group-tate1r"><a href="#%E7%AA%81%E7%B8%A61R">突縦1R</a></li>
-        <li class="group-tate1r"><a href="#%E7%86%B1%E7%B8%A61R">熱縦1R</a></li>
-        <li class="group-tate1r"><a href="#%E5%86%B7%E7%B8%A61R">冷縦1R</a></li>
-        <li class="group-tate1r"><a href="#%E9%9B%B7%E7%B8%A61R">雷縦1R</a></li>
-        <li class="group-tate1r"><a href="#%E9%99%BD%E7%B8%A61R">陽縦1R</a></li>
-        <li class="group-tate1r"><a href="#%E9%99%B0%E7%B8%A61R">陰縦1R</a></li>
+        <li class="group-zen1r disabled"><a href="#%E7%AA%81%E5%85%A81R">突全1R</a></li>
+        <li class="group-zen1r disabled"><a href="#%E7%86%B1%E5%85%A81R">熱全1R</a></li>
+        <li class="group-zen1r disabled"><a href="#%E5%86%B7%E5%85%A81R">冷全1R</a></li>
+        <li class="group-zen1r disabled"><a href="#%E9%9B%B7%E5%85%A81R">雷全1R</a></li>
+        <li class="group-zen1r disabled"><a href="#%E9%99%BD%E5%85%A81R">陽全1R</a></li>
+        <li class="group-zen1r disabled"><a href="#%E9%99%B0%E5%85%A81R">陰全1R</a></li>
+        <li class="group-tate1r disabled"><a href="#%E6%96%AC%E7%B8%A61R">斬縦1R</a></li>
+        <li class="group-tate1r disabled"><a href="#%E6%89%93%E7%B8%A61R">打縦1R</a></li>
+        <li class="group-tate1r disabled"><a href="#%E7%AA%81%E7%B8%A61R">突縦1R</a></li>
+        <li class="group-tate1r disabled"><a href="#%E7%86%B1%E7%B8%A61R">熱縦1R</a></li>
+        <li class="group-tate1r disabled"><a href="#%E5%86%B7%E7%B8%A61R">冷縦1R</a></li>
+        <li class="group-tate1r disabled"><a href="#%E9%9B%B7%E7%B8%A61R">雷縦1R</a></li>
+        <li class="group-tate1r disabled"><a href="#%E9%99%BD%E7%B8%A61R">陽縦1R</a></li>
+        <li class="group-tate1r disabled"><a href="#%E9%99%B0%E7%B8%A61R">陰縦1R</a></li>
         <li class="group-kanmon"><a href="#%E9%96%A2%E9%96%80%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88">関門クエスト</a></li>
         <li class="group-kanmon"><a href="#%E3%83%AD%E3%83%83%E3%82%AF%E3%83%96%E3%83%BC%E3%82%B1%E3%80%80%E2%98%85%E6%9B%B4%E6%96%B0%E7%B5%82%E4%BA%86">ロックブーケ</a></li>
         <li class="group-kanmon"><a href="#%E3%83%93%E3%83%A5%E3%83%BC%E3%83%8D%E3%82%A4%E3%80%80%E2%98%85%E6%9B%B4%E6%96%B0%E7%B5%82%E4%BA%86">ビューネイ</a></li>
@@ -475,13 +531,55 @@
     <h3 id="%E3%83%95%E3%82%A9%E3%83%AB%E3%83%8D%E3%82%A6%E3%82%B9">▼フォルネウス<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
     <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1961426671237829013"><p>ツイートを読み込み中...</p></div>
 
+    <div style="height: 80vh;"></div>
+
     
     <script>
+        const PAGE_SETTING_KEY = 'PageSettings'; 
+        let pageSettings = { 'repeat_zoom': 1.0 };
+        
+        function changeZoom(delta) {
+            const zoomKey = 'repeat_zoom';
+            let currentZoom = pageSettings[zoomKey] || 1.0;
+        
+            currentZoom += delta;
+            currentZoom = Math.round(currentZoom * 10) / 10;
+
+            if (currentZoom < 0.5) currentZoom = 0.5;
+            if (currentZoom > 2.0) currentZoom = 2.0;
+            
+            document.body.style.zoom = currentZoom;
+            pageSettings[zoomKey] = currentZoom;
+            savePageSettings();
+        }
+        
+        function loadPageSettings() {
+            try {
+                const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+                if (savedSettings) {
+                    pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+                }
+            } catch (error) {
+                console.error("ページ設定の読み込みに失敗しました:", error);
+            }
+        }
+        
+        function savePageSettings() {
+            try {
+                localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+            } catch (error) {
+                console.error("ページ設定の保存に失敗しました:", error);
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             const body = document.body;
             const themeToggleButton = document.getElementById('theme-toggle-button');
             const themeOptions = document.getElementById('theme-options');
             const themeRadios = document.querySelectorAll('input[name="theme"]');
+            
+            loadPageSettings();
+            document.body.style.zoom = pageSettings['repeat_zoom'] || 1.0;
 
             function getCurrentTheme() {
                 const savedTheme = localStorage.getItem("theme") || "system";
@@ -530,7 +628,6 @@
                                 { theme: getCurrentTheme(), dnt: true }
                             ).then(el => {
                                 if (el) {
-                                    // ★ 変更点: 成功後に「読み込み中」の文字(<p>)を探して削除する
                                     const loadingP = placeholder.querySelector('p');
                                     if (loadingP) {
                                         loadingP.remove();
