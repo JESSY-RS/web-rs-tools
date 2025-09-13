@@ -655,7 +655,6 @@
             const themeOptions = document.getElementById('theme-options');
             const themeRadios = document.querySelectorAll('input[name="theme"]');
             
-            // ★ 変更点: iPhone/iPad/iPodのSafariに限定して判定
             const ua = navigator.userAgent;
             const isAppleMobile = /iPhone|iPad|iPod/i.test(ua);
             const isThirdPartyBrowserOnIos = /CriOS|FxiOS|EdgiOS/i.test(ua);
@@ -669,13 +668,13 @@
             const initialZoom = pageSettings['repeat_zoom'] || 1.0;
             document.body.style.zoom = initialZoom;
 
-            // ★ 変更点: AppleのSafariの場合のみ、目次クリック時の処理を有効化
             if (isAppleSafari) {
                 document.querySelectorAll('.toc a').forEach(anchor => {
                     anchor.addEventListener('click', function(e) {
                         const href = this.getAttribute('href');
                         if (href && href.startsWith('#')) {
-                            anchorTargetId = decodeURIComponent(href.substring(1));
+                            // ★ 変更点: decodeURIComponentを削除
+                            anchorTargetId = href.substring(1);
 
                             if (scrollCorrectionTimeout) {
                                 clearTimeout(scrollCorrectionTimeout);
@@ -761,7 +760,6 @@
                                     }
                                 }
 
-                                // ★ 変更点: AppleのSafariの場合のみ、スクロール位置を補正
                                 if (isAppleSafari && anchorTargetId) {
                                     try {
                                         const targetElement = document.getElementById(anchorTargetId);
