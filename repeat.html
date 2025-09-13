@@ -1,38 +1,45 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon-kiokucalc.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-kiokucalc.png">
     <link rel="icon" type="image/png" href="android-chrome-144x144-kiokucalc.png">
-    <title>周回編成まとめ</title> <style>
+    <title>周回編成まとめ</title>
+    <style>
         body {
-            font-family: sans-serif; line-height: 1.6; margin: 0; padding: 0;
-            background: #fff; color: #333;
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #333;
         }
         body.dark {
-            background: #2A2A2A; color: #e0e0e0;
+            background: #2A2A2A;
+            color: #e0e0e0;
         }
         #page-wrapper {
             max-width: 1200px;
             margin: 0 auto;
             padding: 15px;
-            /* ★ 修正点: 拡大縮小と競合するため、ここからpadding-bottomを削除 */
-            transform-origin: top; /* 上を基準に拡大縮小 */
-            transition: transform 0.1s ease-in-out;
         }
         a { color: #0056b3; }
         body.dark a { color: #8ab4f8; }
         h1 {
-            display: flex; align-items: center; border-bottom: 2px solid #ccc;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid #ccc;
             position: relative;
             margin-top: 0;
         }
-        body.dark h1, body.dark h2 { border-bottom-color: #444; }
-        
-        h2, h3 {
+        body.dark h1,
+        body.dark h2 {
+            border-bottom-color: #444;
+        }
+        h2,
+        h3 {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -43,9 +50,11 @@
             white-space: nowrap;
             margin-left: 1em;
         }
-        
-        h2 { margin-top: 30px; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
-        
+        h2 {
+            margin-top: 30px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+        }
         h3 {
             margin-top: 30px;
             padding: 5px 10px;
@@ -57,14 +66,36 @@
         body.dark h3 {
             border-color: #555;
         }
-        
-        .toc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; list-style: none; padding: 0; margin-bottom: 40px; }
-        @media (min-width: 1200px) { .toc { grid-template-columns: repeat(8, 1fr); } }
-        .toc li { border-radius: 5px; transition: filter 0.2s, opacity 0.2s; }
-        .toc li:not(.disabled):hover { filter: brightness(105%); }
-        .toc a { text-decoration: none; font-weight: bold; display: block; padding: 10px; color: #333; }
-        body.dark .toc a { color: #e0e0e0; }
-        
+        .toc {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            list-style: none;
+            padding: 0;
+            margin-bottom: 40px;
+        }
+        @media (min-width: 1200px) {
+            .toc {
+                grid-template-columns: repeat(8, 1fr);
+            }
+        }
+        .toc li {
+            border-radius: 5px;
+            transition: filter 0.2s, opacity 0.2s;
+        }
+        .toc li:not(.disabled):hover {
+            filter: brightness(105%);
+        }
+        .toc a {
+            text-decoration: none;
+            font-weight: bold;
+            display: block;
+            padding: 10px;
+            color: #333;
+        }
+        body.dark .toc a {
+            color: #e0e0e0;
+        }
         .toc li.disabled {
             background-color: #f8f9fa !important;
             cursor: not-allowed;
@@ -81,11 +112,9 @@
         body.dark .toc li.disabled a {
             color: #adb5bd;
         }
-
         blockquote.twitter-tweet {
-             margin: 10px 0 20px 0 !important;
+            margin: 10px 0 20px 0 !important;
         }
-        
         .lazy-tweet {
             min-height: 100px;
             border: 2px dashed #ccc;
@@ -101,11 +130,9 @@
         body.dark .lazy-tweet {
             border-color: #555;
         }
-        
-        p + .lazy-tweet {
+        p+.lazy-tweet {
             margin-top: -11px;
         }
-        
         .group-tan2r { background-color: #ffcdd2; }
         .group-zen2r { background-color: #b2ebf2; }
         .group-tate2r { background-color: #c8e6c9; }
@@ -115,7 +142,6 @@
         .group-tate1r { background-color: #fff9c4; }
         .group-yoko1r { background-color: #f8bbd0; }
         .group-kanmon { background-color: #e8e8e8; }
-
         body.dark .group-tan2r { background-color: #5c2b29; }
         body.dark .group-zen2r { background-color: #1e454d; }
         body.dark .group-tate2r { background-color: #28442a; }
@@ -125,12 +151,11 @@
         body.dark .group-tate1r { background-color: #5e5b29; }
         body.dark .group-yoko1r { background-color: #5c2a3d; }
         body.dark .group-kanmon { background-color: #555555; }
-
         #theme-toggle-button {
             cursor: pointer;
-            color: #f5c542; 
+            color: #f5c542;
             user-select: none;
-            margin-right: -10px;
+            margin-right: 0px;
         }
         #theme-options {
             display: none;
@@ -149,14 +174,22 @@
             background-color: #4a4a4a;
             border-color: #666;
         }
-        #theme-options div { display: flex; flex-direction: column; }
-        #theme-options label { display: flex; align-items: center; margin-top: 0.5rem; }
-        #theme-options label:first-child { margin-top: 0; }
+        #theme-options div {
+            display: flex;
+            flex-direction: column;
+        }
+        #theme-options label {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        #theme-options label:first-child {
+            margin-top: 0;
+        }
         #theme-options span {
             margin-left: 0.5rem;
             font-size: 1rem;
         }
-        
         .zoom-buttons {
             position: absolute;
             top: 0;
@@ -181,8 +214,7 @@
     <div id="page-wrapper">
         <h1>
             <div style="flex-grow: 1;">
-                <span id="theme-toggle-button">★</span>
-                周回編成まとめ
+                <span id="theme-toggle-button">★</span>周回編成まとめ
             </div>
             <div id="theme-options">
                 <div>
@@ -196,7 +228,6 @@
                 <button onclick="changeZoom(0.1)">＋</button>
             </div>
         </h1>
-    
         <h2>目次</h2>
         <ul class="toc">
         <li class="group-tan2r"><a href="#%E6%96%AC%E5%8D%982R">斬単2R</a></li>
@@ -275,7 +306,8 @@
         <li class="group-kanmon"><a href="#%E3%82%AC%E3%83%A9%E3%83%8F%E3%83%89%E3%80%80%E2%98%85%E6%9B%B4%E6%96%B0%E7%B5%82%E4%BA%86">ガラハド</a></li>
         <li class="group-kanmon"><a href="#%E3%82%A2%E3%83%B3%E3%83%BB%E3%83%AB%E3%83%BC">アン・ルー</a></li>
         <li class="group-kanmon"><a href="#%E3%83%95%E3%82%A9%E3%83%AB%E3%83%8D%E3%82%A6%E3%82%B9">フォルネウス</a></li>
-    </ul>
+
+        </ul>
     <h2 id="%E6%96%AC%E5%8D%982R">▼斬単2R<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h2>
     <p>記憶再戦14秒・自由枠０</p>
     <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1834205679428796830"><p>ツイートを読み込み中...</p></div>
@@ -538,28 +570,30 @@
     <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1961426671237829013"><p>ツイートを読み込み中...</p></div>
 
     </div>
-    
+
     <div style="height: 80vh;"></div>
 
     <script>
-        const PAGE_SETTING_KEY = 'PageSettings'; 
-        let pageSettings = { 'repeat_zoom': 1.0 };
-        
+        const PAGE_SETTING_KEY = 'PageSettings';
+        let pageSettings = {
+            'repeat_zoom': 1.0
+        };
+
         function changeZoom(delta) {
             const zoomKey = 'repeat_zoom';
             let currentZoom = pageSettings[zoomKey] || 1.0;
-        
             currentZoom += delta;
             currentZoom = Math.round(currentZoom * 10) / 10;
-
             if (currentZoom < 0.5) currentZoom = 0.5;
             if (currentZoom > 2.0) currentZoom = 2.0;
             
-            document.getElementById('page-wrapper').style.transform = `scale(${currentZoom})`;
+            // ★ 修正点: zoomプロパティをbodyに適用
+            document.body.style.zoom = currentZoom;
+            
             pageSettings[zoomKey] = currentZoom;
             savePageSettings();
         }
-        
+
         function loadPageSettings() {
             try {
                 const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
@@ -570,7 +604,7 @@
                 console.error("ページ設定の読み込みに失敗しました:", error);
             }
         }
-        
+
         function savePageSettings() {
             try {
                 localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
@@ -586,8 +620,10 @@
             const themeRadios = document.querySelectorAll('input[name="theme"]');
             
             loadPageSettings();
+            
+            // ★ 修正点: ページ読み込み時にbodyにzoomを適用
             const initialZoom = pageSettings['repeat_zoom'] || 1.0;
-            document.getElementById('page-wrapper').style.transform = `scale(${initialZoom})`;
+            document.body.style.zoom = initialZoom;
 
             function getCurrentTheme() {
                 const savedTheme = localStorage.getItem("theme") || "system";
@@ -608,7 +644,6 @@
             function updateAllExistingTweets() {
                 const theme = getCurrentTheme();
                 const allIframes = document.querySelectorAll('iframe[id^="twitter-widget-"]');
-
                 allIframes.forEach(iframe => {
                     try {
                         const src = new URL(iframe.src);
@@ -630,11 +665,13 @@
                                 const placeholder = entry.target;
                                 const tweetUrl = placeholder.dataset.tweetUrl;
                                 const tweetId = tweetUrl.split('/').pop().split('?')[0];
-                                
                                 window.twttr.widgets.createTweet(
                                     tweetId,
-                                    placeholder,
-                                    { theme: getCurrentTheme(), dnt: true, lang: 'ja' }
+                                    placeholder, {
+                                        theme: getCurrentTheme(),
+                                        dnt: true,
+                                        lang: 'ja'
+                                    }
                                 ).then(el => {
                                     if (el) {
                                         const loadingP = placeholder.querySelector('p');
@@ -650,13 +687,13 @@
                                     console.error("Error creating tweet:", tweetUrl, error);
                                     placeholder.innerHTML = `<p style="color:red;">ツイートの読み込み中にエラーが発生しました。</p>`;
                                 });
-
                                 observer.unobserve(placeholder);
                             }
                         });
                     };
-
-                    const observer = new IntersectionObserver(processLazyTweets, { rootMargin: '200px 0px' });
+                    const observer = new IntersectionObserver(processLazyTweets, {
+                        rootMargin: '200px 0px'
+                    });
                     document.querySelectorAll('.lazy-tweet').forEach(tweet => {
                         observer.observe(tweet);
                     });
@@ -679,7 +716,6 @@
                     themeOptions.style.display = 'none';
                 }
             });
-            
             themeRadios.forEach(radio => {
                 radio.addEventListener('change', (e) => {
                     localStorage.setItem('theme', e.target.value);
@@ -687,7 +723,6 @@
                     updateAllExistingTweets();
                 });
             });
-
             window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
                 const currentSetting = localStorage.getItem("theme") || "system";
                 if (currentSetting === "system") {
@@ -695,7 +730,6 @@
                     updateAllExistingTweets();
                 }
             });
-            
             applyPageTheme();
             const savedRadioValue = localStorage.getItem("theme") || "system";
             for (const radio of themeRadios) {
@@ -703,8 +737,7 @@
                     radio.checked = true;
                 }
             }
-
-            window.twttr = (function (d, s, id) {
+            window.twttr = (function(d, s, id) {
                 var js, fjs = d.getElementsByTagName(s)[0],
                     t = window.twttr || {};
                 if (d.getElementById(id)) return t;
@@ -715,7 +748,7 @@
                 js.onerror = handleTwitterScriptError;
                 fjs.parentNode.insertBefore(js, fjs);
                 t._e = [];
-                t.ready = function (f) {
+                t.ready = function(f) {
                     t._e.push(f);
                 };
                 return t;
