@@ -9,12 +9,19 @@
     <link rel="icon" type="image/png" href="android-chrome-144x144-kiokucalc.png">
     <title>周回編成まとめ</title> <style>
         body {
-            font-family: sans-serif; line-height: 1.6; margin: 0 auto;
-            max-width: 1200px; padding: 15px;
-            background: #fff; color: #333; transition: background 0.3s, color 0.3s;
+            font-family: sans-serif; line-height: 1.6; margin: 0; padding: 0;
+            background: #fff; color: #333;
         }
         body.dark {
             background: #2A2A2A; color: #e0e0e0;
+        }
+        #page-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
+            padding-bottom: 100vh; /* ★ 最下部のツイート読み込み時のズレ防止用の余白を追加 */
+            transform-origin: top; /* 上を基準に拡大縮小 */
+            transition: transform 0.1s ease-in-out;
         }
         a { color: #0056b3; }
         body.dark a { color: #8ab4f8; }
@@ -171,26 +178,27 @@
     </style>
 </head>
 <body id="top">
-    <h1>
-        <div style="flex-grow: 1;">
-            <span id="theme-toggle-button">★</span>
-            周回編成まとめ
-        </div>
-        <div id="theme-options">
-            <div>
-                <label><input type="radio" name="theme" value="system"><span>端末の設定を使う</span></label>
-                <label><input type="radio" name="theme" value="dark"><span>ダークモード ON</span></label>
-                <label><input type="radio" name="theme" value="light"><span>ダークモード OFF</span></label>
+    <div id="page-wrapper">
+        <h1>
+            <div style="flex-grow: 1;">
+                <span id="theme-toggle-button">★</span>
+                周回編成まとめ
             </div>
-        </div>
-        <div class="zoom-buttons">
-            <button onclick="changeZoom(-0.1)">－</button>
-            <button onclick="changeZoom(0.1)">＋</button>
-        </div>
-    </h1>
+            <div id="theme-options">
+                <div>
+                    <label><input type="radio" name="theme" value="system"><span>端末の設定を使う</span></label>
+                    <label><input type="radio" name="theme" value="dark"><span>ダークモード ON</span></label>
+                    <label><input type="radio" name="theme" value="light"><span>ダークモード OFF</span></label>
+                </div>
+            </div>
+            <div class="zoom-buttons">
+                <button onclick="changeZoom(-0.1)">－</button>
+                <button onclick="changeZoom(0.1)">＋</button>
+            </div>
+        </h1>
     
-    <h2>目次</h2>
-    <ul class="toc">
+        <h2>目次</h2>
+        <ul class="toc">
         <li class="group-tan2r"><a href="#%E6%96%AC%E5%8D%982R">斬単2R</a></li>
         <li class="group-tan2r"><a href="#%E6%89%93%E5%8D%982R">打単2R</a></li>
         <li class="group-tan2r"><a href="#%E7%AA%81%E5%8D%982R">突単2R</a></li>
@@ -529,8 +537,7 @@
     <h3 id="%E3%83%95%E3%82%A9%E3%83%AB%E3%83%8D%E3%82%A6%E3%82%B9">▼フォルネウス<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
     <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1961426671237829013"><p>ツイートを読み込み中...</p></div>
 
-    <div style="height: 100vh;"></div>
-
+    </div>
     
     <script>
         const PAGE_SETTING_KEY = 'PageSettings'; 
@@ -546,7 +553,7 @@
             if (currentZoom < 0.5) currentZoom = 0.5;
             if (currentZoom > 2.0) currentZoom = 2.0;
             
-            document.body.style.zoom = currentZoom;
+            document.getElementById('page-wrapper').style.transform = `scale(${currentZoom})`;
             pageSettings[zoomKey] = currentZoom;
             savePageSettings();
         }
@@ -577,7 +584,8 @@
             const themeRadios = document.querySelectorAll('input[name="theme"]');
             
             loadPageSettings();
-            document.body.style.zoom = pageSettings['repeat_zoom'] || 1.0;
+            const initialZoom = pageSettings['repeat_zoom'] || 1.0;
+            document.getElementById('page-wrapper').style.transform = `scale(${initialZoom})`;
 
             function getCurrentTheme() {
                 const savedTheme = localStorage.getItem("theme") || "system";
@@ -621,7 +629,6 @@
                                 const tweetUrl = placeholder.dataset.tweetUrl;
                                 const tweetId = tweetUrl.split('/').pop().split('?')[0];
                                 
-                                // ★ 変更点: ここに lang: 'ja' を追加する
                                 window.twttr.widgets.createTweet(
                                     tweetId,
                                     placeholder,
@@ -694,8 +701,7 @@
                     radio.checked = true;
                 }
             }
-            
-            // ★ 変更点: 動的読み込みに戻し、URLからは ?lang=ja を削除
+
             window.twttr = (function (d, s, id) {
                 var js, fjs = d.getElementsByTagName(s)[0],
                     t = window.twttr || {};
