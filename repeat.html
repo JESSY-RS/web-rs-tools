@@ -122,15 +122,19 @@
         blockquote.twitter-tweet {
             margin: 10px 0 20px 0 !important;
         }
+        /* ▼▼▼ 修正箇所1 ▼▼▼ */
+        /* Twitterの埋め込みスタイルを上書きして、読み込み後の下部マージンを減らす */
+        .tweet-item blockquote.twitter-tweet {
+            margin-bottom: 10px !important;
+        }
+        /* ▲▲▲ 修正ここまで ▲▲▲ */
         .lazy-tweet {
             min-height: 100px;
             border: 2px dashed #ccc;
             border-radius: 12px;
             display: flex;
             align-items: center;
-            /* ▼▼▼ 修正箇所1 ▼▼▼ */
-            margin: 10px 0; /* 上下の余白を均等にし、記事間のスペースを調整 */
-            /* ▲▲▲ 修正ここまで ▲▲▲ */
+            margin: 10px 0;
         }
         .lazy-tweet p {
             padding-left: 1em;
@@ -140,7 +144,6 @@
             border-color: #555;
         }
         /* ▼▼▼ 修正箇所2 ▼▼▼ */
-        /* 説明文と点線の間のネガティブマージンを0にし、5pxの余白を確保 */
         p+.lazy-tweet {
             margin-top: -8px;
         }
