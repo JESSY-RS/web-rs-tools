@@ -760,24 +760,20 @@
                                 }
 
                                 if (isAppleSafari && anchorTargetId) {
-                                    // ★ 変更点: デバッグ設定を実用的な設定に戻す
+                                    // ★ 最終変更点: 待ち時間を150ミリ秒とし、ズレチェックを無くして強制補正する
                                     setTimeout(() => {
                                         if (!anchorTargetId) return;
 
                                         try {
                                             const targetElement = document.getElementById(anchorTargetId);
                                             if (targetElement) {
-                                                const rect = targetElement.getBoundingClientRect();
-                                                // ズレを検知した場合のみ補正を実行
-                                                if (rect.top > 1) {
-                                                    targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
-                                                }
+                                                targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
                                             }
                                         } catch (e) {
                                             console.error("Error finding target element for scroll correction:", e);
                                             anchorTargetId = null;
                                         }
-                                    }, 100); // 待ち時間を100ミリ秒に戻す
+                                    }, 150);
                                 }
                             });
                             observer.unobserve(placeholder);
