@@ -763,9 +763,12 @@
                                     try {
                                         const targetElement = document.getElementById(anchorTargetId);
                                         if (targetElement) {
-                                            // ★ 変更点: scrollIntoViewから、より正確なscrollToへ変更
-                                            const elementTop = targetElement.getBoundingClientRect().top + window.scrollY;
-                                            window.scrollTo({ top: elementTop, left: 0, behavior: 'auto' });
+                                            const rect = targetElement.getBoundingClientRect();
+                                            // ★ 変更点: ターゲットが画面最上部から1px以上ズレている場合のみ補正
+                                            if (rect.top > 1) {
+                                                const elementTop = rect.top + window.scrollY;
+                                                window.scrollTo({ top: elementTop, left: 0, behavior: 'auto' });
+                                            }
                                         }
                                     } catch (e) {
                                         console.error("Error finding target element for scroll correction:", e);
