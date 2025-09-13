@@ -22,7 +22,6 @@
             display: flex; align-items: center; border-bottom: 2px solid #ccc;
             position: relative;
             margin-top: 0;
-            font-size: 2em;
         }
         body.dark h1, body.dark h2 { border-bottom-color: #444; }
         
@@ -153,7 +152,7 @@
         
         .zoom-buttons {
             position: absolute;
-            top: 0; 
+            top: 0;
             right: 0;
             display: flex;
             gap: 5px;
@@ -169,7 +168,6 @@
             border-radius: 5px;
             border: 1px solid #ccc;
         }
-
     </style>
 </head>
 <body id="top">
@@ -531,7 +529,7 @@
     <h3 id="%E3%83%95%E3%82%A9%E3%83%AB%E3%83%8D%E3%82%A6%E3%82%B9">▼フォルネウス<a href="#top" class="heading-top-link">▲TOPへ戻る</a></h3>
     <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1961426671237829013"><p>ツイートを読み込み中...</p></div>
 
-    <div style="height: 80vh;"></div>
+    <div style="height: 100vh;"></div>
 
     
     <script>
@@ -615,41 +613,44 @@
             }
 
             function initializeTwitterLazyLoader() {
-                const processLazyTweets = (entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const placeholder = entry.target;
-                            const tweetUrl = placeholder.dataset.tweetUrl;
-                            const tweetId = tweetUrl.split('/').pop().split('?')[0];
-                            
-                            window.twttr.widgets.createTweet(
-                                tweetId,
-                                placeholder,
-                                { theme: getCurrentTheme(), dnt: true }
-                            ).then(el => {
-                                if (el) {
-                                    const loadingP = placeholder.querySelector('p');
-                                    if (loadingP) {
-                                        loadingP.remove();
+                window.twttr.ready(function() {
+                    const processLazyTweets = (entries, observer) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                const placeholder = entry.target;
+                                const tweetUrl = placeholder.dataset.tweetUrl;
+                                const tweetId = tweetUrl.split('/').pop().split('?')[0];
+                                
+                                // ★ 変更点: ここに lang: 'ja' を追加する
+                                window.twttr.widgets.createTweet(
+                                    tweetId,
+                                    placeholder,
+                                    { theme: getCurrentTheme(), dnt: true, lang: 'ja' }
+                                ).then(el => {
+                                    if (el) {
+                                        const loadingP = placeholder.querySelector('p');
+                                        if (loadingP) {
+                                            loadingP.remove();
+                                        }
+                                        placeholder.style.minHeight = '0';
+                                        placeholder.style.border = 'none';
+                                    } else {
+                                        placeholder.innerHTML = `<p style="color:red;">ツイートを読み込めませんでした。<br>（削除されたか、URLが間違っている可能性があります）</p>`;
                                     }
-                                    placeholder.style.minHeight = '0';
-                                    placeholder.style.border = 'none';
-                                } else {
-                                    placeholder.innerHTML = `<p style="color:red;">ツイートを読み込めませんでした。<br>（削除されたか、URLが間違っている可能性があります）</p>`;
-                                }
-                            }).catch(error => {
-                                console.error("Error creating tweet:", tweetUrl, error);
-                                placeholder.innerHTML = `<p style="color:red;">ツイートの読み込み中にエラーが発生しました。</p>`;
-                            });
+                                }).catch(error => {
+                                    console.error("Error creating tweet:", tweetUrl, error);
+                                    placeholder.innerHTML = `<p style="color:red;">ツイートの読み込み中にエラーが発生しました。</p>`;
+                                });
 
-                            observer.unobserve(placeholder);
-                        }
+                                observer.unobserve(placeholder);
+                            }
+                        });
+                    };
+
+                    const observer = new IntersectionObserver(processLazyTweets, { rootMargin: '200px 0px' });
+                    document.querySelectorAll('.lazy-tweet').forEach(tweet => {
+                        observer.observe(tweet);
                     });
-                };
-
-                const observer = new IntersectionObserver(processLazyTweets, { rootMargin: '200px 0px' });
-                document.querySelectorAll('.lazy-tweet').forEach(tweet => {
-                    observer.observe(tweet);
                 });
             }
 
@@ -693,14 +694,24 @@
                     radio.checked = true;
                 }
             }
-
-            const twitterScript = document.createElement('script');
-            twitterScript.id = 'twitter-wjs';
-            twitterScript.src = "https://platform.twitter.com/widgets.js";
-            twitterScript.async = true;
-            twitterScript.onload = initializeTwitterLazyLoader;
-            twitterScript.onerror = handleTwitterScriptError;
-            document.body.appendChild(twitterScript);
+            
+            // ★ 変更点: 動的読み込みに戻し、URLからは ?lang=ja を削除
+            window.twttr = (function (d, s, id) {
+                var js, fjs = d.getElementsByTagName(s)[0],
+                    t = window.twttr || {};
+                if (d.getElementById(id)) return t;
+                js = d.createElement(s);
+                js.id = id;
+                js.src = "https://platform.twitter.com/widgets.js";
+                js.onload = initializeTwitterLazyLoader;
+                js.onerror = handleTwitterScriptError;
+                fjs.parentNode.insertBefore(js, fjs);
+                t._e = [];
+                t.ready = function (f) {
+                    t._e.push(f);
+                };
+                return t;
+            }(document, "script", "twitter-wjs"));
         });
     </script>
 </body>
