@@ -19,7 +19,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 15px;
-            padding-bottom: 100vh; /* ★ 最下部のツイート読み込み時のズレ防止用の余白を追加 */
+            /* ★ 修正点: 拡大縮小と競合するため、ここからpadding-bottomを削除 */
             transform-origin: top; /* 上を基準に拡大縮小 */
             transition: transform 0.1s ease-in-out;
         }
@@ -539,6 +539,8 @@
 
     </div>
     
+    <div style="height: 80vh;"></div>
+
     <script>
         const PAGE_SETTING_KEY = 'PageSettings'; 
         let pageSettings = { 'repeat_zoom': 1.0 };
