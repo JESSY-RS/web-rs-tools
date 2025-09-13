@@ -728,9 +728,8 @@
             const themeOptions = document.getElementById('theme-options');
             const themeRadios = document.querySelectorAll('input[name="theme"]');
 
-            // --- ★★★ ここから下のスクリプトを全面的に書き換え ★★★ ---
+            // --- ★★★ ここから下のスクリプトをハイブリッド方式に修正 ★★★ ---
 
-            // 1. 現在のテーマ設定（'light' or 'dark'）を取得する関数
             function getCurrentTheme() {
                 const savedTheme = localStorage.getItem("theme") || "system";
                 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -739,7 +738,6 @@
                 return prefersDark ? 'dark' : 'light';
             }
 
-            // 2. ページ本体のテーマ（背景色など）を適用する関数
             function applyPageTheme() {
                 if (getCurrentTheme() === 'dark') {
                     body.classList.add("dark");
@@ -748,19 +746,32 @@
                 }
             }
 
-            // 3. ★核心★ Twitterウィジェット用のmetaタグを制御する関数
-            function setTwitterMetaTheme() {
+            // ★【初期表示用】Twitterウィジェット用のmetaタグを制御する関数
+            function setInitialTwitterMetaTheme() {
                 const theme = getCurrentTheme();
                 let metaTag = document.querySelector('meta[name="twitter:widgets:theme"]');
-                
-                // metaタグがなければ新しく作成してheadに追加
                 if (!metaTag) {
                     metaTag = document.createElement('meta');
                     metaTag.name = 'twitter:widgets:theme';
                     document.head.appendChild(metaTag);
                 }
-                // metaタグのcontentに現在のテーマを設定
                 metaTag.content = theme;
+            }
+            
+            // ★【手動切り替え用】表示済みの全ツイートのテーマを強制的に更新する関数
+            function updateAllExistingTweets() {
+                const theme = getCurrentTheme();
+                const allIframes = document.querySelectorAll('iframe[id^="twitter-widget-"]');
+
+                allIframes.forEach(iframe => {
+                    try {
+                        const src = new URL(iframe.src);
+                        if (src.searchParams.get('theme') !== theme) {
+                            src.searchParams.set('theme', theme);
+                            iframe.src = src.toString();
+                        }
+                    } catch (e) { /* エラーを無視 */ }
+                });
             }
 
             // --- イベントリスナー設定 ---
@@ -780,35 +791,26 @@
                     const newTheme = e.target.value;
                     localStorage.setItem('theme', newTheme);
                     
-                    // ページとTwitterのテーマを更新
                     applyPageTheme();
-                    setTwitterMetaTheme();
-
-                    // Twitterのウィジェットに新しい設定を反映させるため、再読み込みを指示
-                    if (window.twttr && window.twttr.widgets) {
-                        // body全体を対象にウィジェットを再描画
-                        window.twttr.widgets.load(document.body);
-                    }
+                    // 手動切り替え時は、iframeのURLを直接書き換えて再読み込みさせる
+                    updateAllExistingTweets();
                 });
             });
 
             window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-                // OSのテーマ変更時も同様に更新
                 const currentSetting = localStorage.getItem("theme") || "system";
                 if (currentSetting === "system") {
                     applyPageTheme();
-                    setTwitterMetaTheme();
-                    if (window.twttr && window.twttr.widgets) {
-                        window.twttr.widgets.load(document.body);
-                    }
+                    updateAllExistingTweets();
                 }
             });
             
             // --- 初期化処理 ---
             
-            // ページ読み込み時に、Twitterのスクリプトが読み込まれる「前」に設定を完了させる
+            // ページ本体のテーマを適用
             applyPageTheme();
-            setTwitterMetaTheme();
+            // ★【初期表示用】Twitterが表示される前にmetaタグでテーマを指示
+            setInitialTwitterMetaTheme();
 
             // 保存されている設定をラジオボタンに反映
             const savedRadioValue = localStorage.getItem("theme") || "system";
