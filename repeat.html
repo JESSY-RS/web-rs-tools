@@ -36,11 +36,9 @@
             margin: 0 auto;
             padding: 15px;
         }
-        /* ▼▼▼ 修正箇所 ▼▼▼ */
         #page-wrapper p {
             margin-top: 5px;
         }
-        /* ▲▲▲ 修正ここまで ▲▲▲ */
         h1 {
             display: flex;
             align-items: center;
@@ -130,7 +128,9 @@
             border-radius: 12px;
             display: flex;
             align-items: center;
-            margin: 10px 0 20px 0;
+            /* ▼▼▼ 修正箇所1 ▼▼▼ */
+            margin: 10px 0; /* 上下の余白を均等にし、記事間のスペースを調整 */
+            /* ▲▲▲ 修正ここまで ▲▲▲ */
         }
         .lazy-tweet p {
             padding-left: 1em;
@@ -139,9 +139,12 @@
         body.dark .lazy-tweet {
             border-color: #555;
         }
+        /* ▼▼▼ 修正箇所2 ▼▼▼ */
+        /* 説明文と点線の間のネガティブマージンを0にし、5pxの余白を確保 */
         p+.lazy-tweet {
-            margin-top: -11px;
+            margin-top: -8px;
         }
+        /* ▲▲▲ 修正ここまで ▲▲▲ */
         .tweet-item {
             break-inside: avoid;
             page-break-inside: avoid;
@@ -150,8 +153,6 @@
             .toc {
                 grid-template-columns: repeat(8, 1fr);
             }
-            /* ▼▼▼ 修正箇所 ▼▼▼ */
-            /* :not(.kanmon-container) を削除し、全コンテナを対象に */
             .tweet-container {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
@@ -161,7 +162,6 @@
             .tweet-container > p {
                 grid-column: 1 / -1;
             }
-            /* ▲▲▲ 修正ここまで ▲▲▲ */
         }
         .group-tan2r { background-color: #ffcdd2; }
         .group-zen2r { background-color: #b2ebf2; }
