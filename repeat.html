@@ -1005,7 +1005,6 @@
             if (currentZoom < 0.5) currentZoom = 0.5;
             if (currentZoom > 2.0) currentZoom = 2.0;
             
-            // ▼▼▼ 修正箇所: zoomの適用対象を body から #page-wrapper に変更 ▼▼▼
             document.getElementById('page-wrapper').style.zoom = currentZoom;
             
             pageSettings[zoomKey] = currentZoom;
@@ -1044,7 +1043,6 @@
             loadPageSettings();
             
             const initialZoom = pageSettings['repeat_zoom'] || 1.0;
-            // ▼▼▼ 修正箇所: zoomの適用対象を body から #page-wrapper に変更 ▼▼▼
             document.getElementById('page-wrapper').style.zoom = initialZoom;
 
             if (isAppleSafari) {
@@ -1126,6 +1124,14 @@
                                 console.error("Error creating tweet:", tweetUrl, error);
                                 placeholder.innerHTML = `<p style="color:red;">ツイートの読み込み中にエラーが発生しました。</p>`;
                             }).finally(() => {
+                                // ▼▼▼ 修正箇所: 読み込み完了後にコンテナの高さを再計算させる処理を追加 ▼▼▼
+                                const tweetContainer = placeholder.closest('.tweet-container');
+                                if (tweetContainer) {
+                                    // Safariのzoom時の高さ計算バグを是正するため、高さを自動調整させる
+                                    tweetContainer.style.height = 'auto';
+                                }
+                                // ▲▲▲ 修正ここまで ▲▲▲
+
                                 if (placeholder.dataset.isLast === 'true') {
                                     const footerSpacer = document.getElementById('footer-spacer');
                                     if (footerSpacer) {
