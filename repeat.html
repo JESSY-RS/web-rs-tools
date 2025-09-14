@@ -123,8 +123,6 @@
             margin: 10px 0 20px 0 !important;
         }
         
-        /* ▼▼▼ 修正箇所1 ▼▼▼ */
-        /* 読み込み後のツイートの下マージンを削除 */
         .tweet-item blockquote.twitter-tweet {
             margin-bottom: 0 !important;
         }
@@ -134,10 +132,8 @@
             border-radius: 12px;
             display: flex;
             align-items: center;
-            /* 上下マージンを削除 */
             margin: 0;
         }
-        /* ▲▲▲ 修正ここまで ▲▲▲ */
 
         .lazy-tweet p {
             padding-left: 1em;
@@ -147,14 +143,9 @@
             border-color: #555;
         }
         
-        /* ▼▼▼ 修正箇所2 ▼▼▼ */
-        /* p+lazy-tweet のハックを削除 */
-        
-        /* tweet-itemコンテナ自体に下マージンを設定し、記事間のスペースを確保 */
         .tweet-item {
             margin-bottom: 20px;
         }
-        /* ▲▲▲ 修正ここまで ▲▲▲ */
 
         @media (min-width: 1200px) {
             .toc {
@@ -170,10 +161,8 @@
                 grid-column: 1 / -1;
             }
             .tweet-item {
-                /* 2カラム表示時に記事が分割されないようにする設定 */
                 break-inside: avoid;
                 page-break-inside: avoid;
-                /* 2カラム時のマージンはgapで制御されるためリセット */
                 margin-bottom: 0;
             }
         }
@@ -1001,8 +990,7 @@
     </div>
 
     
-        <div id="footer-spacer" style="height: 900px;"></div>
-        
+        <div id="footer-spacer" style="height: 0px;"></div>
         <div class="bottom">
             <a href="index.html" class="web-link">INDEXへ戻る</a>
         </div>
