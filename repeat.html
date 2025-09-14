@@ -116,13 +116,42 @@
         body.dark .toc li.disabled a {
             color: #adb5bd;
         }
+        
+        /* ▼▼▼ 修正箇所 ▼▼▼ */
+        /* シンプルで安定した余白指定 */
+        blockquote.twitter-tweet {
+            margin: 20px 0 !important;
+        }
         .lazy-tweet {
             min-height: 100px;
             border: 2px dashed #ccc;
             border-radius: 12px;
             display: flex;
             align-items: center;
+            margin: 20px 0;
         }
+        .tweet-item p + .lazy-tweet {
+            margin-top: -8px; /* 説明文と記事の間の余白を調整 */
+        }
+        
+        @media (min-width: 1200px) {
+            .toc {
+                grid-template-columns: repeat(8, 1fr);
+            }
+            /* 2列表示用の指定 */
+            .content-container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0 20px; /* 列間の隙間 */
+                align-items: start; /* 上揃え */
+            }
+            .tweet-item {
+                /* 列をまたいでアイテムが分割されるのを防ぐ */
+                break-inside: avoid;
+            }
+        }
+        /* ▲▲▲ 修正ここまで ▲▲▲ */
+
         .lazy-tweet p {
             padding-left: 1em;
             white-space: nowrap;
@@ -131,42 +160,6 @@
             border-color: #555;
         }
 
-        /* ▼▼▼ 修正箇所 ▼▼▼ */
-        /* --- 新しい余白管理システム --- */
-
-        /* 1. アイテム間の主要な余白は、このコンテナで管理 */
-        .tweet-item {
-            margin-bottom: 20px;
-        }
-
-        /* 2. アイテム内部の全要素の上下マージンを強制的にリセット */
-        .tweet-item > *,
-        .tweet-item blockquote.twitter-tweet {
-            margin-top: 0 !important;
-            margin-bottom: 0 !important;
-        }
-
-        /* 3. 説明文(p)とツイート(.lazy-tweet)の間にだけ、必要な余白を再設定 */
-        .tweet-item p + .lazy-tweet {
-            margin-top: 8px !important;
-        }
-        /* --- ここまで --- */
-        /* ▲▲▲ 修正ここまで ▲▲▲ */
-        
-        @media (min-width: 1200px) {
-            .toc {
-                grid-template-columns: repeat(8, 1fr);
-            }
-            .tweet-container {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0 20px; /* 横の隙間のみ設定 */
-                align-items: start;
-            }
-            .tweet-container > p {
-                grid-column: 1 / -1;
-            }
-        }
         .group-tan2r { background-color: #ffcdd2; }
         .group-zen2r { background-color: #b2ebf2; }
         .group-tate2r { background-color: #c8e6c9; }
@@ -366,7 +359,7 @@
 
         </ul>
     <h2 id="%E6%96%AC%E5%8D%982R">▼斬単2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦14秒・自由枠０</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1834205679428796830"><p>ツイートを読み込み中...</p></div>
@@ -381,7 +374,7 @@
         </div>
     </div>
     <h2 id="%E6%89%93%E5%8D%982R">▼打単2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦13or15秒・自由枠４</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1855205619709731109"><p>ツイートを読み込み中...</p></div>
@@ -400,7 +393,7 @@
         </div>
     </div>
     <h2 id="%E7%AA%81%E5%8D%982R">▼突単2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦15秒・自由枠４</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1855387219768553967"><p>ツイートを読み込み中...</p></div>
@@ -419,24 +412,24 @@
         </div>
     </div>
     <h2 id="%E7%86%B1%E5%8D%982R">▼熱単2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦14or16秒・自由枠４<br>記憶再戦13秒・自由枠０</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1856227377766117898"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h2 id="%E5%86%B7%E5%8D%982R">▼冷単2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%9B%B7%E5%8D%982R">▼雷単2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦14秒・自由枠０</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1834205679428796830"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h2 id="%E9%99%BD%E5%8D%982R">▼陽単2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦12秒・自由枠０</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1886446666850676941"><p>ツイートを読み込み中...</p></div>
@@ -455,10 +448,10 @@
         </div>
     </div>
     <h2 id="%E9%99%B0%E5%8D%982R">▼陰単2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E6%96%AC%E5%85%A82R">▼斬全2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦11秒</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1961437893458882759"><p>ツイートを読み込み中...</p></div>
@@ -477,7 +470,7 @@
         </div>
     </div>
     <h2 id="%E6%89%93%E5%85%A82R">▼打全2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦12秒・自由枠３</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1876876174426603915"><p>ツイートを読み込み中...</p></div>
@@ -496,7 +489,7 @@
         </div>
     </div>
     <h2 id="%E7%AA%81%E5%85%A82R">▼突全2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦11秒・自由枠０～</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1915381352368931079"><p>ツイートを読み込み中...</p></div>
@@ -515,7 +508,7 @@
         </div>
     </div>
     <h2 id="%E7%86%B1%E5%85%A82R">▼熱全2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦12秒・自由枠０～？</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1946146833790849211"><p>ツイートを読み込み中...</p></div>
@@ -530,7 +523,7 @@
         </div>
     </div>
     <h2 id="%E5%86%B7%E5%85%A82R">▼冷全2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦18or20秒・自由枠４</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1855413742621822995"><p>ツイートを読み込み中...</p></div>
@@ -541,7 +534,7 @@
         </div>
     </div>
     <h2 id="%E9%9B%B7%E5%85%A82R">▼雷全2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦14秒・自由枠３</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1849423407693316590"><p>ツイートを読み込み中...</p></div>
@@ -552,7 +545,7 @@
         </div>
     </div>
     <h2 id="%E9%99%BD%E5%85%A82R">▼陽全2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦15秒・自由枠４<br>記憶再戦12秒・自由枠２(引用参照)</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1855856814405067163"><p>ツイートを読み込み中...</p></div>
@@ -563,7 +556,7 @@
         </div>
     </div>
     <h2 id="%E9%99%B0%E5%85%A82R">▼陰全2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦15秒・自由枠３<br>記憶再戦13秒・自由枠０</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1855819040687857788"><p>ツイートを読み込み中...</p></div>
@@ -578,7 +571,7 @@
         </div>
     </div>
     <h2 id="%E6%96%AC%E7%B8%A62R">▼斬縦2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦14秒・自由枠３</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1833440770160005129"><p>ツイートを読み込み中...</p></div>
@@ -589,10 +582,10 @@
         </div>
     </div>
     <h2 id="%E6%89%93%E7%B8%A62R">▼打縦2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E7%AA%81%E7%B8%A62R">▼突縦2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦13秒・自由枠３</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1830926017097277562"><p>ツイートを読み込み中...</p></div>
@@ -603,26 +596,26 @@
         </div>
     </div>
     <h2 id="%E7%86%B1%E7%B8%A62R">▼熱縦2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E5%86%B7%E7%B8%A62R">▼冷縦2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%9B%B7%E7%B8%A62R">▼雷縦2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%99%BD%E7%B8%A62R">▼陽縦2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%99%B0%E7%B8%A62R">▼陰縦2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦17秒・自由枠０？</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1833348342648344667"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h2 id="%E6%96%AC%E6%A8%AA2R">▼斬横2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦16秒・自由枠４</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1855172310787084650"><p>ツイートを読み込み中...</p></div>
@@ -633,23 +626,23 @@
         </div>
     </div>
     <h2 id="%E6%89%93%E6%A8%AA2R">▼打横2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E7%AA%81%E6%A8%AA2R">▼突横2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦15秒or16秒・自由枠０～１？</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1834585455373009388"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h2 id="%E7%86%B1%E6%A8%AA2R">▼熱横2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E5%86%B7%E6%A8%AA2R">▼冷横2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%9B%B7%E6%A8%AA2R">▼雷横2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦16秒・自由枠４</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1855172310787084650"><p>ツイートを読み込み中...</p></div>
@@ -660,7 +653,7 @@
         </div>
     </div>
     <h2 id="%E9%99%BD%E6%A8%AA2R">▼陽横2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦14秒・自由枠３</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1833887871809536104"><p>ツイートを読み込み中...</p></div>
@@ -671,34 +664,34 @@
         </div>
     </div>
     <h2 id="%E9%99%B0%E6%A8%AA2R">▼陰横2R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E6%96%AC%E6%A8%AA1R">▼斬横1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E6%89%93%E6%A8%AA1R">▼打横1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E7%AA%81%E6%A8%AA1R">▼突横1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E7%86%B1%E6%A8%AA1R">▼熱横1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E5%86%B7%E6%A8%AA1R">▼冷横1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%9B%B7%E6%A8%AA1R">▼雷横1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%99%BD%E6%A8%AA1R">▼陽横1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%99%B0%E6%A8%AA1R">▼陰横1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E6%96%AC%E5%8D%981R">▼斬単1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦3秒(※端末性能依存)</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1956197938641953046"><p>ツイートを読み込み中...</p></div>
@@ -717,14 +710,14 @@
         </div>
     </div>
     <h2 id="%E6%89%93%E5%8D%981R">▼打単1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦6秒・自由枠０</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1862694620825887213"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h2 id="%E7%AA%81%E5%8D%981R">▼突単1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦11秒・自由枠０</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1862510538225590393"><p>ツイートを読み込み中...</p></div>
@@ -751,93 +744,93 @@
         </div>
     </div>
     <h2 id="%E7%86%B1%E5%8D%981R">▼熱単1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E5%86%B7%E5%8D%981R">▼冷単1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%9B%B7%E5%8D%981R">▼雷単1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦16秒・自由枠０</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1843989003995087249"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h2 id="%E9%99%BD%E5%8D%981R">▼陽単1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦9秒・自由枠０</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1862642310837936212"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h2 id="%E9%99%B0%E5%8D%981R">▼陰単1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦6秒・自由枠０</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1862448757327241690"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h2 id="%E6%96%AC%E5%85%A81R">▼斬全1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦4秒・自由枠４</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1862510538225590393"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h2 id="%E6%89%93%E5%85%A81R">▼打全1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
         <div class="tweet-item">
             <p>記憶再戦5秒～??秒・自由枠０～４</p>
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1859580790461563030"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h2 id="%E7%AA%81%E5%85%A81R">▼突全1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E7%86%B1%E5%85%A81R">▼熱全1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E5%86%B7%E5%85%A81R">▼冷全1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%9B%B7%E5%85%A81R">▼雷全1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%99%BD%E5%85%A81R">▼陽全1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%99%B0%E5%85%A81R">▼陰全1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E6%96%AC%E7%B8%A61R">▼斬縦1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E6%89%93%E7%B8%A61R">▼打縦1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E7%AA%81%E7%B8%A61R">▼突縦1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E7%86%B1%E7%B8%A61R">▼熱縦1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E5%86%B7%E7%B8%A61R">▼冷縦1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%9B%B7%E7%B8%A61R">▼雷縦1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%99%BD%E7%B8%A61R">▼陽縦1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%99%B0%E7%B8%A61R">▼陰縦1R<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container ">
+    <div class="content-container">
     </div>
     <h2 id="%E9%96%A2%E9%96%80%E3%82%AF%E3%82%A8%E3%82%B9%E3%83%88">▼関門クエスト<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h2>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
     </div>
     <h3 id="%E3%83%AD%E3%83%83%E3%82%AF%E3%83%96%E3%83%BC%E3%82%B1">▼ロックブーケ　★更新終了<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1921391638837862846"><p>ツイートを読み込み中...</p></div>
         </div>
@@ -864,7 +857,7 @@
         </div>
     </div>
     <h3 id="%E3%83%93%E3%83%A5%E3%83%BC%E3%83%8D%E3%82%A4">▼ビューネイ　★更新終了<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1921391321085788436"><p>ツイートを読み込み中...</p></div>
         </div>
@@ -879,7 +872,7 @@
         </div>
     </div>
     <h3 id="%E3%81%9B%E3%81%84%E3%82%8A%E3%82%85%E3%81%86">▼せいりゅう　★更新終了<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1879150776104460796"><p>ツイートを読み込み中...</p></div>
         </div>
@@ -894,7 +887,7 @@
         </div>
     </div>
     <h3 id="%E3%82%A2%E3%83%87%E3%82%A3%E3%83%AA%E3%82%B9">▼アディリス　★更新終了<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1879879370485162162"><p>ツイートを読み込み中...</p></div>
         </div>
@@ -903,13 +896,13 @@
         </div>
     </div>
     <h3 id="%E3%83%87%E3%82%B9">▼デス　★更新終了<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1884950789531292010"><p>ツイートを読み込み中...</p></div>
         </div>
     </div>
     <h3 id="%E3%83%96%E3%83%A9%E3%83%83%E3%82%AF%E3%82%AF%E3%83%AD%E3%82%B9">▼ブラッククロス　★更新終了<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1952734626612474202"><p>ツイートを読み込み中...</p></div>
         </div>
@@ -924,7 +917,7 @@
         </div>
     </div>
     <h3 id="%E6%AD%BB%E3%81%9B%E3%82%8B%E8%B3%A2%E8%80%85">▼死せる賢者　★更新終了<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1945799626856247714"><p>ツイートを読み込み中...</p></div>
         </div>
@@ -939,7 +932,7 @@
         </div>
     </div>
     <h3 id="%E3%83%9F%E3%83%AD%E3%82%AF">▼ミロク　★更新終了<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1918650122814038017"><p>ツイートを読み込み中...</p></div>
         </div>
@@ -948,7 +941,7 @@
         </div>
     </div>
     <h3 id="%E3%82%AC%E3%83%A9%E3%83%8F%E3%83%89">▼ガラハド　★更新終了<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1957426253881086163"><p>ツイートを読み込み中...</p></div>
         </div>
@@ -969,7 +962,7 @@
         </div>
     </div>
     <h3 id="%E3%82%A2%E3%83%B3%E3%83%BB%E3%83%AB%E3%83%BC">▼アン・ルー<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1957731057832272158"><p>ツイートを読み込み中...</p></div>
         </div>
@@ -984,7 +977,7 @@
         </div>
     </div>
     <h3 id="%E3%83%95%E3%82%A9%E3%83%AB%E3%83%8D%E3%82%A6%E3%82%B9">▼フォルネウス<a href="#top" class="heading-top-link web-link">▲TOPへ戻る</a></h3>
-    <div class="tweet-container kanmon-container">
+    <div class="content-container">
         <div class="tweet-item">
             <div class="lazy-tweet" data-tweet-url="https://x.com/jessy_romasaga/status/1961426671237829013" data-is-last="true"><p>ツイートを読み込み中...</p></div>
         </div>
