@@ -147,12 +147,22 @@
             margin-bottom: 20px;
         }
 
+        /* ▼▼▼ 修正箇所 ▼▼▼ */
+        /*
+         * iPhone Safariでコンテナの高さ計算が不正確になる問題の対策。
+         * これによりコンテナ末尾の不要な空白が解消される。
+         */
+        .tweet-container {
+            display: flow-root;
+        }
+        /* ▲▲▲ 修正ここまで ▲▲▲ */
+
         @media (min-width: 1200px) {
             .toc {
                 grid-template-columns: repeat(8, 1fr);
             }
             .tweet-container {
-                display: grid;
+                display: grid; /* flow-rootを上書き */
                 grid-template-columns: repeat(2, 1fr);
                 gap: 20px;
                 align-items: start;
@@ -990,7 +1000,8 @@
     </div>
 
     
-        <div id="footer-spacer" style="height: 0px;"></div>
+        <div id="footer-spacer" style="height: 900px;"></div>
+        
         <div class="bottom">
             <a href="index.html" class="web-link">INDEXへ戻る</a>
         </div>
