@@ -122,8 +122,11 @@
         blockquote.twitter-tweet {
             margin: 10px 0 20px 0 !important;
         }
+        
+        /* ▼▼▼ 修正箇所1 ▼▼▼ */
+        /* 読み込み後のツイートの下マージンを削除 */
         .tweet-item blockquote.twitter-tweet {
-            margin-bottom: 10px !important;
+            margin-bottom: 0 !important;
         }
         .lazy-tweet {
             min-height: 100px;
@@ -131,8 +134,11 @@
             border-radius: 12px;
             display: flex;
             align-items: center;
-            margin: 10px 0;
+            /* 上下マージンを削除 */
+            margin: 0;
         }
+        /* ▲▲▲ 修正ここまで ▲▲▲ */
+
         .lazy-tweet p {
             padding-left: 1em;
             white-space: nowrap;
@@ -140,9 +146,16 @@
         body.dark .lazy-tweet {
             border-color: #555;
         }
-        p+.lazy-tweet {
-            margin-top: -8px;
+        
+        /* ▼▼▼ 修正箇所2 ▼▼▼ */
+        /* p+lazy-tweet のハックを削除 */
+        
+        /* tweet-itemコンテナ自体に下マージンを設定し、記事間のスペースを確保 */
+        .tweet-item {
+            margin-bottom: 20px;
         }
+        /* ▲▲▲ 修正ここまで ▲▲▲ */
+
         @media (min-width: 1200px) {
             .toc {
                 grid-template-columns: repeat(8, 1fr);
@@ -156,16 +169,13 @@
             .tweet-container > p {
                 grid-column: 1 / -1;
             }
-            /* ▼▼▼ 修正箇所 ▼▼▼ */
-            /*
-             * iPhone Safariでの余白問題を修正するため、
-             * カラム分割を禁止するスタイルをPC表示（2カラム時）にのみ適用する
-             */
             .tweet-item {
+                /* 2カラム表示時に記事が分割されないようにする設定 */
                 break-inside: avoid;
                 page-break-inside: avoid;
+                /* 2カラム時のマージンはgapで制御されるためリセット */
+                margin-bottom: 0;
             }
-            /* ▲▲▲ 修正ここまで ▲▲▲ */
         }
         .group-tan2r { background-color: #ffcdd2; }
         .group-zen2r { background-color: #b2ebf2; }
