@@ -149,11 +149,12 @@
 
         /* ▼▼▼ 修正箇所 ▼▼▼ */
         /*
-         * iPhone Safariでコンテナの高さ計算が不正確になる問題の対策。
-         * これによりコンテナ末尾の不要な空白が解消される。
+         * iPhone Safariで発生するレイアウト崩れへの最終対策。
+         * 古典的で安定した `overflow: hidden;` を使い、
+         * コンテナが内部の要素を正しく包含するように強制する。
          */
         .tweet-container {
-            display: flow-root;
+            overflow: hidden;
         }
         /* ▲▲▲ 修正ここまで ▲▲▲ */
 
@@ -162,7 +163,8 @@
                 grid-template-columns: repeat(8, 1fr);
             }
             .tweet-container {
-                display: grid; /* flow-rootを上書き */
+                overflow: visible; /* PC表示では解除 */
+                display: grid;
                 grid-template-columns: repeat(2, 1fr);
                 gap: 20px;
                 align-items: start;
