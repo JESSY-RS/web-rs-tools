@@ -122,9 +122,8 @@
         blockquote.twitter-tweet {
             margin: 10px 0 20px 0 !important;
         }
-        
         .tweet-item blockquote.twitter-tweet {
-            margin-bottom: 0 !important;
+            margin-bottom: 10px !important;
         }
         .lazy-tweet {
             min-height: 100px;
@@ -132,9 +131,8 @@
             border-radius: 12px;
             display: flex;
             align-items: center;
-            margin: 0;
+            margin: 10px 0;
         }
-
         .lazy-tweet p {
             padding-left: 1em;
             white-space: nowrap;
@@ -142,28 +140,18 @@
         body.dark .lazy-tweet {
             border-color: #555;
         }
-        
+        p+.lazy-tweet {
+            margin-top: -8px;
+        }
         .tweet-item {
-            margin-bottom: 20px;
+            break-inside: avoid;
+            page-break-inside: avoid;
         }
-
-        /* ▼▼▼ 修正箇所 ▼▼▼ */
-        /*
-         * iPhone Safariで発生するレイアウト崩れへの最終対策。
-         * 古典的で安定した `overflow: hidden;` を使い、
-         * コンテナが内部の要素を正しく包含するように強制する。
-         */
-        .tweet-container {
-            overflow: hidden;
-        }
-        /* ▲▲▲ 修正ここまで ▲▲▲ */
-
         @media (min-width: 1200px) {
             .toc {
                 grid-template-columns: repeat(8, 1fr);
             }
             .tweet-container {
-                overflow: visible; /* PC表示では解除 */
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
                 gap: 20px;
@@ -171,11 +159,6 @@
             }
             .tweet-container > p {
                 grid-column: 1 / -1;
-            }
-            .tweet-item {
-                break-inside: avoid;
-                page-break-inside: avoid;
-                margin-bottom: 0;
             }
         }
         .group-tan2r { background-color: #ffcdd2; }
@@ -1022,7 +1005,8 @@
             if (currentZoom < 0.5) currentZoom = 0.5;
             if (currentZoom > 2.0) currentZoom = 2.0;
             
-            document.body.style.zoom = currentZoom;
+            // ▼▼▼ 修正箇所: zoomの適用対象を body から #page-wrapper に変更 ▼▼▼
+            document.getElementById('page-wrapper').style.zoom = currentZoom;
             
             pageSettings[zoomKey] = currentZoom;
             savePageSettings();
@@ -1060,7 +1044,9 @@
             loadPageSettings();
             
             const initialZoom = pageSettings['repeat_zoom'] || 1.0;
-            document.body.style.zoom = initialZoom;
+            // ▼▼▼ 修正箇所: zoomの適用対象を body から #page-wrapper に変更 ▼▼▼
+            document.getElementById('page-wrapper').style.zoom = initialZoom;
+
             if (isAppleSafari) {
                 document.querySelectorAll('.toc a').forEach(anchor => {
                     anchor.addEventListener('click', function(e) {
