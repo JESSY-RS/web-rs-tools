@@ -125,6 +125,7 @@
         /* ▼▼▼ 修正箇所1 ▼▼▼ */
         /* Twitterの埋め込みスタイルを上書きして、読み込み後の下部マージンを減らす */
         .tweet-item blockquote.twitter-tweet {
+            margin-top: -8px !important;
             margin-bottom: 10px !important;
         }
         /* ▲▲▲ 修正ここまで ▲▲▲ */
@@ -139,6 +140,9 @@
         .lazy-tweet p {
             padding-left: 1em;
             white-space: nowrap;
+            /* ▼▼▼ 修正箇所（ここから）▼▼▼ */
+            margin: 0; /* pタグのデフォルトマージンをリセットして垂直中央揃えを正確にする */
+            /* ▲▲▲ 修正箇所（ここまで）▲▲▲ */
         }
         body.dark .lazy-tweet {
             border-color: #555;
