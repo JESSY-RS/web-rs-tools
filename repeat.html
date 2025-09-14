@@ -31,13 +31,10 @@
             --web-link-hover: #0CFF57;
             --web-link-active: #FF0000;
         }
-        /* ここが拡縮用のラッパー（Safari 時は transform をここに当てます） */
         #page-wrapper {
             max-width: 1200px;
             margin: 0 auto;
             padding: 15px;
-            transform-origin: top center;
-            will-change: transform;
         }
         #page-wrapper p {
             margin-top: 5px;
@@ -125,10 +122,12 @@
         blockquote.twitter-tweet {
             margin: 10px 0 20px 0 !important;
         }
+        /* ▼▼▼ 修正箇所1 ▼▼▼ */
         /* Twitterの埋め込みスタイルを上書きして、読み込み後の下部マージンを減らす */
         .tweet-item blockquote.twitter-tweet {
             margin-bottom: 10px !important;
         }
+        /* ▲▲▲ 修正ここまで ▲▲▲ */
         .lazy-tweet {
             min-height: 100px;
             border: 2px dashed #ccc;
@@ -144,9 +143,11 @@
         body.dark .lazy-tweet {
             border-color: #555;
         }
+        /* ▼▼▼ 修正箇所2 ▼▼▼ */
         p+.lazy-tweet {
             margin-top: -8px;
         }
+        /* ▲▲▲ 修正ここまで ▲▲▲ */
         .tweet-item {
             break-inside: avoid;
             page-break-inside: avoid;
@@ -1001,35 +1002,6 @@
         let pageSettings = {
             'repeat_zoom': 1.0
         };
-
-        /* Safari 判定（グローバルで使います） */
-        const __ua_for_safari_check = navigator.userAgent;
-        const __isAppleMobile_for_safari_check = /iPhone|iPad|iPod/i.test(__ua_for_safari_check);
-        const __isThirdPartyBrowserOnIos_for_safari_check = /CriOS|FxiOS|EdgiOS/i.test(__ua_for_safari_check);
-        const isAppleSafari = __isAppleMobile_for_safari_check && !__isThirdPartyBrowserOnIos_for_safari_check;
-
-        function applySafariZoom(currentZoom) {
-            const wrapper = document.getElementById("page-wrapper");
-            if (!wrapper) return;
-
-            // 拡縮を適用
-            wrapper.style.transform = "scale(" + currentZoom + ")";
-            wrapper.style.transformOrigin = "top center";
-
-            // 横幅を補正 → 横スクロール防止 & 余白調整
-            wrapper.style.width = (100 / currentZoom) + "%";
-            wrapper.style.marginLeft = "auto";
-            wrapper.style.marginRight = "auto";
-            
-            // 上下余白補正用（footer-spacer の高さを縮尺に合わせる）
-            const spacer = document.getElementById("footer-spacer");
-            if (spacer) {
-                const origHeight = spacer.dataset.origHeight || spacer.offsetHeight;
-                spacer.dataset.origHeight = origHeight;
-                spacer.style.height = (origHeight * currentZoom) + "px";
-            }
-        }
-
         function changeZoom(delta) {
             const zoomKey = 'repeat_zoom';
             let currentZoom = pageSettings[zoomKey] || 1.0;
@@ -1038,17 +1010,7 @@
             if (currentZoom < 0.5) currentZoom = 0.5;
             if (currentZoom > 2.0) currentZoom = 2.0;
             
-            if (isAppleSafari) {
-                applySafariZoom(currentZoom);
-                // iframe の高さ補正
-                document.querySelectorAll('iframe[id^="twitter-widget-"]').forEach(function(iframe) {
-                    const origHeight = iframe.dataset.origHeight || iframe.offsetHeight;
-                    iframe.dataset.origHeight = origHeight;
-                    iframe.style.height = (origHeight * currentZoom) + "px";
-                });
-            } else {
-                document.body.style.zoom = currentZoom;
-            }
+            document.body.style.zoom = currentZoom;
             
             pageSettings[zoomKey] = currentZoom;
             savePageSettings();
@@ -1076,19 +1038,17 @@
             const themeOptions = document.getElementById('theme-options');
             const themeRadios = document.querySelectorAll('input[name="theme"]');
             
+            const ua = navigator.userAgent;
+            const isAppleMobile = /iPhone|iPad|iPod/i.test(ua);
+            const isThirdPartyBrowserOnIos = /CriOS|FxiOS|EdgiOS/i.test(ua);
+            const isAppleSafari = isAppleMobile && !isThirdPartyBrowserOnIos;
             let anchorTargetId = null;
             let scrollCorrectionTimeout = null;
             
             loadPageSettings();
             
             const initialZoom = pageSettings['repeat_zoom'] || 1.0;
-            // Safari なら page-wrapper に transform を適用、それ以外は body.zoom
-            if (isAppleSafari) {
-                applySafariZoom(initialZoom);
-            } else {
-                document.body.style.zoom = initialZoom;
-            }
-
+            document.body.style.zoom = initialZoom;
             if (isAppleSafari) {
                 document.querySelectorAll('.toc a').forEach(anchor => {
                     anchor.addEventListener('click', function(e) {
@@ -1161,19 +1121,6 @@
                                     placeholder.style.border = 'none';
                                     const loadingP = placeholder.querySelector('p');
                                     if(loadingP) loadingP.remove();
-                                    // 生成された iframe を見つけて元高さを保存しておく（Safari scale 補正用）
-                                    try {
-                                        const generatedIframe = placeholder.querySelector('iframe[id^="twitter-widget-"]');
-                                        if (generatedIframe) {
-                                            generatedIframe.dataset.origHeight = generatedIframe.offsetHeight;
-                                        } else {
-                                            // iframe はウィジェット内部の別ノードに入ることがあるので探索
-                                            const iframeInside = placeholder.querySelector('iframe');
-                                            if (iframeInside) iframeInside.dataset.origHeight = iframeInside.offsetHeight;
-                                        }
-                                    } catch (e) {
-                                        // ignore
-                                    }
                                 } else {
                                     placeholder.innerHTML = `<p style="color:red;">ツイートを読み込めませんでした。<br>（削除されたか、URLが間違っている可能性があります）</p>`;
                                 }
@@ -1186,15 +1133,6 @@
                                     if (footerSpacer) {
                                         footerSpacer.style.height = '0px';
                                     }
-                                }
-                                // Safari ではツイート生成後に iframe 高さ補正を走らせる
-                                if (isAppleSafari) {
-                                    const appliedZoom = pageSettings['repeat_zoom'] || 1.0;
-                                    document.querySelectorAll('iframe[id^="twitter-widget-"]').forEach(function(iframe) {
-                                        const origHeight = iframe.dataset.origHeight || iframe.offsetHeight;
-                                        iframe.dataset.origHeight = origHeight;
-                                        iframe.style.height = (origHeight * appliedZoom) + "px";
-                                    });
                                 }
                                 if (isAppleSafari && anchorTargetId) {
                                     setTimeout(() => {
@@ -1263,7 +1201,7 @@
             }
             window.twttr = (function(d, s, id) {
                 var js, fjs = d.getElementsByTagName(s)[0],
-                    t = window.twttr || {}; 
+                    t = window.twttr || {};
                 if (d.getElementById(id)) return t;
                 js = d.createElement(s);
 js.id = id;
