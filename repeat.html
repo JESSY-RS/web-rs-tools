@@ -122,9 +122,8 @@
         blockquote.twitter-tweet {
             margin: 10px 0 20px 0 !important;
         }
-        
         .tweet-item blockquote.twitter-tweet {
-            margin-bottom: 0 !important;
+            margin-bottom: 10px !important;
         }
         .lazy-tweet {
             min-height: 100px;
@@ -132,9 +131,8 @@
             border-radius: 12px;
             display: flex;
             align-items: center;
-            margin: 0;
+            margin: 10px 0;
         }
-
         .lazy-tweet p {
             padding-left: 1em;
             white-space: nowrap;
@@ -142,28 +140,18 @@
         body.dark .lazy-tweet {
             border-color: #555;
         }
-        
+        p+.lazy-tweet {
+            margin-top: -8px;
+        }
         .tweet-item {
-            margin-bottom: 20px;
+            break-inside: avoid;
+            page-break-inside: avoid;
         }
-
-        /* ▼▼▼ 修正箇所 ▼▼▼ */
-        /*
-         * iPhone Safariで発生するレイアウト崩れへの最終対策。
-         * 古典的で安定した `overflow: hidden;` を使い、
-         * コンテナが内部の要素を正しく包含するように強制する。
-         */
-        .tweet-container {
-            overflow: hidden;
-        }
-        /* ▲▲▲ 修正ここまで ▲▲▲ */
-
         @media (min-width: 1200px) {
             .toc {
                 grid-template-columns: repeat(8, 1fr);
             }
             .tweet-container {
-                overflow: visible; /* PC表示では解除 */
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
                 gap: 20px;
@@ -171,11 +159,6 @@
             }
             .tweet-container > p {
                 grid-column: 1 / -1;
-            }
-            .tweet-item {
-                break-inside: avoid;
-                page-break-inside: avoid;
-                margin-bottom: 0;
             }
         }
         .group-tan2r { background-color: #ffcdd2; }
@@ -235,24 +218,6 @@
             margin-left: 0.5rem;
             font-size: 1rem;
         }
-        .zoom-buttons {
-            position: absolute;
-            top: 0;
-            right: 0;
-            display: flex;
-            gap: 5px;
-            z-index: 10;
-            margin-top: 5px;
-        }
-        .zoom-buttons button {
-            color: #000;
-            background-color: #eee;
-            padding: 5px 10px;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
         #footer-spacer {
             transition: height 0.5s ease-in-out;
         }
@@ -291,11 +256,7 @@
                     <label><input type="radio" name="theme" value="light"><span>ダークモード OFF</span></label>
                 </div>
             </div>
-            <div class="zoom-buttons">
-                <button onclick="changeZoom(-0.1)">－</button>
-                <button onclick="changeZoom(0.1)">＋</button>
-            </div>
-        </h1>
+            </h1>
         <h2>目次</h2>
         <ul class="toc">
         <li class="group-tan2r"><a href="#%E6%96%AC%E5%8D%982R">斬単2R</a></li>
@@ -1010,40 +971,7 @@
     </div>
 
     <script>
-        const PAGE_SETTING_KEY = 'PageSettings';
-        let pageSettings = {
-            'repeat_zoom': 1.0
-        };
-        function changeZoom(delta) {
-            const zoomKey = 'repeat_zoom';
-            let currentZoom = pageSettings[zoomKey] || 1.0;
-            currentZoom += delta;
-            currentZoom = Math.round(currentZoom * 10) / 10;
-            if (currentZoom < 0.5) currentZoom = 0.5;
-            if (currentZoom > 2.0) currentZoom = 2.0;
-            
-            document.body.style.zoom = currentZoom;
-            
-            pageSettings[zoomKey] = currentZoom;
-            savePageSettings();
-        }
-        function loadPageSettings() {
-            try {
-                const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
-                if (savedSettings) {
-                    pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
-                }
-            } catch (error) {
-                console.error("ページ設定の読み込みに失敗しました:", error);
-            }
-        }
-        function savePageSettings() {
-            try {
-                localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
-            } catch (error) {
-                console.error("ページ設定の保存に失敗しました:", error);
-            }
-        }
+        // ▼▼▼ 修正箇所: zoom機能に関連するJavaScriptをすべて削除 ▼▼▼
         document.addEventListener("DOMContentLoaded", function() {
             const body = document.body;
             const themeToggleButton = document.getElementById('theme-toggle-button');
@@ -1057,10 +985,6 @@
             let anchorTargetId = null;
             let scrollCorrectionTimeout = null;
             
-            loadPageSettings();
-            
-            const initialZoom = pageSettings['repeat_zoom'] || 1.0;
-            document.body.style.zoom = initialZoom;
             if (isAppleSafari) {
                 document.querySelectorAll('.toc a').forEach(anchor => {
                     anchor.addEventListener('click', function(e) {
@@ -1230,6 +1154,7 @@ js.id = id;
                 return t;
             }(document, "script", "twitter-wjs"));
         });
+        // ▲▲▲ 修正ここまで ▲▲▲
     </script>
 </body>
 </html>
