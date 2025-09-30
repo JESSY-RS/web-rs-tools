@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クリア目安計算ツール</title>
+
+    <style>
+        /* ページ全体のスタイル */
+        body {
+            margin: 20px;
+            background-color: #2A2A2A;
+            color: #eee;
+            font-family: sans-serif;
+        }
+
+        /* 見出しのスタイル */
+        .header {
+            display: flex;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #00ff00;
+            margin-right: 8px;
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            font-weight: bold;
+            color: orange;
+            margin-top: 0px;
+            margin-bottom: 20px;
+        }
+
+        /* 入力フィールドのスタイル */
+        input[type="text"] {
+            width: 250px;
+            font-size: 32px;
+            padding: 5px;
+            text-align: right;
+        }
+
+        /* プレースホルダーのスタイル */
+        ::placeholder {
+            color: #777;
+            opacity: 1; /* Firefox */
+        }
+
+        .input-group label {
+            font-size: 20px;
+            margin-right: 5px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        /* コロン部分のスタイル */
+        .separator {
+            font-size: 32px;
+            margin-left: 1px;
+            margin-right: 1px;
+        }
+        
+        /* 時間入力欄の幅を調整 */
+        #turn-min, #turn-sec {
+            width: 80px;
+        }
+
+        /* エラーメッセージのスタイル */
+        #warning {
+            color: red;
+            height: 32px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        /* ボタンのスタイル */
+        button {
+            font-size: 28px;
+            padding: 5px 12px;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        /* 結果表示のスタイル */
+        .result {
+            font-size: 42px;
+            font-weight: bold;
+        }
+
+        .result-label {
+            color: #1D9BF0;
+        }
+
+        .result-time {
+            color: #eee;
+        }
+
+        /* 終了予定時刻のスタイル */
+        #endTimeDisplay {
+            font-size: 24px;
+            color: red;
+            margin-top: 10px;
+            height: 32px;
+        }
+
+        /* フッターのスタイル */
+        footer {
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            font-size: 16pt;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <span class="title">クリア目安計算</span>
+            <span class="subtitle">🔢ツール</span>
+        </div>
+
+        <div class="input-group">
+            <label for="total-hp">敵のHP合計</label>
+            <input type="text" id="total-hp" inputmode="numeric" oninput="formatNumber(this)" onkeydown="handleEnter(event, 'damage')" onfocus="this.select()">
+        </div>
+
+        <div class="input-group">
+            <label for="damage">1体あたりダメージ</label>
+            <input type="text" id="damage" inputmode="numeric" oninput="formatNumber(this)" onkeydown="handleEnter(event, 'enemies')" onfocus="this.select()">
+        </div>
+
+        <div class="input-group">
+            <label for="enemies">敵の数</label>
+            <input type="text" id="enemies" inputmode="numeric" oninput="formatNumber(this)" onkeydown="handleEnter(event, 'attacks')" onfocus="this.select()">
+        </div>
+
+        <div class="input-group">
+            <label for="attacks">攻撃回数</label>
+            <input type="text" id="attacks" inputmode="numeric" oninput="formatNumber(this)" onkeydown="handleEnter(event, 'turn-min')" onfocus="this.select()">
+        </div>
+
+        <div class="input-group">
+            <label for="turn-min">1ターンあたり所要時間</label>
+            <input type="text" id="turn-min" inputmode="numeric" placeholder="分" onkeydown="handleEnter(event, 'turn-sec')" onfocus="this.select()">
+            <span class="separator">:</span>
+            <input type="text" id="turn-sec" inputmode="numeric" placeholder="秒" onkeydown="handleEnter(event, 'calculate-button')" onfocus="this.select()">
+        </div>
+
+        <p id="warning"></p>
+
+        <button id="calculate-button" onclick="calculateTurns()">計算する</button>
+
+        <div class="result">
+            <span class="result-label">結果: </span><span id="result" class="result-time">0</span>
+            <span class="result-label"> T</span>
+        </div>
+        <div id="endTimeDisplay"></div>
+    </div>
+
+    <footer>
+        ※使用は自己責任にて。<br>
+        ※ページをリロードすると各項目が初期値に戻ります。<br>
+    </footer>
+
+    <script>
+        // --- カンマ区切り関連の関数 ---
+        function formatNumber(input) {
+            // 数字以外の文字を削除
+            let num = input.value.replace(/[^0-9]/g, '');
+            // カンマ区切りに変換
+            input.value = num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        
+        function removeCommas(str) {
+            if (typeof str !== 'string' || str === '') return 0;
+            return parseInt(str.replace(/,/g, ''), 10);
+        }
+
+        // --- 計算と表示のメイン関数 ---
+        function calculateTurns() {
+            const totalHp = removeCommas(document.getElementById('total-hp').value);
+            const damage = removeCommas(document.getElementById('damage').value);
+            const enemies = removeCommas(document.getElementById('enemies').value);
+            const attacks = removeCommas(document.getElementById('attacks').value);
+            const turnMin = parseInt(document.getElementById('turn-min').value, 10) || 0;
+            const turnSec = parseInt(document.getElementById('turn-sec').value, 10) || 0;
+            
+            const warningElement = document.getElementById('warning');
+            const resultElement = document.getElementById('result');
+            const endTimeElement = document.getElementById('endTimeDisplay');
+
+            // --- 入力値の検証 ---
+            let emptyFields = [];
+            if (document.getElementById('total-hp').value === '') emptyFields.push('敵のHP合計');
+            if (document.getElementById('damage').value === '') emptyFields.push('1体あたりダメージ');
+            if (document.getElementById('enemies').value === '') emptyFields.push('敵の数');
+            if (document.getElementById('attacks').value === '') emptyFields.push('攻撃回数');
+
+            if (emptyFields.length > 0) {
+                warningElement.innerText = `※${emptyFields.join('・')}に数値を入力してください。`;
+                resultElement.innerText = '0';
+                endTimeElement.innerText = '';
+                return;
+            } else {
+                warningElement.innerText = '';
+            }
+
+            // --- 計算処理 ---
+            const denominator = damage * enemies * attacks;
+
+            if (denominator === 0) {
+                warningElement.innerText = '※ダメージ・敵の数・攻撃回数に0以外の値を入力してください。';
+                resultElement.innerText = '0';
+                endTimeElement.innerText = '';
+                return;
+            }
+
+            // ターン数を計算 (小数点以下を切り上げ)
+            const turns = Math.ceil(totalHp / denominator);
+            
+            // 結果を表示 (カンマ区切り)
+            resultElement.innerText = turns.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            resultElement.style.color = '#eee';
+
+            // 終了予定時間を計算・表示
+            const timePerTurn = (turnMin * 60) + turnSec;
+            if (timePerTurn > 0) {
+                const totalSeconds = turns * timePerTurn;
+                // 総秒数を分に変換し、小数点以下を切り上げる
+                const totalMinutesRoundedUp = Math.ceil(totalSeconds / 60);
+                
+                const hours = Math.floor(totalMinutesRoundedUp / 60);
+                const minutes = totalMinutesRoundedUp % 60;
+                
+                endTimeElement.innerText = `終了予定時間：${hours}時間${minutes}分`;
+            } else {
+                endTimeElement.innerText = ''; // 時間未入力の場合はクリア
+            }
+        }
+
+        // --- Enterキーでフォーカス移動 ---
+        function handleEnter(event, nextElementId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                document.getElementById(nextElementId).focus();
+            }
+        }
+        
+        // --- ページ読み込み時に各項目を初期化 ---
+        window.onload = function () {
+            // デフォルト値を設定
+            document.getElementById('total-hp').value = '9,614,400,000';
+            document.getElementById('damage').value = '';
+            document.getElementById('enemies').value = '4';
+            document.getElementById('attacks').value = '3';
+            document.getElementById('turn-min').value = '1'; // 1分
+            document.getElementById('turn-sec').value = '0'; // 0秒 (合計60秒)
+
+            // 結果と警告の初期状態
+            document.getElementById('result').innerText = '0';
+            document.getElementById('warning').innerText = '';
+            document.getElementById('endTimeDisplay').innerText = '';
+        }
+    </script>
+</body>
+</html>
