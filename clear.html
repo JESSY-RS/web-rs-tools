@@ -103,6 +103,10 @@
             color: #1D9BF0;
         }
 
+        .result-label2 {
+            font-size: 24px;
+        }
+
         .result-time {
             color: #eee;
         }
@@ -128,8 +132,8 @@
 
     <div class="container">
         <div class="header">
-            <span class="title">クリア目安計算</span>
-            <span class="subtitle">🔢ツール</span>
+            <span class="title">クリア目安</span>
+            <span class="subtitle">🔢計算ツール</span>
         </div>
 
         <div class="input-group">
@@ -164,8 +168,8 @@
         <button id="calculate-button" onclick="calculateTurns()">計算する</button>
 
         <div class="result">
-            <span class="result-label">結果: </span><span id="result" class="result-time">0</span>
-            <span class="result-label"> T</span>
+            <span class="result-label">結果: </span><span id="result" class="result-time">--</span>
+            <span class="result-label2">ターン</span>
         </div>
         <div id="endTimeDisplay"></div>
     </div>
@@ -270,7 +274,7 @@
             document.getElementById('turn-sec').value = '0'; // 0秒 (合計60秒)
 
             // 結果と警告の初期状態
-            document.getElementById('result').innerText = '0';
+            document.getElementById('result').innerText = '--';
             document.getElementById('warning').innerText = '';
             document.getElementById('endTimeDisplay').innerText = '';
         }
