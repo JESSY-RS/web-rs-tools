@@ -8,7 +8,7 @@
     <title>スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
 
     <style>
         :root {
@@ -875,7 +875,7 @@
 
     <footer>
         ※使用は自己責任にて。<br>
-        <span id="footer-text-normal">※追加情報はスキル欄やアビリティ欄に記載のあるものは除外しています。また追加除外は次回表示時に適用されます。</span>
+        <span id="footer-text-normal">※追加情報はスキル欄やアビリティ欄に記載のあるものは除外しています。</span>
         <span id="footer-text-search" style="display: none;">※候補が無い場合はキーワード検索を利用してください。間にスペースを入れる事によって複数指定も出来ます。</span>
         <br>
         ※記載の情報が間違っている可能性もあります。気付かれた方は<a href="https://x.com/jessy_romasaga" class="web-link">@jessy_romasaga</a>までご一報いただけると助かります。<br>
@@ -2127,7 +2127,7 @@
             }
             toggleSkillOptions();
             updateSearchUIState();
-            performTagSearch();
+            // performTagSearch(); // ★★★ 修正点: この行をコメントアウト/削除 ★★★
         });
     }
     
@@ -2467,9 +2467,20 @@
                 checkbox.value = keyword;
                 checkbox.checked = additionalExclusionList.includes(keyword);
                 checkbox.addEventListener('change', (e) => {
-                    if (e.target.checked) additionalExclusionList.push(keyword);
-                    else additionalExclusionList = additionalExclusionList.filter(item => item !== keyword);
+                    if (e.target.checked) {
+                        if (!additionalExclusionList.includes(keyword)) {
+                             additionalExclusionList.push(keyword);
+                        }
+                    } else {
+                        additionalExclusionList = additionalExclusionList.filter(item => item !== keyword);
+                    }
                     updateSelectedText();
+                    
+                    // 表示を即時更新
+                    const currentStyleName = document.getElementById('styleBtn').dataset.value;
+                    if (currentStyleName && currentStyleName !== '---') {
+                        updateView(currentStyleName);
+                    }
                 });
                 label.appendChild(checkbox);
                 label.append(` ${keyword}`);
@@ -2516,6 +2527,12 @@
             }
             renderOptions(searchInput.value);
             updateSelectedText();
+
+            // 表示を即時更新
+            const currentStyleName = document.getElementById('styleBtn').dataset.value;
+            if (currentStyleName && currentStyleName !== '---') {
+                updateView(currentStyleName);
+            }
         });
         document.addEventListener('click', (e) => {
             if (!document.getElementById('additionalExclusionContainer').contains(e.target)) {
@@ -2533,6 +2550,12 @@
             additionalExclusionList = [];
             renderOptions(searchInput.value);
             updateSelectedText();
+
+            // 表示を即時更新
+            const currentStyleName = document.getElementById('styleBtn').dataset.value;
+            if (currentStyleName && currentStyleName !== '---') {
+                updateView(currentStyleName);
+            }
         });
         updateSelectedText();
     }
@@ -2558,12 +2581,28 @@
         }
         const fileName = `${chara}_${style}_${title}.png`;
         if (element) {
-            html2canvas(element, { scale: 2, backgroundColor: getComputedStyle(element).backgroundColor })
-            .then(canvas => {
+            // dom-to-image-moreのオプションを設定
+            const options = {
+                bgcolor: getComputedStyle(element).backgroundColor,
+                // 解像度を2倍にして画像を綺麗にする
+                width: element.offsetWidth * 2,
+                height: element.offsetHeight * 2,
+                style: {
+                    transform: 'scale(2)',
+                    transformOrigin: 'top left'
+                }
+            };
+
+            domtoimage.toPng(element, options)
+            .then(function (dataUrl) {
                 const link = document.createElement('a');
                 link.download = fileName;
-                link.href = canvas.toDataURL("image/png");
+                link.href = dataUrl;
                 link.click();
+            })
+            .catch(function (error) {
+                console.error('画像の生成に失敗しました:', error);
+                alert('画像の生成に失敗しました。コンソールでエラー内容を確認してください。');
             });
         }
     }
