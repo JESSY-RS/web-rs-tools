@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>スタイル情報ビューア</title>
+    <title>★スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
@@ -1538,6 +1538,7 @@
             }
         }
         summaryParts.push(slashStr + attrStr);
+        if (data['準備']) summaryParts.push(`[スタンバイターン:${data['準備']}]`);
         if (data['再使用']) summaryParts.push(`[リキャストターン:${data['再使用']}]`);
         if (data['制限'] && !(type === 'addInfo' && data['制限'] === '1')) {
             summaryParts.push(`[使用回数制限:バトル中${data['制限']}回]`);
