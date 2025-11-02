@@ -1341,12 +1341,23 @@
             });
             newPart.querySelector('.drag-handle').style.display = isEditMode ? 'block' : 'none';
             newPart.querySelector('.favorite-toggle').style.display = isEditMode ? 'none' : 'block';
-            newPart.dataset.originalIndex = partsContainer.children.length;
+            // newPart.dataset.originalIndex = partsContainer.children.length; // [削除]
 
             if (basePart) {
-                basePart.after(newPart);
+                basePart.after(newPart); // DOM挿入
+
+                // [変更] originalPartOrder を更新
+                const baseIndex = originalPartOrder.indexOf(basePart);
+                if (baseIndex > -1) {
+                    originalPartOrder.splice(baseIndex + 1, 0, newPart);
+                } else {
+                    // basePart が originalPartOrder に見つからない場合
+                    // DOMの現在の状態を originalPartOrder に反映する
+                    originalPartOrder = Array.from(partsContainer.children);
+                }
             } else {
-                partsContainer.appendChild(newPart);
+                partsContainer.appendChild(newPart); // DOM挿入 (末尾)
+                originalPartOrder.push(newPart); // [変更]
             }
 
             if (data) {
@@ -1375,6 +1386,10 @@
                 setupDropdown(newPart, 'main');
                 setupAbilityDropdown(newPart, 'SS');
             }
+            
+            // if (isEditMode) { // [削除]
+            //     originalPartOrder = Array.from(partsContainer.children); // [削除]
+            // } // [削除]
             
             if (setDirty) {
                 setDataDirty(true);
@@ -1642,19 +1657,26 @@
             }
             else if (part && target.matches('.add-part-inline-btn')) {
                 addNewPart(null, part);
-                if (isEditMode) {
-                    originalPartOrder = Array.from(partsContainer.children);
-                }
+                // if (isEditMode) { // [削除]
+                //     originalPartOrder = Array.from(partsContainer.children); // [削除]
+                // } // [削除]
             }
             else if (part && target.matches('.delete-btn')) {
                 const deletablePanelCount = document.querySelectorAll('#tab-list .armor-part .delete-btn').length;
 
                 if (deletablePanelCount > 1) {
                     const scrollY = window.scrollY;
-                    part.remove();
-                    if (isEditMode) {
-                        originalPartOrder = Array.from(partsContainer.children);
+                    part.remove(); // DOMから削除
+                    
+                    // [変更] originalPartOrder からも削除
+                    const partIndex = originalPartOrder.indexOf(part);
+                    if (partIndex > -1) {
+                        originalPartOrder.splice(partIndex, 1);
                     }
+                    
+                    // if (isEditMode) { // [削除]
+                    //     originalPartOrder = Array.from(partsContainer.children); // [削除]
+                    // } // [削除]
                     setDataDirty(true);
                     window.scrollTo(0, scrollY);
                 }
