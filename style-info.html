@@ -885,6 +885,7 @@
         <a href="index.html" class="web-link">INDEXへ戻る</a>
     </div>
 
+
 <script>
     // 拡大縮小の関数
     const PAGE_SETTING_KEY = 'PageSettings'; 
@@ -1609,22 +1610,68 @@
 
         let detailText = cardData['効果詳細'] || '(効果詳細なし)';
 
+        // ▼▼▼ ここから修正 ▼▼▼
         if (parsedName.count && detailText !== '(効果詳細なし)') {
-            const lines = detailText.split('\n');
-            const addition = `(上限回数:${parsedName.count}回)`;
-            if (lines.length > 0) {
-                if (lines[0].trim().startsWith('[')) {
-                    if (lines.length > 1) {
-                        lines[1] = lines[1].trim() + addition;
-                    } else {
-                        lines.push(addition);
-                    }
+            
+            // 条件1: type === 'addInfo'
+            // 条件2: "以下の効果が発動する" が含まれていない
+            if (type === 'addInfo' && !detailText.includes('以下の効果が発動する')) {
+                const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
+                let lines = detailText.split('\n');
+                let processedLines = [];
+                let originalLinesStartIndex = 0;
+
+                if (lines.length > 0 && lines[0].trim().startsWith('[')) {
+                    // [タイミング] がある場合
+                    processedLines.push(lines[0]); // 1行目（タイミング）
+                    processedLines.push(additionText); // 2行目（追加文言）
+                    originalLinesStartIndex = 1; // 元の行は1行目から処理
                 } else {
-                    lines[0] = lines[0].trim() + addition;
+                    // [タイミング] がない場合
+                    processedLines.push(additionText); // 1行目（追加文言）
+                    originalLinesStartIndex = 0; // 元の行は0行目から処理
                 }
-                detailText = lines.join('\n');
+                
+                // 元の行に「・」を追加する処理
+                for (let i = originalLinesStartIndex; i < lines.length; i++) {
+                    let line = lines[i];
+                    // 行が空でない（空白のみでない）場合のみ処理
+                    if (line.trim()) { 
+                        // 行頭が ※ や ・ や ( で始まっていないかチェック
+                        if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
+                            // 元のインデントを保持しつつ「・」を追加
+                            const indentMatch = line.match(/^(\s*)/);
+                            const indent = indentMatch ? indentMatch[1] : '';
+                            line = indent + '・' + line.trimStart();
+                        }
+                        processedLines.push(line);
+                    } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
+                         // 空行も保持する（ただし、前の行が空行でない場合 = 連続する空行は1行に）
+                         processedLines.push(line);
+                    }
+                }
+                detailText = processedLines.join('\n');
+                
+            } else {
+                // typeが 'addInfo' でないか、または "以下の効果が発動する" が 含まれている場合
+                // 元のロジック（(#回) を追記する）
+                const lines = detailText.split('\n');
+                const addition = `(上限回数:${parsedName.count}回)`;
+                if (lines.length > 0) {
+                    if (lines[0].trim().startsWith('[')) {
+                        if (lines.length > 1) {
+                            lines[1] = lines[1].trim() + addition;
+                        } else {
+                            lines.push(addition);
+                        }
+                    } else {
+                        lines[0] = lines[0].trim() + addition;
+                    }
+                    detailText = lines.join('\n');
+                }
             }
         }
+        // ▲▲▲ ここまで修正 ▲▲▲
 
         detailText = applyGrayTextStyle(detailText);
 
@@ -1787,26 +1834,65 @@
                         if (parsedKeyword.count) {
                             let detail = instanceData['効果詳細'] || '(効果詳細なし)';
                             if (detail !== '(効果詳細なし)') {
-                                const lines = detail.split('\n');
-                                const addition = `(上限回数:${parsedKeyword.count}回)`;
-                                if (lines.length > 0) {
-                                    if (lines[0].trim().startsWith('[')) {
-                                        if (lines.length > 1) {
-                                            lines[1] = lines[1].trim() + addition;
-                                        } else {
-                                            lines.push(addition);
-                                        }
+                                // ▼▼▼ ここから修正 ▼▼▼
+                                // displayInfo と同じロジックを適用
+                                if (db.addInfo[parsedKeyword.baseName] && !detail.includes('以下の効果が発動する')) { // type === 'addInfo' 
+                                    const additionText = `以下の効果が発動する(上限回数:バトル中${parsedKeyword.count}回)`;
+                                    let lines = detail.split('\n');
+                                    let processedLines = [];
+                                    let originalLinesStartIndex = 0;
+
+                                    if (lines.length > 0 && lines[0].trim().startsWith('[')) {
+                                        processedLines.push(lines[0]); 
+                                        processedLines.push(additionText);
+                                        originalLinesStartIndex = 1;
                                     } else {
-                                        lines[0] = lines[0].trim() + addition;
+                                        processedLines.push(additionText);
+                                        originalLinesStartIndex = 0;
                                     }
-                                    instanceData['効果詳細'] = lines.join('\n');
+                                    
+                                    for (let i = originalLinesStartIndex; i < lines.length; i++) {
+                                        let line = lines[i];
+                                        if (line.trim()) { 
+                                            if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
+                                                const indentMatch = line.match(/^(\s*)/);
+                                                const indent = indentMatch ? indentMatch[1] : '';
+                                                line = indent + '・' + line.trimStart();
+                                            }
+                                            processedLines.push(line);
+                                        } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
+                                             processedLines.push(line);
+                                        }
+                                    }
+                                    instanceData['効果詳細'] = processedLines.join('\n');
+
+                                } else {
+                                    // 元のロジック
+                                    const lines = detail.split('\n');
+                                    const addition = `(上限回数:${parsedKeyword.count}回)`;
+                                    if (lines.length > 0) {
+                                        if (lines[0].trim().startsWith('[')) {
+                                            if (lines.length > 1) {
+                                                lines[1] = lines[1].trim() + addition;
+                                            } else {
+                                                lines.push(addition);
+                                            }
+                                        } else {
+                                            lines[0] = lines[0].trim() + addition;
+                                        }
+                                        instanceData['効果詳細'] = lines.join('\n');
+                                    }
                                 }
+                                // ▲▲▲ ここまで修正 ▲▲▲
                             }
                         }
 
                         if (!linkedInfoItems.has(parsedKeyword.fullName)) {
                             linkedInfoItems.set(parsedKeyword.fullName, instanceData);
-                            itemsToScan.push(infoData);
+                            // infoData は元のDBデータなので、instanceData（加工済み）ではなく infoData をスキャン対象にプッシュ
+                            if (db.addInfo[parsedKeyword.baseName]) { // only scan addInfo items recursively
+                                itemsToScan.push(infoData);
+                            }
                         }
                     }
                 }
@@ -2262,7 +2348,9 @@
                                 if (checkSkillBtn(item, btn)) matchingKeywordsForHighlight.push(btn.textContent);
                             });
                         }
-                        foundItems.push({ name: itemName, detail: itemDetail, keywords: [...new Set(matchingKeywordsForHighlight)] });
+                        // ▼▼▼ ここから修正 ▼▼▼
+                        foundItems.push({ name: itemName, detail: itemDetail, keywords: [...new Set(matchingKeywordsForHighlight)], type: item.type });
+                        // ▲▲▲ ここまで修正 ▲▲▲
                     }
                 }
             });
@@ -2284,7 +2372,8 @@
         return highlightedText;
     }
 
-    function generateItemCardHTML(itemName, keywords = [], contextCharacter, contextStyleName, searchContext) {
+    // ▼▼▼ ここから修正 ▼▼▼
+    function generateItemCardHTML(itemName, keywords = [], contextCharacter, contextStyleName, searchContext, itemTypeFromSearch) {
         const parsedName = parseName(itemName);
         const itemData = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName] || db.addInfo[parsedName.baseName];
 
@@ -2292,37 +2381,82 @@
 
         const renderData = { ...itemData };
 
+        const itemType = itemTypeFromSearch; 
+        const isSkillBased = (itemType === 'skill') || (itemType === 'addInfo' && !!db.skills[parsedName.baseName]);
+
         if (parsedName.count) {
             let detail = renderData['効果詳細'] || '(効果詳細なし)';
             if (detail !== '(効果詳細なし)') {
-                const lines = detail.split('\n');
-                const addition = `(上限回数:${parsedName.count}回)`;
-                if (lines.length > 0) {
-                    if (lines[0].trim().startsWith('[')) {
-                        if (lines.length > 1) {
-                            lines[1] = lines[1].trim() + addition;
-                        } else {
-                            lines.push(addition);
-                        }
+                
+                // displayInfo と同じロジックを適用
+                // const itemType = db.skills[parsedName.baseName] ? 'スキル' : (db.abilities[parsedName.baseName] ? 'アビリティ' : '追加情報'); // 削除
+
+                if (itemType === 'addInfo' && !detail.includes('以下の効果が発動する')) { // 関数スコープのitemTypeを参照
+                    const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
+                    let lines = detail.split('\n');
+                    let processedLines = [];
+                    let originalLinesStartIndex = 0;
+
+                    if (lines.length > 0 && lines[0].trim().startsWith('[')) {
+                        processedLines.push(lines[0]); 
+                        processedLines.push(additionText);
+                        originalLinesStartIndex = 1;
                     } else {
-                        lines[0] = lines[0].trim() + addition;
+                        processedLines.push(additionText);
+                        originalLinesStartIndex = 0;
                     }
-                    renderData['効果詳細'] = lines.join('\n');
+                    
+                    for (let i = originalLinesStartIndex; i < lines.length; i++) {
+                        let line = lines[i];
+                        if (line.trim()) { 
+                            if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
+                                const indentMatch = line.match(/^(\s*)/);
+                                const indent = indentMatch ? indentMatch[1] : '';
+                                line = indent + '・' + line.trimStart();
+                            }
+                            processedLines.push(line);
+                        } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
+                             processedLines.push(line);
+                        }
+                    }
+                    renderData['効果詳細'] = processedLines.join('\n');
+                } else {
+                    // 元のロジック
+                    const lines = detail.split('\n');
+                    const addition = `(上限回数:${parsedName.count}回)`;
+                    if (lines.length > 0) {
+                        if (lines[0].trim().startsWith('[')) {
+                            if (lines.length > 1) {
+                                lines[1] = lines[1].trim() + addition;
+                            } else {
+                                lines.push(addition);
+                            }
+                        } else {
+                            lines[0] = lines[0].trim() + addition;
+                        }
+                        renderData['効果詳細'] = lines.join('\n');
+                    }
                 }
             }
         }
         
-        const itemType = db.skills[parsedName.baseName] ? 'スキル' : (db.abilities[parsedName.baseName] ? 'アビリティ' : '追加情報');
+        // const itemType = db.skills[parsedName.baseName] ? 'スキル' : (db.abilities[parsedName.baseName] ? 'アビリティ' : '追加情報'); // 削除
+        
+        let typeText = '';
+        if (itemType === 'skill') typeText = 'スキル';
+        else if (itemType === 'ability') typeText = 'アビリティ';
+        else if (itemType === 'addInfo') typeText = '追加情報';
+
         let typeTextClass, typeTextColorStyle = '';
-        if (itemType === 'スキル') typeTextClass = 'search-result-skill-type';
-        else if (itemType === 'アビリティ') typeTextClass = 'search-result-ability-type';
+        if (itemType === 'skill') typeTextClass = 'search-result-skill-type';
+        else if (itemType === 'ability') typeTextClass = 'search-result-ability-type';
         else typeTextColorStyle = `color: var(--addinfo-col-text); font-size: 0.8em; font-weight: normal;`;
         
-        const typeSpan = typeTextClass ? `<span class="${typeTextClass}">(${itemType})</span>` : `<span style="${typeTextColorStyle}">(${itemType})</span>`;
+        const typeSpan = typeTextClass ? `<span class="${typeTextClass}">(${typeText})</span>` : `<span style="${typeTextColorStyle}">(${typeText})</span>`;
         
         let summaryHtml = '';
-        if (itemType === 'スキル' || (itemType === '追加情報' && db.skills[parsedName.baseName])) {
-            summaryHtml = generateSkillDetailHtml(renderData);
+        if (isSkillBased) {
+            summaryHtml = generateSkillDetailHtml(renderData, 'addInfo'); // 'addInfo' type to avoid BP/LP
         }
         summaryHtml = summaryHtml.replace(/\n/g, '<br>');
         const highlightedSummary = highlightKeywords(summaryHtml, keywords);
@@ -2340,6 +2474,7 @@
             parents = parents.filter(parent => {
                 if (parent.type === 'スキル' && !searchContext.isSkillScope) return false;
                 if (parent.type === 'アビリティ' && !searchContext.isAbilityScope) return false;
+                // '追加情報' は常に表示（検索範囲外でも参照元としては表示）
                 return true;
             });
         }
@@ -2355,7 +2490,9 @@
         
         return `<h3>${itemName} ${typeSpan}</h3>${referenceInfo}${highlightedSummary}<div class="detail-line">${finalDetailHtml}</div>`;
     }
+    // ▲▲▲ ここまで修正 ▲▲▲
 
+    // ▼▼▼ ここから修正 ▼▼▼
     function displaySearchResults(results, searchContext) {
         const searchResultsContainer = document.getElementById('searchResults');
         const flatResults = results.flatMap(styleResult => styleResult.items.map(item => ({ character: styleResult.character, styleName: styleResult.styleName, ...item })));
@@ -2376,18 +2513,21 @@
         [...document.querySelectorAll('#csvTagArea .tag-btn.active')].forEach(btn => searchParts.push(btn.textContent));
         const searchText = searchParts.join(conjunction);
         searchResultsContainer.innerHTML = flatResults.length === 0 ? `<h2>「${searchText}」の検索結果: 0件</h2><p style="color: red;">該当するスキル・アビリティは見つかりませんでした。</p>` : `<h2>「${searchText}」の検索結果: ${flatResults.length}件</h2>` + flatResults.map(res => {
-            const itemData = db.skills[res.name] || db.abilities[res.name] || db.addInfo[res.name];
-            const itemType = itemData ? (db.skills[res.name] ? 'スキル' : (db.abilities[res.name] ? 'アビリティ' : '追加情報')) : '';
+            // const itemData = db.skills[res.name] || db.abilities[res.name] || db.addInfo[res.name]; // 削除
+            // const itemType = itemData ? (db.skills[res.name] ? 'スキル' : (db.abilities[res.name] ? 'アビリティ' : '追加情報')) : ''; // 削除
+            
             let panelBgColor;
-            if (itemType === 'スキル') panelBgColor = 'var(--skill-col-bg)';
-            else if (itemType === 'アビリティ') panelBgColor = 'var(--ability-col-bg)';
-            else panelBgColor = 'var(--addinfo-col-bg)';
-            const cardHtml = generateItemCardHTML(res.name, res.keywords, res.character, res.styleName, searchContext);
+            if (res.type === 'skill') panelBgColor = 'var(--skill-col-bg)';
+            else if (res.type === 'ability') panelBgColor = 'var(--ability-col-bg)';
+            else panelBgColor = 'var(--addinfo-col-bg)'; // res.type === 'addInfo'
+            
+            const cardHtml = generateItemCardHTML(res.name, res.keywords, res.character, res.styleName, searchContext, res.type); // res.type を渡す
             return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${res.character}</h3><h4>${res.styleName}</h4><div class="card">${cardHtml}</div></div>`;
         }).join('');
         searchResultsContainer.style.display = 'grid';
         document.getElementById('mainContainer').style.display = 'none';
     }
+    // ▲▲▲ ここまで修正 ▲▲▲
 
     function handleSearchResultClick(event) {
         const jumpLink = event.target.closest('.search-jump-link');
@@ -2421,7 +2561,23 @@
             const owners = itemToStyleMap[parentName];
             let character, styleName;
             if (!owners || owners.length === 0) {
-                character = "所有者不明"; styleName = "";
+                // Try to find owners from all styles if not found in itemToStyleMap (e.g., direct skills/abilities)
+                const allOwners = [];
+                for (const style of db.styles) {
+                    if ([style['スキル1'], style['スキル2'], style['スキル3'], style['アビリティ1'], style['アビリティ2'], style['アビリティ3']].includes(parentName)) {
+                        allOwners.push({ character: style['キャラ名'], styleName: `[${style['グレード']}] ${style['スタイル名']}` });
+                    }
+                }
+                if (allOwners.length === 0) {
+                     character = "参照元不明"; styleName = "";
+                } else if (allOwners.length === 1) {
+                    character = allOwners[0].character; styleName = allOwners[0].styleName;
+                } else {
+                    const uniqueChars = [...new Set(allOwners.map(o => o.character))];
+                    character = uniqueChars.join(' ／ ');
+                    if (uniqueChars.length > 1) styleName = allOwners.map(o => `${o.character} ${o.styleName}`).join(' ／ ');
+                    else styleName = allOwners.map(o => o.styleName).join(' ／ ');
+                }
             } else if (owners.length === 1) {
                 character = owners[0].character; styleName = owners[0].styleName;
             } else {
@@ -2441,8 +2597,11 @@
             const isAddInfoScope = document.querySelector('.search-scope-btn[data-scope="addInfo"]').classList.contains('active');
             const searchContext = { isSkillScope, isAbilityScope, isAddInfoScope };
             let cardHtml;
-            if (owners && owners.length === 1) cardHtml = generateItemCardHTML(parentName, [], owners[0].character, owners[0].styleName, searchContext);
-            else cardHtml = generateItemCardHTML(parentName, [], null, null, searchContext);
+            // ▼▼▼ ここから修正 ▼▼▼
+            const parentItemType = db.skills[parentName] ? 'skill' : (db.abilities[parentName] ? 'ability' : 'addInfo'); // 判定
+            if (owners && owners.length === 1) cardHtml = generateItemCardHTML(parentName, [], owners[0].character, owners[0].styleName, searchContext, parentItemType);
+            else cardHtml = generateItemCardHTML(parentName, [], null, null, searchContext, parentItemType);
+            // ▲▲▲ ここまで修正 ▲▲▲
             const contentHtml = `<div class="close-parent-info">閉じる</div><h3>${character}</h3><h4>${styleName}</h4><div class="card">${cardHtml}</div>`;
             panel.innerHTML = contentHtml;
             const anchorElement = showLink.closest('.column');
@@ -2618,5 +2777,7 @@
         }
     }
 </script>
+
+
 </body>
 </html>
