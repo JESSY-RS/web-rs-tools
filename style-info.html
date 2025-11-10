@@ -1677,7 +1677,7 @@
 
         const linkedDetailText = detailText.replace(/「([^」]+)」/g, (match, keyword) => {
             const parsedKeyword = parseName(keyword);
-            const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedName.baseName];
+            const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
 
             if (!existsInDb || fixedExclusionList.has(parsedKeyword.fullName) || parsedKeyword.fullName === name || allInitialItems.has(parsedKeyword.fullName) || additionalExclusionList.includes(parsedKeyword.baseName)) {
                 return match;
