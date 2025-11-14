@@ -1528,7 +1528,7 @@
         if (data['種類']) slashParts.push(data['種類']);
         if (data['遠近']) slashParts.push(data['遠近']);
         if (data['方法']) slashParts.push(data['方法']);
-        if (data['行動順']) slashParts.push(data['行動順']);
+        if (data['行動順'] && type !== 'addInfo') slashParts.push(data['行動順']);
         let targetRange = (data['対象'] || '') + (data['範囲'] || '');
         if (targetRange) slashParts.push(targetRange);
         let slashStr = slashParts.join('/');
@@ -2716,15 +2716,17 @@
             setTimeout(() => { saveProfileBtn.classList.remove('is-saving'); }, 500);
         });
         deleteProfileBtn.addEventListener('click', () => {
-            localStorage.removeItem('styleViewerExclusions');
-            additionalExclusionList = [];
-            renderOptions(searchInput.value);
-            updateSelectedText();
-
-            // 表示を即時更新
-            const currentStyleName = document.getElementById('styleBtn').dataset.value;
-            if (currentStyleName && currentStyleName !== '---') {
-                updateView(currentStyleName);
+            if (window.confirm("除外設定をすべて削除してよろしいですか？")) {
+                localStorage.removeItem('styleViewerExclusions');
+                additionalExclusionList = [];
+                renderOptions(searchInput.value);
+                updateSelectedText();
+    
+                // 表示を即時更新
+                const currentStyleName = document.getElementById('styleBtn').dataset.value;
+                if (currentStyleName && currentStyleName !== '---') {
+                    updateView(currentStyleName);
+                }
             }
         });
         updateSelectedText();
