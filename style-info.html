@@ -2716,17 +2716,21 @@
             setTimeout(() => { saveProfileBtn.classList.remove('is-saving'); }, 500);
         });
         deleteProfileBtn.addEventListener('click', () => {
-            if (window.confirm("除外設定をすべて削除してよろしいですか？")) {
-                localStorage.removeItem('styleViewerExclusions');
-                additionalExclusionList = [];
-                renderOptions(searchInput.value);
-                updateSelectedText();
-    
-                // 表示を即時更新
-                const currentStyleName = document.getElementById('styleBtn').dataset.value;
-                if (currentStyleName && currentStyleName !== '---') {
-                    updateView(currentStyleName);
-                }
+
+            const confirmed = window.confirm("除外設定をすべて削除してよろしいですか？");
+            if (!confirmed) {
+                return;
+            }
+
+            localStorage.removeItem('styleViewerExclusions');
+            additionalExclusionList = [];
+            renderOptions(searchInput.value);
+            updateSelectedText();
+
+            // 表示を即時更新
+            const currentStyleName = document.getElementById('styleBtn').dataset.value;
+            if (currentStyleName && currentStyleName !== '---') {
+                updateView(currentStyleName);
             }
         });
         updateSelectedText();
