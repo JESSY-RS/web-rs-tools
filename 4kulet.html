@@ -1,0 +1,2789 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="favicon.ico">
+    <title>★スタイル情報ビューア</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
+
+    <style>
+        :root {
+            --main-bg: #fff;
+            --main-text: #000;
+            --title-text: #000;
+            --controls-bg: #f0f0f0;
+            --controls-border: #ddd;
+            --select-bg: #fff;
+            --select-text: #000;
+            --select-border: #ccc;
+            --select-disabled-bg: #ccc;
+            --select-focus-bg: #007bff;
+            --select-focus-text: #fff;
+            --skill-col-bg: #e7f3ff;
+            --skill-col-text: #0056b3;
+            --ability-col-bg: #e8f5e9;
+            --ability-col-text: #1e8e3e;
+            --addinfo-col-bg: #f3e8f5;
+            --addinfo-col-text: #6a1b9a;
+            --col-border: #ddd;
+            --card-bg: #fff;
+            --card-border: #e8e8e8;
+            --card-title-text: #000;
+            --card-text: #333;
+            --link-color: #007bff;
+            --link-hover-color: #0056b3;
+            --back-link-color: #000;
+            --silver-text: silver;
+            --popup-bg: #fff;
+            --popup-border: #a0aec0;
+            --web-link-text: dodgerblue;
+            --web-link-visited: blueviolet;
+            --web-link-hover: lime;
+            --web-link-active: orangered;
+        }
+        [data-theme="dark"] {
+            --main-bg: #2A2A2A;
+            --main-text: #f2f2f2;
+            --title-text: #f2f2f2;
+            --controls-bg: #3a3a3a;
+            --controls-border: #555;
+            --select-bg: #4a4a4a;
+            --select-text: #f2f2f2;
+            --select-border: #666;
+            --select-disabled-bg: #555;
+            --select-focus-bg: #1D9BF0;
+            --select-focus-text: #fff;
+            --skill-col-bg: #1e293b;
+            --skill-col-text: #93c5fd;
+            --ability-col-bg: #163318;
+            --ability-col-text: #86efac;
+            --addinfo-col-bg: #2a1a2e;
+            --addinfo-col-text: #d8b4fe;
+            --col-border: #555;
+            --card-bg: #3a3a3a;
+            --card-border: #555;
+            --card-title-text: #f2f2f2;
+            --card-text: #ccc;
+            --link-color: #1D9BF0;
+            --link-hover-color: #0CFF57;
+            --back-link-color: #ccc;
+            --silver-text: #888;
+            --popup-bg: #4a4a4a;
+            --popup-border: #666;
+            --web-link-text: #1D9BF0;
+            --web-link-visited: #7755FF;
+            --web-link-hover: #0CFF57;
+            --web-link-active: #FF0000;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Segoe UI', Meiryo, sans-serif;
+            margin: 0 3px;
+            padding: 15px;
+            background-color: var(--main-bg);
+            color: var(--main-text);
+            font-size: 16px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        h1,
+        h2,
+        h3,
+        h4 {
+            margin: 0;
+            padding: 0;
+        }
+        .main-title {
+            text-align: left;
+            margin-bottom: 15px;
+            color: var(--title-text);
+            position: relative;
+            font-size: 1.8em;
+        }
+        #theme-options {
+            display: none;
+            position: absolute;
+            left: 0;
+            margin-top: 8px;
+            padding: 1rem;
+            background-color: var(--popup-bg);
+            border: 1px solid var(--popup-border);
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 20;
+        }
+        #theme-options .flex-col {
+            display: flex;
+            flex-direction: column;
+        }
+        #theme-options .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+        #theme-options .inline-flex {
+            display: inline-flex;
+        }
+        #theme-options .items-center {
+            align-items: center;
+        }
+        #theme-options .form-radio {
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: var(--select-bg);
+            margin-top: 0;
+            font-family: inherit;
+            color: currentColor;
+            width: 1.15em;
+            height: 1.15em;
+            border: 0.15em solid currentColor;
+            border-radius: 50%;
+            transform: translateY(-0.075em);
+            display: grid;
+            place-content: center;
+        }
+        #theme-options .form-radio::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em #2563eb;
+        }
+        #theme-options .form-radio:checked::before {
+            transform: scale(1);
+        }
+        #theme-options .text-xl {
+            font-size: 1.25rem;
+        }
+        #theme-options .ml-2 {
+            margin-left: 0.5rem;
+        }
+        .zoom-buttons {
+            position: absolute;
+            top: 17px;
+            right: 18px;
+            display: flex;
+            flex-direction: row;
+            gap: 5px;
+            z-index: 1000;
+        }
+        .zoom-buttons button {
+            color: #000;
+            background-color: #eee;
+            padding: 5px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 1px solid var(--select-border);
+        }
+        .controls-wrapper {
+            max-width: none;
+            margin: 0 auto 20px auto;
+            padding: 20px 15px;
+            background: var(--controls-bg);
+            border: 1px solid var(--controls-border);
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        .control-group {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        .control-group label {
+            font-weight: bold;
+            text-align: right;
+            font-size: 1.1em;
+            white-space: nowrap;
+        }
+        .control-group-separator {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--controls-border);
+        }
+        .custom-select-container {
+            position: relative;
+            width: 100%;
+        }
+        .custom-select-button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--select-border);
+            background-color: var(--select-bg);
+            color: var(--main-text);
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 45px;
+            box-sizing: border-box;
+            font-size: 1.1em;
+        }
+        .custom-select-button.is-empty,
+        .custom-select-button.is-placeholder {
+            color: var(--main-text);
+        }
+        [data-theme="dark"] .custom-select-button.is-empty,
+        [data-theme="dark"] .custom-select-button.is-placeholder {
+            color: var(--main-text);
+        }
+        .custom-select-button:disabled {
+            background-color: var(--select-disabled-bg);
+            cursor: not-allowed;
+        }
+        .custom-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            border: 1px solid var(--select-border);
+            background: var(--select-bg);
+            color: var(--main-text);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+        .custom-select-search {
+            margin: 8px;
+            padding: 8px;
+            width: calc(100% - 24px);
+            box-sizing: border-box;
+            border: 1px solid var(--select-border);
+            background-color: var(--select-bg);
+            color: var(--main-text);
+            font-size: 1.1em;
+        }
+        .custom-select-option {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        #deselectAllExclusions {
+            border-bottom: 1px solid var(--select-border);
+        }
+        .custom-select-option:hover, .custom-select-option.focused {
+            background-color: var(--select-focus-bg);
+            color: var(--select-focus-text);
+        }
+        #additionalExclusionOptions {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+        #characterOptions,
+        #styleOptions {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: none;
+            margin: 0 auto;
+        }
+        .column {
+            border: 1px solid var(--col-border);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .column h2 {
+            text-align: left;
+            margin-bottom: 15px;
+            border-bottom: none;
+        }
+        .card {
+            border: 1px solid var(--card-border);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 11px;
+            background: var(--card-bg);
+        }
+        .card h3 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            color: var(--card-title-text);
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .summary-line,
+        .detail-line {
+            font-size: 1em;
+            color: var(--card-text);
+            line-height: 1.7;
+        }
+        .summary-line {
+            margin-bottom: 10px;
+        }
+        .detail-line {
+            white-space: pre-wrap;
+        }
+        .keyword-link {
+            text-decoration: underline;
+            color: var(--link-color);
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .keyword-link:hover {
+            color: var(--link-hover-color);
+        }
+        .back-link {
+            font-size: 1em;
+            text-decoration: none;
+            color: var(--back-link-color);
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .skill-column {
+            background-color: var(--skill-col-bg);
+        }
+        .skill-column h2 {
+            color: var(--skill-col-text);
+        }
+        .ability-column {
+            background-color: var(--ability-col-bg);
+        }
+        .ability-column h2 {
+            color: var(--ability-col-text);
+        }
+        .add-info-column {
+            background-color: var(--addinfo-col-bg);
+        }
+        .add-info-column h2 {
+            color: var(--addinfo-col-text);
+        }
+        .button-group-multi {
+            margin-top: 15px;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        .save-btn {
+            flex: 1;
+            padding: 10px 5px;
+            font-size: 1em;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            white-space: nowrap;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #saveSkillBtn {
+            background-color: #007bff;
+        }
+        #saveSkillBtn:hover {
+            background-color: #0056b3;
+        }
+        #saveAbilityBtn {
+            background-color: #28a745;
+        }
+        #saveAbilityBtn:hover {
+            background-color: #218838;
+        }
+        #saveAddInfoBtn {
+            background-color: #8441a1;
+        }
+        #saveAddInfoBtn:hover {
+            background-color: #6a1b9a;
+        }
+        .save-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .profile-btn {
+            flex: 1;
+            padding: 10px 5px;
+            font-size: 1em;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color: 0.1s ease;
+        }
+        .profile-btn-save {
+            background-color: #007bff;
+        }
+        .profile-btn-save:hover {
+            background-color: #0056b3;
+        }
+        .profile-btn-delete {
+            background-color: #dc3545;
+        }
+        .profile-btn-delete:hover {
+            background-color: #c82333;
+        }
+        .profile-btn:disabled {
+            background-color: #bbb;
+            cursor: default;
+            opacity: 0.8;
+        }
+        .profile-btn-save.is-saving {
+            background-color: #6c757d;
+        }
+        .silver-text {
+            color: var(--silver-text);
+        }
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        footer {
+            width: 100%;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            font-size: 14pt;
+            margin-top: 40px;
+        }
+        .bottom {
+            margin-top: 20px;
+            font-size: 16pt;
+            line-height: 2;
+        }
+        .web-link:link {
+            color: var(--web-link-text);
+            text-decoration: underline;
+        }
+        .web-link:visited {
+            color: var(--web-link-visited);
+            text-decoration: underline;
+        }
+        .web-link:hover {
+            color: var(--web-link-hover);
+        }
+        .web-link:active {
+            color: var(--web-link-active);
+            text-decoration: underline;
+        }
+        #searchTagContainer {
+            padding-top: 15px;
+        }
+        #keywordSearchArea {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--controls-border);
+        }
+        #keywordSearchInput {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid var(--select-border);
+            border-radius: 4px;
+            background-color: var(--select-bg);
+            color: var(--select-text);
+        }
+        #keywordSearchBtn,
+        #resetSearchBtn {
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            border: none;
+        }
+        #keywordSearchBtn {
+            background-color: #007bff;
+        }
+        #keywordSearchBtn:hover {
+            background-color: #0056b3;
+        }
+        #resetSearchBtn {
+            background-color: #6c757d;
+        }
+        #resetSearchBtn:hover {
+            background-color: #5a6268;
+        }
+        #keywordSearchBtn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .tag-category {
+            margin-bottom: 15px;
+        }
+        .tag-category-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tag-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .tag-btn {
+            padding: 6px 12px;
+            font-size: 0.95em;
+            border: 1px solid var(--select-border);
+            border-radius: 15px;
+            background-color: var(--select-bg);
+            color: var(--select-text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .tag-btn:hover {
+            border-color: #007bff;
+        }
+        .tag-btn.active {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+            border-color: #007bff;
+        }
+        [data-theme="dark"] .tag-btn.active {
+            background-color: #1D9BF0;
+        }
+        .tag-category.single-line-layout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .tag-category.single-line-layout .tag-category-title {
+            margin-bottom: 0;
+            flex-shrink: 0;
+        }
+        .tag-category.single-line-layout .tag-buttons {
+            flex-grow: 1;
+        }
+        #bpSearchInput {
+            padding: 6px 10px;
+            font-size: 1em;
+            border-radius: 4px;
+            border: 1px solid var(--select-border);
+            background-color: var(--select-bg);
+            color: var(--select-text);
+            width: 70px;
+            text-align: right;
+        }
+        #searchResults .column {
+            position: relative;
+            grid-column: 1 / -1;
+            margin-bottom: 20px;
+        }
+        #searchResults .column .card {
+            margin-bottom: 0;
+        }
+        #searchResults h3 {
+            font-size: 1.2em;
+            margin-bottom: 2px;
+        }
+        #searchResults h4 {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            font-weight: normal;
+        }
+        .search-result-skill-type,
+        .search-result-ability-type {
+            font-size: 0.8em;
+            font-weight: normal;
+        }
+        .search-result-skill-type {
+            color: var(--skill-col-text);
+        }
+        .search-result-ability-type {
+            color: var(--ability-col-text);
+        }
+        .jump-to-top-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1em;
+            text-decoration: none;
+            color: var(--card-text);
+        }
+        .jump-to-top-btn:hover {
+            color: var(--main-text);
+        }
+        #resetSearch {
+            margin-bottom: 20px;
+            display: block;
+            font-size: 1.1em;
+        }
+        .highlight {
+            background-color: #ffd700;
+            color: black;
+        }
+        #toggleSearchBtn {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 4px;
+            border: 1px solid var(--select-border);
+            background-color: var(--select-bg);
+            color: var(--select-text);
+            cursor: pointer;
+            text-align: center;
+        }
+        #toggleSearchBtn:hover {
+            border-color: #007bff;
+        }
+        #toggleSearchBtn.search-active {
+            background-color: #f1b0b7;
+            color: #721c24;
+            border-color: #eea2aa;
+            font-weight: bold;
+        }
+        #toggleSearchBtn.search-active:hover {
+            background-color: #ee9ca7;
+        }
+        [data-theme="dark"] #toggleSearchBtn.search-active {
+            background-color: #721c24;
+            color: #f5c6cb;
+            border-color: #8c2a32;
+        }
+        [data-theme="dark"] #toggleSearchBtn.search-active:hover {
+            background-color: #8c2a32;
+        }
+        .parent-info-panel {
+            margin-top: -10px;
+        }
+        .close-parent-info {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+            text-decoration: none;
+            color: var(--card-text);
+        }
+        .close-parent-info:hover {
+            color: #c82333;
+        }
+        #searchResults .jump-to-top-btn {
+            font-size: 1.1em;
+        }
+        .logic-btn.active {
+            background-color: red !important;
+            border-color: red !important;
+        }
+        .search-scope-btn[data-scope="skill"].active {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+        }
+        .search-scope-btn[data-scope="ability"].active {
+            background-color: forestgreen !important;
+            border-color: forestgreen !important;
+        }
+        .search-scope-btn[data-scope="addInfo"].active {
+            background-color: darkorchid !important;
+            border-color: darkorchid !important;
+        }
+        .skill-filter-btn[data-value="火"].active,
+        .skill-filter-btn[data-value="熱"].active {
+            background-color: red !important;
+            border-color: red !important;
+        }
+        .skill-filter-btn[data-value="水"].active,
+        .skill-filter-btn[data-value="冷"].active {
+            background-color: dodgerblue !important;
+            border-color: dodgerblue !important;
+        }
+        .skill-filter-btn[data-value="雷"].active {
+            background-color: darkorange !important;
+            border-color: darkorange !important;
+        }
+        .skill-filter-btn[data-value="風"].active {
+            background-color: forestgreen !important;
+            border-color: forestgreen !important;
+        }
+        .skill-filter-btn[data-value="土"].active {
+            background-color: chocolate !important;
+            border-color: chocolate !important;
+        }
+        .skill-filter-btn[data-value="光"].active,
+        .skill-filter-btn[data-value="陽"].active {
+            background-color: orangered !important;
+            border-color: orangered !important;
+        }
+        .skill-filter-btn[data-value="闇"].active,
+        .skill-filter-btn[data-value="陰"].active {
+            background-color: darkorchid !important;
+            border-color: darkorchid !important;
+        }
+        #toggleVisibilityBtn.active {
+            background-color: #6c757d !important;
+            color: white !important;
+            border-color: #6c757d !important;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="main-title">
+        <span id="theme-toggle-button" style="cursor: pointer; color: #f5c542; margin-right: -8px;">★</span>
+        スタイル情報ビューア
+        <div id="theme-options">
+            <div class="flex-col space-y-2">
+                <label class="inline-flex items-center">
+                    <input type="radio" name="theme" value="system" class="form-radio">
+                    <span class="text-xl ml-2">端末の設定を使う</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="radio" name="theme" value="dark" class="form-radio">
+                    <span class="text-xl ml-2">ダークモード ON</span>
+                </label>
+                <label class="inline-flex items-center">
+                    <input type="radio" name="theme" value="light" class="form-radio">
+                    <span class="text-xl ml-2">ダークモード OFF</span>
+                </label>
+            </div>
+        </div>
+    </h1>
+
+    <div class="zoom-buttons">
+        <button onclick="changeZoom(-0.1)">－</button>
+        <button onclick="changeZoom(0.1)">＋</button>
+    </div>
+
+    <div class="controls-wrapper">
+        <div id="viewModeControls">
+            <div class="control-group">
+                <label for="characterBtn">キャラ名:</label>
+                <div class="custom-select-container" id="characterContainer">
+                    <button class="custom-select-button" id="characterBtn" disabled>
+                        <span id="characterText">---</span>
+                        <span>▼</span>
+                    </button>
+                    <div class="custom-select-dropdown" id="characterDropdown" style="display: none;">
+                        <input type="text" class="custom-select-search" id="characterSearch" placeholder="検索...">
+                        <div id="characterOptions"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label for="styleBtn">スタイル名:</label>
+                <div class="custom-select-container" id="styleContainer">
+                    <button class="custom-select-button" id="styleBtn" disabled>
+                        <span id="styleText">---</span>
+                        <span>▼</span>
+                    </button>
+                    <div class="custom-select-dropdown" id="styleDropdown" style="display: none;">
+                        <input type="text" class="custom-select-search" id="styleSearch" placeholder="検索...">
+                        <div id="styleOptions"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-group control-group-separator">
+                <label for="additionalExclusionSelect">追加除外:</label>
+                <div class="custom-select-container" id="additionalExclusionContainer">
+                    <button class="custom-select-button" id="additionalExclusionBtn">
+                        <span id="additionalExclusionText">(未指定)</span>
+                        <span>▼</span>
+                    </button>
+                    <div class="custom-select-dropdown" id="additionalExclusionDropdown" style="display: none;">
+                        <input type="text" class="custom-select-search" id="additionalExclusionSearch" placeholder="検索...">
+                        <div class="custom-select-option" id="deselectAllExclusions">
+                            <label><input type="checkbox" id="selectAllExclusionsCheckbox" /> すべて選択/解除</label>
+                        </div>
+                        <div id="additionalExclusionOptions"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label></label>
+                <div class="button-container">
+                    <button class="profile-btn profile-btn-save" id="saveExclusionProfile">除外設定を保存</button>
+                    <button class="profile-btn profile-btn-delete" id="deleteExclusionProfile">除外設定を削除</button>
+                </div>
+            </div>
+
+            <div class="control-group button-group-multi control-group-separator" id="screenshot-section">
+                <label>スクショ保存:</label>
+                <div class="button-container">
+                    <button id="saveSkillBtn" class="save-btn" disabled>スキル</button>
+                    <button id="saveAbilityBtn" class="save-btn" disabled>アビリティ</button>
+                    <button id="saveAddInfoBtn" class="save-btn" disabled>追加情報</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group-separator" id="search-controls-top">
+             <button id="toggleSearchBtn">タグ検索を開く</button>
+        </div>
+        <div id="searchTagContainer" style="display: none;">
+            <div id="keywordSearchArea">
+                <input type="text" id="keywordSearchInput" placeholder="スキル・アビリティ名 / 効果詳細">
+                <button id="keywordSearchBtn">キーワード検索</button>
+                <button id="resetSearchBtn">リセット</button>
+            </div>
+            <div class="tag-category single-line-layout" id="searchScopeCategory" style="margin-top: 15px;">
+                <div class="tag-category-title">検索範囲:</div>
+                <div class="tag-buttons">
+                    <button class="tag-btn search-scope-btn active" data-scope="skill">スキル</button>
+                    <button class="tag-btn search-scope-btn active" data-scope="ability">アビリティ</button>
+                    <button class="tag-btn search-scope-btn active" data-scope="addInfo">追加情報</button>
+                    <button class="tag-btn" id="toggleVisibilityBtn">候補非表示</button>
+                </div>
+            </div>
+            
+            <div id="skillSearchOptionsContainer" style="display: none;"></div>
+
+        </div>
+    </div>
+
+    <div id="searchResults" style="display: none;"></div>
+
+    <div class="container" id="mainContainer">
+        <div class="column skill-column"><h2>スキル</h2><div id="skillDisplay"></div></div>
+        <div class="column ability-column"><h2>アビリティ</h2><div id="abilityDisplay"></div></div>
+        <div class="column add-info-column"><h2>追加情報</h2><div id="addInfoDisplay"></div></div>
+    </div>
+
+    <footer>
+        ※使用は自己責任にて。<br>
+        <span id="footer-text-normal">※追加情報はスキル欄やアビリティ欄に記載のあるものは除外しています。</span>
+        <span id="footer-text-search" style="display: none;">※候補が無い場合はキーワード検索を利用してください。間にスペースを入れる事によって複数指定も出来ます。</span>
+        <br>
+        ※記載の情報が間違っている可能性もあります。気付かれた方は<a href="https://x.com/jessy_romasaga" class="web-link">@jessy_romasaga</a>までご一報いただけると助かります。<br>
+    </footer>
+
+    <div class="bottom">
+        <a href="index.html" class="web-link">INDEXへ戻る</a>
+    </div>
+
+
+<script>
+    // 拡大縮小の関数
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    
+    let pageSettings = { 'style-info_zoom': 1.0 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'style-info_zoom';
+        let currentZoom = pageSettings[zoomKey];
+    
+        currentZoom += delta;
+
+        currentZoom = Math.round(currentZoom * 10) / 10;
+
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        // 画面の表示に反映
+        document.body.style.zoom = currentZoom;
+        
+        // 設定オブジェクトの値を更新
+        pageSettings[zoomKey] = currentZoom;
+        
+        // localStorageに保存
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                // 保存済みの設定があれば、デフォルト値と結合して上書きします。
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+
+    // --------------------------------------------------
+    // グローバル変数
+    // --------------------------------------------------
+    let db = { 
+        styles: [], 
+        skills: {}, 
+        abilities: {}, 
+        addInfo: {}, 
+        searchTags: [], 
+        autoTagExclusions: [], 
+        characterOrder: [] // { 'キャラ名': '最終皇帝(男)', 'フリガナ': 'サイシュウコウテイオトコ' } のようなオブジェクトの配列になる
+    };
+    let additionalExclusionList = [];
+    let allExclusionKeywords = [];
+    let addInfoOrderedKeys = [];
+    let stylesWithDetails = [];
+    let grayTextPhrases = [];
+    let reverseIndex = {};
+    let itemToStyleMap = {};
+    const fixedExclusionList = new Set(["攻撃", "アビリティ効果により発動する技・術", "特殊状態の効果により発動する技・術", "技・術の効果により発動する技・術", "溜め技・術", "溜め状態を付与する技・術", "カウンター効果による反撃技・術", "\"追撃\"により発動する技・術"]);
+    let originalTitle = "";
+
+    // ひらがなをカタカナに変換する関数
+    const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
+
+    // --------------------------------------------------
+    // 初期化処理
+    // --------------------------------------------------
+    document.addEventListener('DOMContentLoaded', async () => {
+        loadPageSettings();
+
+        originalTitle = document.title;
+        
+        // --- テキスト選択と右クリックの制御 ---
+        const pageTitle = document.title;
+        if (!pageTitle.includes('★')) {
+            document.addEventListener('contextmenu', event => event.preventDefault());
+            document.body.classList.add('no-select');
+            const screenshotSection = document.getElementById('screenshot-section');
+            if (screenshotSection) {
+                screenshotSection.style.display = 'none';
+            }
+        }
+        
+        // --- Theme switcher logic ---
+        const themeToggleButton = document.getElementById('theme-toggle-button');
+        const themeOptions = document.getElementById('theme-options');
+        const themeRadios = document.querySelectorAll('input[name="theme"]');
+        const applyTheme = (theme) => {
+            if (theme === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        };
+        const handleThemeChange = () => {
+            // ローカルストレージに設定がなければ 'light' をデフォルトにする
+            const selectedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(selectedTheme);
+            for (const radio of themeRadios) {
+                if (radio.value === selectedTheme) {
+                    radio.checked = true;
+                }
+            }
+        };
+        themeToggleButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            themeOptions.style.display = themeOptions.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', (e) => {
+            if (!themeOptions.contains(e.target) && e.target !== themeToggleButton) {
+                themeOptions.style.display = 'none';
+            }
+        });
+        themeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const newTheme = e.target.value;
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+        });
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            const selectedTheme = localStorage.getItem('theme') || 'light';
+            if (selectedTheme === 'system') {
+                applyTheme('system');
+            }
+        });
+        handleThemeChange();
+        // --- End of theme switcher logic ---
+
+        try {
+            await Promise.all([
+                loadCsv('data/style.csv', 'styles'),
+                loadCsv('data/skill.csv', 'skills'),
+                loadCsv('data/ability.csv', 'abilities'),
+                loadCsv('data/add_info.csv', 'addInfo'),
+                loadCsv('data/search-tags.csv', 'searchTags'),
+                loadCsv('data/auto-tag-exclusions.csv', 'autoTagExclusions'),
+                loadCsv('data/character.csv', 'characterOrder')
+            ]);
+            
+            grayTextPhrases = db.autoTagExclusions.map(row => row.text_to_exclude).filter(Boolean);
+            buildReverseIndex();
+            prepareSearchData();
+            buildItemToStyleMap();
+            
+            initializeCharacterSelect();
+            initializeStyleSelect();
+            window.addEventListener('popstate', handlePopState);
+            
+            generateSearchTags();
+            initializeExclusionFeature();
+            initializeSaveButtons();
+            initializeSearchModeToggle();
+            initializeResetButton();
+            document.getElementById('searchResults').addEventListener('click', handleSearchResultClick);
+            
+            handleUrlHash();
+
+        } catch (error) {
+            console.error(`初期化エラー: ${error.message}`);
+            alert(`データの読み込みに失敗しました。ファイルが所定の場所にあるか確認してください。\nエラー: ${error.message}`);
+        }
+        document.body.style.zoom = pageSettings['style-info_zoom'];
+    });
+
+    // --- ▼▼▼ 表示・URL・タイトル更新のロジック ▼▼▼ ---
+
+    function updateView(styleName, fromHistory = false) {
+        const charaBtn = document.getElementById('characterBtn');
+        const charaText = document.getElementById('characterText');
+        const styleBtn = document.getElementById('styleBtn');
+        const styleText = document.getElementById('styleText');
+        const saveBtns = document.querySelectorAll('.save-btn');
+        clearDisplays();
+
+        if (!styleName || styleName === '---') {
+            styleBtn.classList.add('is-placeholder');
+            saveBtns.forEach(btn => btn.disabled = true);
+            
+            if (!fromHistory && (location.hash || history.state)) {
+                history.pushState({ styleName: null }, originalTitle, window.location.pathname + window.location.search);
+            }
+            document.title = originalTitle;
+            return;
+        }
+
+        const selectedStyle = db.styles.find(s => s['スタイル名'] === styleName);
+        if (!selectedStyle) {
+            console.error(`指定されたスタイルが見つかりません: ${styleName}`);
+            return;
+        }
+
+        const characterName = selectedStyle['キャラ名'];
+        if (charaText.textContent !== characterName) {
+            charaText.textContent = characterName;
+            populateStyleSelect(characterName);
+        }
+        
+        const displayStyleName = `[${selectedStyle['グレード']}] ${selectedStyle['スタイル名']}`;
+        styleText.textContent = displayStyleName;
+        styleBtn.dataset.value = selectedStyle['スタイル名'];
+
+        styleBtn.classList.remove('is-placeholder');
+        charaBtn.classList.remove('is-placeholder');
+        saveBtns.forEach(btn => btn.disabled = false);
+
+        const grade = selectedStyle['グレード'];
+        const baseTitle = originalTitle.replace(/（統合版）/g, '').trim();
+        const newTitle = `${baseTitle} - ${characterName} [${grade}] ${styleName}`;
+        const hash = `${characterName}_${grade}_${styleName}`;
+        const newHash = '#' + encodeURIComponent(hash);
+
+        if (!fromHistory && location.hash !== newHash) {
+            history.pushState({ styleName: styleName }, newTitle, newHash);
+        }
+
+        requestAnimationFrame(() => { document.title = newTitle; });
+
+        const skillsToShow = [selectedStyle['スキル1'], selectedStyle['スキル2'], selectedStyle['スキル3']].filter(Boolean);
+        const abilitiesToShow = [selectedStyle['アビリティ1'], selectedStyle['アビリティ2'], selectedStyle['アビリティ3']].filter(Boolean);
+        const allInitialItems = new Set([...skillsToShow, ...abilitiesToShow]);
+        const displayedAddInfo = new Set();
+        
+        skillsToShow.forEach(name => displayInfo('skill', name, allInitialItems, displayedAddInfo));
+        abilitiesToShow.forEach(name => displayInfo('ability', name, allInitialItems, displayedAddInfo));
+        
+        let keywordsToProcess = new Set();
+        [...allInitialItems].forEach(name => {
+             const detailText = findDetailText(name);
+             if (!detailText) return;
+             [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
+                const parsedKeyword = parseName(keyword);
+                const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+                if (existsInDb && !allInitialItems.has(parsedKeyword.fullName) && !fixedExclusionList.has(parsedKeyword.fullName) && !additionalExclusionList.includes(parsedKeyword.baseName)) {
+                    keywordsToProcess.add(parsedKeyword.fullName);
+                }
+             });
+        });
+        
+        let processedKeywords = new Set();
+        while(keywordsToProcess.size > 0){
+            const currentKeyword = [...keywordsToProcess][0];
+            processedKeywords.add(currentKeyword);
+            displayInfo('addInfo', currentKeyword, allInitialItems, displayedAddInfo);
+            const parsedCurrent = parseName(currentKeyword);
+            const detailText = findDetailText(parsedCurrent.baseName);
+            keywordsToProcess.delete(currentKeyword);
+            if (!detailText) continue;
+            [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
+                const parsedKeyword = parseName(keyword);
+                const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+                if(existsInDb && !allInitialItems.has(parsedKeyword.fullName) && !fixedExclusionList.has(parsedKeyword.fullName) && !processedKeywords.has(parsedKeyword.fullName) && !additionalExclusionList.includes(parsedKeyword.baseName)){
+                    keywordsToProcess.add(parsedKeyword.fullName);
+                }
+            });
+        }
+    }
+
+    function openSearchView(fromHistory = false) {
+        const searchPanel = document.getElementById('searchTagContainer');
+        const mainContainer = document.getElementById('mainContainer');
+        const viewModeControls = document.getElementById('viewModeControls');
+        const toggleBtn = document.getElementById('toggleSearchBtn');
+
+        if (searchPanel.style.display === 'none') {
+            searchPanel.style.display = 'block';
+            toggleBtn.textContent = 'タグ検索を終了';
+            toggleBtn.classList.add('search-active');
+            mainContainer.style.display = 'none';
+            viewModeControls.style.display = 'none';
+            document.getElementById('footer-text-normal').style.display = 'none';
+            document.getElementById('footer-text-search').style.display = 'inline';
+        }
+        
+        const newTitle = `${originalTitle.replace(/（統合版）/g, '').trim()} - タグ検索`;
+        if (!fromHistory) {
+            history.pushState({ searchTop: true }, newTitle, '#search-controls-top');
+        }
+        document.title = newTitle;
+        
+        const targetElement = document.getElementById('search-controls-top');
+        if (targetElement) {
+            setTimeout(() => { targetElement.scrollIntoView({ behavior: 'auto', block: 'start' }); }, 0); 
+        }
+    }
+
+    // --- イベントハンドラ ---
+    
+    function handlePopState(event) {
+        const state = event.state;
+        if (state && state.styleName) {
+            updateView(state.styleName, true);
+        } else if (state && state.searchTop) {
+            openSearchView(true);
+        } else if (!state && !location.hash) {
+             updateView(null, true);
+        } else {
+            handleUrlHash();
+        }
+    }
+    
+    function handleUrlHash() {
+        if (window.location.hash) {
+            try {
+                const hash = decodeURIComponent(window.location.hash.substring(1));
+                if (hash.startsWith('card-')) return;
+                if (hash === 'search-controls-top') {
+                    openSearchView(true);
+                    return;
+                }
+                const parts = hash.split('_');
+                if (parts.length < 3) throw new Error("不正なURLハッシュ形式");
+                const styleName = parts.slice(2).join('_');
+                updateView(styleName, true);
+            } catch (e) {
+                console.error(e.message);
+                updateView(null, true);
+            }
+        } else {
+            if (document.readyState === 'complete') {
+                 updateView(null, true);
+            }
+        }
+    }
+
+    // --- 補助関数 ---
+    
+    function parseName(name) {
+        const variableMatch = name.match(/(.+)(\((\d+)回\))$/);
+        return {
+            fullName: name,
+            baseName: variableMatch ? variableMatch[1] : name,
+            count: variableMatch ? variableMatch[3] : null
+        };
+    }
+
+    // スタイル選択カスタムプルダウンの初期化
+    function initializeStyleSelect() {
+        const btn = document.getElementById('styleBtn');
+        const text = document.getElementById('styleText');
+        const dropdown = document.getElementById('styleDropdown');
+        const searchInput = document.getElementById('styleSearch');
+        const optionsContainer = document.getElementById('styleOptions');
+        
+        btn.addEventListener('click', () => {
+            const isOpen = dropdown.style.display === 'flex';
+            dropdown.style.display = isOpen ? 'none' : 'flex';
+            if (!isOpen) {
+                searchInput.value = ''; // 検索ボックスを初期化
+                const charaText = document.getElementById('characterText').textContent;
+                populateStyleSelect(charaText); // フィルタなしでオプションを再描画
+
+                const currentStyleName = btn.dataset.value;
+                const currentStyleText = text.textContent;
+
+                // 値が選択されている場合のみ、選択中の項目をハイライト
+                if (currentStyleName && currentStyleName !== '---' && !currentStyleText.startsWith('現在の登録数')) {
+                    const options = optionsContainer.querySelectorAll('.custom-select-option');
+                    for (const option of options) {
+                        if (option.dataset.value === currentStyleName) {
+                            option.classList.add('focused');
+                            option.scrollIntoView({ block: 'nearest' });
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        optionsContainer.addEventListener('mouseover', (e) => {
+            if (e.target.classList.contains('custom-select-option')) {
+                const currentlyFocused = optionsContainer.querySelector('.custom-select-option.focused');
+                if (currentlyFocused) {
+                    currentlyFocused.classList.remove('focused');
+                }
+            }
+        });
+
+        searchInput.addEventListener('input', () => {
+            const charaText = document.getElementById('characterText').textContent;
+            populateStyleSelect(charaText, searchInput.value);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('styleContainer').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    // スタイル選択カスタムプルダウンのオプションを生成・更新
+    function populateStyleSelect(characterName, filter = '') {
+        const btn = document.getElementById('styleBtn');
+        const text = document.getElementById('styleText');
+        const optionsContainer = document.getElementById('styleOptions');
+        optionsContainer.innerHTML = '';
+        
+        if (!characterName || characterName.startsWith('現在の登録数')) {
+            text.textContent = `現在の登録数: ${db.styles.length}`;
+            btn.classList.add('is-placeholder');
+            btn.disabled = true;
+            return;
+        }
+        
+        const searchTerm = hiraganaToKatakana(filter);
+        const stylesForCharacter = db.styles
+            .filter(style => style['キャラ名'] === characterName)
+            .filter(style => {
+                const displayName = `[${style['グレード']}] ${style['スタイル名']}`;
+                const kanaName = hiraganaToKatakana(displayName);
+                // 漢字とカタカナの両方を含むため、元の表示名でも検索
+                return kanaName.includes(searchTerm) || displayName.includes(searchTerm);
+            });
+
+        if (stylesForCharacter.length > 0) {
+            stylesForCharacter.forEach(style => {
+                const displayName = `[${style['グレード']}] ${style['スタイル名']}`;
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'custom-select-option';
+                optionDiv.textContent = displayName;
+                optionDiv.dataset.value = style['スタイル名'];
+
+                optionDiv.addEventListener('click', (e) => {
+                    const selectedStyleName = e.target.dataset.value;
+                    text.textContent = e.target.textContent;
+                    btn.dataset.value = selectedStyleName;
+                    btn.classList.remove('is-placeholder');
+                    document.getElementById('styleDropdown').style.display = 'none';
+                    updateView(selectedStyleName);
+                });
+                optionsContainer.appendChild(optionDiv);
+            });
+        } else {
+             optionsContainer.innerHTML = '<div class="custom-select-option" style="color: #999;">該当なし</div>';
+        }
+        
+        btn.disabled = false;
+    }
+
+    // キャラクター選択カスタムプルダウンの初期化
+    function initializeCharacterSelect() {
+        const btn = document.getElementById('characterBtn');
+        const dropdown = document.getElementById('characterDropdown');
+        const searchInput = document.getElementById('characterSearch');
+        const optionsContainer = document.getElementById('characterOptions');
+        const selectedText = document.getElementById('characterText');
+        const styleBtn = document.getElementById('styleBtn');
+        const styleText = document.getElementById('styleText');
+
+        // character.csv から読み込んだキャラ順とフリガナを保持
+        const characterListWithFurigana = db.characterOrder.map(row => ({
+            name: row['キャラ名'],
+            furigana: row['フリガナ'] || ''
+        }));
+        
+        const allUniqueCharactersInStyles = new Set(db.styles.map(item => item['キャラ名']));
+        
+        // character.csv の順番を維持しつつ、style.csv に存在するキャラのみをリストアップ
+        const sortedList = characterListWithFurigana.filter(char => allUniqueCharactersInStyles.has(char.name));
+        const sortedSet = new Set(sortedList.map(char => char.name));
+
+        // character.csv にいないが style.csv にはいるキャラを末尾に追加
+        const remainingCharacters = [...allUniqueCharactersInStyles]
+            .filter(name => !sortedSet.has(name))
+            .sort((a,b) => a.localeCompare(b, 'ja'))
+            .map(name => ({ name: name, furigana: '' })); // フリガナがないので空文字
+
+        const finalList = [...sortedList, ...remainingCharacters];
+
+        selectedText.textContent = `現在の登録数: ${allUniqueCharactersInStyles.size}`;
+        btn.classList.add('is-placeholder');
+        styleText.textContent = `現在の登録数: ${db.styles.length}`;
+        styleBtn.classList.add('is-placeholder');
+
+        const renderCharacterOptions = (filter = '') => {
+            optionsContainer.innerHTML = '';
+            const searchTerm = hiraganaToKatakana(filter);
+            
+            const filteredList = finalList.filter(char => {
+                // 検索語がフリガナに含まれるか、またはキャラ名自体に含まれるかチェック
+                const furiganaMatch = char.furigana && char.furigana.includes(searchTerm);
+                const nameMatch = char.name.includes(searchTerm);
+                return furiganaMatch || nameMatch;
+            });
+
+            filteredList.forEach(char => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'custom-select-option';
+                optionDiv.textContent = char.name;
+                optionDiv.dataset.value = char.name;
+
+                optionDiv.addEventListener('click', (e) => {
+                    const selectedCharacter = e.target.dataset.value;
+                    selectedText.textContent = selectedCharacter;
+                    btn.classList.remove('is-placeholder');
+                    dropdown.style.display = 'none';
+                    
+                    styleText.textContent = '---';
+                    styleBtn.dataset.value = '---';
+                    styleBtn.classList.add('is-placeholder');
+                    populateStyleSelect(selectedCharacter);
+                    clearDisplays();
+                    document.querySelectorAll('.save-btn').forEach(btn => btn.disabled = true);
+                });
+                optionsContainer.appendChild(optionDiv);
+            });
+        };
+
+        btn.addEventListener('click', () => {
+            const isOpen = dropdown.style.display === 'flex';
+            dropdown.style.display = isOpen ? 'none' : 'flex';
+            if (!isOpen) {
+                searchInput.value = ''; // 検索ボックスを初期化
+                renderCharacterOptions(); // 常にフィルタなしでオプションを再描画
+                const currentCharacterName = selectedText.textContent;
+                
+                // 値が選択されている場合（プレースホルダーではない場合）のみ、選択中の項目をハイライト
+                if (currentCharacterName && !currentCharacterName.startsWith('現在の登録数')) {
+                    const options = optionsContainer.querySelectorAll('.custom-select-option');
+                    for (const option of options) {
+                        if (option.dataset.value === currentCharacterName) {
+                            option.classList.add('focused');
+                            option.scrollIntoView({ block: 'nearest' });
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+        
+        // マウスオーバーで初期フォーカスを解除する
+        optionsContainer.addEventListener('mouseover', (e) => {
+            if (e.target.classList.contains('custom-select-option')) {
+                const currentlyFocused = optionsContainer.querySelector('.custom-select-option.focused');
+                if (currentlyFocused) {
+                    currentlyFocused.classList.remove('focused');
+                }
+            }
+        });
+
+        searchInput.addEventListener('input', () => renderCharacterOptions(searchInput.value));
+
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('characterContainer').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+        
+        renderCharacterOptions();
+        btn.disabled = false;
+    }
+    
+    function buildReverseIndex() {
+        reverseIndex = {};
+        const allItems = [...Object.values(db.skills), ...Object.values(db.abilities), ...Object.values(db.addInfo)];
+        for (const parentItem of allItems) {
+            if (!parentItem) continue;
+            const parentName = parentItem['スキル名'] || parentItem['アビリティ名'] || parentItem['名称'];
+            if (!parentName) continue;
+            const parentType = db.skills[parentName] ? 'スキル' : (db.abilities[parentName] ? 'アビリティ' : '追加情報');
+            const detailText = parentItem['効果詳細'] || '';
+            const linkedKeywords = [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]);
+            for (const childName of linkedKeywords) {
+                if (!reverseIndex[childName]) reverseIndex[childName] = [];
+                const exists = reverseIndex[childName].some(p => p.name === parentName);
+                if (!exists) reverseIndex[childName].push({ name: parentName, type: parentType });
+            }
+        }
+    }
+
+    function buildItemToStyleMap() {
+        itemToStyleMap = {};
+        for (const style of stylesWithDetails) {
+            const context = { character: style.character, styleName: style.styleName };
+            const items = [...style.skills, ...style.abilities, ...style.linkedInfo];
+            for (const item of items) {
+                if (!item) continue;
+                const itemName = item['スキル名'] || item['アビリティ名'] || item['名称'];
+                if (!itemName) continue;
+                if (!itemToStyleMap[itemName]) itemToStyleMap[itemName] = [];
+                const exists = itemToStyleMap[itemName].some(c => c.character === context.character && c.styleName === context.styleName);
+                if (!exists) itemToStyleMap[itemName].push(context);
+            }
+        }
+    }
+
+    async function loadCsv(fileName, dbKey) {
+        try {
+            const response = await fetch(fileName);
+            if (!response.ok) throw new Error(`${fileName} が見つかりません`);
+            const csvText = await response.text();
+            const results = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+            
+            if (['styles', 'searchTags', 'autoTagExclusions', 'characterOrder'].includes(dbKey)) {
+                db[dbKey] = results.data;
+            } else {
+                if (dbKey === 'addInfo') addInfoOrderedKeys = [];
+                results.data.forEach(row => {
+                    const key = row['スキル名'] || row['アビリティ名'] || row['名称'];
+                    if(key) {
+                        db[dbKey][key] = row;
+                        if (dbKey === 'addInfo') addInfoOrderedKeys.push(key);
+                    }
+                });
+            }
+        } catch (error) {
+            if (['searchTags', 'autoTagExclusions'].includes(dbKey)) {
+                console.warn(`${fileName} の読み込みに失敗しましたが、処理を続行します。`);
+                db[dbKey] = [];
+            } else {
+                throw error;
+            }
+        }
+    }
+    
+    function applyGrayTextStyle(text) {
+        if (!text) return '';
+        let modifiedText = text;
+        grayTextPhrases.forEach(phrase => {
+            const escapedPhrase = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(escapedPhrase, 'g');
+            modifiedText = modifiedText.replace(regex, `<span class="silver-text">${phrase}</span>`);
+        });
+        return modifiedText;
+    }
+    
+    function generateSkillDetailHtml(data, type = 'skill') {
+        if (!data || !data['スキル名']) return '';
+        let html = '';
+        const summaryParts = [], slashParts = [];
+        if (data['種類']) slashParts.push(data['種類']);
+        if (data['遠近']) slashParts.push(data['遠近']);
+        if (data['方法']) slashParts.push(data['方法']);
+        if (data['行動順'] && type !== 'addInfo') slashParts.push(data['行動順']);
+        let targetRange = (data['対象'] || '') + (data['範囲'] || '');
+        if (targetRange) slashParts.push(targetRange);
+        let slashStr = slashParts.join('/');
+        let attrStr = '';
+        if (data['種類'] !== '補助') {
+            if (data['属性1']) {
+                attrStr = data['属性2'] ? `(${data['属性1']}+${data['属性2']})` : `(${data['属性1']})`;
+            }
+        }
+        summaryParts.push(slashStr + attrStr);
+        if (data['準備']) summaryParts.push(`[スタンバイターン:${data['準備']}]`);
+        if (data['再使用']) summaryParts.push(`[リキャストターン:${data['再使用']}]`);
+        if (data['制限'] && !(type === 'addInfo' && data['制限'] === '1')) {
+            summaryParts.push(`[使用回数制限:バトル中${data['制限']}回]`);
+        }
+        
+        if (data['特殊'] && data['特殊'].trim() !== '') {
+            summaryParts.push(`${data['特殊']}`);
+        }
+
+        const summaryLine = summaryParts.join(' ').trim();
+        
+        // ▼▼▼ 修正箇所 ▼▼▼
+        let bpLpPart = '';
+        if (type !== 'addInfo') {
+            bpLpPart = ` / <strong>BP:</strong> ${data['BP'] || ''}`;
+            if (data['LP'] && data['LP'].trim() !== '') {
+                bpLpPart += ` / <strong>LP:</strong> ${data['LP']}`;
+            }
+        }
+        html += `<div class="summary-line"><strong>種別:</strong> ${data['属性'] || ''}${data['技術'] || ''} / <strong>威力:</strong> ${data['威力'] || ''}${bpLpPart}</div>`;
+        // ▲▲▲ 修正箇所 ▲▲▲
+
+        if(summaryLine) html += `<div class="summary-line">${summaryLine}</div>`;
+        return html;
+    }
+    
+    function displayInfo(type, name, allInitialItems, displayedAddInfo) {
+        const parsedName = parseName(name);
+
+        if (type === 'addInfo' && (displayedAddInfo.has(parsedName.fullName) || additionalExclusionList.includes(parsedName.baseName))) {
+            return;
+        }
+
+        let data, containerId, isSkill = false;
+
+        if (type === 'skill') {
+            data = db.skills[parsedName.baseName];
+            containerId = 'skillDisplay';
+            isSkill = true;
+        } else if (type === 'ability') {
+            data = db.abilities[parsedName.baseName];
+            containerId = 'abilityDisplay';
+        } else if (type === 'addInfo') {
+            data = db.addInfo[parsedName.baseName] || db.skills[parsedName.baseName] || db.abilities[parsedName.baseName];
+            containerId = 'addInfoDisplay';
+            if (!data) return;
+            if (db.skills[parsedName.baseName]) isSkill = true;
+        }
+
+        if (!data) return;
+
+        const cardData = parsedName.count ? { ...data } : data;
+
+        if (type === 'addInfo') {
+            displayedAddInfo.add(parsedName.fullName);
+        }
+
+        const container = document.getElementById(containerId);
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.id = `card-${parsedName.fullName.replace(/[ ()]/g, "_")}`;
+
+        let content = `<h3>${parsedName.fullName}</h3>`;
+
+        if (isSkill) {
+            content += generateSkillDetailHtml(cardData, type);
+        }
+
+        let detailText = cardData['効果詳細'] || '(効果詳細なし)';
+
+        // ▼▼▼ ここから修正 ▼▼▼
+        if (parsedName.count && detailText !== '(効果詳細なし)') {
+            
+            // 条件1: type === 'addInfo'
+            // 条件2: "以下の効果が発動する" が含まれていない
+            if (type === 'addInfo' && !detailText.includes('以下の効果が発動する')) {
+                const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
+                let lines = detailText.split('\n');
+                let processedLines = [];
+                let originalLinesStartIndex = 0;
+
+                if (lines.length > 0 && lines[0].trim().startsWith('[')) {
+                    // [タイミング] がある場合
+                    processedLines.push(lines[0]); // 1行目（タイミング）
+                    processedLines.push(additionText); // 2行目（追加文言）
+                    originalLinesStartIndex = 1; // 元の行は1行目から処理
+                } else {
+                    // [タイミング] がない場合
+                    processedLines.push(additionText); // 1行目（追加文言）
+                    originalLinesStartIndex = 0; // 元の行は0行目から処理
+                }
+                
+                // 元の行に「・」を追加する処理
+                for (let i = originalLinesStartIndex; i < lines.length; i++) {
+                    let line = lines[i];
+                    // 行が空でない（空白のみでない）場合のみ処理
+                    if (line.trim()) { 
+                        // 行頭が ※ や ・ や ( で始まっていないかチェック
+                        if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
+                            // 元のインデントを保持しつつ「・」を追加
+                            const indentMatch = line.match(/^(\s*)/);
+                            const indent = indentMatch ? indentMatch[1] : '';
+                            line = indent + '・' + line.trimStart();
+                        }
+                        processedLines.push(line);
+                    } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
+                         // 空行も保持する（ただし、前の行が空行でない場合 = 連続する空行は1行に）
+                         processedLines.push(line);
+                    }
+                }
+                detailText = processedLines.join('\n');
+                
+            } else {
+                // typeが 'addInfo' でないか、または "以下の効果が発動する" が 含まれている場合
+                // 元のロジック（(#回) を追記する）
+                const lines = detailText.split('\n');
+                const addition = `(上限回数:${parsedName.count}回)`;
+                if (lines.length > 0) {
+                    if (lines[0].trim().startsWith('[')) {
+                        if (lines.length > 1) {
+                            lines[1] = lines[1].trim() + addition;
+                        } else {
+                            lines.push(addition);
+                        }
+                    } else {
+                        lines[0] = lines[0].trim() + addition;
+                    }
+                    detailText = lines.join('\n');
+                }
+            }
+        }
+        // ▲▲▲ ここまで修正 ▲▲▲
+
+        detailText = applyGrayTextStyle(detailText);
+
+        const linkedDetailText = detailText.replace(/「([^」]+)」/g, (match, keyword) => {
+            const parsedKeyword = parseName(keyword);
+            const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+
+            if (!existsInDb || fixedExclusionList.has(parsedKeyword.fullName) || parsedKeyword.fullName === name || allInitialItems.has(parsedKeyword.fullName) || additionalExclusionList.includes(parsedKeyword.baseName)) {
+                return match;
+            }
+            const sourceCardId = `card-${name.replace(/[ ()]/g, "_")}`;
+            const targetCardId = `card-${parsedKeyword.fullName.replace(/[ ()]/g, "_")}`;
+            return `「<a class="keyword-link" data-source-id="${sourceCardId}" href="#${targetCardId}">${parsedKeyword.fullName}</a>」`;
+        });
+
+        content += `<div class="detail-line">${linkedDetailText.replace(/\n/g, '<br>')}</div>`;
+        card.innerHTML = content;
+        container.appendChild(card);
+    }
+    
+    document.getElementById('mainContainer').addEventListener('click', function(event) {
+        const keywordLink = event.target.closest('.keyword-link');
+        const backLink = event.target.closest('.back-link');
+        if (keywordLink) {
+            event.preventDefault(); 
+            document.querySelectorAll('.back-link').forEach(btn => btn.remove());
+            const sourceId = keywordLink.dataset.sourceId;
+            const targetId = keywordLink.getAttribute('href').substring(1);
+            const targetCard = document.getElementById(targetId);
+            if (targetCard) {
+                const newBackLink = document.createElement('a');
+                newBackLink.href = `#${sourceId}`;
+                newBackLink.className = 'back-link';
+                newBackLink.textContent = '▲';
+                targetCard.querySelector('h3').appendChild(newBackLink);
+                targetCard.scrollIntoView({ behavior: 'smooth' });
+                history.replaceState(null, '', `#${targetId}`);
+            }
+        } else if (backLink) {
+            // This event is now primarily handled by the browser's default anchor behavior
+        }
+    });
+
+    function findDetailText(name) {
+        if(db.skills[name]) return db.skills[name]['効果詳細'];
+        if(db.abilities[name]) return db.abilities[name]['効果詳細'];
+        if(db.addInfo[name]) return db.addInfo[name]['効果詳細'];
+        return null;
+    }
+
+    function clearDisplays() {
+        document.getElementById('skillDisplay').innerHTML = '';
+        document.getElementById('abilityDisplay').innerHTML = '';
+        document.getElementById('addInfoDisplay').innerHTML = '';
+    }
+    
+    function endSearchMode() {
+        const toggleBtn = document.getElementById('toggleSearchBtn');
+        toggleBtn.classList.remove('search-active');
+        const searchPanel = document.getElementById('searchTagContainer');
+        const searchResults = document.getElementById('searchResults');
+        const mainContainer = document.getElementById('mainContainer');
+        const viewModeControls = document.getElementById('viewModeControls');
+        document.querySelectorAll('#searchTagContainer .tag-btn.active').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('keywordSearchInput').value = '';
+        document.getElementById('bpSearchInput').value = '';
+        document.querySelectorAll('.search-scope-btn').forEach(btn => btn.classList.add('active'));
+        document.querySelectorAll('#searchLogicCategory .logic-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('#searchLogicCategory .logic-btn[data-logic="and"]').classList.add('active');
+        toggleSkillOptions();
+        updateSearchUIState();
+        updateAutoExtractedTags();
+        searchPanel.style.display = 'none';
+        searchResults.style.display = 'none';
+        searchResults.innerHTML = '';
+        mainContainer.style.display = 'grid';
+        viewModeControls.style.display = 'block';
+        
+        const charaBtn = document.getElementById('characterBtn');
+        const charaText = document.getElementById('characterText');
+        const allUniqueCharacters = [...new Set(db.styles.map(item => item['キャラ名']))].filter(Boolean);
+        charaText.textContent = `現在の登録数: ${allUniqueCharacters.length}`;
+        charaBtn.classList.add('is-placeholder');
+        
+        const styleBtn = document.getElementById('styleBtn');
+        const styleText = document.getElementById('styleText');
+        styleText.textContent = `現在の登録数: ${db.styles.length}`;
+        styleBtn.classList.add('is-placeholder');
+        styleBtn.disabled = true;
+
+        clearDisplays();
+        document.querySelectorAll('.save-btn').forEach(btn => btn.disabled = true);
+        toggleBtn.textContent = 'タグ検索を開く';
+        document.getElementById('footer-text-normal').style.display = 'inline';
+        document.getElementById('footer-text-search').style.display = 'none';
+        updateView(null);
+    }
+
+    function initializeSearchModeToggle() {
+        const toggleBtn = document.getElementById('toggleSearchBtn');
+        const searchPanel = document.getElementById('searchTagContainer');
+        toggleBtn.addEventListener('click', () => {
+            const isSearchPanelHidden = searchPanel.style.display === 'none';
+            if (isSearchPanelHidden) {
+                const charaBtn = document.getElementById('characterBtn');
+                const charaText = document.getElementById('characterText');
+                const allUniqueCharacters = [...new Set(db.styles.map(item => item['キャラ名']))].filter(Boolean);
+                charaText.textContent = `現在の登録数: ${allUniqueCharacters.length}`;
+                charaBtn.classList.add('is-placeholder');
+                populateStyleSelect(null);
+                clearDisplays();
+                openSearchView(false);
+            } else {
+                endSearchMode();
+            }
+        });
+    }
+    
+    function initializeResetButton() {
+        document.getElementById('resetSearchBtn').addEventListener('click', () => {
+            document.getElementById('keywordSearchInput').value = '';
+            performTagSearch();
+        });
+    }
+
+    function prepareSearchData() {
+        stylesWithDetails = db.styles.map(style => {
+            const styleSkills = [style['スキル1'], style['スキル2'], style['スキル3']].filter(Boolean).map(name => db.skills[name]).filter(Boolean);
+            const styleAbilities = [style['アビリティ1'], style['アビリティ2'], style['アビリティ3']].filter(Boolean).map(name => db.abilities[name]).filter(Boolean);
+            const linkedInfoItems = new Map();
+            const itemsToScan = [...styleSkills, ...styleAbilities];
+            const scannedKeywords = new Set([...styleSkills.map(s => s['スキル名']), ...styleAbilities.map(a => a['アビリティ名'])]);
+            
+            while (itemsToScan.length > 0) {
+                const currentItem = itemsToScan.shift();
+                const detailText = currentItem['効果詳細'] || '';
+                
+                const linkedKeywords = [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]);
+                
+                for (const keyword of linkedKeywords) {
+                    const parsedKeyword = parseName(keyword);
+
+                    if (scannedKeywords.has(parsedKeyword.fullName)) continue;
+                    
+                    const infoData = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+                    
+                    if (infoData) {
+                        scannedKeywords.add(parsedKeyword.fullName);
+                        
+                        const instanceData = { ...infoData };
+                        
+                        if (instanceData.hasOwnProperty('名称')) {
+                            instanceData['名称'] = parsedKeyword.fullName;
+                        } else if (instanceData.hasOwnProperty('スキル名')) {
+                            instanceData['スキル名'] = parsedKeyword.fullName;
+                        } else if (instanceData.hasOwnProperty('アビリティ名')) {
+                            instanceData['アビリティ名'] = parsedKeyword.fullName;
+                        }
+
+                        if (parsedKeyword.count) {
+                            let detail = instanceData['効果詳細'] || '(効果詳細なし)';
+                            if (detail !== '(効果詳細なし)') {
+                                // ▼▼▼ ここから修正 ▼▼▼
+                                // displayInfo と同じロジックを適用
+                                if (db.addInfo[parsedKeyword.baseName] && !detail.includes('以下の効果が発動する')) { // type === 'addInfo' 
+                                    const additionText = `以下の効果が発動する(上限回数:バトル中${parsedKeyword.count}回)`;
+                                    let lines = detail.split('\n');
+                                    let processedLines = [];
+                                    let originalLinesStartIndex = 0;
+
+                                    if (lines.length > 0 && lines[0].trim().startsWith('[')) {
+                                        processedLines.push(lines[0]); 
+                                        processedLines.push(additionText);
+                                        originalLinesStartIndex = 1;
+                                    } else {
+                                        processedLines.push(additionText);
+                                        originalLinesStartIndex = 0;
+                                    }
+                                    
+                                    for (let i = originalLinesStartIndex; i < lines.length; i++) {
+                                        let line = lines[i];
+                                        if (line.trim()) { 
+                                            if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
+                                                const indentMatch = line.match(/^(\s*)/);
+                                                const indent = indentMatch ? indentMatch[1] : '';
+                                                line = indent + '・' + line.trimStart();
+                                            }
+                                            processedLines.push(line);
+                                        } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
+                                             processedLines.push(line);
+                                        }
+                                    }
+                                    instanceData['効果詳細'] = processedLines.join('\n');
+
+                                } else {
+                                    // 元のロジック
+                                    const lines = detail.split('\n');
+                                    const addition = `(上限回数:${parsedKeyword.count}回)`;
+                                    if (lines.length > 0) {
+                                        if (lines[0].trim().startsWith('[')) {
+                                            if (lines.length > 1) {
+                                                lines[1] = lines[1].trim() + addition;
+                                            } else {
+                                                lines.push(addition);
+                                            }
+                                        } else {
+                                            lines[0] = lines[0].trim() + addition;
+                                        }
+                                        instanceData['効果詳細'] = lines.join('\n');
+                                    }
+                                }
+                                // ▲▲▲ ここまで修正 ▲▲▲
+                            }
+                        }
+
+                        if (!linkedInfoItems.has(parsedKeyword.fullName)) {
+                            linkedInfoItems.set(parsedKeyword.fullName, instanceData);
+                            // infoData は元のDBデータなので、instanceData（加工済み）ではなく infoData をスキャン対象にプッシュ
+                            if (db.addInfo[parsedKeyword.baseName]) { // only scan addInfo items recursively
+                                itemsToScan.push(infoData);
+                            }
+                        }
+                    }
+                }
+            }
+            return {
+                character: style['キャラ名'],
+                styleName: `[${style['グレード']}] ${style['スタイル名']}`,
+                grade: style['グレード'],
+                skills: styleSkills,
+                abilities: styleAbilities,
+                linkedInfo: Array.from(linkedInfoItems.values())
+            };
+        });
+    }
+    
+    function updateSearchUIState() {
+        const isSkillScope = document.querySelector('.search-scope-btn[data-scope="skill"]').classList.contains('active');
+        const isAbilityScope = document.querySelector('.search-scope-btn[data-scope="ability"]').classList.contains('active');
+        const isAddInfoScope = document.querySelector('.search-scope-btn[data-scope="addInfo"]').classList.contains('active');
+        const isAnyScopeActiveForSearch = isSkillScope || isAbilityScope || isAddInfoScope;
+        
+        const csvTagArea = document.getElementById('csvTagArea');
+        if (csvTagArea) {
+            const isHiddenByUser = document.getElementById('toggleVisibilityBtn').classList.contains('active');
+            const showCsvTagArea = isSkillScope || isAbilityScope;
+            if (showCsvTagArea && !isHiddenByUser) {
+                 csvTagArea.style.display = 'block';
+            } else {
+                 csvTagArea.style.display = 'none';
+            }
+        }
+        
+        const keywordSearchBtn = document.getElementById('keywordSearchBtn');
+        if (keywordSearchBtn) keywordSearchBtn.disabled = !isAnyScopeActiveForSearch;
+    }
+
+    function updateAutoExtractedTags() {
+        const container = document.getElementById('autoTagCategory');
+        if (!container) return;
+        const activeTagButtons = new Set([...document.querySelectorAll('#autoTagCategory .tag-btn.active')].map(btn => btn.textContent));
+        const isEnabled = document.getElementById('autoTagToggle').checked;
+        const buttonsDiv = container.querySelector('.tag-buttons');
+        if (buttonsDiv) buttonsDiv.remove();
+        const noCandidatesMsg = container.querySelector('p');
+        if (noCandidatesMsg) noCandidatesMsg.remove();
+        if (!isEnabled) return;
+        const isSkillScope = document.querySelector('.search-scope-btn[data-scope="skill"]').classList.contains('active');
+        const isAbilityScope = document.querySelector('.search-scope-btn[data-scope="ability"]').classList.contains('active');
+        const isAddInfoScope = document.querySelector('.search-scope-btn[data-scope="addInfo"]').classList.contains('active');
+        let itemsToScan = [];
+        if (isSkillScope) itemsToScan.push(...Object.values(db.skills));
+        if (isAbilityScope) itemsToScan.push(...Object.values(db.abilities));
+        if (isAddInfoScope) itemsToScan.push(...Object.values(db.addInfo));
+        const timingKeywords = new Set();
+        const regex = /\[([^\]]+?)\]/g;
+        itemsToScan.forEach(item => {
+            if (item && item['効果詳細']) {
+                const matches = item['効果詳細'].match(regex);
+                if (matches) {
+                    matches.forEach(match => {
+                        if (!match.startsWith('[特効:')) {
+                            timingKeywords.add(match);
+                        }
+                    });
+                }
+            }
+        });
+        const newButtonsDiv = document.createElement('div');
+        newButtonsDiv.className = 'tag-buttons';
+        const manualKeywords = new Set();
+        db.searchTags.forEach(tag => tag.keywords.split(',').forEach(kw => manualKeywords.add(kw.trim().replace(/\(※\)/g, ''))));
+        [...timingKeywords].sort().forEach(keyword => {
+            const buttonDisplayText = keyword.slice(1, -1).replace(/\(※\)/g, '').trim();
+            if (manualKeywords.has(buttonDisplayText)) return;
+            const btn = document.createElement('button');
+            btn.className = 'tag-btn csv-tag-btn';
+            btn.textContent = buttonDisplayText;
+            btn.dataset.keywords = JSON.stringify([keyword]);
+            if (activeTagButtons.has(buttonDisplayText)) btn.classList.add('active');
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
+                performTagSearch();
+            });
+            newButtonsDiv.appendChild(btn);
+        });
+        if (newButtonsDiv.children.length > 0) {
+            container.appendChild(newButtonsDiv);
+        } else {
+            const p = document.createElement('p');
+            p.textContent = '候補はありません';
+            p.style.fontStyle = 'italic';
+            container.appendChild(p);
+        }
+    }
+
+    function resetSkillFilters() {
+        document.querySelectorAll('#skillSearchOptionsContainer .skill-filter-btn.active').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const bpInput = document.getElementById('bpSearchInput');
+        if (bpInput) bpInput.value = '';
+        document.querySelectorAll('#skillSearchOptionsContainer .bp-op-btn.active').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
+
+    function resetCommonFilters() {
+        document.querySelectorAll('#csvTagArea .tag-btn.active').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
+    
+    function generateSearchTags() {
+        const container = document.getElementById('searchTagContainer');
+        document.getElementById('keywordSearchBtn').addEventListener('click', performTagSearch);
+        document.getElementById('keywordSearchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') performTagSearch(); });
+        const skillOptionsContainer = document.getElementById('skillSearchOptionsContainer');
+        skillOptionsContainer.style.borderTop = '1px solid var(--controls-border)';
+        skillOptionsContainer.style.paddingTop = '10px';
+        skillOptionsContainer.style.marginTop = '15px';
+        const skillHeader = document.createElement('h3');
+        skillHeader.textContent = 'スキル項目';
+        skillHeader.style.color = '#007bff';
+        skillHeader.style.marginBottom = '10px';
+        skillOptionsContainer.prepend(skillHeader);
+        toggleSkillOptions = () => {
+            const isSkillScopeActive = document.querySelector('.search-scope-btn[data-scope="skill"]').classList.contains('active');
+            const isVisibilityHidden = document.getElementById('toggleVisibilityBtn').classList.contains('active');
+            if (isVisibilityHidden) {
+                skillOptionsContainer.style.display = 'none';
+            } else {
+                skillOptionsContainer.style.display = isSkillScopeActive ? 'block' : 'none';
+            }
+        };
+
+        document.querySelectorAll('.search-scope-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const clickedBtn = e.currentTarget;
+                const scope = clickedBtn.dataset.scope;
+                clickedBtn.classList.toggle('active');
+                const isActive = clickedBtn.classList.contains('active');
+                
+                const skillBtn = document.querySelector('.search-scope-btn[data-scope="skill"]');
+                const abilityBtn = document.querySelector('.search-scope-btn[data-scope="ability"]');
+                const addInfoBtn = document.querySelector('.search-scope-btn[data-scope="addInfo"]');
+                const isSkillActive = skillBtn.classList.contains('active');
+                const isAbilityActive = abilityBtn.classList.contains('active');
+                const isAddInfoActive = addInfoBtn.classList.contains('active');
+
+                if (scope === 'skill' && !isActive) {
+                    resetSkillFilters();
+                }
+                if (!isSkillActive && !isAbilityActive) {
+                    resetCommonFilters();
+                }
+
+                if ((scope === 'skill' || scope === 'ability') && !isActive) {
+                    if (!isSkillActive && !isAbilityActive && isAddInfoActive) {
+                        addInfoBtn.classList.remove('active');
+                    }
+                }
+                if (scope === 'addInfo' && isActive) {
+                    if (!isSkillActive && !isAbilityActive) {
+                        skillBtn.classList.add('active');
+                    }
+                }
+                
+                toggleSkillOptions();
+                updateSearchUIState();
+                updateAutoExtractedTags();
+                performTagSearch();
+            });
+        });
+
+        toggleSkillOptions();
+        const searchScopeCategory = document.getElementById('searchScopeCategory');
+        const logicCategory = document.createElement('div');
+        logicCategory.className = 'tag-category single-line-layout';
+        logicCategory.id = 'searchLogicCategory';
+        logicCategory.style.paddingTop = '0px';
+        logicCategory.style.marginTop = '15px';
+        logicCategory.innerHTML = `<div class="tag-category-title">検索ロジック:</div><div class="tag-buttons"><button class="tag-btn logic-btn active" data-logic="and">AND検索</button><button class="tag-btn logic-btn" data-logic="or">OR検索</button></div>`;
+        searchScopeCategory.before(logicCategory);
+        container.querySelectorAll('.logic-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                container.querySelectorAll('.logic-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                performTagSearch();
+            });
+        });
+        const skillSearchDefs = {
+            '武器種・術適正': { field: '属性', values: ['剣', '大剣', '斧', '棍棒', '体術', '銃', '小剣', '槍', '弓', '火', '水', '風', '土', '光', '闇'] },
+            '技・術': { field: '技術', values: ['技', '術'] },
+            '属性': { field: 'detailAttr', values: ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'] },
+            '威力': ['SSSS', 'SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E'],
+            'BP': 'placeholder',
+            '種類': ['攻撃', '補助', '防御', '回復'],
+            '距離': { field: '遠近', values: ['遠', '近'] },
+            '手段': { field: '方法', values: ['直接', '間接'] },
+            '行動順': ['ファスト', 'ディレイ'],
+            '対象': ['味方', '敵'],
+            '範囲': ['単体', '全体'],
+            'その他': { field: 'misc', values: { 'リキャスト技': '再使用', '使用回数制限あり': '制限', '体術技特殊タイプ(知)': '特殊' } }
+        };
+        const createButtons = (category, options) => {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'tag-category single-line-layout';
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'tag-buttons';
+            let title = category, field = category, values = options;
+            if (typeof options === 'object' && !Array.isArray(options)) {
+                field = options.field; values = options.values;
+            }
+            categoryDiv.innerHTML = `<div class="tag-category-title">${title}:</div>`;
+            if (Array.isArray(values)) {
+                values.forEach(val => {
+                    const btn = document.createElement('button');
+                    btn.className = 'tag-btn skill-filter-btn';
+                    btn.textContent = val;
+                    btn.dataset.field = field;
+                    btn.dataset.value = val;
+                    buttonsDiv.appendChild(btn);
+                });
+            } else {
+                 Object.entries(values).forEach(([text, dataField]) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'tag-btn skill-filter-btn';
+                    btn.textContent = text;
+                    btn.dataset.field = dataField;
+                    btn.dataset.value = 'exists';
+                    buttonsDiv.appendChild(btn);
+                });
+            }
+            categoryDiv.appendChild(buttonsDiv);
+            return categoryDiv;
+        };
+        Object.entries(skillSearchDefs).forEach(([category, options]) => {
+            if (category === 'BP') {
+                const bpCategory = document.createElement('div');
+                bpCategory.className = 'tag-category single-line-layout';
+                bpCategory.innerHTML = `<div class="tag-category-title">BP:</div><div class="tag-buttons"><input type="number" id="bpSearchInput" placeholder="BP値"><button class="tag-btn bp-op-btn" data-op="equal">一致</button><button class="tag-btn bp-op-btn" data-op="gte">以上</button><button class="tag-btn bp-op-btn" data-op="lte">以下</button></div>`;
+                skillOptionsContainer.appendChild(bpCategory);
+                const bpInput = document.getElementById('bpSearchInput');
+                bpInput.addEventListener('input', performTagSearch);
+                bpInput.addEventListener('focus', () => {
+                    bpInput.select();
+                });
+            } else {
+                 skillOptionsContainer.appendChild(createButtons(category, options));
+            }
+        });
+        const tagArea = document.createElement('div');
+        tagArea.id = 'csvTagArea';
+        tagArea.style.borderTop = '1px solid var(--controls-border)';
+        tagArea.style.paddingTop = '10px';
+        tagArea.style.marginTop = '15px';
+        const commonHeader = document.createElement('h3');
+        commonHeader.textContent = '共通項目';
+        commonHeader.style.color = '#007bff';
+        commonHeader.style.marginBottom = '10px';
+        tagArea.prepend(commonHeader);
+        const tagsFromCsv = db.searchTags.reduce((acc, tag) => {
+            if (!acc[tag.category]) acc[tag.category] = [];
+            acc[tag.category].push({ name: tag.tag_name, keywords: tag.keywords.split(',') });
+            return acc;
+        }, {});
+        for (const category in tagsFromCsv) {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'tag-category';
+            categoryDiv.innerHTML = `<div class="tag-category-title">${category}</div>`;
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'tag-buttons';
+            tagsFromCsv[category].forEach(tag => {
+                const btn = document.createElement('button');
+                btn.className = 'tag-btn csv-tag-btn';
+                btn.textContent = tag.name;
+                btn.dataset.keywords = JSON.stringify(tag.keywords);
+                buttonsDiv.appendChild(btn);
+            });
+            categoryDiv.appendChild(buttonsDiv);
+            tagArea.appendChild(categoryDiv);
+        }
+        const autoTagCategory = document.createElement('div');
+        autoTagCategory.id = 'autoTagCategory';
+        autoTagCategory.className = 'tag-category';
+        tagArea.appendChild(autoTagCategory);
+        container.appendChild(tagArea);
+        container.querySelectorAll('.csv-tag-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
+                performTagSearch();
+            });
+        });
+        skillOptionsContainer.querySelectorAll('.skill-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
+                performTagSearch();
+            });
+        });
+        const bpButtons = skillOptionsContainer.querySelectorAll('.bp-op-btn');
+        bpButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const isActive = btn.classList.contains('active');
+                bpButtons.forEach(b => b.classList.remove('active'));
+                if (!isActive) btn.classList.add('active');
+                performTagSearch();
+            });
+        });
+        updateSearchUIState();
+        const isStarTitle = document.title.includes('★');
+        document.getElementById('autoTagCategory').innerHTML = `<div class="tag-category-title">タイミング (自動抽出)<label style="margin-left: 10px; font-size: 0.9em; font-weight: normal;"><input type="checkbox" id="autoTagToggle" ${isStarTitle ? 'checked' : ''}> 有効にする</label></div>`;
+        document.getElementById('autoTagToggle').addEventListener('change', () => {
+          updateAutoExtractedTags();
+          if(!document.getElementById('autoTagToggle').checked) {
+              [...document.querySelectorAll('#autoTagCategory .tag-btn.active')].forEach(btn => btn.classList.remove('active'));
+          }
+          performTagSearch();
+        });
+        updateAutoExtractedTags();
+
+        const toggleVisibilityBtn = document.getElementById('toggleVisibilityBtn');
+        toggleVisibilityBtn.addEventListener('click', () => {
+            toggleVisibilityBtn.classList.toggle('active');
+            const isHidden = toggleVisibilityBtn.classList.contains('active');
+            if (isHidden) {
+                toggleVisibilityBtn.textContent = '候補表示';
+            } else {
+                toggleVisibilityBtn.textContent = '候補非表示';
+            }
+            toggleSkillOptions();
+            updateSearchUIState();
+            // performTagSearch(); // ★★★ 修正点: この行をコメントアウト/削除 ★★★
+        });
+    }
+    
+    function traceToStyleRoot(itemName, styleContext, visited = new Set()) {
+        if (visited.has(itemName)) return [];
+        visited.add(itemName);
+        const roots = [];
+        const currentStyle = stylesWithDetails.find(s => s.character === styleContext.character && s.styleName === styleContext.styleName);
+        if (!currentStyle) return [];
+        const styleData = db.styles.find(s => s['キャラ名'] === currentStyle.character && `[${s['グレード']}] ${s['スタイル名']}` === currentStyle.styleName);
+        if (styleData) {
+            if ([styleData['スキル1'], styleData['スキル2'], styleData['スキル3']].includes(itemName)) return [{ name: itemName, type: 'スキル' }];
+            if ([styleData['アビリティ1'], styleData['アビリティ2'], styleData['アビリティ3']].includes(itemName)) return [{ name: itemName, type: 'アビリティ' }];
+        }
+        const directParents = reverseIndex[itemName];
+        if (!directParents) return [];
+        const styleEcosystemItems = new Set([...currentStyle.skills.map(s => s['スキル名']),...currentStyle.abilities.map(a => a['アビリティ名']),...currentStyle.linkedInfo.map(i => i['名称'] || i['スキル名'] || i['アビリティ名'])].filter(Boolean));
+        const contextualParents = directParents.filter(p => styleEcosystemItems.has(p.name));
+        for (const parent of contextualParents) {
+            const parentRoots = traceToStyleRoot(parent.name, styleContext, visited);
+            roots.push(...parentRoots);
+        }
+        const uniqueRoots = [];
+        const seenRoots = new Set();
+        for (const root of roots) {
+            const key = `${root.type}:${root.name}`;
+            if (!seenRoots.has(key)) {
+                uniqueRoots.push(root);
+                seenRoots.add(key);
+            }
+        }
+        return uniqueRoots;
+    }
+
+    function performTagSearch() {
+        const keywordString = document.getElementById('keywordSearchInput').value.trim();
+        const keywords = keywordString.split(/[\s　]+/).filter(k => k);
+        const isSkillScope = document.querySelector('.search-scope-btn[data-scope="skill"]').classList.contains('active');
+        const isAbilityScope = document.querySelector('.search-scope-btn[data-scope="ability"]').classList.contains('active');
+        const isAddInfoScope = document.querySelector('.search-scope-btn[data-scope="addInfo"]').classList.contains('active');
+        const searchLogic = document.querySelector('#searchLogicCategory .logic-btn.active').dataset.logic;
+        const activeSkillFilterBtns = [...document.querySelectorAll('#skillSearchOptionsContainer .skill-filter-btn.active')];
+        const activeTags = [...document.querySelectorAll('#csvTagArea .tag-btn.active')].map(btn => ({ name: btn.textContent, keywords: JSON.parse(btn.dataset.keywords) }));
+        const bpValueStr = document.getElementById('bpSearchInput').value;
+        const activeBpOp = document.querySelector('#skillSearchOptionsContainer .bp-op-btn.active');
+        const bpFilter = (activeBpOp && bpValueStr) ? { value: parseInt(bpValueStr, 10), op: activeBpOp.dataset.op } : null;
+        const hasActiveFilters = keywords.length > 0 || bpFilter !== null || activeSkillFilterBtns.length > 0 || activeTags.length > 0;
+        if (!hasActiveFilters) {
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('searchResults').style.display = 'none';
+            return;
+        }
+        const exclusionStrings = db.autoTagExclusions.map(row => row.text_to_exclude).filter(Boolean);
+        const cleanText = (text) => {
+            if (!text) return '';
+            return exclusionStrings.reduce((acc, excludeStr) => {
+                const regex = new RegExp(excludeStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                return acc.replace(regex, '');
+            }, text);
+        };
+        const checkSkillBtn = (item, btn) => {
+            const field = btn.dataset.field;
+            const value = btn.dataset.value;
+            if (field === 'detailAttr') return item['属性1'] === value || item['属性2'] === value;
+            if (value === 'exists') return item[field] && item[field].trim() !== '';
+            return item[field] === value;
+        };
+        const results = stylesWithDetails.map(styleData => {
+            const foundItems = [];
+            let itemsToSearch = [];
+            if (isSkillScope) itemsToSearch.push(...styleData.skills.map(item => ({ ...item, type: 'skill' })));
+            if (isAbilityScope) itemsToSearch.push(...styleData.abilities.map(item => ({ ...item, type: 'ability' })));
+            if (isAddInfoScope) itemsToSearch.push(...styleData.linkedInfo.map(item => ({ ...item, type: 'addInfo' })));
+            itemsToSearch.forEach(item => {
+                if (!item) return;
+                const isSkill = item.type === 'skill' || (item.type === 'addInfo' && !!item['スキル名']);
+                const itemName = item['スキル名'] || item['アビリティ名'] || item['名称'] || '';
+                const itemDetail = item['効果詳細'] || '';
+                const cleanedDetail = cleanText(itemDetail);
+                const allChecks = [];
+                if (keywords.length > 0) {
+                    const keywordMatch = searchLogic === 'and' ? keywords.every(kw => itemName.includes(kw) || cleanedDetail.includes(kw)) : keywords.some(kw => itemName.includes(kw) || cleanedDetail.includes(kw));
+                    allChecks.push(keywordMatch);
+                }
+                activeSkillFilterBtns.forEach(btn => {
+                    if (isSkill) allChecks.push(checkSkillBtn(item, btn));
+                    else allChecks.push(false);
+                });
+                if (bpFilter) {
+                    if (isSkill) {
+                        const itemBp = parseInt(item['BP'], 10);
+                        let bpResult = false;
+                        if (!isNaN(itemBp)) {
+                            if (bpFilter.op === 'equal' && itemBp === bpFilter.value) bpResult = true;
+                            if (bpFilter.op === 'lte' && itemBp <= bpFilter.value) bpResult = true;
+                            if (bpFilter.op === 'gte' && itemBp >= bpFilter.value) bpResult = true;
+                        }
+                        allChecks.push(bpResult);
+                    } else {
+                        allChecks.push(false);
+                    }
+                }
+                activeTags.forEach(tag => {
+                    allChecks.push(tag.keywords.some(kw => cleanedDetail.includes(kw)));
+                });
+                const finalMatch = allChecks.length > 0 && (searchLogic === 'and' ? allChecks.every(r => r) : allChecks.some(r => r));
+                if (finalMatch) {
+                    let shouldBeIncluded = true;
+                    const ultimateRoots = traceToStyleRoot(itemName, { character: styleData.character, styleName: styleData.styleName });
+                    if (ultimateRoots.length === 0) {
+                        shouldBeIncluded = false;
+                    } else {
+                        const isAnyRootVisible = ultimateRoots.some(root => (root.type === 'スキル' && isSkillScope) || (root.type === 'アビリティ' && isAbilityScope));
+                        if (!isAnyRootVisible) shouldBeIncluded = false;
+                    }
+                    if (shouldBeIncluded) {
+                        let matchingKeywordsForHighlight = activeTags.flatMap(tag => tag.keywords).filter(kw => cleanedDetail.includes(kw));
+                        if (keywords.length > 0) matchingKeywordsForHighlight.push(...keywords);
+                        if (isSkill) {
+                            activeSkillFilterBtns.forEach(btn => {
+                                if (checkSkillBtn(item, btn)) matchingKeywordsForHighlight.push(btn.textContent);
+                            });
+                        }
+                        // ▼▼▼ ここから修正 ▼▼▼
+                        foundItems.push({ name: itemName, detail: itemDetail, keywords: [...new Set(matchingKeywordsForHighlight)], type: item.type });
+                        // ▲▲▲ ここまで修正 ▲▲▲
+                    }
+                }
+            });
+            return foundItems.length > 0 ? { character: styleData.character, styleName: styleData.styleName, items: foundItems } : null;
+        }).filter(Boolean);
+        displaySearchResults(results, { isSkillScope, isAbilityScope, isAddInfoScope });
+    }
+
+    function highlightKeywords(text, keywords) {
+        if (!text) return '';
+        let highlightedText = text;
+        const sortedKeywords = keywords.sort((a, b) => b.length - a.length);
+        sortedKeywords.forEach(keyword => {
+            if (keyword === '') return;
+            const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(?<!<[^>]*)${escapedKeyword}(?![^<]*>)`, 'gi');
+            highlightedText = highlightedText.replace(regex, `<span class="highlight">$&</span>`);
+        });
+        return highlightedText;
+    }
+
+    // ▼▼▼ ここから修正 ▼▼▼
+    function generateItemCardHTML(itemName, keywords = [], contextCharacter, contextStyleName, searchContext, itemTypeFromSearch) {
+        const parsedName = parseName(itemName);
+        const itemData = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName] || db.addInfo[parsedName.baseName];
+
+        if (!itemData) return '';
+
+        const renderData = { ...itemData };
+
+        const itemType = itemTypeFromSearch; 
+        const isSkillBased = (itemType === 'skill') || (itemType === 'addInfo' && !!db.skills[parsedName.baseName]);
+
+        if (parsedName.count) {
+            let detail = renderData['効果詳細'] || '(効果詳細なし)';
+            if (detail !== '(効果詳細なし)') {
+                
+                // displayInfo と同じロジックを適用
+                // const itemType = db.skills[parsedName.baseName] ? 'スキル' : (db.abilities[parsedName.baseName] ? 'アビリティ' : '追加情報'); // 削除
+
+                if (itemType === 'addInfo' && !detail.includes('以下の効果が発動する')) { // 関数スコープのitemTypeを参照
+                    const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
+                    let lines = detail.split('\n');
+                    let processedLines = [];
+                    let originalLinesStartIndex = 0;
+
+                    if (lines.length > 0 && lines[0].trim().startsWith('[')) {
+                        processedLines.push(lines[0]); 
+                        processedLines.push(additionText);
+                        originalLinesStartIndex = 1;
+                    } else {
+                        processedLines.push(additionText);
+                        originalLinesStartIndex = 0;
+                    }
+                    
+                    for (let i = originalLinesStartIndex; i < lines.length; i++) {
+                        let line = lines[i];
+                        if (line.trim()) { 
+                            if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
+                                const indentMatch = line.match(/^(\s*)/);
+                                const indent = indentMatch ? indentMatch[1] : '';
+                                line = indent + '・' + line.trimStart();
+                            }
+                            processedLines.push(line);
+                        } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
+                             processedLines.push(line);
+                        }
+                    }
+                    renderData['効果詳細'] = processedLines.join('\n');
+                } else {
+                    // 元のロジック
+                    const lines = detail.split('\n');
+                    const addition = `(上限回数:${parsedName.count}回)`;
+                    if (lines.length > 0) {
+                        if (lines[0].trim().startsWith('[')) {
+                            if (lines.length > 1) {
+                                lines[1] = lines[1].trim() + addition;
+                            } else {
+                                lines.push(addition);
+                            }
+                        } else {
+                            lines[0] = lines[0].trim() + addition;
+                        }
+                        renderData['効果詳細'] = lines.join('\n');
+                    }
+                }
+            }
+        }
+        
+        // const itemType = db.skills[parsedName.baseName] ? 'スキル' : (db.abilities[parsedName.baseName] ? 'アビリティ' : '追加情報'); // 削除
+        
+        let typeText = '';
+        if (itemType === 'skill') typeText = 'スキル';
+        else if (itemType === 'ability') typeText = 'アビリティ';
+        else if (itemType === 'addInfo') typeText = '追加情報';
+
+        let typeTextClass, typeTextColorStyle = '';
+        if (itemType === 'skill') typeTextClass = 'search-result-skill-type';
+        else if (itemType === 'ability') typeTextClass = 'search-result-ability-type';
+        else typeTextColorStyle = `color: var(--addinfo-col-text); font-size: 0.8em; font-weight: normal;`;
+        
+        const typeSpan = typeTextClass ? `<span class="${typeTextClass}">(${typeText})</span>` : `<span style="${typeTextColorStyle}">(${typeText})</span>`;
+        
+        let summaryHtml = '';
+        if (isSkillBased) {
+            summaryHtml = generateSkillDetailHtml(renderData, 'addInfo'); // 'addInfo' type to avoid BP/LP
+        }
+        summaryHtml = summaryHtml.replace(/\n/g, '<br>');
+        const highlightedSummary = highlightKeywords(summaryHtml, keywords);
+        
+        let referenceInfo = '';
+        let parents = reverseIndex[itemName];
+        if (parents && contextCharacter && contextStyleName) {
+            const currentStyle = stylesWithDetails.find(s => s.character === contextCharacter && s.styleName === contextStyleName);
+            if (currentStyle) {
+                const styleItemNames = new Set([...currentStyle.skills.map(s => s['スキル名']),...currentStyle.abilities.map(a => a['アビリティ名']),...currentStyle.linkedInfo.map(i => i['名称'] || i['スキル名'] || i['アビリティ名'])]);
+                parents = parents.filter(parent => styleItemNames.has(parent.name));
+            }
+        }
+        if (parents && searchContext) {
+            parents = parents.filter(parent => {
+                if (parent.type === 'スキル' && !searchContext.isSkillScope) return false;
+                if (parent.type === 'アビリティ' && !searchContext.isAbilityScope) return false;
+                // '追加情報' は常に表示（検索範囲外でも参照元としては表示）
+                return true;
+            });
+        }
+        if (parents && parents.length > 0) {
+            const parentLinks = parents.map(parent => {
+                return `<span style="white-space: nowrap;">[${parent.type}] <a href="#" class="keyword-link show-parent-info-link" data-parent-name="${parent.name}">${parent.name}</a></span>`;
+            }).join(' ／ ');
+            referenceInfo = `<div class="summary-line">参照元: ${parentLinks}</div>`;
+        }
+        
+        const styledDetail = applyGrayTextStyle(renderData['効果詳細'] || '').replace(/\n/g, '<br>');
+        const finalDetailHtml = highlightKeywords(styledDetail, keywords);
+        
+        return `<h3>${itemName} ${typeSpan}</h3>${referenceInfo}${highlightedSummary}<div class="detail-line">${finalDetailHtml}</div>`;
+    }
+    // ▲▲▲ ここまで修正 ▲▲▲
+
+    // ▼▼▼ ここから修正 ▼▼▼
+    function displaySearchResults(results, searchContext) {
+        const searchResultsContainer = document.getElementById('searchResults');
+        const flatResults = results.flatMap(styleResult => styleResult.items.map(item => ({ character: styleResult.character, styleName: styleResult.styleName, ...item })));
+        const searchLogic = document.querySelector('#searchLogicCategory .logic-btn.active').dataset.logic;
+        const conjunction = searchLogic === 'or' ? ` <span style="color: #999;">または</span> ` : ` <span style="color: #999;">かつ</span> `;
+        const searchParts = [];
+        const keywordString = document.getElementById('keywordSearchInput').value.trim();
+        const keywords = keywordString.split(/[\s　]+/).filter(k => k);
+        if (keywords.length > 0) {
+            const keywordConjunction = searchLogic === 'or' ? ' または ' : ' かつ ';
+            const keywordsText = keywords.map(kw => `'${kw}'`).join(keywordConjunction);
+            searchParts.push(`キーワード:(${keywordsText})`);
+        }
+        const bpBtn = document.querySelector('#skillSearchOptionsContainer .bp-op-btn.active');
+        const bpVal = document.getElementById('bpSearchInput').value;
+        if (bpBtn && bpVal) searchParts.push(`BP(${bpVal}${bpBtn.textContent})`);
+        [...document.querySelectorAll('#skillSearchOptionsContainer .skill-filter-btn.active')].forEach(btn => searchParts.push(btn.textContent));
+        [...document.querySelectorAll('#csvTagArea .tag-btn.active')].forEach(btn => searchParts.push(btn.textContent));
+        const searchText = searchParts.join(conjunction);
+        searchResultsContainer.innerHTML = flatResults.length === 0 ? `<h2>「${searchText}」の検索結果: 0件</h2><p style="color: red;">該当するスキル・アビリティは見つかりませんでした。</p>` : `<h2>「${searchText}」の検索結果: ${flatResults.length}件</h2>` + flatResults.map(res => {
+            // const itemData = db.skills[res.name] || db.abilities[res.name] || db.addInfo[res.name]; // 削除
+            // const itemType = itemData ? (db.skills[res.name] ? 'スキル' : (db.abilities[res.name] ? 'アビリティ' : '追加情報')) : ''; // 削除
+            
+            let panelBgColor;
+            if (res.type === 'skill') panelBgColor = 'var(--skill-col-bg)';
+            else if (res.type === 'ability') panelBgColor = 'var(--ability-col-bg)';
+            else panelBgColor = 'var(--addinfo-col-bg)'; // res.type === 'addInfo'
+            
+            const cardHtml = generateItemCardHTML(res.name, res.keywords, res.character, res.styleName, searchContext, res.type); // res.type を渡す
+            return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${res.character}</h3><h4>${res.styleName}</h4><div class="card">${cardHtml}</div></div>`;
+        }).join('');
+        searchResultsContainer.style.display = 'grid';
+        document.getElementById('mainContainer').style.display = 'none';
+    }
+    // ▲▲▲ ここまで修正 ▲▲▲
+
+    function handleSearchResultClick(event) {
+        const jumpLink = event.target.closest('.search-jump-link');
+        const showLink = event.target.closest('.show-parent-info-link');
+        const closeBtn = event.target.closest('.close-parent-info');
+        
+        if (jumpLink) {
+            event.preventDefault();
+            const targetElement = document.getElementById('search-controls-top');
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth' });
+            }
+            openSearchView(false);
+            return;
+        }
+
+        if (closeBtn) {
+            closeBtn.closest('.parent-info-panel').remove();
+            return;
+        }
+        if (showLink) {
+            event.preventDefault();
+            const allPanels = document.querySelectorAll('.parent-info-panel');
+            const clickedPanel = showLink.closest('.parent-info-panel');
+            allPanels.forEach(p => {
+                if (p !== clickedPanel && !p.contains(showLink)) p.remove();
+            });
+            const parentName = showLink.dataset.parentName;
+            const parentData = db.skills[parentName] || db.abilities[parentName] || db.addInfo[parentName];
+            if (!parentData) return;
+            const owners = itemToStyleMap[parentName];
+            let character, styleName;
+            if (!owners || owners.length === 0) {
+                // Try to find owners from all styles if not found in itemToStyleMap (e.g., direct skills/abilities)
+                const allOwners = [];
+                for (const style of db.styles) {
+                    if ([style['スキル1'], style['スキル2'], style['スキル3'], style['アビリティ1'], style['アビリティ2'], style['アビリティ3']].includes(parentName)) {
+                        allOwners.push({ character: style['キャラ名'], styleName: `[${style['グレード']}] ${style['スタイル名']}` });
+                    }
+                }
+                if (allOwners.length === 0) {
+                     character = "参照元不明"; styleName = "";
+                } else if (allOwners.length === 1) {
+                    character = allOwners[0].character; styleName = allOwners[0].styleName;
+                } else {
+                    const uniqueChars = [...new Set(allOwners.map(o => o.character))];
+                    character = uniqueChars.join(' ／ ');
+                    if (uniqueChars.length > 1) styleName = allOwners.map(o => `${o.character} ${o.styleName}`).join(' ／ ');
+                    else styleName = allOwners.map(o => o.styleName).join(' ／ ');
+                }
+            } else if (owners.length === 1) {
+                character = owners[0].character; styleName = owners[0].styleName;
+            } else {
+                const uniqueChars = [...new Set(owners.map(o => o.character))];
+                character = uniqueChars.join(' ／ ');
+                if (uniqueChars.length > 1) styleName = owners.map(o => `${o.character} ${o.styleName}`).join(' ／ ');
+                else styleName = owners.map(o => o.styleName).join(' ／ ');
+            }
+            const parentType = db.skills[parentName] ? 'スキル' : (db.abilities[parentName] ? 'アビリティ' : '追加情報');
+            const panel = document.createElement('div');
+            panel.classList.add('column', 'parent-info-panel');
+            if (parentType === 'スキル') panel.style.backgroundColor = 'var(--skill-col-bg)';
+            else if (parentType === 'アビリティ') panel.style.backgroundColor = 'var(--ability-col-bg)';
+            else panel.style.backgroundColor = 'var(--addinfo-col-bg)';
+            const isSkillScope = document.querySelector('.search-scope-btn[data-scope="skill"]').classList.contains('active');
+            const isAbilityScope = document.querySelector('.search-scope-btn[data-scope="ability"]').classList.contains('active');
+            const isAddInfoScope = document.querySelector('.search-scope-btn[data-scope="addInfo"]').classList.contains('active');
+            const searchContext = { isSkillScope, isAbilityScope, isAddInfoScope };
+            let cardHtml;
+            // ▼▼▼ ここから修正 ▼▼▼
+            const parentItemType = db.skills[parentName] ? 'skill' : (db.abilities[parentName] ? 'ability' : 'addInfo'); // 判定
+            if (owners && owners.length === 1) cardHtml = generateItemCardHTML(parentName, [], owners[0].character, owners[0].styleName, searchContext, parentItemType);
+            else cardHtml = generateItemCardHTML(parentName, [], null, null, searchContext, parentItemType);
+            // ▲▲▲ ここまで修正 ▲▲▲
+            const contentHtml = `<div class="close-parent-info">閉じる</div><h3>${character}</h3><h4>${styleName}</h4><div class="card">${cardHtml}</div>`;
+            panel.innerHTML = contentHtml;
+            const anchorElement = showLink.closest('.column');
+            if(anchorElement) {
+                if (clickedPanel) clickedPanel.replaceWith(panel);
+                else anchorElement.insertAdjacentElement('afterend', panel);
+            }
+        }
+    }
+    
+    function initializeExclusionFeature() {
+        const btn = document.getElementById('additionalExclusionBtn');
+        const dropdown = document.getElementById('additionalExclusionDropdown');
+        const searchInput = document.getElementById('additionalExclusionSearch');
+        const optionsContainer = document.getElementById('additionalExclusionOptions');
+        const selectedText = document.getElementById('additionalExclusionText');
+        const selectAllCheckbox = document.getElementById('selectAllExclusionsCheckbox');
+        const saveProfileBtn = document.getElementById('saveExclusionProfile');
+        const deleteProfileBtn = document.getElementById('deleteExclusionProfile');
+        allExclusionKeywords = addInfoOrderedKeys;
+        const savedExclusions = JSON.parse(localStorage.getItem('styleViewerExclusions') || '[]');
+        additionalExclusionList = savedExclusions.filter(item => allExclusionKeywords.includes(item));
+        const renderOptions = (filter = '') => {
+            optionsContainer.innerHTML = '';
+            const searchTerm = hiraganaToKatakana(filter);
+            const filteredKeywords = allExclusionKeywords.filter(kw => hiraganaToKatakana(kw).includes(searchTerm));
+            filteredKeywords.forEach(keyword => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'custom-select-option';
+                const label = document.createElement('label');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = keyword;
+                checkbox.checked = additionalExclusionList.includes(keyword);
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        if (!additionalExclusionList.includes(keyword)) {
+                             additionalExclusionList.push(keyword);
+                        }
+                    } else {
+                        additionalExclusionList = additionalExclusionList.filter(item => item !== keyword);
+                    }
+                    updateSelectedText();
+                    
+                    // 表示を即時更新
+                    const currentStyleName = document.getElementById('styleBtn').dataset.value;
+                    if (currentStyleName && currentStyleName !== '---') {
+                        updateView(currentStyleName);
+                    }
+                });
+                label.appendChild(checkbox);
+                label.append(` ${keyword}`);
+                optionDiv.appendChild(label);
+                optionsContainer.appendChild(optionDiv);
+            });
+            updateSelectAllCheckboxState();
+        };
+        const updateSelectedText = () => {
+            const hasSavedProfile = localStorage.getItem('styleViewerExclusions') !== null;
+            saveProfileBtn.disabled = (additionalExclusionList.length === 0);
+            deleteProfileBtn.disabled = !hasSavedProfile;
+            if (additionalExclusionList.length === 0) {
+                selectedText.textContent = '(未指定)';
+                btn.classList.add('is-empty');
+            } else {
+                btn.classList.remove('is-empty');
+                if (additionalExclusionList.length === 1) selectedText.textContent = additionalExclusionList[0];
+                else selectedText.textContent = `${additionalExclusionList.length}個選択`;
+            }
+            updateSelectAllCheckboxState();
+        };
+        const updateSelectAllCheckboxState = () => {
+            const visibleKeywords = [...optionsContainer.querySelectorAll('input[type="checkbox"]')].map(cb => cb.value);
+            const allVisibleSelected = visibleKeywords.every(kw => additionalExclusionList.includes(kw));
+            selectAllCheckbox.checked = allVisibleSelected && visibleKeywords.length > 0;
+        };
+        btn.addEventListener('click', () => {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'flex' : 'none';
+            if (dropdown.style.display === 'flex') {
+                searchInput.value = '';
+                renderOptions();
+            }
+        });
+        searchInput.addEventListener('input', () => renderOptions(searchInput.value));
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const visibleKeywords = [...optionsContainer.querySelectorAll('input[type="checkbox"]')].map(cb => cb.value);
+            if (e.target.checked) {
+                visibleKeywords.forEach(kw => {
+                    if (!additionalExclusionList.includes(kw)) additionalExclusionList.push(kw);
+                });
+            } else {
+                additionalExclusionList = additionalExclusionList.filter(kw => !visibleKeywords.includes(kw));
+            }
+            renderOptions(searchInput.value);
+            updateSelectedText();
+
+            // 表示を即時更新
+            const currentStyleName = document.getElementById('styleBtn').dataset.value;
+            if (currentStyleName && currentStyleName !== '---') {
+                updateView(currentStyleName);
+            }
+        });
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('additionalExclusionContainer').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+        saveProfileBtn.addEventListener('click', () => {
+            saveProfileBtn.classList.add('is-saving');
+            localStorage.setItem('styleViewerExclusions', JSON.stringify(additionalExclusionList));
+            updateSelectedText();
+            setTimeout(() => { saveProfileBtn.classList.remove('is-saving'); }, 500);
+        });
+        deleteProfileBtn.addEventListener('click', () => {
+
+            const confirmed = window.confirm("除外設定をすべて削除してよろしいですか？");
+            if (!confirmed) {
+                return;
+            }
+
+            localStorage.removeItem('styleViewerExclusions');
+            additionalExclusionList = [];
+            renderOptions(searchInput.value);
+            updateSelectedText();
+
+            // 表示を即時更新
+            const currentStyleName = document.getElementById('styleBtn').dataset.value;
+            if (currentStyleName && currentStyleName !== '---') {
+                updateView(currentStyleName);
+            }
+        });
+        updateSelectedText();
+    }
+    
+    function initializeSaveButtons() {
+        document.getElementById('saveSkillBtn').addEventListener('click', () => saveColumnAsImage('skill'));
+        document.getElementById('saveAbilityBtn').addEventListener('click', () => saveColumnAsImage('ability'));
+        document.getElementById('saveAddInfoBtn').addEventListener('click', () => saveColumnAsImage('addInfo'));
+    }
+
+    function saveColumnAsImage(type) {
+        let element, title;
+        const chara = document.getElementById('characterText').textContent;
+        const style = document.getElementById('styleBtn').dataset.value;
+        switch(type) {
+            case 'skill': element = document.querySelector('.skill-column'); title = 'スキル'; break;
+            case 'ability': element = document.querySelector('.ability-column'); title = 'アビリティ'; break;
+            case 'addInfo': element = document.querySelector('.add-info-column'); title = '追加情報'; break;
+        }
+        if (!chara || !style || chara.startsWith('現在の登録数') || style === '---') {
+            alert('キャラクターとスタイルを選択してください。');
+            return;
+        }
+        const fileName = `${chara}_${style}_${title}.png`;
+        if (element) {
+            // dom-to-image-moreのオプションを設定
+            const options = {
+                bgcolor: getComputedStyle(element).backgroundColor,
+                // 解像度を2倍にして画像を綺麗にする
+                width: element.offsetWidth * 2,
+                height: element.offsetHeight * 2,
+                style: {
+                    transform: 'scale(2)',
+                    transformOrigin: 'top left'
+                }
+            };
+
+            domtoimage.toPng(element, options)
+            .then(function (dataUrl) {
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = dataUrl;
+                link.click();
+            })
+            .catch(function (error) {
+                console.error('画像の生成に失敗しました:', error);
+                alert('画像の生成に失敗しました。コンソールでエラー内容を確認してください。');
+            });
+        }
+    }
+</script>
+
+
+</body>
+</html>
