@@ -2751,7 +2751,12 @@
     }
     
     function updateCalcTab(data) {
-        armorData_calc = data.map(item => ({...item, value: parseInt(item.value, 10)})).filter(item => !isNaN(item.value));
+        // データ変換時にユニークIDを付与するように修正
+        armorData_calc = data.map((item, index) => ({
+            ...item, 
+            value: parseInt(item.value, 10),
+            uniqueId: `item-${index}-${Date.now()}` // インデックスと時間で固有IDを作成
+        })).filter(item => !isNaN(item.value));
         
         const fileStatus = document.getElementById('file-status');
         if (armorData_calc.length > 0 && armorData_calc[0].armorName) {
@@ -2816,8 +2821,9 @@
 
     function getConditionFromAbilityName_calc(abilityName) {
         if (!abilityName) return null;
-        const match = abilityName.match(/\((.*)\)/);
-        return match ? match[1] : null;
+        // 全角カッコにも対応し、前後の空白を除去する
+        const match = abilityName.match(/[\(（](.*)[\)）]/);
+        return match ? match[1].trim() : null;
     }
 
     function getNativeAbilityValue_calc(armorName, armorType, selectedConditions, abilityType, charId) {
@@ -2864,9 +2870,12 @@
     function findBestArmorWithNativeAbilities_calc(armorType, character, excludedItems, partyConfig) {
         const { abilityType, selectedConditions, charId, series } = character;
         const candidates = [];
-        const availableArmor = armorData_calc.filter(item => item.armorType === armorType && !excludedItems.has(item.armorName));
+        
+        // 除外チェックを armorName ではなく uniqueId で行うように変更
+        const availableArmor = armorData_calc.filter(item => item.armorType === armorType && !excludedItems.has(item.uniqueId));
 
         for (const armor of availableArmor) {
+            // アビリティ名抽出（前回の修正内容含む）
             const jsonAbilityCondition = getConditionFromAbilityName_calc(armor.abilityName);
             const jsonAbilityType = armor.abilityName.includes('味方威力＋') ? '味方威力＋' : '威力＋';
             let typeMatch = (abilityType === jsonAbilityType);
@@ -2914,22 +2923,30 @@
             lastLoadoutStr = JSON.stringify(partyLoadout);
             iterations++;
             const equippedThisPass = new Set();
+            
+            // ロックされた装備のIDを除外リストに追加
             lockedEquipment.forEach(loadout => {
-                if (loadout.mainArmor) equippedThisPass.add(loadout.mainArmor.armorName);
-                if (loadout.subArmor) equippedThisPass.add(loadout.subArmor.armorName);
+                if (loadout.mainArmor) equippedThisPass.add(loadout.mainArmor.uniqueId);
+                if (loadout.subArmor) equippedThisPass.add(loadout.subArmor.uniqueId);
             });
+            
             const nextLoadout = [];
 
             for (const character of partyConfig) {
                 const { charId } = character;
                 let mainArmor, subArmor;
+                
                 if (lockedEquipment.has(charId) && lockedEquipment.get(charId).mainArmor) mainArmor = lockedEquipment.get(charId).mainArmor;
                 else mainArmor = findBestArmorWithNativeAbilities_calc('main', character, equippedThisPass, partyConfig);
-                if (mainArmor.armorName !== '該当なし') equippedThisPass.add(mainArmor.armorName);
+                
+                // 該当装備があった場合、IDを除外リストに追加（名前ではなくuniqueIdを使う）
+                if (mainArmor.armorName !== '該当なし') equippedThisPass.add(mainArmor.uniqueId);
                 
                 if (lockedEquipment.has(charId) && lockedEquipment.get(charId).subArmor) subArmor = lockedEquipment.get(charId).subArmor;
                 else subArmor = findBestArmorWithNativeAbilities_calc('sub', character, equippedThisPass, partyConfig);
-                if (subArmor.armorName !== '該当なし') equippedThisPass.add(subArmor.armorName);
+                
+                // 該当装備があった場合、IDを除外リストに追加
+                if (subArmor.armorName !== '該当なし') equippedThisPass.add(subArmor.uniqueId);
                 
                 nextLoadout[charId - 1] = { mainArmor, subArmor };
             }
