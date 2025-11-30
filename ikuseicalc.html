@@ -17,6 +17,12 @@
       color: #eee;
     }
 
+    #warning {
+      color: red;
+      margin-top: 10px;
+      margin-bottom: 3px;
+    }
+
     h1 {
       font-size: 24px;
     }
@@ -374,6 +380,8 @@
     <h1><span class="hamburger" onclick="toggleMenu()">☰</span> 育成効率比較ツール</h1>
   </div>
 
+  <div id="warning">※プルダウンメニューのダメージ量は現在シムメシュのものです。</div>
+
   <div class="zoom-buttons">
     <button onclick="changeZoom(-0.1)">－</button>
     <button onclick="changeZoom(0.1)">＋</button>
@@ -443,17 +451,17 @@
       <div class="form-label">ボーナス倍率</div>
       <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" onfocus="this.select()" min="1" value="1">倍　</div>
       <select id="gradeSelect1" onchange="updateItemValue(1)">
-        <option value="0" selected>【grade 0】1.00倍</option>
-        <option value="1">【grade 1】1.01倍</option>
-        <option value="2">【grade 2】1.11倍</option>
-        <option value="3">【grade 3】1.15倍</option>
-        <option value="4">【grade 4】1.36倍</option>
-        <option value="5">【grade 5】2.20倍</option>
-        <option value="6">【grade 6】2.90倍</option>
-        <option value="7">【grade 7】3.60倍</option>
-        <option value="8">【grade 8】4.35倍</option>
-        <option value="9">【grade 9】7.00倍</option>
-        <option value="10">【grade X】9.30倍</option>
+        <option value="0" selected>【grade 0】0</option>
+        <option value="1">【grade 1】500万</option>
+        <option value="2">【grade 2】1000万</option>
+        <option value="3">【grade 3】5000万</option>
+        <option value="4">【grade 4】1億</option>
+        <option value="5">【grade 5】3億</option>
+        <option value="6">【grade 6】5億</option>
+        <option value="7">【grade 7】10億</option>
+        <option value="8">【grade 8】50億</option>
+        <option value="9">【grade 9】100億</option>
+        <option value="10">【grade X】200億</option>
       </select><br>
     </div>
 
