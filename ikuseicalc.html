@@ -22,6 +22,15 @@
       margin-top: 10px;
       margin-bottom: 3px;
     }
+    
+    /* raidcalc.htmlの#deleteMessageと同じスタイルを適用 */
+    #profileMessage {
+      color: red;
+      margin-top: 5px;
+      min-height: 1.2em;
+      font-weight: normal;
+      margin-bottom: 3px;
+    }
 
     h1 {
       font-size: 24px;
@@ -119,6 +128,19 @@
     }
 
     button:disabled {
+      background-color: #555;
+      color: #aaa;
+      cursor: not-allowed;
+      border: 1px solid #444;
+    }
+
+    /* プロファイル削除ボタン用スタイル */
+    .delete-btn {
+      background-color: #dc3545;
+      border: 1px solid #a71d2a;
+    }
+
+    .delete-btn:disabled {
       background-color: #555;
       color: #aaa;
       cursor: not-allowed;
@@ -341,7 +363,7 @@
     <a class="menu-item" href="kiokucalc2.html">記憶再戦回数計算</a><br>
     </br>
     <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
-    <a class="menu-item" href="raidcalc.html">レイド周回効率比較ツール</a><br>
+    <a class="menu-item" href="raidcalc.html">レイド報酬効率比較ツール</a><br>
     </br>
     <a class="menu-item" href="renma-armor.html">練磨(防具)統合ツール</a><br>
     <span class="toggle-button" data-target="linkList3">練磨(防具)個別ページ</span>
@@ -380,7 +402,7 @@
     <h1><span class="hamburger" onclick="toggleMenu()">☰</span> 育成効率比較ツール</h1>
   </div>
 
-  <div id="warning">※プルダウンメニューのダメージ量は現在アレツのものです。</div>
+  <div id="warning">※プルダウンメニューのダメージ量は現在シャムマベルのものです。</div>
 
   <div class="zoom-buttons">
     <button onclick="changeZoom(-0.1)">－</button>
@@ -452,16 +474,16 @@
       <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" onfocus="this.select()" min="1" value="1">倍　</div>
       <select id="gradeSelect1" onchange="updateItemValue(1)">
         <option value="0" selected>【grade 0】0</option>
-        <option value="1">【grade 1】500万</option>
+        <option value="1">【grade 1】100万</option>
         <option value="2">【grade 2】1000万</option>
         <option value="3">【grade 3】5000万</option>
         <option value="4">【grade 4】1億</option>
         <option value="5">【grade 5】3億</option>
         <option value="6">【grade 6】5億</option>
         <option value="7">【grade 7】10億</option>
-        <option value="8">【grade 8】50億</option>
-        <option value="9">【grade 9】100億</option>
-        <option value="10">【grade X】200億</option>
+        <option value="8">【grade 8】30億</option>
+        <option value="9">【grade 9】50億</option>
+        <option value="10">【grade X】100億</option>
       </select><br>
     </div>
 
@@ -572,11 +594,11 @@
 
   <div id="footerArea">
     <button onclick="saveDefaultProfile(1)">現在の状態をデフォルトに設定</button>
-    <button onclick="deleteAllProfiles()">プロファイル削除</button><br>
-    <div id="warning">※現在の状態をプロファイルに保存し初期値に設定できます。</div><br><br>
+    <button id="deleteProfileBtn" class="delete-btn" onclick="deleteAllProfiles()">プロファイル削除</button><br>
+    <div id="profileMessage">※現在の状態をプロファイルに保存し初期値に設定できます。</div><br><br>
     <div class="method">
       <span style="color: #FF6E3D; font-weight: bold;">【重要】J式とM式の比較について</span><br>
-      J式は「合計成長数(大きい方が良い)」、M式は「1成長あたりの秒数(小さい方が良い)」を算出します。<br>
+      J式は「合計成長数(大きい方が良い)」、M式は「1成長あたりの秒数(小さい方が良い)」を算出します。育成枠数、所要時間、成長軽率など比較①と②で条件が異なる場合は正確に比較できませんので注意してください。<br>
       <br>
       <span style="color: lime;">【J式計算方法(改)】</span><br>
       ※「1戦あたり」の定義をM式と同様に「1周の時間（戦闘+間隔）」に統一しました。<br>
@@ -785,7 +807,7 @@
       document.getElementById(`結果${number}`).textContent = `${期待値.toFixed(2)} J`;
 
       const errorDiv = document.getElementById(`error${number}`);
-      errorDiv.textContent = '※J式: 値が大きい方が期待度が高くなります(総成長回数)。';
+      errorDiv.textContent = '※J式: 値が大きい方が期待度が高くなります(総成長回数)';
       errorDiv.style.display = 'block';
 
       if (number === 1) {
@@ -818,7 +840,7 @@
       document.getElementById(`結果${number}`).textContent = `${期待値.toFixed(2)} M`;
 
       const errorDiv = document.getElementById(`error${number}`);
-      errorDiv.textContent = '※M式: 値が小さい方が期待度が高くなります(1UP秒数)。';
+      errorDiv.textContent = '※M式: 値が小さい方が期待度が高くなります(1UP秒数)';
       errorDiv.style.display = 'block';
 
       if (number === 1) {
@@ -908,6 +930,15 @@
       input.value = value;
     }
 
+    // プロファイルの有無を確認してボタンの状態を更新する関数
+    function checkProfileExistence() {
+      const hasProfile = localStorage.getItem('ikusei_profile1') || localStorage.getItem('ikusei_profile2');
+      const deleteBtn = document.getElementById('deleteProfileBtn');
+      if (deleteBtn) {
+        deleteBtn.disabled = !hasProfile;
+      }
+    }
+
     function saveDefaultProfile() {
       const compareNum = [1, 2];
       compareNum.forEach(num => {
@@ -930,18 +961,30 @@
         };
         localStorage.setItem(`ikusei_profile${num}`, JSON.stringify(profile));
       });
-      const warningDiv = document.getElementById('warning');
-      warningDiv.textContent = '※プロファイルに現在の状態を保存しました。';
+      // メッセージのIDを修正
+      const messageDiv = document.getElementById('profileMessage');
+      messageDiv.textContent = '※プロファイルに現在の状態を保存しました。';
+      // 保存後にボタンの状態を更新
+      checkProfileExistence();
     }
 
     function deleteAllProfiles() {
+      // raidcalc.htmlのロジックに合わせて確認ダイアログを追加
+      const confirmed = window.confirm("プロファイルの情報を削除してよろしいですか？");
+      if (!confirmed) {
+          return;
+      }
+
       const compareNum = [1, 2];
       compareNum.forEach(num => {
         localStorage.removeItem(`ikusei_profile${num}`);
         localStorage.removeItem(`profile${num}`);
       });
-      const warningDiv = document.getElementById('warning');
-      warningDiv.textContent = '※プロファイルの情報を削除しました。';
+      // メッセージのIDを修正
+      const messageDiv = document.getElementById('profileMessage');
+      messageDiv.textContent = '※プロファイルの情報を削除しました。';
+      // 削除後にボタンの状態を更新
+      checkProfileExistence();
     }
 
     // 表示切り替え機能
@@ -971,9 +1014,9 @@
       document.getElementById('所要分1').value = "0";
       document.getElementById('所要秒1').value = "0";
       document.getElementById('成長確率1').value = "10";
-      document.getElementById('成長判定回数1').value = "15"; 
-      document.getElementById('ボーナス倍率1').value = "7";
-      document.getElementById('gradeSelect1').value = "9";
+      document.getElementById('成長判定回数1').value = "9"; 
+      document.getElementById('ボーナス倍率1').value = "3.6";
+      document.getElementById('gradeSelect1').value = "7";
 
       document.getElementById("計算式2").checked = true;
       document.getElementById('育成枠2').value = "5";
@@ -1014,6 +1057,9 @@
           document.getElementById(`gradeSelect${num}`).value = profile.gradeSelect;
         }
       });
+
+      // ページ読み込み時にボタンの状態をチェック
+      checkProfileExistence();
     };
 
     document.addEventListener("DOMContentLoaded", function(){

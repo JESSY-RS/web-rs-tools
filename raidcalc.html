@@ -7,20 +7,27 @@
   <link rel="shortcut icon" href="favicon-raidcalc.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-raidcalc.png">
   <link rel="icon" type="image/png" href="android-chrome-144x144-raidcalc.png">
-  <title>７周年制圧戦・周回効率比較ツール</title> <!-- Created by じぇ -->
-
-  <style>
+  <title>７周年制圧戦・報酬効率比較ツール</title> <style>
 
     body {
       margin: 20px;
       background-color: #2A2A2A;
       color: #eee;
+      font-size: 16px;
     }
 
     #warning {
       color: red;
       margin-top: 10px;
       margin-bottom: 3px;
+    }
+
+    #deleteMessage {
+      color: #2A2A2A;
+      margin-top: 5px;
+      min-height: 1.2em; 
+      font-weight: normal;
+      user-select: none;
     }
 
     h2 {
@@ -47,6 +54,7 @@
       background-color: #fff;
       color: #000;
       border: 1px solid #555;
+      /* 高さ設定を削除しました */
     }
 
     .time-inputbox {
@@ -56,11 +64,36 @@
 
     button {
       margin: 5px;
-      padding: 5px;
+      padding: 5px 10px;
       color: #fff;
       background-color: #2A99E6;
       border: 1px solid #555;
       cursor: pointer;
+      /* 高さ設定を削除しました */
+    }
+
+    /* 登録ボタン用スタイル */
+    .register-btn {
+      background-color: #28a745;
+      min-width: 60px; /* 横幅は維持 */
+      padding: 5px 15px;
+    }
+    .register-btn:hover {
+      background-color: #218838;
+    }
+
+    /* 削除ボタン用スタイル */
+    .delete-btn {
+      background-color: #dc3545;
+    }
+    .delete-btn:hover {
+      background-color: #c82333;
+    }
+    .delete-btn:disabled {
+      background-color: #555;
+      color: #aaa;
+      cursor: not-allowed;
+      border: 1px solid #444;
     }
 
     .time-input {
@@ -76,6 +109,36 @@
     .error {
       color: #f00;
       margin-top: 5px;
+    }
+
+    .input-wrapper {
+      margin-top: 10px;
+      margin-bottom: 15px;
+    }
+
+    /* 個数入力エリアを横並びにするためのクラス */
+    .item-input-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 5px 0;
+    }
+    
+    .item-input-row label {
+      margin-right: 5px;
+    }
+
+    /* ラジオボタンのレイアウト調整 */
+    .radio-group {
+      margin: 5px 0 0 5px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .radio-group label {
+      cursor: pointer;
+      user-select: none;
     }
 
     /* フッターのスタイル */
@@ -120,7 +183,7 @@
 
     table {
       border-collapse: collapse;
-      width: 160%;
+      width: 100%;
       margin-top: 0;
     }
 
@@ -138,6 +201,43 @@
 
     td.num {
       text-align: right;
+    }
+
+    /* グレード換算表本体のスタイル */
+    table.grade-table {
+      table-layout: fixed; 
+      width: 100%; 
+    }
+
+    /* 各列の幅指定 */
+    .grade-table th:nth-of-type(1) { width: 8%; } /* Gr. */
+    .grade-table th:nth-of-type(2) { width: 25%; } /* シムメシュ等 */
+    .grade-table th:nth-of-type(3) { width: 27%; } /* シャムマベル等 */
+    .grade-table th:nth-of-type(4) { width: 20%; } /* 判定回数 */
+    .grade-table th:nth-of-type(5) { width: 20%; } /* 倍率 */
+
+    .grade-table td {
+      word-wrap: break-word;
+      font-size: 14px;
+    }
+
+    /* ズームボタンのスタイル */
+    .zoom-buttons {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: row;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      color: #000;
+      background-color: #eee;
+      padding: 5px 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
     }
 
     /* ハンバーガーメニューのスタイル */
@@ -274,6 +374,13 @@
       color: #7755FF;
     }
 
+    #linkList3 {
+      font-size: 18px;
+      text-align: left;
+      display: none;
+      color: #7755FF;
+    }
+
     #linkList a {
       display: inline-block;
       text-decoration: none;
@@ -295,22 +402,26 @@
       text-decoration: underline;
     }
 
+    /* ユーザーデータ削除エリア */
+    #footerArea {
+      margin-bottom: 10px;
+      border-top: none;
+    }
+
   </style>
 
 </head>
 <body>
 
-  <!-- サイドメニューオーバーレイ -->
   <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-  <!-- サイドメニュー -->
   <div class="side-menu" id="sideMenu">
     <div class="menu-title">リユニのWeb版いろいろ</div>
     <a class="menu-item" href="kiokucalc.html">記憶再戦時間計算</a><br>
     <a class="menu-item" href="kiokucalc2.html">記憶再戦回数計算</a><br>
     </br>
     <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
-    <a class="menu-item" href="raidcalc.html">レイド周回効率比較ツール</a><br>
+    <a class="menu-item" href="raidcalc.html">レイド報酬効率比較ツール</a><br>
     </br>
     <a class="menu-item" href="renma-armor.html">練磨(防具)統合ツール</a><br>
     <span class="toggle-button" data-target="linkList3">練磨(防具)個別ページ</span>
@@ -345,12 +456,16 @@
     </br>
   </div>
 
-  <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
-    <h2><span class="hamburger" onclick="toggleMenu()">☰</span> ７周年制圧戦・周回効率比較ツール</h2>
+    <h2><span class="hamburger" onclick="toggleMenu()">☰</span> ７周年制圧戦・報酬効率比較ツール</h2>
   </div>
 
-  <div id="warning">※交換所の素材の入手個数が6.5周年の時のものになっています。</div>
+  <div id="warning">※グレードにより個数が判明していない部分は入力してください。</div>
+
+  <div class="zoom-buttons">
+    <button onclick="changeZoom(-0.1)">－</button>
+    <button onclick="changeZoom(0.1)">＋</button>
+  </div>
 
   <div class="block">
     <h3>比較①</h3>
@@ -362,8 +477,20 @@
       <button onclick="calculate24h(1)">24Hで回数セット</button><br>
     </div>
 
-    <label>回数：</label>
-    <input type="number" id="countInput1" placeholder="回数を入力" /><br />
+    <div class="input-wrapper">
+      <label>回数：</label>
+      <input type="number" id="countInput1" placeholder="回数を入力" />
+    </div>
+
+    <div class="input-wrapper">
+      <label>アイテム選択：</label>
+      <div class="radio-group">
+        <label><input type="radio" name="itemType1" value="shinka" onchange="changeItemType(1)">覇衣進化</label>
+        <label><input type="radio" name="itemType1" value="renma" onchange="changeItemType(1)">覇衣練磨</label>
+        <label><input type="radio" name="itemType1" value="unkai" onchange="changeItemType(1)">雲海魔晶</label>
+        <label><input type="radio" name="itemType1" value="raima" onchange="changeItemType(1)" checked>雷魔の石</label>
+      </div>
+    </div>
 
     <label>グレード選択：</label>
     <select id="gradeSelect1" onchange="updateItemValue(1)">
@@ -371,12 +498,15 @@
       <option value="6">グレード6</option>
       <option value="7">グレード7</option>
       <option value="8">グレード8</option>
-      <option value="9" selected>グレード9</option>
+      <option value="9">グレード9</option>
       <option value="10">グレード10</option>
     </select><br>
 
-    <label>個数：</label>
-    <input type="number" id="itemPerGame1" value="92.8" step="0.1" /><br />
+    <div class="item-input-row">
+      <label>個数：</label>
+      <input type="number" id="itemPerGame1" step="0.1" />
+      <button class="register-btn" onclick="registerUserValue(1)">登録</button>
+    </div>
 
     <button onclick="calculateResult(1)">計算する</button>
 
@@ -394,8 +524,20 @@
       <button onclick="calculate24h(2)">24Hで回数セット</button><br>
     </div>
 
-    <label>回数：</label>
-    <input type="number" id="countInput2" placeholder="回数を入力" /><br />
+    <div class="input-wrapper">
+      <label>回数：</label>
+      <input type="number" id="countInput2" placeholder="回数を入力" />
+    </div>
+
+    <div class="input-wrapper">
+      <label>アイテム選択：</label>
+      <div class="radio-group">
+        <label><input type="radio" name="itemType2" value="shinka" onchange="changeItemType(2)">覇衣進化</label>
+        <label><input type="radio" name="itemType2" value="renma" onchange="changeItemType(2)">覇衣練磨</label>
+        <label><input type="radio" name="itemType2" value="unkai" onchange="changeItemType(2)">雲海魔晶</label>
+        <label><input type="radio" name="itemType2" value="raima" onchange="changeItemType(2)" checked>雷魔の石</label>
+      </div>
+    </div>
 
     <label>グレード選択：</label>
     <select id="gradeSelect2" onchange="updateItemValue(2)">
@@ -407,8 +549,11 @@
       <option value="10" selected>グレード10</option>
     </select><br>
 
-    <label>個数：</label>
-    <input type="number" id="itemPerGame2" value="365.4" step="0.1" /><br />
+    <div class="item-input-row">
+      <label>個数：</label>
+      <input type="number" id="itemPerGame2" step="0.1" />
+      <button class="register-btn" onclick="registerUserValue(2)">登録</button>
+    </div>
 
     <button onclick="calculateResult(2)">計算する</button>
 
@@ -434,18 +579,20 @@
     <div class="error" id="error3" style="display:none;"></div>
   </div>
 
-  <div class="container">
-    <div class="title-box">■グレード⇆ダメージ換算早見表 (単位：百万)</div>
+  <div id="footerArea">
+    <button id="deleteUserProfileBtn" class="delete-btn" onclick="deleteUserProfiles()" disabled>ユーザー別に登録した個数を削除</button>
+    <div id="deleteMessage">※</div>
+  </div>
 
-    <table>
+  <div class="container">
+    <div class="title-box">■グレード⇆ダメージ換算早見表</div>
+
+    <table class="grade-table">
       <thead>
         <tr>
           <th>Gr.</th>
-          <th>シムメシュ</th>
-          <th>アレツ</th>
-          <th>シャムマベル</th>
-          <th>ノーア</th>
-          <th>ラスボス</th>
+          <th>シムメシュ<br>アレツ<br>ノーア</th>
+          <th>シャムマベル<br>ラスボス</th>
           <th>成長判定回数</th>
           <th>ボーナス倍率</th>
         </tr>
@@ -455,59 +602,41 @@
           <td class="num">0</td>
           <td class="num">0</td>
           <td class="num">0</td>
-          <td class="num">0</td>
-          <td class="num">0</td>
-          <td class="num">0</td>
           <td class="num">3回</td>
           <td class="num">1.00倍</td>
         </tr>
         <tr>
           <td class="num">6</td>
-          <td class="num">500</td>
-          <td class="num">500</td>
-          <td class="num">500</td>
-          <td class="num">500</td>
-          <td class="num">500</td>
+          <td class="num">5億</td>
+          <td class="num">5億</td>
           <td class="num">8回</td>
           <td class="num">2.90倍</td>
         </tr>
         <tr>
           <td class="num">7</td>
-          <td class="num">1,000</td>
-          <td class="num">1,000</td>
-          <td class="num">1,000</td>
-          <td class="num">1,000</td>
-          <td class="num">1,000</td>
+          <td class="num">10億</td>
+          <td class="num">10億</td>
           <td class="num">9回</td>
           <td class="num">3.60倍</td>
         </tr>
         <tr>
           <td class="num">8</td>
-          <td class="num">5,000</td>
-          <td class="num">5,000</td>
-          <td class="num">3,000</td>
-          <td class="num">5,000</td>
-          <td class="num">3,000</td>
+          <td class="num">50億</td>
+          <td class="num">30億</td>
           <td class="num">10回</td>
           <td class="num">4.35倍</td>
         </tr>
         <tr>
           <td class="num">9</td>
-          <td class="num">10,000</td>
-          <td class="num">10,000</td>
-          <td class="num">5,000</td>
-          <td class="num">10,000</td>
-          <td class="num">5,000</td>
+          <td class="num">100億</td>
+          <td class="num">50億</td>
           <td class="num">15回</td>
           <td class="num">7.00倍</td>
         </tr>
         <tr>
           <td class="num">10</td>
-          <td class="num">20,000</td>
-          <td class="num">20,000</td>
-          <td class="num">10,000</td>
-          <td class="num">20,000</td>
-          <td class="num">10,000</td>
+          <td class="num">200億</td>
+          <td class="num">100億</td>
           <td class="num">20回</td>
           <td class="num">9.30倍</td>
         </tr>
@@ -519,6 +648,7 @@
   <br>
 
   ■関連記事<br>
+  <a href="https://x.com/jessy_romasaga/status/1995511608219767026">https://x.com/jessy_romasaga/status/1995511608219767026</a><br>
   <a href="https://x.com/jessy_romasaga/status/1994728915689246767">https://x.com/jessy_romasaga/status/1994728915689246767</a><br>
 
   <footer>
@@ -529,12 +659,10 @@
   </footer>
 
   <script>
-
-    // ハンバーガーメニューの関数
+    // ハンバーガーメニュー関連
     function toggleMenu() {
         const sideMenu = document.getElementById('sideMenu');
         const menuOverlay = document.getElementById('menuOverlay');
-
         if (sideMenu.classList.contains('open')) {
             closeMenu();
         } else {
@@ -547,146 +675,315 @@
         const sideMenu = document.getElementById('sideMenu');
         const menuOverlay = document.getElementById('menuOverlay');
         const menuClose = document.getElementById('menuClose');
-
         sideMenu.classList.remove('open');
         menuOverlay.classList.remove('open');
-        menuClose.style.color = '#eee';
+        if(menuClose) menuClose.style.color = '#eee';
     }
 
-    // ハンバーガーメニューの関数
-    function toggleMenu() {
-        const sideMenu = document.getElementById('sideMenu');
-        const menuOverlay = document.getElementById('menuOverlay');
-
-        if (sideMenu.classList.contains('open')) {
-            closeMenu();
-        } else {
-            sideMenu.classList.add('open');
-            menuOverlay.classList.add('open');
-        }
-    }
-
-    function closeMenu() {
-        const sideMenu = document.getElementById('sideMenu');
-        const menuOverlay = document.getElementById('menuOverlay');
-        const menuClose = document.getElementById('menuClose');
-
-        sideMenu.classList.remove('open');
-        menuOverlay.classList.remove('open');
-        menuClose.style.color = '#eee';
-    }
-
-    // フリックでメニュー開閉（スクロール誤作動対策版）
+    // フリック操作関連・ズーム操作関連
     let startX = 0, startY = 0;
     let endX = 0, endY = 0;
 
     document.addEventListener('touchstart', function (e) {
-      // タッチ開始時のX座標とY座標を記録
       startX = e.changedTouches[0].screenX;
       startY = e.changedTouches[0].screenY;
     }, false);
 
     document.addEventListener('touchend', function (e) {
-      // タッチ終了時のX座標とY座標を記録
       endX = e.changedTouches[0].screenX;
       endY = e.changedTouches[0].screenY;
-      handleGesture(); // ジェスチャーを判定する関数を呼び出し
+      handleGesture();
     }, false);
 
     function handleGesture() {
-      const diffX = endX - startX; // 水平方向の移動量
-      const diffY = endY - startY; // 垂直方向の移動量
-
-      // 条件1: 水平方向の移動量が、垂直方向の移動量よりも大きい場合のみ処理（スワイプかスクロールかを判定）
+      const diffX = endX - startX;
+      const diffY = endY - startY;
       if (Math.abs(diffX) > Math.abs(diffY)) {
-
-        // 条件2-1: 右へのスワイプ（50px以上移動し、かつ画面の左端30px以内から開始）
         if (diffX > 50 && startX < 30) {
-          // 右にフリックしてメニューを開く
           toggleMenu();
         } 
-        // 条件2-2: 左へのスワイプ（50px以上移動）
         else if (diffX < -50) {
-          // 左にフリックしてメニューを閉じる
           closeMenu();
         }
       }
-      // 垂直方向の移動量が大きい場合は、何もしない（ブラウザの標準スクロールに任せる）
     }
 
-    // 初期値の定義
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    let pageSettings = { 'raidcalc_zoom': 1.0 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'raidcalc_zoom';
+        let currentZoom = pageSettings[zoomKey];
+        currentZoom += delta;
+        currentZoom = Math.round(currentZoom * 10) / 10;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        document.body.style.zoom = currentZoom;
+        pageSettings[zoomKey] = currentZoom;
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['raidcalc_zoom'];
+    });
+
+
+    /* --------------------------------------------------
+       データ設定エリア
+       -------------------------------------------------- */
     const initialValues = {
       inputMin: '',
-      inputMinSec: '',
+      inputSec: '',
       countInput: '',
-      itemPerGame1: '286.6',
-      itemPerGame2: '365.4',
     };
 
-    const gradeValues = {
-      0: 16.5,
-      6: 92.8,
-      7: 141.2,
-      8: 192.4,
-      9: 286.6,
-      10: 365.4
+    // ▼▼▼ アイテムごとのグレードデータ（デフォルト） ▼▼▼
+    const itemData = {
+      // 覇衣進化
+      shinka: {
+        0: null, 6: null, 7: 93.9, 8: null, 9: 109.9, 10: 115.3
+      },
+      // 覇衣練磨
+      renma: {
+        0: null, 6: null, 7: 77.4, 8: null, 9: 101.1, 10: 111.9
+      },
+      // 雲海魔晶
+      unkai: {
+        0: null, 6: null, 7: 3249.5, 8: null, 9: 5052.3, 10: 6068.3
+      },
+      // 雷魔の石（既存データ）
+      raima: {
+        0: null, 6: null, 7: 277.4, 8: null, 9: 458.2, 10: 559.3
+      }
     };
 
+    // ユーザー登録データ
+    let userItemData = {};
+
+    // ページロード時の処理
+    window.onload = function () {
+      // ユーザーデータの読み込み
+      loadUserData();
+
+      // 初期値を各項目へセット
+      document.getElementById('input1-min').value = initialValues.inputMin;
+      document.getElementById('input1-sec').value = initialValues.inputSec;
+      document.getElementById('input2-min').value = initialValues.inputMin;
+      document.getElementById('input2-sec').value = initialValues.inputSec;
+      
+      document.getElementById('countInput1').value = initialValues.countInput;
+      document.getElementById('countInput2').value = initialValues.countInput;
+
+      document.getElementById('gradeSelect1').value = "7";
+      document.getElementById('gradeSelect2').value = "10";
+      
+      document.getElementById('targetItemCount').value = "";
+
+      // 初期状態の計算（雷魔の石がデフォルト）
+      updateItemValue(1);
+      updateItemValue(2);
+
+      // 全選択機能のセットアップ
+      setupAutoSelect();
+    }
+
+    /* --------------------------------------------------
+       ロジック
+       -------------------------------------------------- */
+
+    // 入力欄の全選択機能
+    function setupAutoSelect() {
+      const inputs = document.querySelectorAll('input[type="number"]');
+      inputs.forEach(function(input) {
+        input.addEventListener('focus', function() { this.select(); });
+        input.addEventListener('click', function() { this.select(); });
+      });
+    }
+
+    // ▼▼▼ ユーザーデータの管理 ▼▼▼
+    function loadUserData() {
+      const stored = localStorage.getItem('raidcalc_user_item_data');
+      if (stored) {
+        try {
+          userItemData = JSON.parse(stored);
+        } catch (e) {
+          userItemData = {};
+        }
+      }
+      updateDeleteButtonState();
+    }
+
+    function saveUserData() {
+      localStorage.setItem('raidcalc_user_item_data', JSON.stringify(userItemData));
+      updateDeleteButtonState();
+    }
+
+    function updateDeleteButtonState() {
+      const btn = document.getElementById('deleteUserProfileBtn');
+      // データが存在するかチェック
+      if (Object.keys(userItemData).length > 0) {
+        btn.disabled = false;
+      } else {
+        btn.disabled = true;
+      }
+    }
+
+    function registerUserValue(number) {
+      const grade = document.getElementById(`gradeSelect${number}`).value;
+      const currentType = getCurrentItemType();
+      const val = document.getElementById(`itemPerGame${number}`).value;
+
+      if (val === "") return;
+
+      if (!userItemData[currentType]) userItemData[currentType] = {};
+      userItemData[currentType][grade] = parseFloat(val);
+
+      saveUserData();
+
+      // 両方の表示を更新（同じアイテム・グレードを選択している可能性があるため）
+      updateItemValue(1);
+      updateItemValue(2);
+    }
+
+    function deleteUserProfiles() {
+      const confirmed = window.confirm("プロファイルに登録されているユーザー別の個数の情報を削除してよろしいですか？");
+      if (!confirmed) {
+          return;
+      }
+
+      localStorage.removeItem('raidcalc_user_item_data');
+      userItemData = {};
+      
+      // 表示を更新（デフォルト値に戻る）
+      updateItemValue(1);
+      updateItemValue(2);
+      
+      updateDeleteButtonState();
+
+      // 完了メッセージ表示
+      const msgDiv = document.getElementById("deleteMessage");
+      msgDiv.textContent = "※プロファイルの情報を削除しました。";
+      msgDiv.style.color = "red"; // 文字色を赤に変更して表示させる
+    }
+
+    // ▼▼▼ ラジオボタンの同期と更新処理 ▼▼▼
+    function changeItemType(sourceNumber) {
+      // 変更された側の値を取得
+      const selectedValue = document.querySelector(`input[name="itemType${sourceNumber}"]:checked`).value;
+      
+      // もう片方の番号を特定（1なら2、2なら1）
+      const targetNumber = sourceNumber === 1 ? 2 : 1;
+      
+      // もう片方のラジオボタンを同じ値にする
+      const targetRadios = document.getElementsByName(`itemType${targetNumber}`);
+      targetRadios.forEach(radio => {
+        radio.checked = (radio.value === selectedValue);
+      });
+
+      // 両方の入力欄の数値を、選択されたアイテム・グレードに合わせて更新
+      updateItemValue(1);
+      updateItemValue(2);
+      
+      // 逆算結果が表示されている場合はリセット
+      document.getElementById("reverseResult").innerHTML = "";
+      document.getElementById("reverseMessage").textContent = "";
+
+      const msgDiv = document.getElementById("deleteMessage");
+      msgDiv.textContent = "※";
+      msgDiv.style.color = "#2A2A2A";
+    }
+
+    // 現在選択されているアイテムの種類を取得するヘルパー関数
+    function getCurrentItemType() {
+      // 同期されているので常に itemType1 を見ればOK
+      const radio = document.querySelector('input[name="itemType1"]:checked');
+      return radio ? radio.value : 'raima';
+    }
+
+    // グレードまたはアイテム変更時に数値をセットする関数
     function updateItemValue(number) {
       const grade = document.getElementById(`gradeSelect${number}`).value;
-      document.getElementById(`itemPerGame${number}`).value = gradeValues[grade];
+      const currentType = getCurrentItemType(); // 現在選ばれているアイテムタイプ
+      
+      let val = null;
+
+      // ユーザー登録値を優先チェック
+      if (userItemData[currentType] && userItemData[currentType][grade] !== undefined && userItemData[currentType][grade] !== null) {
+          val = userItemData[currentType][grade];
+      } else {
+          // デフォルトデータから取得
+          val = itemData[currentType][grade];
+      }
+
+      // 値が null または undefined の場合は空文字を入れる
+      if (val === null || val === undefined) {
+        document.getElementById(`itemPerGame${number}`).value = "";
+      } else {
+        document.getElementById(`itemPerGame${number}`).value = val;
+      }
     }
 
     function calculateResult(number) {
       const count = Number(document.getElementById(`countInput${number}`).value);
       const errorDiv = document.getElementById(`error${number}`);
+      
       if (isNaN(count) || count <= 0) {
         errorDiv.style.display = "block";
         errorDiv.textContent = `※比較${number}の回数を正しく入力してください。`;
         document.getElementById(`result${number}`).textContent = "結果：-";
         return;
       }
+      
+      const itemInputVal = document.getElementById(`itemPerGame${number}`).value;
+      
+      if (itemInputVal === "") {
+        errorDiv.style.display = "block";
+        errorDiv.textContent = `※比較${number}の個数が入力されていません。`;
+        document.getElementById(`result${number}`).textContent = "結果：-";
+        return;
+      }
+
+      const perGame = Number(itemInputVal);
       errorDiv.style.display = "none";
-      const perGame = Number(document.getElementById(`itemPerGame${number}`).value);
       const total = Math.floor(count * perGame);
       document.getElementById(`result${number}`).textContent = `結果：${total.toLocaleString()}個`;
     }
 
     function calculate24h(number) {
-      let resultCount = 0;
-    
       const min = parseInt(document.getElementById(`input${number}-min`).value) || 0;
       const sec = parseInt(document.getElementById(`input${number}-sec`).value) || 0;
-      const oneTime = min * 60 + sec + 13; // 入力値 + 13秒
-      const totalTime = 86400; // 24時間＝86400秒
-
-      const count = Number(document.getElementById(`countInput${number}`).value);
+      const oneTime = min * 60 + sec + 13; 
+      const totalTime = 86400; 
       const errorDiv = document.getElementById(`error${number}`);
 
-      if (oneTime === 13) {
+      if (oneTime === 13) { 
         errorDiv.style.display = "block";
         errorDiv.textContent = `※計測時間${number}を入力してください。`;
         return;
       }
-
-      resultCount = Math.floor(totalTime / oneTime);
+      errorDiv.style.display = "none";
+      const resultCount = Math.floor(totalTime / oneTime);
       document.getElementById(`countInput${number}`).value = resultCount;
-    }
-
-    // ページをリロードしたら各項目を初期値に戻す
-    window.onload = function () {
-      loadSideMenu();
-      document.getElementById('input1-min').value = initialValues.inputMin;
-      document.getElementById('input1-sec').value = initialValues.inputSec;
-      document.getElementById('input2-min').value = initialValues.inputMin;
-      document.getElementById('input2-sec').value = initialValues.inputSec;
-      document.getElementById('countInput1').value = initialValues.countInput;
-      document.getElementById('countInput2').value = initialValues.countInput;
-      document.getElementById('itemPerGame1').value = initialValues.itemPerGame1;
-      document.getElementById('itemPerGame2').value = initialValues.itemPerGame2;
-      document.getElementById('gradeSelect1').value = "9";
-      document.getElementById('gradeSelect2').value = "10";
-      document.getElementById('targetItemCount').value = "";
     }
 
     function calculateReverse() {
@@ -700,6 +997,11 @@
         return;
       }
 
+      const currentType = getCurrentItemType();
+      
+      // 計算対象のグレード一覧（固定）
+      const gradesToCheck = [0, 6, 7, 8, 9, 10];
+
       let output = `<table border="1" cellspacing="0" cellpadding="5">
         <thead>
           <tr>
@@ -710,19 +1012,26 @@
         </thead>
         <tbody>`;
 
-      const totalTime = 86400; // 24時間＝86400秒
-
+      const totalTime = 86400; 
       function formatTimeWithOffset(seconds) {
-        // 13秒を引くが、マイナスにならないよう0未満なら0にする
         const adjusted = Math.max(0, seconds - 13);
         const mm = Math.floor(adjusted / 60).toString().padStart(2, "0");
         const ss = (adjusted % 60).toString().padStart(2, "0");
         return `${mm}:${ss}(+00:13)`;
       }
 
-      for (const grade in gradeValues) {
-        const perGame = gradeValues[grade];
-        if (perGame === 0) continue;
+      for (const grade of gradesToCheck) {
+        let perGame = null;
+
+        // ユーザー登録値を優先チェック
+        if (userItemData[currentType] && userItemData[currentType][grade] !== undefined && userItemData[currentType][grade] !== null) {
+            perGame = userItemData[currentType][grade];
+        } else {
+            perGame = itemData[currentType][grade];
+        }
+
+        // 値がない場合はスキップ
+        if (perGame === null || perGame === 0 || perGame === undefined) continue;
 
         const requiredCount = Math.ceil(targetItemCount / perGame);
         const oneLapTime = Math.floor(totalTime / requiredCount);
@@ -737,55 +1046,45 @@
       output += "</tbody></table>";
       resultDiv.innerHTML = output;
       document.getElementById("reverseMessage").textContent = "上記タイム未満で周回可能ならば報酬量は上回ります。";
-
     }
 
-    // 比較①または比較②の結果から目標個数欄に値をセットする関数
     function setTargetFromResult(number) {
-      const resultText = document.getElementById(`result${number}`).textContent;  // 例: "結果：1,234個"
+      const resultText = document.getElementById(`result${number}`).textContent;
       const match = resultText.match(/結果：([\d,]+)個/);
-
       const reverseResultDiv = document.getElementById("reverseResult");
-
       reverseResultDiv.innerHTML = "";
 
-      // 結果が未計算ならエラー表示
-      if (resultText === "結果：-") {
+      if (resultText === "結果：-" || !match) {
         document.getElementById("reverseMessage").textContent = "";
         reverseResultDiv.innerHTML += `<div class="error">※比較${number}が計算されていません。</div>`;
         return;
       }
-
-      // エラー表示クリア（前回の残りを消すため）
-      reverseResultDiv.innerHTML = "";
-
       if (match) {
-        // カンマを外して数字に変換
         const count = Number(match[1].replace(/,/g, ''));
         if (!isNaN(count)) {
           document.getElementById('targetItemCount').value = count;
         }
       }
     }
-
+    
+    // サイドメニューのトグル設定
     document.addEventListener("DOMContentLoaded", function(){
       var toggleButtons = document.querySelectorAll(".toggle-button");
-
       toggleButtons.forEach(function(button) {
         var targetId = button.getAttribute("data-target");
         var list = document.getElementById(targetId);
-        list.style.display = "none";
-
-        button.addEventListener("click", function(){
-          if (list.style.display === "block") {
-            list.style.display = "none";
-          } else {
-            list.style.display = "block";
-          }
-        });
+        if(list){
+             list.style.display = "none";
+             button.addEventListener("click", function(){
+               if (list.style.display === "block") {
+                 list.style.display = "none";
+               } else {
+                 list.style.display = "block";
+               }
+             });
+        }
       });
     });
-
   </script>
 
 </body>
