@@ -22,9 +22,12 @@
       margin-bottom: 3px;
     }
 
+    /* メッセージエリア */
     #deleteMessage {
       color: #2A2A2A;
       margin-top: 5px;
+      /* ▼修正：下の表との余白を広げる */
+      margin-bottom: 20px; 
       min-height: 1.2em; 
       font-weight: normal;
       user-select: none;
@@ -86,7 +89,7 @@
       background-color: #218838;
     }
     
-    /* 無効時のスタイル：削除ボタンと同じ配色へ変更 */
+    /* 無効時のスタイル */
     .register-btn:disabled {
       background-color: #555;
       color: #aaa;
@@ -108,51 +111,43 @@
       border: 1px solid #444;
     }
 
+    /* ▼▼▼ レイアウト調整用CSS ▼▼▼ */
+
+    /* 入力エリア共通のFlex設定 */
+    .input-wrapper, 
     .time-input {
+      margin-top: 10px;
       margin-bottom: 15px;
+      display: flex;        
+      align-items: center;  
+      flex-wrap: wrap;      
     }
 
-    .block {
-      border: 1px solid #fff;
-      padding: 15px;
-      margin-bottom: 20px;
+    /* 分・秒・(+00:13) をひとまとめにして改行させないクラス */
+    .input-group-nowrap {
+      display: inline-block;
+      white-space: nowrap;
     }
 
-    /* 横並びレイアウト用コンテナ */
-    #compareContainer {
-      display: block; /* デフォルトはブロック（縦並び・マージン相殺維持） */
+    /* 縦並び（固定）モード時のスタイル */
+    .force-vertical .input-label-area {
+      width: 100%;       
+      display: block;    
+      margin-bottom: 5px;
+    }
+    
+    /* 横並び時のラベルスタイル */
+    .input-label-area {
+      margin-right: 5px;
     }
 
-    /* 横並びモード時のスタイル */
-    #compareContainer.horizontal {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 20px;
-      margin-bottom: 20px; /* 横並び時に下のブロックとの余白を確保 */
-    }
-
-    #compareContainer.horizontal .block {
-      flex: 1;
-      min-width: 300px;
-      margin-bottom: 0; /* 横並び時はコンテナのgap/marginに任せる */
-    }
-
-    .error {
-      color: #f00;
+    /* 24Hボタン用のコンテナ */
+    .button-row {
+      width: 100%;
       margin-top: 5px;
     }
 
-    /* 入力ラッパーのスタイル修正：横並び対応 */
-    .input-wrapper {
-      margin-top: 10px;
-      margin-bottom: 15px;
-      display: flex;        /* フレックスボックス化 */
-      align-items: center;  /* 垂直方向中央揃え */
-      flex-wrap: wrap;      /* 必要に応じて折り返し */
-    }
-
-    /* 個数入力エリアを横並びにするためのクラス */
+    /* 個数入力エリア */
     .item-input-row {
       display: flex;
       align-items: center;
@@ -166,7 +161,7 @@
 
     /* ラジオボタンのレイアウト調整 */
     .radio-group {
-      margin: 0 0 0 5px;    /* 上マージンを削除して高さを揃える */
+      margin: 0 0 0 5px;
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -177,6 +172,39 @@
       user-select: none;
     }
 
+    /* 横並びレイアウト用コンテナ */
+    #compareContainer {
+      display: block; 
+    }
+    #compareContainer.horizontal {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 20px; 
+    }
+    #compareContainer.horizontal .block {
+      flex: 1;
+      min-width: 300px;
+      margin-bottom: 0; 
+    }
+
+    .block {
+      border: 1px solid #fff;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    /* ▼修正：逆算パネル（ID指定）の下マージンを詰める */
+    #reverseBlock {
+      margin-bottom: 10px;
+    }
+
+    .error {
+      color: #f00;
+      margin-top: 5px;
+    }
+
     /* フッターのスタイル */
     footer {
       border-top: 1px solid #eee;
@@ -185,79 +213,41 @@
     }
 
     /* リンクのスタイル */
-    a:link {
-      color: #1D9BF0;
-      text-decoration: underline;
-    }
+    a:link { color: #1D9BF0; text-decoration: underline; }
+    a:visited { color: #7755FF; text-decoration: underline; }
+    a:hover { color: #0CFF57; }
+    a:active { color: #FF0000; text-decoration: underline; }
 
-    a:visited {
-      color: #7755FF;
-      text-decoration: underline;
-    }
-
-    a:hover {
-      color: #0CFF57;
-    }
-
-    a:active {
-      color: #FF0000;
-      text-decoration: underline;
-    }
-
-    .reResult {
-      max-width: 320px;
-    }
-
-    .container {
-      max-width: 500px;
-    }
-
-    .title-box {
-      padding: 8px 0px;
-      text-align: left;
-    }
+    .reResult { max-width: 320px; }
+    .container { max-width: 500px; }
+    .title-box { padding: 8px 0px; text-align: left; }
 
     table {
       border-collapse: collapse;
       width: 100%;
       margin-top: 0;
     }
-
-    th,
-    td {
+    th, td {
       border: 1px solid white;
       padding: 8px 12px;
     }
-
     thead th {
       background-color: gray;
       text-align: center;
       border-top: 1px solid white;
     }
-
-    td.num {
-      text-align: right;
-    }
+    td.num { text-align: right; }
 
     /* グレード換算表本体のスタイル */
-    table.grade-table {
-      table-layout: fixed; 
-      width: 100%; 
-    }
+    table.grade-table { table-layout: fixed; width: 100%; }
+    .grade-table th:nth-of-type(1) { width: 8%; }
+    .grade-table th:nth-of-type(2) { width: 25%; }
+    .grade-table th:nth-of-type(3) { width: 27%; }
+    .grade-table th:nth-of-type(4) { width: 20%; }
+    .grade-table th:nth-of-type(5) { width: 20%; }
+    .grade-table td { word-wrap: break-word; font-size: 14px; }
 
-    /* 各列の幅指定 */
-    .grade-table th:nth-of-type(1) { width: 8%; } /* Gr. */
-    .grade-table th:nth-of-type(2) { width: 25%; } /* シムメシュ等 */
-    .grade-table th:nth-of-type(3) { width: 27%; } /* シャムマベル等 */
-    .grade-table th:nth-of-type(4) { width: 20%; } /* 判定回数 */
-    .grade-table th:nth-of-type(5) { width: 20%; } /* 倍率 */
-
-    .grade-table td {
-      word-wrap: break-word;
-      font-size: 14px;
-    }
-
-    /* ズームボタンのスタイル */
+    /* ズームボタン */
     .zoom-buttons {
       position: absolute;
       top: 15px;
@@ -266,7 +256,6 @@
       flex-direction: row;
       z-index: 1000;
     }
-
     .zoom-buttons button {
       color: #000;
       background-color: #eee;
@@ -276,7 +265,7 @@
       border-radius: 5px;
     }
 
-    /* ハンバーガーメニューのスタイル */
+    /* ハンバーガーメニュー */
     .hamburger {
       font-size: 24px;
       cursor: pointer;
@@ -285,10 +274,7 @@
       color: #eee;
       display: inline-block;
     }
-    
-    .hamburger:hover {
-      color: #2A99E6;
-    }
+    .hamburger:hover { color: #2A99E6; }
 
     .side-menu {
       position: fixed;
@@ -307,10 +293,7 @@
       overflow-y: auto;
       overscroll-behavior: contain;
     }
-
-    .side-menu.open {
-      left: 0;
-    }
+    .side-menu.open { left: 0; }
 
     .menu-overlay {
       position: fixed;
@@ -326,11 +309,7 @@
       visibility: hidden;
       transition: opacity 0.3s, visibility 0.3s;
     }
-
-    .menu-overlay.open {
-      opacity: 1;
-      visibility: visible;
-    }
+    .menu-overlay.open { opacity: 1; visibility: visible; }
 
     .menu-close {
       position: absolute;
@@ -341,10 +320,7 @@
       color: #eee;
       user-select: none;
     }
-
-    .menu-close:hover {
-      color: #ff6b6b;
-    }
+    .menu-close:hover { color: #ff6b6b; }
 
     .menu-title {
       font-size: 20px;
@@ -353,7 +329,6 @@
       margin-bottom: 10px;
       color: #FF6E3D;
     }
-
     .menu-item {
       font-size: 18px;
       text-align: left;
@@ -362,17 +337,9 @@
       color: #eee;
       text-decoration: none;
     }
-    .menu-item:hover {
-      color: #0CFF57;
-    }
-
-    .menu-item:last-child {
-      border-bottom: none;
-    }
-
-    .menu-spacer {
-      height: 30px;
-    }
+    .menu-item:hover { color: #0CFF57; }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-spacer { height: 30px; }
 
     .toggle-button {
       cursor: pointer;
@@ -384,65 +351,65 @@
       padding: 6px 0;
       user-select: none;
     }
+    .toggle-button:hover { color: #0CFF57; text-decoration: underline; }
 
-    .toggle-button:hover {
-      color: #0CFF57;
-      text-decoration: underline;
-    }
-
-    #linkList {
-      display: none;
-      color: #7755FF;
-    }
-
-    #linkList1 {
-      font-size: 18px;
-      text-align: left;
-      padding-bottom: 6px;
-      display: none;
-      color: #7755FF;
-    }
-
-    #linkList2 {
-      font-size: 18px;
-      text-align: left;
-      display: none;
-      color: #7755FF;
-    }
-
-    #linkList3 {
-      font-size: 18px;
-      text-align: left;
-      display: none;
-      color: #7755FF;
-    }
-
-    #linkList a {
+    #linkList, #linkList1, #linkList2, #linkList3 { display: none; color: #7755FF; }
+    #linkList a, #linkList1 a, #linkList2 a, #linkList3 a {
       display: inline-block;
       text-decoration: none;
       color: #7755FF;
     }
-
-    #linkList a:visited {
-      color: #7755FF;
-      text-decoration: underline;
-    }
-
-    #linkList a:hover {
+    #linkList a:hover, #linkList1 a:hover, #linkList2 a:hover, #linkList3 a:hover {
       text-decoration: underline;
       color: #0CFF57;
     }
 
-    #linkList a:active {
-      color: #FF0000;
-      text-decoration: underline;
-    }
-
-    /* ユーザーデータ削除エリア */
+    /* ▼▼▼ フッター・レイアウトボタン関連 ▼▼▼ */
     #footerArea {
       margin-bottom: 10px;
       border-top: none;
+      display: flex;
+      flex-wrap: wrap; /* 折り返し許可 */
+      align-items: center;
+      gap: 4px; /* ボタン間の余白 */
     }
+
+    /* サブボタン群のコンテナ */
+    #subLayoutButtons {
+      display: none;
+      gap: 4px; /* サブボタン同士の余白 */
+    }
+    #subLayoutButtons.show {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    /* レイアウト切替ボタンの基本スタイル */
+    .layout-btn {
+      color: #fff;
+      border: 1px solid #555;
+      padding: 5px 6px; /* 左右の余白を詰める */
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* 親ボタン：通常のオレンジ */
+    .btn-orange {
+      background-color: #ff8c00;
+    }
+    .btn-orange:hover { background-color: #e07b00; }
+
+    /* 縦並び：強いオレンジ */
+    .btn-strong-orange {
+      background-color: #ff4500;
+    }
+    .btn-strong-orange:hover { background-color: #cc3700; }
+
+    /* 横並び：紫 */
+    .btn-purple {
+      background-color: #9b59b6; 
+    }
+    .btn-purple:hover { background-color: #8e44ad; }
 
   </style>
 
@@ -507,11 +474,17 @@
     <div class="block">
       <h3>比較①</h3>
 
-      <div class="time-input">
-        <label>1回の計測時間</label><br>
-        <input class="time-inputbox" type="number" placeholder="分" id="input1-min" min="0"> :
-        <input class="time-inputbox" type="number" placeholder="秒" id="input1-sec" min="0">（+00:13）<br>
-        <button onclick="calculate24h(1)">24Hで回数セット</button><br>
+      <div class="time-input" id="timeInput1">
+        <span class="input-label-area"><label>1回の計測時間：</label></span>
+        
+        <span class="input-group-nowrap">
+          <input class="time-inputbox" type="number" placeholder="分" id="input1-min" min="0"> :
+          <input class="time-inputbox" type="number" placeholder="秒" id="input1-sec" min="0">（+00:13）
+        </span>
+        
+        <div class="button-row">
+          <button onclick="calculate24h(1)">24Hで回数セット</button>
+        </div>
       </div>
 
       <div class="input-wrapper">
@@ -519,8 +492,8 @@
         <input type="number" id="countInput1" placeholder="回数を入力" />
       </div>
 
-      <div class="input-wrapper">
-        <label>アイテム選択：</label>
+      <div class="input-wrapper" id="itemSelect1">
+        <span class="input-label-area"><label>アイテム選択：</label></span>
         <div class="radio-group">
           <label><input type="radio" name="itemType1" value="shinka" onchange="changeItemType(1)">覇衣進化</label>
           <label><input type="radio" name="itemType1" value="renma" onchange="changeItemType(1)">覇衣練磨</label>
@@ -554,11 +527,17 @@
     <div class="block">
       <h3>比較②</h3>
 
-      <div class="time-input">
-        <label>1回の計測時間</label><br>
-        <input class="time-inputbox" type="number" placeholder="分" id="input2-min" min="0"> :
-        <input class="time-inputbox" type="number" placeholder="秒" id="input2-sec" min="0">（+00:13）<br>
-        <button onclick="calculate24h(2)">24Hで回数セット</button><br>
+      <div class="time-input" id="timeInput2">
+        <span class="input-label-area"><label>1回の計測時間：</label></span>
+        
+        <span class="input-group-nowrap">
+          <input class="time-inputbox" type="number" placeholder="分" id="input2-min" min="0"> :
+          <input class="time-inputbox" type="number" placeholder="秒" id="input2-sec" min="0">（+00:13）
+        </span>
+
+        <div class="button-row">
+          <button onclick="calculate24h(2)">24Hで回数セット</button>
+        </div>
       </div>
 
       <div class="input-wrapper">
@@ -566,8 +545,8 @@
         <input type="number" id="countInput2" placeholder="回数を入力" />
       </div>
 
-      <div class="input-wrapper">
-        <label>アイテム選択：</label>
+      <div class="input-wrapper" id="itemSelect2">
+        <span class="input-label-area"><label>アイテム選択：</label></span>
         <div class="radio-group">
           <label><input type="radio" name="itemType2" value="shinka" onchange="changeItemType(2)">覇衣進化</label>
           <label><input type="radio" name="itemType2" value="renma" onchange="changeItemType(2)">覇衣練磨</label>
@@ -598,7 +577,8 @@
       <div class="error" id="error2" style="display:none;"></div>
     </div>
   </div>
-  <div class="block">
+  
+  <div class="block" id="reverseBlock">
     <h3>目標個数から逆算</h3>
 
     <button onclick="setTargetFromResult(1)">比較①の結果をセット</button>
@@ -618,8 +598,15 @@
 
   <div id="footerArea">
     <button id="deleteUserProfileBtn" class="delete-btn" onclick="deleteUserProfiles()" disabled>ユーザー別に登録した個数を削除</button>
-    <div id="deleteMessage">メッセージエリア</div>
+    
+    <button id="showLayoutMenuBtn" class="layout-btn btn-orange" onclick="toggleLayoutMenu()">表示レイアウト変更</button>
+    
+    <div id="subLayoutButtons">
+      <button id="timeLayoutBtn" class="layout-btn" onclick="toggleTimeLayout()">計測時間欄・縦並び(固定)</button>
+      <button id="itemLayoutBtn" class="layout-btn" onclick="toggleItemLayout()">アイテム欄・縦並び(固定)</button>
+    </div>
   </div>
+  <div id="deleteMessage">メッセージエリア</div>
 
   <div class="container">
     <div class="title-box">■グレード⇆ダメージ換算早見表</div>
@@ -747,8 +734,15 @@
     }
 
     const PAGE_SETTING_KEY = 'PageSettings'; 
-    // デフォルト: raidcalc_column: 1 (縦)
-    let pageSettings = { 'raidcalc_zoom': 1.0, 'raidcalc_column': 1 };
+    // デフォルト設定
+    // raidcalc_layout_time: 1=縦並び(固定), 0=横並び(自動)
+    // raidcalc_layout_item: 1=縦並び(固定), 0=横並び(自動)
+    let pageSettings = { 
+        'raidcalc_zoom': 1.0, 
+        'raidcalc_column': 1,
+        'raidcalc_layout_time': 1,
+        'raidcalc_layout_item': 1
+    };
     
     function changeZoom(delta) {
         const zoomKey = 'raidcalc_zoom';
@@ -762,7 +756,7 @@
         savePageSettings();
     }
 
-    // レイアウト切り替え機能
+    // レイアウト切り替え機能（ブロックの1列/2列）
     function toggleLayout() {
       // 1=縦, 2=横。現在の値を反転
       const current = pageSettings['raidcalc_column'] || 1;
@@ -772,7 +766,7 @@
       savePageSettings();
     }
 
-    // レイアウト適用
+    // レイアウト適用（ブロックの1列/2列）
     function applyLayout() {
       const container = document.getElementById('compareContainer');
       const isHorizontal = pageSettings['raidcalc_column'] === 2;
@@ -782,6 +776,90 @@
       } else {
         container.classList.remove('horizontal');
       }
+    }
+
+    // ▼▼▼ レイアウト操作ロジック ▼▼▼
+
+    // 親ボタンを押したときのメニュー開閉
+    function toggleLayoutMenu() {
+        const menu = document.getElementById('subLayoutButtons');
+        const msgDiv = document.getElementById("deleteMessage"); // メッセージエリア
+        
+        if (menu.classList.contains('show')) {
+            menu.classList.remove('show');
+            msgDiv.textContent = "メッセージエリア";
+            msgDiv.style.color = "#2A2A2A";
+        } else {
+            menu.classList.add('show');
+            msgDiv.textContent = "※比較パネル自体の縦並び(固定)と横並び(自動)はタイトル部分をクリックする事で可能です。(モニター幅が十分にない場合はクリック自体出来ません。)";
+            // ▼修正：色を赤に変更
+            msgDiv.style.color = "red";
+        }
+    }
+
+    // 計測時間欄のレイアウト切替
+    function toggleTimeLayout() {
+        const current = pageSettings['raidcalc_layout_time'];
+        pageSettings['raidcalc_layout_time'] = (current === 1) ? 0 : 1;
+        applyTimeLayout();
+        savePageSettings();
+    }
+
+    // アイテム欄のレイアウト切替
+    function toggleItemLayout() {
+        const current = pageSettings['raidcalc_layout_item'];
+        pageSettings['raidcalc_layout_item'] = (current === 1) ? 0 : 1;
+        applyItemLayout();
+        savePageSettings();
+    }
+
+    function applyTimeLayout() {
+        const isVertical = (pageSettings['raidcalc_layout_time'] === 1);
+        const btn = document.getElementById('timeLayoutBtn');
+        
+        // 比較1と比較2の両方に適用
+        const targets = [document.getElementById('timeInput1'), document.getElementById('timeInput2')];
+        
+        targets.forEach(el => {
+            if (el) {
+                if (isVertical) el.classList.add('force-vertical');
+                else el.classList.remove('force-vertical');
+            }
+        });
+
+        if (btn) {
+            if (isVertical) {
+                btn.textContent = "計測時間欄・縦並び(固定)";
+                btn.className = "layout-btn btn-strong-orange";
+            } else {
+                btn.textContent = "計測時間欄・横並び(自動)";
+                btn.className = "layout-btn btn-purple";
+            }
+        }
+    }
+
+    function applyItemLayout() {
+        const isVertical = (pageSettings['raidcalc_layout_item'] === 1);
+        const btn = document.getElementById('itemLayoutBtn');
+        
+        const targets = [document.getElementById('itemSelect1'), document.getElementById('itemSelect2')];
+        
+        targets.forEach(el => {
+            if (el) {
+                if (isVertical) el.classList.add('force-vertical');
+                else el.classList.remove('force-vertical');
+            }
+        });
+
+        if (btn) {
+            if (isVertical) {
+                btn.textContent = "アイテム欄・縦並び(固定)";
+                btn.className = "layout-btn btn-strong-orange";
+            } else {
+                btn.textContent = "アイテム欄・横並び(自動)";
+                btn.className = "layout-btn btn-purple";
+            }
+        }
     }
     
     function loadPageSettings() {
@@ -806,7 +884,9 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadPageSettings();
         document.body.style.zoom = pageSettings['raidcalc_zoom'];
-        applyLayout(); // レイアウト設定の反映
+        applyLayout();       // 全体レイアウト
+        applyTimeLayout();   // 計測時間のレイアウト適用
+        applyItemLayout();   // アイテムのレイアウト適用
     });
 
 
@@ -926,7 +1006,7 @@
       updateItemValue(1);
       updateItemValue(2);
       
-      // ★修正：メッセージ表示（alert）を削除
+      // メッセージなし
     }
     
     // ▼▼▼ ボタンの活性/非活性を制御する関数 ▼▼▼
@@ -944,12 +1024,9 @@
           storedVal = itemData[currentType][grade];
       }
 
-      // 比較用に文字列化（null/undefinedは空文字扱い）
       const strStored = (storedVal === null || storedVal === undefined) ? "" : String(storedVal);
       const strInput = String(inputVal);
 
-      // ★修正：JavaScriptによる直接のスタイル操作を削除し、disabled属性のみ切り替える
-      // （CSSの :disabled 疑似クラスにスタイルを任せるため）
       if (strStored !== strInput) {
         btn.disabled = false;
       } else {
@@ -975,7 +1052,7 @@
       // 完了メッセージ表示
       const msgDiv = document.getElementById("deleteMessage");
       msgDiv.textContent = "※プロファイルの情報を削除しました。";
-      msgDiv.style.color = "red"; // 文字色を赤に変更して表示させる
+      msgDiv.style.color = "red"; 
     }
 
     // ▼▼▼ ラジオボタンの同期と更新処理 ▼▼▼
@@ -1005,36 +1082,29 @@
       msgDiv.style.color = "#2A2A2A";
     }
 
-    // 現在選択されているアイテムの種類を取得するヘルパー関数
     function getCurrentItemType() {
-      // 同期されているので常に itemType1 を見ればOK
       const radio = document.querySelector('input[name="itemType1"]:checked');
       return radio ? radio.value : 'raima';
     }
 
-    // グレードまたはアイテム変更時に数値をセットする関数
     function updateItemValue(number) {
       const grade = document.getElementById(`gradeSelect${number}`).value;
-      const currentType = getCurrentItemType(); // 現在選ばれているアイテムタイプ
+      const currentType = getCurrentItemType(); 
       
       let val = null;
 
-      // ユーザー登録値を優先チェック
       if (userItemData[currentType] && userItemData[currentType][grade] !== undefined && userItemData[currentType][grade] !== null) {
           val = userItemData[currentType][grade];
       } else {
-          // デフォルトデータから取得
           val = itemData[currentType][grade];
       }
 
-      // 値が null または undefined の場合は空文字を入れる
       if (val === null || val === undefined) {
         document.getElementById(`itemPerGame${number}`).value = "";
       } else {
         document.getElementById(`itemPerGame${number}`).value = val;
       }
 
-      // ★修正：値を読み込んだ直後は「変更されていない」のでボタンを無効化（スタイル操作削除）
       const btn = document.getElementById(`registerBtn${number}`);
       if(btn) {
         btn.disabled = true;
@@ -1121,14 +1191,12 @@
       for (const grade of gradesToCheck) {
         let perGame = null;
 
-        // ユーザー登録値を優先チェック
         if (userItemData[currentType] && userItemData[currentType][grade] !== undefined && userItemData[currentType][grade] !== null) {
             perGame = userItemData[currentType][grade];
         } else {
             perGame = itemData[currentType][grade];
         }
 
-        // 値がない場合はスキップ
         if (perGame === null || perGame === 0 || perGame === undefined) continue;
 
         const requiredCount = Math.ceil(targetItemCount / perGame);
