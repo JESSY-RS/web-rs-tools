@@ -36,6 +36,12 @@
       font-size: 24px;
     }
 
+    /* タイトルクリック用スタイル */
+    #titleTrigger {
+      cursor: pointer;
+      user-select: none; /* ダブルクリックによる選択防止 */
+    }
+
     h2 {
       font-size: 20px;
       margin-top: 0px;
@@ -46,6 +52,30 @@
       border: 1px solid #ccc;
       padding: 12px;
       margin-bottom: 20px;
+    }
+
+    /* コンテナのスタイル設定 
+       デフォルト（縦）は display: block にすることで、
+       以前のレイアウトや余白のマージン相殺を完全に再現します。
+    */
+    #compareContainer {
+      display: block; 
+    }
+
+    /* 横並びモード時のスタイル */
+    #compareContainer.horizontal {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap; /* 画面幅が極端に狭い場合は折り返す */
+      gap: 20px;       /* 左右の間隔 */
+      margin-bottom: 20px; /* ★横並び時に下の余白を確保（これがないと詰まって見える） */
+    }
+
+    /* 横並び時の内部セクション調整 */
+    #compareContainer.horizontal .section {
+      flex: 1;         /* 横並び時は幅を等分 */
+      min-width: 300px; /* 必要に応じて最小幅を設定 */
+      margin-bottom: 0; /* 横並び時はセクション自体の下余白を消し、コンテナのgap/marginに任せる */
     }
 
     .section h2 {
@@ -399,7 +429,7 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> 育成効率比較ツール</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> <span id="titleTrigger" onclick="toggleLayout()">育成効率比較ツール</span></h1>
   </div>
 
   <div id="warning">※プルダウンメニューのダメージ量は現在シャムマベルのものです。</div>
@@ -409,163 +439,165 @@
     <button onclick="changeZoom(0.1)">＋</button>
   </div>
 
-  <div class="section">
+  <div id="compareContainer">
 
-    <div class="form-row">
-      <div class="form-label" style="justify-content: flex-start;"><h2>比較①</h2></div>
-      <div class="radio-group">
-        <label><input type="radio" name="計算方式1" id="計算式1" value="J" onchange="syncRadio(1)" checked>J式で計算</label>
-        <label><input type="radio" name="計算方式1" value="M" onchange="syncRadio(1)">M式で計算</label>
+    <div class="section">
+
+      <div class="form-row">
+        <div class="form-label" style="justify-content: flex-start;"><h2>比較①</h2></div>
+        <div class="radio-group">
+          <label><input type="radio" name="計算方式1" id="計算式1" value="J" onchange="syncRadio(1)" checked>J式で計算</label>
+          <label><input type="radio" name="計算方式1" value="M" onchange="syncRadio(1)">M式で計算</label>
+        </div>
       </div>
-    </div>
 
-    <div class="form-row">
-      <div class="form-label">育成枠</div>
-      <div class="form-input"><input type="number" id="育成枠1" onfocus="this.select()" min="1" value="4">名</div>
-      <div class="updown-btn">
-        <button type="button" onclick="changeValue('育成枠1', -1)">↓</button>
-        <button type="button" onclick="changeValue('育成枠1', 1)">↑</button>
+      <div class="form-row">
+        <div class="form-label">育成枠</div>
+        <div class="form-input"><input type="number" id="育成枠1" onfocus="this.select()" min="1" value="4">名</div>
+        <div class="updown-btn">
+          <button type="button" onclick="changeValue('育成枠1', -1)">↓</button>
+          <button type="button" onclick="changeValue('育成枠1', 1)">↑</button>
+        </div>
       </div>
-    </div>
 
-    <div class="form-row">
-      <div class="form-label">1戦あたり</div>
-      <div class="form-input">
-        <input type="number" class="time-input gray-bg" id="戦闘時1" onfocus="this.select()" min="0" value="0">時
-        <input type="number" class="time-input" id="戦闘分1" onfocus="this.select()" min="0" value="0">分
-        <input type="number" class="time-input" id="戦闘秒1" onfocus="this.select()" min="0" value="0">秒
+      <div class="form-row">
+        <div class="form-label">1戦あたり</div>
+        <div class="form-input">
+          <input type="number" class="time-input gray-bg" id="戦闘時1" onfocus="this.select()" min="0" value="0">時
+          <input type="number" class="time-input" id="戦闘分1" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input" id="戦闘秒1" onfocus="this.select()" min="0" value="0">秒
+        </div>
       </div>
-    </div>
 
-    <div class="form-row">
-      <div class="form-label">インターバル</div>
-      <div class="form-input">
-        <input type="number" class="time-input gray-bg" id="間隔時1" onfocus="this.select()" min="0" value="0">時
-        <input type="number" class="time-input gray-bg" id="間隔分1" onfocus="this.select()" min="0" value="0">分
-        <input type="number" class="time-input gray-bg" id="間隔秒1" onfocus="this.select()" min="0" value="13">秒
+      <div class="form-row">
+        <div class="form-label">インターバル</div>
+        <div class="form-input">
+          <input type="number" class="time-input gray-bg" id="間隔時1" onfocus="this.select()" min="0" value="0">時
+          <input type="number" class="time-input gray-bg" id="間隔分1" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input gray-bg" id="間隔秒1" onfocus="this.select()" min="0" value="13">秒
+        </div>
       </div>
-    </div>
 
-    <div class="form-row">
-      <div class="form-label">所要時間</div>
-      <div class="form-input">
-        <input type="number" class="time-input" id="所要時1" onfocus="this.select()" min="0" value="24">時
-        <input type="number" class="time-input" id="所要分1" onfocus="this.select()" min="0" value="0">分
-        <input type="number" class="time-input" id="所要秒1" onfocus="this.select()" min="0" value="0">秒
+      <div class="form-row">
+        <div class="form-label">所要時間</div>
+        <div class="form-input">
+          <input type="number" class="time-input" id="所要時1" onfocus="this.select()" min="0" value="24">時
+          <input type="number" class="time-input" id="所要分1" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input" id="所要秒1" onfocus="this.select()" min="0" value="0">秒
+        </div>
       </div>
-    </div>
 
-    <div class="form-row">
-      <div class="form-label">成長確率</div>
-      <div class="form-input"><input type="number" class="time-input gray-bg" id="成長確率1" onfocus="this.select()" min="1" value="10">％</div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-label">成長判定回数</div>
-      <div class="form-input"><input type="number" step="0.01" id="成長判定回数1" onfocus="this.select()" min="1" value="1">回</div>
-      <div class="updown-btn">
-        <button type="button" onclick="changeValue('成長判定回数1', -1)">↓</button>
-        <button type="button" onclick="changeValue('成長判定回数1', 1)">↑</button>
+      <div class="form-row">
+        <div class="form-label">成長確率</div>
+        <div class="form-input"><input type="number" class="time-input gray-bg" id="成長確率1" onfocus="this.select()" min="1" value="10">％</div>
       </div>
-    </div>
 
-    <div class="form-row">
-      <div class="form-label">ボーナス倍率</div>
-      <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" onfocus="this.select()" min="1" value="1">倍　</div>
-      <select id="gradeSelect1" onchange="updateItemValue(1)"></select><br>
-    </div>
-
-    <div class="form-row">
-      <div class="button-area">
-        <button onclick="計算する(1)">期待値を計算</button>
-        <button id="reverseBtn1" onclick="逆算する(1)" disabled>比較②から逆算</button>
+      <div class="form-row">
+        <div class="form-label">成長判定回数</div>
+        <div class="form-input"><input type="number" step="0.01" id="成長判定回数1" onfocus="this.select()" min="1" value="1">回</div>
+        <div class="updown-btn">
+          <button type="button" onclick="changeValue('成長判定回数1', -1)">↓</button>
+          <button type="button" onclick="changeValue('成長判定回数1', 1)">↑</button>
+        </div>
       </div>
-      <div class="form-input"><div class="result" id="結果1"></div></div>
+
+      <div class="form-row">
+        <div class="form-label">ボーナス倍率</div>
+        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" onfocus="this.select()" min="1" value="1">倍　</div>
+        <select id="gradeSelect1" onchange="updateItemValue(1)"></select><br>
+      </div>
+
+      <div class="form-row">
+        <div class="button-area">
+          <button onclick="計算する(1)">期待値を計算</button>
+          <button id="reverseBtn1" onclick="逆算する(1)" disabled>比較②から逆算</button>
+        </div>
+        <div class="form-input"><div class="result" id="結果1"></div></div>
+      </div>
+
+      <div class="error" id="error1"></div>
+
     </div>
 
-    <div class="error" id="error1"></div>
+    <div class="section">
 
+      <div class="form-row">
+        <div class="form-label" style="justify-content: flex-start;"><h2>比較②</h2></div>
+        <div class="radio-group">
+          <label><input type="radio" name="計算方式2" id="計算式2" value="J" onchange="syncRadio(2)" checked>J式で計算　</label>
+          <label><input type="radio" name="計算方式2" value="M" onchange="syncRadio(2)">M式で計算</label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">育成枠</div>
+        <div class="form-input"><input type="number" id="育成枠2" onfocus="this.select()" min="1" value="4">名</div>
+        <div class="updown-btn">
+          <button type="button" onclick="changeValue('育成枠2', -1)">↓</button>
+          <button type="button" onclick="changeValue('育成枠2', 1)">↑</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">1戦あたり</div>
+        <div class="form-input">
+          <input type="number" class="time-input gray-bg" id="戦闘時2" onfocus="this.select()" min="0" value="0">時
+          <input type="number" class="time-input" id="戦闘分2" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input" id="戦闘秒2" onfocus="this.select()" min="0" value="0">秒
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">インターバル</div>
+        <div class="form-input">
+          <input type="number" class="time-input gray-bg" id="間隔時2" onfocus="this.select()" min="0" value="0">時
+          <input type="number" class="time-input gray-bg" id="間隔分2" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input gray-bg" id="間隔秒2" onfocus="this.select()" min="0" value="13">秒
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">所要時間</div>
+        <div class="form-input">
+          <input type="number" class="time-input" id="所要時2" onfocus="this.select()" min="0" value="24">時
+          <input type="number" class="time-input" id="所要分2" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input" id="所要秒2" onfocus="this.select()" min="0" value="0">秒
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">成長確率</div>
+        <div class="form-input"><input type="number" class="time-input gray-bg" id="成長確率2" onfocus="this.select()" min="1" value="10">％</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">成長判定回数</div>
+        <div class="form-input"><input type="number" step="0.01" id="成長判定回数2" onfocus="this.select()" min="1" value="1">回</div>
+        <div class="updown-btn">
+          <button type="button" onclick="changeValue('成長判定回数2', -1)">↓</button>
+          <button type="button" onclick="changeValue('成長判定回数2', 1)">↑</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">ボーナス倍率</div>
+        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率2" onfocus="this.select()" min="1" value="3.6">倍　</div>
+
+        <select id="gradeSelect2" onchange="updateItemValue(2)"></select><br>
+      </div>
+
+      <div class="form-row">
+        <div class="button-area">
+          <button onclick="計算する(2)">期待値を計算</button>
+          <button id="reverseBtn2" onclick="逆算する(2)" disabled>比較①から逆算</button>
+        </div>
+        <div class="form-input"><div class="result" id="結果2"></div></div>
+      </div>
+
+      <div class="error" id="error2"></div>
+
+    </div>
   </div>
-
-  <div class="section">
-
-    <div class="form-row">
-      <div class="form-label" style="justify-content: flex-start;"><h2>比較②</h2></div>
-      <div class="radio-group">
-        <label><input type="radio" name="計算方式2" id="計算式2" value="J" onchange="syncRadio(2)" checked>J式で計算　</label>
-        <label><input type="radio" name="計算方式2" value="M" onchange="syncRadio(2)">M式で計算</label>
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-label">育成枠</div>
-      <div class="form-input"><input type="number" id="育成枠2" onfocus="this.select()" min="1" value="4">名</div>
-      <div class="updown-btn">
-        <button type="button" onclick="changeValue('育成枠2', -1)">↓</button>
-        <button type="button" onclick="changeValue('育成枠2', 1)">↑</button>
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-label">1戦あたり</div>
-      <div class="form-input">
-        <input type="number" class="time-input gray-bg" id="戦闘時2" onfocus="this.select()" min="0" value="0">時
-        <input type="number" class="time-input" id="戦闘分2" onfocus="this.select()" min="0" value="0">分
-        <input type="number" class="time-input" id="戦闘秒2" onfocus="this.select()" min="0" value="0">秒
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-label">インターバル</div>
-      <div class="form-input">
-        <input type="number" class="time-input gray-bg" id="間隔時2" onfocus="this.select()" min="0" value="0">時
-        <input type="number" class="time-input gray-bg" id="間隔分2" onfocus="this.select()" min="0" value="0">分
-        <input type="number" class="time-input gray-bg" id="間隔秒2" onfocus="this.select()" min="0" value="13">秒
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-label">所要時間</div>
-      <div class="form-input">
-        <input type="number" class="time-input" id="所要時2" onfocus="this.select()" min="0" value="24">時
-        <input type="number" class="time-input" id="所要分2" onfocus="this.select()" min="0" value="0">分
-        <input type="number" class="time-input" id="所要秒2" onfocus="this.select()" min="0" value="0">秒
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-label">成長確率</div>
-      <div class="form-input"><input type="number" class="time-input gray-bg" id="成長確率2" onfocus="this.select()" min="1" value="10">％</div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-label">成長判定回数</div>
-      <div class="form-input"><input type="number" step="0.01" id="成長判定回数2" onfocus="this.select()" min="1" value="1">回</div>
-      <div class="updown-btn">
-        <button type="button" onclick="changeValue('成長判定回数2', -1)">↓</button>
-        <button type="button" onclick="changeValue('成長判定回数2', 1)">↑</button>
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-label">ボーナス倍率</div>
-      <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率2" onfocus="this.select()" min="1" value="3.6">倍　</div>
-
-      <select id="gradeSelect2" onchange="updateItemValue(2)"></select><br>
-    </div>
-
-    <div class="form-row">
-      <div class="button-area">
-        <button onclick="計算する(2)">期待値を計算</button>
-        <button id="reverseBtn2" onclick="逆算する(2)" disabled>比較①から逆算</button>
-      </div>
-      <div class="form-input"><div class="result" id="結果2"></div></div>
-    </div>
-
-    <div class="error" id="error2"></div>
-
-  </div>
-
   <div id="toggleDisplayBtn" onclick="toggleFooter()">× 以下の項目を非表示にする</div>
 
   <div id="footerArea">
@@ -652,7 +684,8 @@
     }
 
     const PAGE_SETTING_KEY = 'PageSettings'; 
-    let pageSettings = { 'ikuseicalc_zoom': 1.0 };
+    // デフォルト: ikuseicalc_column: 1 (縦)
+    let pageSettings = { 'ikuseicalc_zoom': 1.0, 'ikuseicalc_column': 1 };
     
     function changeZoom(delta) {
         const zoomKey = 'ikuseicalc_zoom';
@@ -664,6 +697,29 @@
         document.body.style.zoom = currentZoom;
         pageSettings[zoomKey] = currentZoom;
         savePageSettings();
+    }
+
+    // レイアウト切り替え機能
+    function toggleLayout() {
+      // 1=縦, 2=横。現在の値を反転
+      const current = pageSettings['ikuseicalc_column'] || 1;
+      pageSettings['ikuseicalc_column'] = current === 1 ? 2 : 1;
+      
+      applyLayout();
+      savePageSettings();
+    }
+
+    // レイアウト適用
+    function applyLayout() {
+      const container = document.getElementById('compareContainer');
+      // 2の場合が横（Horizontal）
+      const isHorizontal = pageSettings['ikuseicalc_column'] === 2;
+      
+      if (isHorizontal) {
+        container.classList.add('horizontal');
+      } else {
+        container.classList.remove('horizontal');
+      }
     }
     
     function loadPageSettings() {
@@ -688,6 +744,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadPageSettings();
         document.body.style.zoom = pageSettings['ikuseicalc_zoom'];
+        applyLayout(); // レイアウト設定の反映
     });
 
     // ▼▼▼▼▼▼▼▼▼ メンテナンス箇所（表記・倍率・回数をここで一括管理） ▼▼▼▼▼▼▼▼▼
