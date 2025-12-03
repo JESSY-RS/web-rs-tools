@@ -17,13 +17,6 @@
       color: #eee;
     }
 
-    #warning {
-      color: red;
-      margin-top: 10px;
-      margin-bottom: 3px;
-    }
-    
-    /* raidcalc.htmlの#deleteMessageと同じスタイルを適用 */
     #profileMessage {
       color: red;
       margin-top: 5px;
@@ -36,10 +29,9 @@
       font-size: 24px;
     }
 
-    /* タイトルクリック用スタイル */
     #titleTrigger {
       cursor: pointer;
-      user-select: none; /* ダブルクリックによる選択防止 */
+      user-select: none;
     }
 
     h2 {
@@ -54,28 +46,22 @@
       margin-bottom: 20px;
     }
 
-    /* コンテナのスタイル設定 
-       デフォルト（縦）は display: block にすることで、
-       以前のレイアウトや余白のマージン相殺を完全に再現します。
-    */
     #compareContainer {
       display: block; 
     }
 
-    /* 横並びモード時のスタイル */
     #compareContainer.horizontal {
       display: flex;
       flex-direction: row;
-      flex-wrap: wrap; /* 画面幅が極端に狭い場合は折り返す */
-      gap: 20px;       /* 左右の間隔 */
-      margin-bottom: 20px; /* ★横並び時に下の余白を確保（これがないと詰まって見える） */
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 20px;
     }
 
-    /* 横並び時の内部セクション調整 */
     #compareContainer.horizontal .section {
-      flex: 1;         /* 横並び時は幅を等分 */
-      min-width: 300px; /* 必要に応じて最小幅を設定 */
-      margin-bottom: 0; /* 横並び時はセクション自体の下余白を消し、コンテナのgap/marginに任せる */
+      flex: 1;
+      min-width: 300px;
+      margin-bottom: 0;
     }
 
     .section h2 {
@@ -125,6 +111,7 @@
       margin: 10px 0;
     }
 
+    /* 汎用クラスとしての設定は残しつつ、個別のスタイルはインラインまたはHTML構造で上書きします */
     .radio-group label {
       margin-right: 0px;
     }
@@ -164,7 +151,6 @@
       border: 1px solid #444;
     }
 
-    /* プロファイル削除ボタン用スタイル */
     .delete-btn {
       background-color: #dc3545;
       border: 1px solid #a71d2a;
@@ -432,8 +418,13 @@
     <h1><span class="hamburger" onclick="toggleMenu()">☰</span> <span id="titleTrigger" onclick="toggleLayout()">育成効率比較ツール</span></h1>
   </div>
 
-  <div id="warning">※プルダウンメニューのダメージ量は現在シャムマベルのものです。</div>
-
+  <div class="radio-group" style="display: flex; margin: 5px 0 5px 5px;">
+    <span style="font-weight:bold; color:#FF6E3D; flex-shrink: 0;">基準:</span>
+    <div style="display: flex; flex-wrap: wrap; margin-left: 5px;">
+      <label style="margin-right: 10px; white-space: nowrap;"><input type="radio" name="gradeMode" value="pattern1" onchange="changeGradeMode('pattern1')">シムメシュ・アレツ・ノーア</label>
+      <label style="white-space: nowrap;"><input type="radio" name="gradeMode" value="pattern2" onchange="changeGradeMode('pattern2')">シャムマベル・ラスボス</label>
+    </div>
+  </div>
   <div class="zoom-buttons">
     <button onclick="changeZoom(-0.1)">－</button>
     <button onclick="changeZoom(0.1)">＋</button>
@@ -684,8 +675,8 @@
     }
 
     const PAGE_SETTING_KEY = 'PageSettings'; 
-    // デフォルト: ikuseicalc_column: 1 (縦)
-    let pageSettings = { 'ikuseicalc_zoom': 1.0, 'ikuseicalc_column': 1 };
+    // デフォルト: ikuseicalc_grade_mode: 'pattern2' (シャムマベル側がデフォルト)
+    let pageSettings = { 'ikuseicalc_zoom': 1.0, 'ikuseicalc_column': 1, 'ikuseicalc_grade_mode': 'pattern2' };
     
     function changeZoom(delta) {
         const zoomKey = 'ikuseicalc_zoom';
@@ -745,10 +736,39 @@
         loadPageSettings();
         document.body.style.zoom = pageSettings['ikuseicalc_zoom'];
         applyLayout(); // レイアウト設定の反映
+
+        // ▼ 追加：計算基準設定の反映 ▼
+        // デフォルトは pattern2 (シャムマベル側)
+        const savedMode = pageSettings['ikuseicalc_grade_mode'] || 'pattern2';
+        
+        // ラジオボタンのチェック状態を同期
+        const radio = document.querySelector(`input[name="gradeMode"][value="${savedMode}"]`);
+        if(radio) radio.checked = true;
+        
+        // データをセットしてプルダウン生成
+        changeGradeMode(savedMode);
+        // ▲ 追加ここまで ▲
     });
 
-    // ▼▼▼▼▼▼▼▼▼ メンテナンス箇所（表記・倍率・回数をここで一括管理） ▼▼▼▼▼▼▼▼▼
-    const gradeConfig = [
+    // ▼▼▼▼▼▼▼▼▼ メンテナンス箇所（データ定義・切替ロジック） ▼▼▼▼▼▼▼▼▼
+    
+    // データセット：Pattern1（旧シムメシュ・アレツ・ノーア）
+    const gradeConfigPattern1 = [
+      { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.01, count: 3,  label: "【grade 1】500万" },
+      { id: 2,  val: 1.11, count: 4,  label: "【grade 2】1000万" },
+      { id: 3,  val: 1.15, count: 6,  label: "【grade 3】5000万" },
+      { id: 4,  val: 1.36, count: 6,  label: "【grade 4】1億" },
+      { id: 5,  val: 2.20, count: 7,  label: "【grade 5】3億" },
+      { id: 6,  val: 2.90, count: 8,  label: "【grade 6】5億" },
+      { id: 7,  val: 3.60, count: 9,  label: "【grade 7】10億" },
+      { id: 8,  val: 4.35, count: 10, label: "【grade 8】50億" },
+      { id: 9,  val: 7.00, count: 15, label: "【grade 9】100億" },
+      { id: 10, val: 9.30, count: 20, label: "【grade X】200億" }
+    ];
+
+    // データセット：Pattern2（旧シャムマベル・ラスボス） ※デフォルト
+    const gradeConfigPattern2 = [
       { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
       { id: 1,  val: 1.01, count: 3,  label: "【grade 1】100万" },
       { id: 2,  val: 1.11, count: 4,  label: "【grade 2】1000万" },
@@ -761,6 +781,41 @@
       { id: 9,  val: 7.00, count: 15, label: "【grade 9】50億" },
       { id: 10, val: 9.30, count: 20, label: "【grade X】100億" }
     ];
+
+    // 現在使用中の設定（初期値は空配列、ロード時に決定）
+    let gradeConfig = []; 
+
+    // 切り替え関数（汎用名: changeGradeMode）
+    function changeGradeMode(mode) {
+      // データの切り替え
+      if (mode === 'pattern1') {
+        gradeConfig = gradeConfigPattern1;
+      } else {
+        // pattern2, または不明な場合はデフォルトへ
+        gradeConfig = gradeConfigPattern2;
+      }
+
+      // 設定保存
+      pageSettings['ikuseicalc_grade_mode'] = mode;
+      savePageSettings();
+
+      // 現在選択されているIndexを保持しておく
+      const currentVal1 = document.getElementById('gradeSelect1') ? document.getElementById('gradeSelect1').value : null;
+      const currentVal2 = document.getElementById('gradeSelect2') ? document.getElementById('gradeSelect2').value : null;
+
+      // プルダウン再生成
+      initGradeOptions();
+
+      // 可能な限り元の選択位置を維持、なければデフォルトへ
+      if (currentVal1 !== null) {
+         document.getElementById('gradeSelect1').value = currentVal1;
+         updateItemValue(1);
+      }
+      if (currentVal2 !== null) {
+         document.getElementById('gradeSelect2').value = currentVal2;
+         updateItemValue(2);
+      }
+    }
     // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     // プルダウンの選択肢を生成する関数
@@ -768,7 +823,7 @@
       const targets = ['gradeSelect1', 'gradeSelect2'];
       targets.forEach(id => {
         const select = document.getElementById(id);
-        // 既存のoptionをクリア（念のため）
+        // 既存のoptionをクリア
         select.innerHTML = '';
         gradeConfig.forEach(item => {
           const option = document.createElement('option');
@@ -779,7 +834,7 @@
       });
     }
 
-    // 選択変更時に値をセットする関数（新仕様）
+    // 選択変更時に値をセットする関数
     function updateItemValue(number) {
       const selectVal = parseInt(document.getElementById(`gradeSelect${number}`).value, 10);
       const targetConfig = gradeConfig.find(item => item.id === selectVal);
@@ -1003,7 +1058,7 @@
         };
         localStorage.setItem(`ikusei_profile${num}`, JSON.stringify(profile));
       });
-      // メッセージのIDを修正
+      
       const messageDiv = document.getElementById('profileMessage');
       messageDiv.textContent = '※プロファイルに現在の状態を保存しました。';
       // 保存後にボタンの状態を更新
@@ -1022,7 +1077,7 @@
         localStorage.removeItem(`ikusei_profile${num}`);
         localStorage.removeItem(`profile${num}`);
       });
-      // メッセージのIDを修正
+      
       const messageDiv = document.getElementById('profileMessage');
       messageDiv.textContent = '※プロファイルの情報を削除しました。';
       // 削除後にボタンの状態を更新
@@ -1044,9 +1099,7 @@
     }
 
     window.onload = function () {
-      // ▼ 追加: プルダウンの生成を実行
-      initGradeOptions(); 
-      // ▲ ここまで
+      // ※ initGradeOptions等はDOMContentLoadedのタイミングで呼ばれるため削除済
 
       document.getElementById("計算式1").checked = true;
       document.getElementById('育成枠1').value = "5";
@@ -1101,6 +1154,8 @@
           document.getElementById(`成長判定回数${num}`).value = profile.成長判定回数;
           document.getElementById(`ボーナス倍率${num}`).value = profile.ボーナス倍率;
           document.getElementById(`gradeSelect${num}`).value = profile.gradeSelect;
+          // プロファイル読み込み後に値を再セットして整合性を取る
+          updateItemValue(num);
         }
       });
 
