@@ -711,13 +711,16 @@
             background-color: darkorchid !important;
             border-color: darkorchid !important;
         }
+        /* --- ここから修正: 色付きボタンの定義を追加 --- */
         .skill-filter-btn[data-value="火"].active,
-        .skill-filter-btn[data-value="熱"].active {
+        .skill-filter-btn[data-value="熱"].active,
+        .skill-filter-btn[data-value="火術"].active {
             background-color: red !important;
             border-color: red !important;
         }
         .skill-filter-btn[data-value="水"].active,
-        .skill-filter-btn[data-value="冷"].active {
+        .skill-filter-btn[data-value="冷"].active,
+        .skill-filter-btn[data-value="水術"].active {
             background-color: dodgerblue !important;
             border-color: dodgerblue !important;
         }
@@ -725,24 +728,29 @@
             background-color: darkorange !important;
             border-color: darkorange !important;
         }
-        .skill-filter-btn[data-value="風"].active {
+        .skill-filter-btn[data-value="風"].active,
+        .skill-filter-btn[data-value="風術"].active {
             background-color: forestgreen !important;
             border-color: forestgreen !important;
         }
-        .skill-filter-btn[data-value="土"].active {
+        .skill-filter-btn[data-value="土"].active,
+        .skill-filter-btn[data-value="土術"].active {
             background-color: chocolate !important;
             border-color: chocolate !important;
         }
         .skill-filter-btn[data-value="光"].active,
-        .skill-filter-btn[data-value="陽"].active {
+        .skill-filter-btn[data-value="陽"].active,
+        .skill-filter-btn[data-value="光術"].active {
             background-color: orangered !important;
             border-color: orangered !important;
         }
         .skill-filter-btn[data-value="闇"].active,
-        .skill-filter-btn[data-value="陰"].active {
+        .skill-filter-btn[data-value="陰"].active,
+        .skill-filter-btn[data-value="闇術"].active {
             background-color: darkorchid !important;
             border-color: darkorchid !important;
         }
+        /* --- ここまで修正 --- */
         #toggleVisibilityBtn.active {
             background-color: #6c757d !important;
             color: white !important;
@@ -860,6 +868,8 @@
                 </div>
             </div>
             
+            <div id="charWeaponSearchContainer" style="display: none;"></div>
+            
             <div id="skillSearchOptionsContainer" style="display: none;"></div>
 
         </div>
@@ -884,8 +894,6 @@
     <div class="bottom">
         <a href="index.html" class="web-link">INDEXへ戻る</a>
     </div>
-
-
 <script>
     // 拡大縮小の関数
     const PAGE_SETTING_KEY = 'PageSettings'; 
@@ -943,7 +951,7 @@
         addInfo: {}, 
         searchTags: [], 
         autoTagExclusions: [], 
-        characterOrder: [] // { 'キャラ名': '最終皇帝(男)', 'フリガナ': 'サイシュウコウテイオトコ' } のようなオブジェクトの配列になる
+        characterOrder: [] 
     };
     let additionalExclusionList = [];
     let allExclusionKeywords = [];
@@ -1551,7 +1559,6 @@
 
         const summaryLine = summaryParts.join(' ').trim();
         
-        // ▼▼▼ 修正箇所 ▼▼▼
         let bpLpPart = '';
         if (type !== 'addInfo') {
             bpLpPart = ` / <strong>BP:</strong> ${data['BP'] || ''}`;
@@ -1560,7 +1567,6 @@
             }
         }
         html += `<div class="summary-line"><strong>種別:</strong> ${data['属性'] || ''}${data['技術'] || ''} / <strong>威力:</strong> ${data['威力'] || ''}${bpLpPart}</div>`;
-        // ▲▲▲ 修正箇所 ▲▲▲
 
         if(summaryLine) html += `<div class="summary-line">${summaryLine}</div>`;
         return html;
@@ -1610,11 +1616,7 @@
 
         let detailText = cardData['効果詳細'] || '(効果詳細なし)';
 
-        // ▼▼▼ ここから修正 ▼▼▼
         if (parsedName.count && detailText !== '(効果詳細なし)') {
-            
-            // 条件1: type === 'addInfo'
-            // 条件2: "以下の効果が発動する" が含まれていない
             if (type === 'addInfo' && !detailText.includes('以下の効果が発動する')) {
                 const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
                 let lines = detailText.split('\n');
@@ -1622,39 +1624,30 @@
                 let originalLinesStartIndex = 0;
 
                 if (lines.length > 0 && lines[0].trim().startsWith('[')) {
-                    // [タイミング] がある場合
-                    processedLines.push(lines[0]); // 1行目（タイミング）
-                    processedLines.push(additionText); // 2行目（追加文言）
-                    originalLinesStartIndex = 1; // 元の行は1行目から処理
+                    processedLines.push(lines[0]);
+                    processedLines.push(additionText);
+                    originalLinesStartIndex = 1;
                 } else {
-                    // [タイミング] がない場合
-                    processedLines.push(additionText); // 1行目（追加文言）
-                    originalLinesStartIndex = 0; // 元の行は0行目から処理
+                    processedLines.push(additionText);
+                    originalLinesStartIndex = 0;
                 }
                 
-                // 元の行に「・」を追加する処理
                 for (let i = originalLinesStartIndex; i < lines.length; i++) {
                     let line = lines[i];
-                    // 行が空でない（空白のみでない）場合のみ処理
                     if (line.trim()) { 
-                        // 行頭が ※ や ・ や ( で始まっていないかチェック
                         if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
-                            // 元のインデントを保持しつつ「・」を追加
                             const indentMatch = line.match(/^(\s*)/);
                             const indent = indentMatch ? indentMatch[1] : '';
                             line = indent + '・' + line.trimStart();
                         }
                         processedLines.push(line);
                     } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
-                         // 空行も保持する（ただし、前の行が空行でない場合 = 連続する空行は1行に）
                          processedLines.push(line);
                     }
                 }
                 detailText = processedLines.join('\n');
                 
             } else {
-                // typeが 'addInfo' でないか、または "以下の効果が発動する" が 含まれている場合
-                // 元のロジック（(#回) を追記する）
                 const lines = detailText.split('\n');
                 const addition = `(上限回数:${parsedName.count}回)`;
                 if (lines.length > 0) {
@@ -1671,7 +1664,6 @@
                 }
             }
         }
-        // ▲▲▲ ここまで修正 ▲▲▲
 
         detailText = applyGrayTextStyle(detailText);
 
@@ -1741,6 +1733,9 @@
         document.querySelectorAll('.search-scope-btn').forEach(btn => btn.classList.add('active'));
         document.querySelectorAll('#searchLogicCategory .logic-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector('#searchLogicCategory .logic-btn[data-logic="and"]').classList.add('active');
+        
+        document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active').forEach(btn => btn.classList.remove('active'));
+
         toggleSkillOptions();
         updateSearchUIState();
         updateAutoExtractedTags();
@@ -1834,9 +1829,7 @@
                         if (parsedKeyword.count) {
                             let detail = instanceData['効果詳細'] || '(効果詳細なし)';
                             if (detail !== '(効果詳細なし)') {
-                                // ▼▼▼ ここから修正 ▼▼▼
-                                // displayInfo と同じロジックを適用
-                                if (db.addInfo[parsedKeyword.baseName] && !detail.includes('以下の効果が発動する')) { // type === 'addInfo' 
+                                if (db.addInfo[parsedKeyword.baseName] && !detail.includes('以下の効果が発動する')) {
                                     const additionText = `以下の効果が発動する(上限回数:バトル中${parsedKeyword.count}回)`;
                                     let lines = detail.split('\n');
                                     let processedLines = [];
@@ -1867,7 +1860,6 @@
                                     instanceData['効果詳細'] = processedLines.join('\n');
 
                                 } else {
-                                    // 元のロジック
                                     const lines = detail.split('\n');
                                     const addition = `(上限回数:${parsedKeyword.count}回)`;
                                     if (lines.length > 0) {
@@ -1883,14 +1875,12 @@
                                         instanceData['効果詳細'] = lines.join('\n');
                                     }
                                 }
-                                // ▲▲▲ ここまで修正 ▲▲▲
                             }
                         }
 
                         if (!linkedInfoItems.has(parsedKeyword.fullName)) {
                             linkedInfoItems.set(parsedKeyword.fullName, instanceData);
-                            // infoData は元のDBデータなので、instanceData（加工済み）ではなく infoData をスキャン対象にプッシュ
-                            if (db.addInfo[parsedKeyword.baseName]) { // only scan addInfo items recursively
+                            if (db.addInfo[parsedKeyword.baseName]) {
                                 itemsToScan.push(infoData);
                             }
                         }
@@ -1901,6 +1891,7 @@
                 character: style['キャラ名'],
                 styleName: `[${style['グレード']}] ${style['スタイル名']}`,
                 grade: style['グレード'],
+                weaponType: style['武器種'],
                 skills: styleSkills,
                 abilities: styleAbilities,
                 linkedInfo: Array.from(linkedInfoItems.values())
@@ -2009,6 +2000,44 @@
         const container = document.getElementById('searchTagContainer');
         document.getElementById('keywordSearchBtn').addEventListener('click', performTagSearch);
         document.getElementById('keywordSearchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') performTagSearch(); });
+        
+        const charWeaponSearchContainer = document.getElementById('charWeaponSearchContainer');
+        charWeaponSearchContainer.style.borderTop = '1px solid var(--controls-border)';
+        charWeaponSearchContainer.style.paddingTop = '10px';
+        charWeaponSearchContainer.style.marginTop = '15px';
+        charWeaponSearchContainer.style.display = 'block';
+
+        const charWeaponHeader = document.createElement('h3');
+        charWeaponHeader.textContent = 'キャラ指定';
+        charWeaponHeader.style.color = '#007bff';
+        charWeaponHeader.style.marginBottom = '10px';
+        charWeaponSearchContainer.appendChild(charWeaponHeader);
+        
+        const charWeaponCategory = document.createElement('div');
+        charWeaponCategory.className = 'tag-category single-line-layout';
+        const charWeaponButtonsDiv = document.createElement('div');
+        charWeaponButtonsDiv.className = 'tag-buttons';
+        
+        const charWeaponLabel = document.createElement('div');
+        charWeaponLabel.className = 'tag-category-title';
+        charWeaponLabel.textContent = '武器種:';
+        charWeaponCategory.appendChild(charWeaponLabel);
+
+        const weaponTypes = ['剣', '大剣', '斧', '棍棒', '体術', '銃', '小剣', '槍', '弓', '杖'];
+        weaponTypes.forEach(val => {
+            const btn = document.createElement('button');
+            btn.className = 'tag-btn char-weapon-btn';
+            btn.textContent = val;
+            btn.dataset.value = val;
+            btn.addEventListener('click', (e) => {
+                e.currentTarget.classList.toggle('active');
+                performTagSearch();
+            });
+            charWeaponButtonsDiv.appendChild(btn);
+        });
+        charWeaponCategory.appendChild(charWeaponButtonsDiv);
+        charWeaponSearchContainer.appendChild(charWeaponCategory);
+
         const skillOptionsContainer = document.getElementById('skillSearchOptionsContainer');
         skillOptionsContainer.style.borderTop = '1px solid var(--controls-border)';
         skillOptionsContainer.style.paddingTop = '10px';
@@ -2083,9 +2112,12 @@
                 performTagSearch();
             });
         });
+        
         const skillSearchDefs = {
-            '武器種・術適正': { field: '属性', values: ['剣', '大剣', '斧', '棍棒', '体術', '銃', '小剣', '槍', '弓', '火', '水', '風', '土', '光', '闇'] },
-            '技・術': { field: '技術', values: ['技', '術'] },
+            '種別': { 
+                field: 'combinedType', 
+                values: ['剣技', '大剣技', '斧技', '棍棒技', '体術技', '銃技', '小剣技', '槍技', '弓技', '火術', '水術', '風術', '土術', '光術', '闇術'] 
+            },
             '属性': { field: 'detailAttr', values: ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'] },
             '威力': ['SSSS', 'SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E'],
             'BP': 'placeholder',
@@ -2097,6 +2129,7 @@
             '範囲': ['単体', '全体'],
             'その他': { field: 'misc', values: { 'リキャスト技': '再使用', '使用回数制限あり': '制限', '体術技特殊タイプ(知)': '特殊' } }
         };
+
         const createButtons = (category, options) => {
             const categoryDiv = document.createElement('div');
             categoryDiv.className = 'tag-category single-line-layout';
@@ -2224,7 +2257,6 @@
             }
             toggleSkillOptions();
             updateSearchUIState();
-            // performTagSearch(); // ★★★ 修正点: この行をコメントアウト/削除 ★★★
         });
     }
     
@@ -2271,7 +2303,11 @@
         const bpValueStr = document.getElementById('bpSearchInput').value;
         const activeBpOp = document.querySelector('#skillSearchOptionsContainer .bp-op-btn.active');
         const bpFilter = (activeBpOp && bpValueStr) ? { value: parseInt(bpValueStr, 10), op: activeBpOp.dataset.op } : null;
-        const hasActiveFilters = keywords.length > 0 || bpFilter !== null || activeSkillFilterBtns.length > 0 || activeTags.length > 0;
+        
+        const activeCharWeaponBtns = [...document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active')];
+        const hasCharWeaponFilter = activeCharWeaponBtns.length > 0;
+        
+        const hasActiveFilters = keywords.length > 0 || bpFilter !== null || activeSkillFilterBtns.length > 0 || activeTags.length > 0 || hasCharWeaponFilter;
         if (!hasActiveFilters) {
             document.getElementById('searchResults').innerHTML = '';
             document.getElementById('searchResults').style.display = 'none';
@@ -2288,11 +2324,23 @@
         const checkSkillBtn = (item, btn) => {
             const field = btn.dataset.field;
             const value = btn.dataset.value;
+            if (field === 'combinedType') {
+                const type = value.slice(-1); // '技' or '術'
+                const attr = value.slice(0, -1); // '剣', '大剣', '火' etc.
+                return item['属性'] === attr && item['技術'] === type;
+            }
             if (field === 'detailAttr') return item['属性1'] === value || item['属性2'] === value;
             if (value === 'exists') return item[field] && item[field].trim() !== '';
             return item[field] === value;
         };
         const results = stylesWithDetails.map(styleData => {
+            
+            if (hasCharWeaponFilter) {
+                const styleWeapon = styleData.weaponType;
+                const isMatch = activeCharWeaponBtns.some(btn => btn.dataset.value === styleWeapon);
+                if (!isMatch) return null;
+            }
+
             const foundItems = [];
             let itemsToSearch = [];
             if (isSkillScope) itemsToSearch.push(...styleData.skills.map(item => ({ ...item, type: 'skill' })));
@@ -2348,9 +2396,7 @@
                                 if (checkSkillBtn(item, btn)) matchingKeywordsForHighlight.push(btn.textContent);
                             });
                         }
-                        // ▼▼▼ ここから修正 ▼▼▼
                         foundItems.push({ name: itemName, detail: itemDetail, keywords: [...new Set(matchingKeywordsForHighlight)], type: item.type });
-                        // ▲▲▲ ここまで修正 ▲▲▲
                     }
                 }
             });
@@ -2372,7 +2418,6 @@
         return highlightedText;
     }
 
-    // ▼▼▼ ここから修正 ▼▼▼
     function generateItemCardHTML(itemName, keywords = [], contextCharacter, contextStyleName, searchContext, itemTypeFromSearch) {
         const parsedName = parseName(itemName);
         const itemData = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName] || db.addInfo[parsedName.baseName];
@@ -2387,11 +2432,7 @@
         if (parsedName.count) {
             let detail = renderData['効果詳細'] || '(効果詳細なし)';
             if (detail !== '(効果詳細なし)') {
-                
-                // displayInfo と同じロジックを適用
-                // const itemType = db.skills[parsedName.baseName] ? 'スキル' : (db.abilities[parsedName.baseName] ? 'アビリティ' : '追加情報'); // 削除
-
-                if (itemType === 'addInfo' && !detail.includes('以下の効果が発動する')) { // 関数スコープのitemTypeを参照
+                if (itemType === 'addInfo' && !detail.includes('以下の効果が発動する')) {
                     const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
                     let lines = detail.split('\n');
                     let processedLines = [];
@@ -2421,7 +2462,6 @@
                     }
                     renderData['効果詳細'] = processedLines.join('\n');
                 } else {
-                    // 元のロジック
                     const lines = detail.split('\n');
                     const addition = `(上限回数:${parsedName.count}回)`;
                     if (lines.length > 0) {
@@ -2440,8 +2480,6 @@
             }
         }
         
-        // const itemType = db.skills[parsedName.baseName] ? 'スキル' : (db.abilities[parsedName.baseName] ? 'アビリティ' : '追加情報'); // 削除
-        
         let typeText = '';
         if (itemType === 'skill') typeText = 'スキル';
         else if (itemType === 'ability') typeText = 'アビリティ';
@@ -2456,7 +2494,7 @@
         
         let summaryHtml = '';
         if (isSkillBased) {
-            summaryHtml = generateSkillDetailHtml(renderData, 'addInfo'); // 'addInfo' type to avoid BP/LP
+            summaryHtml = generateSkillDetailHtml(renderData, 'addInfo');
         }
         summaryHtml = summaryHtml.replace(/\n/g, '<br>');
         const highlightedSummary = highlightKeywords(summaryHtml, keywords);
@@ -2474,7 +2512,6 @@
             parents = parents.filter(parent => {
                 if (parent.type === 'スキル' && !searchContext.isSkillScope) return false;
                 if (parent.type === 'アビリティ' && !searchContext.isAbilityScope) return false;
-                // '追加情報' は常に表示（検索範囲外でも参照元としては表示）
                 return true;
             });
         }
@@ -2490,44 +2527,88 @@
         
         return `<h3>${itemName} ${typeSpan}</h3>${referenceInfo}${highlightedSummary}<div class="detail-line">${finalDetailHtml}</div>`;
     }
-    // ▲▲▲ ここまで修正 ▲▲▲
 
-    // ▼▼▼ ここから修正 ▼▼▼
     function displaySearchResults(results, searchContext) {
         const searchResultsContainer = document.getElementById('searchResults');
+        // 結果をフラット化
         const flatResults = results.flatMap(styleResult => styleResult.items.map(item => ({ character: styleResult.character, styleName: styleResult.styleName, ...item })));
+        
+        // 検索ロジックの取得
         const searchLogic = document.querySelector('#searchLogicCategory .logic-btn.active').dataset.logic;
-        const conjunction = searchLogic === 'or' ? ` <span style="color: #999;">または</span> ` : ` <span style="color: #999;">かつ</span> `;
+        // 接続詞（グレー色付き）
+        const conjunction = searchLogic === 'or' ? ' <span style="color: #999;">または</span> ' : ' <span style="color: #999;">かつ</span> ';
+        
         const searchParts = [];
+        
+        // --- 1. キーワード ---
         const keywordString = document.getElementById('keywordSearchInput').value.trim();
         const keywords = keywordString.split(/[\s　]+/).filter(k => k);
         if (keywords.length > 0) {
-            const keywordConjunction = searchLogic === 'or' ? ' または ' : ' かつ ';
+            // キーワード内の接続詞もグレーにする
+            const keywordConjunction = searchLogic === 'or' ? ' <span style="color: #999;">または</span> ' : ' <span style="color: #999;">かつ</span> ';
             const keywordsText = keywords.map(kw => `'${kw}'`).join(keywordConjunction);
             searchParts.push(`キーワード:(${keywordsText})`);
         }
+
+        // --- 2. BP ---
         const bpBtn = document.querySelector('#skillSearchOptionsContainer .bp-op-btn.active');
         const bpVal = document.getElementById('bpSearchInput').value;
-        if (bpBtn && bpVal) searchParts.push(`BP(${bpVal}${bpBtn.textContent})`);
-        [...document.querySelectorAll('#skillSearchOptionsContainer .skill-filter-btn.active')].forEach(btn => searchParts.push(btn.textContent));
-        [...document.querySelectorAll('#csvTagArea .tag-btn.active')].forEach(btn => searchParts.push(btn.textContent));
-        const searchText = searchParts.join(conjunction);
-        searchResultsContainer.innerHTML = flatResults.length === 0 ? `<h2>「${searchText}」の検索結果: 0件</h2><p style="color: red;">該当するスキル・アビリティは見つかりませんでした。</p>` : `<h2>「${searchText}」の検索結果: ${flatResults.length}件</h2>` + flatResults.map(res => {
-            // const itemData = db.skills[res.name] || db.abilities[res.name] || db.addInfo[res.name]; // 削除
-            // const itemType = itemData ? (db.skills[res.name] ? 'スキル' : (db.abilities[res.name] ? 'アビリティ' : '追加情報')) : ''; // 削除
+        if (bpBtn && bpVal) {
+            searchParts.push(`BP(${bpVal}${bpBtn.textContent})`);
+        }
+
+        // --- 3. タグ（スキル項目 + 共通項目） ---
+        const activeSkillFilters = [...document.querySelectorAll('#skillSearchOptionsContainer .skill-filter-btn.active')];
+        const activeCsvTags = [...document.querySelectorAll('#csvTagArea .tag-btn.active')];
+        const allActiveTags = [...activeSkillFilters, ...activeCsvTags];
+
+        if (allActiveTags.length > 0) {
+            // タグ内の接続詞もグレーにする
+            const tagsText = allActiveTags.map(btn => btn.textContent).join(conjunction);
+            searchParts.push(`タグ:(${tagsText})`);
+        }
+        
+        // 条件部分のテキスト結合
+        const otherConditionsText = searchParts.join(conjunction);
+        
+        // --- 4. タイトルの組み立て ---
+        let searchText = "";
+        
+        // キャラ武器種（前提条件）
+        const activeCharWeaponBtns = [...document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active')];
+        
+        if (activeCharWeaponBtns.length > 0) {
+            // 武器種内の「または」をグレーに
+            const weaponsText = activeCharWeaponBtns.map(btn => btn.textContent).join(' <span style="color: #999;">または</span> ');
+            const weaponPart = `キャラ武器種:(${weaponsText})`;
+            
+            if (otherConditionsText) {
+                // 武器種 と その他の条件 は常に「かつ」で結合（グレー）
+                searchText = `${weaponPart} <span style="color: #999;">かつ</span> [${otherConditionsText}]`;
+            } else {
+                searchText = weaponPart;
+            }
+        } else {
+            searchText = otherConditionsText;
+        }
+        
+        // --- 5. 結果の表示 ---
+        searchResultsContainer.innerHTML = flatResults.length === 0 
+            ? `<h2>「${searchText}」の検索結果: 0件</h2><p style="color: red;">該当するスキル・アビリティは見つかりませんでした。</p>` 
+            : `<h2>「${searchText}」の検索結果: ${flatResults.length}件</h2>` + flatResults.map(res => {
             
             let panelBgColor;
             if (res.type === 'skill') panelBgColor = 'var(--skill-col-bg)';
             else if (res.type === 'ability') panelBgColor = 'var(--ability-col-bg)';
-            else panelBgColor = 'var(--addinfo-col-bg)'; // res.type === 'addInfo'
+            else panelBgColor = 'var(--addinfo-col-bg)';
             
-            const cardHtml = generateItemCardHTML(res.name, res.keywords, res.character, res.styleName, searchContext, res.type); // res.type を渡す
+            const cardHtml = generateItemCardHTML(res.name, res.keywords, res.character, res.styleName, searchContext, res.type);
             return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${res.character}</h3><h4>${res.styleName}</h4><div class="card">${cardHtml}</div></div>`;
         }).join('');
+        
         searchResultsContainer.style.display = 'grid';
         document.getElementById('mainContainer').style.display = 'none';
     }
-    // ▲▲▲ ここまで修正 ▲▲▲
 
     function handleSearchResultClick(event) {
         const jumpLink = event.target.closest('.search-jump-link');
@@ -2561,7 +2642,6 @@
             const owners = itemToStyleMap[parentName];
             let character, styleName;
             if (!owners || owners.length === 0) {
-                // Try to find owners from all styles if not found in itemToStyleMap (e.g., direct skills/abilities)
                 const allOwners = [];
                 for (const style of db.styles) {
                     if ([style['スキル1'], style['スキル2'], style['スキル3'], style['アビリティ1'], style['アビリティ2'], style['アビリティ3']].includes(parentName)) {
@@ -2597,11 +2677,9 @@
             const isAddInfoScope = document.querySelector('.search-scope-btn[data-scope="addInfo"]').classList.contains('active');
             const searchContext = { isSkillScope, isAbilityScope, isAddInfoScope };
             let cardHtml;
-            // ▼▼▼ ここから修正 ▼▼▼
-            const parentItemType = db.skills[parentName] ? 'skill' : (db.abilities[parentName] ? 'ability' : 'addInfo'); // 判定
+            const parentItemType = db.skills[parentName] ? 'skill' : (db.abilities[parentName] ? 'ability' : 'addInfo');
             if (owners && owners.length === 1) cardHtml = generateItemCardHTML(parentName, [], owners[0].character, owners[0].styleName, searchContext, parentItemType);
             else cardHtml = generateItemCardHTML(parentName, [], null, null, searchContext, parentItemType);
-            // ▲▲▲ ここまで修正 ▲▲▲
             const contentHtml = `<div class="close-parent-info">閉じる</div><h3>${character}</h3><h4>${styleName}</h4><div class="card">${cardHtml}</div>`;
             panel.innerHTML = contentHtml;
             const anchorElement = showLink.closest('.column');
@@ -2646,7 +2724,6 @@
                     }
                     updateSelectedText();
                     
-                    // 表示を即時更新
                     const currentStyleName = document.getElementById('styleBtn').dataset.value;
                     if (currentStyleName && currentStyleName !== '---') {
                         updateView(currentStyleName);
@@ -2698,7 +2775,6 @@
             renderOptions(searchInput.value);
             updateSelectedText();
 
-            // 表示を即時更新
             const currentStyleName = document.getElementById('styleBtn').dataset.value;
             if (currentStyleName && currentStyleName !== '---') {
                 updateView(currentStyleName);
@@ -2727,7 +2803,6 @@
             renderOptions(searchInput.value);
             updateSelectedText();
 
-            // 表示を即時更新
             const currentStyleName = document.getElementById('styleBtn').dataset.value;
             if (currentStyleName && currentStyleName !== '---') {
                 updateView(currentStyleName);
@@ -2757,10 +2832,8 @@
         }
         const fileName = `${chara}_${style}_${title}.png`;
         if (element) {
-            // dom-to-image-moreのオプションを設定
             const options = {
                 bgcolor: getComputedStyle(element).backgroundColor,
-                // 解像度を2倍にして画像を綺麗にする
                 width: element.offsetWidth * 2,
                 height: element.offsetHeight * 2,
                 style: {
