@@ -2535,8 +2535,8 @@
         
         // 検索ロジックの取得
         const searchLogic = document.querySelector('#searchLogicCategory .logic-btn.active').dataset.logic;
-        // 接続詞（グレー色付き）
-        const conjunction = searchLogic === 'or' ? ' <span style="color: #999;">または</span> ' : ' <span style="color: #999;">かつ</span> ';
+        // 接続詞（赤色付き）
+        const conjunction = searchLogic === 'or' ? ' <span style="color: red;">または</span> ' : ' <span style="color: red;">かつ</span> ';
         
         const searchParts = [];
         
@@ -2544,8 +2544,8 @@
         const keywordString = document.getElementById('keywordSearchInput').value.trim();
         const keywords = keywordString.split(/[\s　]+/).filter(k => k);
         if (keywords.length > 0) {
-            // キーワード内の接続詞もグレーにする
-            const keywordConjunction = searchLogic === 'or' ? ' <span style="color: #999;">または</span> ' : ' <span style="color: #999;">かつ</span> ';
+            // キーワード内の接続詞も赤にする
+            const keywordConjunction = searchLogic === 'or' ? ' <span style="color: red;">または</span> ' : ' <span style="color: red;">かつ</span> ';
             const keywordsText = keywords.map(kw => `'${kw}'`).join(keywordConjunction);
             searchParts.push(`キーワード:(${keywordsText})`);
         }
@@ -2578,13 +2578,13 @@
         const activeCharWeaponBtns = [...document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active')];
         
         if (activeCharWeaponBtns.length > 0) {
-            // 武器種内の「または」をグレーに
-            const weaponsText = activeCharWeaponBtns.map(btn => btn.textContent).join(' <span style="color: #999;">または</span> ');
+            // 武器種内の「または」を赤に
+            const weaponsText = activeCharWeaponBtns.map(btn => btn.textContent).join(' <span style="color: red;">または</span> ');
             const weaponPart = `キャラ武器種:(${weaponsText})`;
             
             if (otherConditionsText) {
-                // 武器種 と その他の条件 は常に「かつ」で結合（グレー）
-                searchText = `${weaponPart} <span style="color: #999;">かつ</span> [${otherConditionsText}]`;
+                // 武器種 と その他の条件 は常に「かつ」で結合（赤）
+                searchText = `${weaponPart} <span style="color: red;">かつ</span> [${otherConditionsText}]`;
             } else {
                 searchText = weaponPart;
             }
