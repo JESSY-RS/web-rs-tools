@@ -7,7 +7,7 @@
     <link rel="shortcut icon" href="favicon-renma.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
-    <title>練磨(防具)自動選定ツール</title> <!-- Created by じぇ -->
+    <title>練磨(防具)自動選定ツール</title> 
 
     <style>
         /* --- 全体 --- */
@@ -1040,7 +1040,13 @@
             reader.onload = (e) => {
                 try {
                     const rawData = JSON.parse(e.target.result);
-                    armorData = rawData.map(item => ({...item, value: parseInt(item.value, 10)})).filter(item => !isNaN(item.value));
+                    // 修正: uniqueIdを付与するように変更
+                    armorData = rawData.map((item, index) => ({
+                        ...item, 
+                        value: parseInt(item.value, 10),
+                        uniqueId: `item-${index}-${Date.now()}` // インデックスと時間で固有IDを作成
+                    })).filter(item => !isNaN(item.value));
+                    
                     fileStatus.textContent = `読み込み完了: ${file.name}`;
                     fileStatus.style.color = '#98fb98';
                     calculateAllButton.disabled = false;
@@ -1129,7 +1135,7 @@
          * JSON値とCSV値を合算した総合値で最適な防具を見つける関数
          * @param {string} armorType - 'main' or 'sub'
          * @param {object} character - The character config object
-         * @param {Set<string>} excludedItems - 既に装備済みの防具名のSet
+         * @param {Set<string>} excludedItems - 既に装備済みの防具のuniqueIdのSet
          * @param {object[]} partyConfig - パーティ全体の設定配列
          * @returns {object} - 最適な防具の情報 (nativeValue含む)
          */
@@ -1137,9 +1143,10 @@
             const { abilityType, selectedConditions, charId, series } = character;
             const candidates = [];
 
+            // 修正: フィルタリングをarmorNameではなくuniqueIdで行う
             const availableArmor = armorData.filter(item =>
                 item.armorType === armorType &&
-                !excludedItems.has(item.armorName)
+                !excludedItems.has(item.uniqueId)
             );
 
             for (const armor of availableArmor) {
@@ -1200,9 +1207,10 @@
                 iterations++;
 
                 const equippedThisPass = new Set();
+                // 修正: ロックされた装備のuniqueIdを除外リストに追加
                 lockedEquipment.forEach(loadout => {
-                    if (loadout.mainArmor) equippedThisPass.add(loadout.mainArmor.armorName);
-                    if (loadout.subArmor) equippedThisPass.add(loadout.subArmor.armorName);
+                    if (loadout.mainArmor) equippedThisPass.add(loadout.mainArmor.uniqueId);
+                    if (loadout.subArmor) equippedThisPass.add(loadout.subArmor.uniqueId);
                 });
 
                 const nextLoadout = [];
@@ -1216,14 +1224,16 @@
                     } else {
                          mainArmor = findBestArmorWithNativeAbilities('main', character, equippedThisPass, partyConfig);
                     }
-                    if (mainArmor.armorName !== '該当なし') equippedThisPass.add(mainArmor.armorName);
+                    // 修正: uniqueIdで除外リストに追加
+                    if (mainArmor.armorName !== '該当なし') equippedThisPass.add(mainArmor.uniqueId);
                     
                     if (lockedEquipment.has(charId) && lockedEquipment.get(charId).subArmor) {
                         subArmor = lockedEquipment.get(charId).subArmor;
                     } else {
                         subArmor = findBestArmorWithNativeAbilities('sub', character, equippedThisPass, partyConfig);
                     }
-                    if (subArmor.armorName !== '該当なし') equippedThisPass.add(subArmor.armorName);
+                    // 修正: uniqueIdで除外リストに追加
+                    if (subArmor.armorName !== '該当なし') equippedThisPass.add(subArmor.uniqueId);
                     
                     nextLoadout[charId - 1] = { mainArmor, subArmor };
                 }
@@ -1387,6 +1397,9 @@
                 ...partyBuffCandidates.slice(0, 3)
             ];
             
+            // uniqueIdではなくarmorNameとスペックでシナリオを作るが、
+            // 実際にロックするときはオブジェクトそのもの(uniqueId含む)を使うため
+            // ここでの重複排除はarmorName基準でOKだが、Mapに入れるときは実体を使う
             const uniqueScenarios = [...new Map(scenariosToTest.map(item => [item.armorName, item])).values()];
             // 「ロックなし」のケースを追加。これにより、ソルバーが自由に選択するベースラインも評価される
             uniqueScenarios.push(null); 
