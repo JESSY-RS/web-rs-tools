@@ -894,6 +894,7 @@
     <div class="bottom">
         <a href="index.html" class="web-link">INDEXへ戻る</a>
     </div>
+
 <script>
     // 拡大縮小の関数
     const PAGE_SETTING_KEY = 'PageSettings'; 
@@ -951,7 +952,8 @@
         addInfo: {}, 
         searchTags: [], 
         autoTagExclusions: [], 
-        characterOrder: [] 
+        characterOrder: [],
+        countExclusions: new Set() // 追加: 除外リスト用
     };
     let additionalExclusionList = [];
     let allExclusionKeywords = [];
@@ -998,7 +1000,6 @@
             }
         };
         const handleThemeChange = () => {
-            // ローカルストレージに設定がなければ 'light' をデフォルトにする
             const selectedTheme = localStorage.getItem('theme') || 'light';
             applyTheme(selectedTheme);
             for (const radio of themeRadios) {
@@ -1040,7 +1041,8 @@
                 loadCsv('data/add_info.csv', 'addInfo'),
                 loadCsv('data/search-tags.csv', 'searchTags'),
                 loadCsv('data/auto-tag-exclusions.csv', 'autoTagExclusions'),
-                loadCsv('data/character.csv', 'characterOrder')
+                loadCsv('data/character.csv', 'characterOrder'),
+                loadCsv('data/count-exclusions.csv', 'countExclusions') // 追加: 除外リスト読み込み
             ]);
             
             grayTextPhrases = db.autoTagExclusions.map(row => row.text_to_exclude).filter(Boolean);
@@ -1498,6 +1500,12 @@
             
             if (['styles', 'searchTags', 'autoTagExclusions', 'characterOrder'].includes(dbKey)) {
                 db[dbKey] = results.data;
+            } else if (dbKey === 'countExclusions') { // 追加: countExclusions用の読み込み処理
+                db[dbKey] = new Set();
+                results.data.forEach(row => {
+                    const name = row['名称'];
+                    if (name) db[dbKey].add(name);
+                });
             } else {
                 if (dbKey === 'addInfo') addInfoOrderedKeys = [];
                 results.data.forEach(row => {
@@ -1509,9 +1517,10 @@
                 });
             }
         } catch (error) {
-            if (['searchTags', 'autoTagExclusions'].includes(dbKey)) {
+            if (['searchTags', 'autoTagExclusions', 'countExclusions'].includes(dbKey)) { // 修正: エラー許容リストに追加
                 console.warn(`${fileName} の読み込みに失敗しましたが、処理を続行します。`);
-                db[dbKey] = [];
+                if (dbKey === 'countExclusions') db[dbKey] = new Set();
+                else db[dbKey] = [];
             } else {
                 throw error;
             }
@@ -1617,50 +1626,53 @@
         let detailText = cardData['効果詳細'] || '(効果詳細なし)';
 
         if (parsedName.count && detailText !== '(効果詳細なし)') {
-            if (type === 'addInfo' && !detailText.includes('以下の効果が発動する')) {
-                const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
-                let lines = detailText.split('\n');
-                let processedLines = [];
-                let originalLinesStartIndex = 0;
+            // 修正: countExclusions に含まれていない場合のみテキスト加工を行う
+            if (!db.countExclusions.has(parsedName.baseName)) {
+                if (type === 'addInfo' && !detailText.includes('以下の効果が発動する')) {
+                    const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
+                    let lines = detailText.split('\n');
+                    let processedLines = [];
+                    let originalLinesStartIndex = 0;
 
-                if (lines.length > 0 && lines[0].trim().startsWith('[')) {
-                    processedLines.push(lines[0]);
-                    processedLines.push(additionText);
-                    originalLinesStartIndex = 1;
-                } else {
-                    processedLines.push(additionText);
-                    originalLinesStartIndex = 0;
-                }
-                
-                for (let i = originalLinesStartIndex; i < lines.length; i++) {
-                    let line = lines[i];
-                    if (line.trim()) { 
-                        if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
-                            const indentMatch = line.match(/^(\s*)/);
-                            const indent = indentMatch ? indentMatch[1] : '';
-                            line = indent + '・' + line.trimStart();
-                        }
-                        processedLines.push(line);
-                    } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
-                         processedLines.push(line);
-                    }
-                }
-                detailText = processedLines.join('\n');
-                
-            } else {
-                const lines = detailText.split('\n');
-                const addition = `(上限回数:${parsedName.count}回)`;
-                if (lines.length > 0) {
-                    if (lines[0].trim().startsWith('[')) {
-                        if (lines.length > 1) {
-                            lines[1] = lines[1].trim() + addition;
-                        } else {
-                            lines.push(addition);
-                        }
+                    if (lines.length > 0 && lines[0].trim().startsWith('[')) {
+                        processedLines.push(lines[0]);
+                        processedLines.push(additionText);
+                        originalLinesStartIndex = 1;
                     } else {
-                        lines[0] = lines[0].trim() + addition;
+                        processedLines.push(additionText);
+                        originalLinesStartIndex = 0;
                     }
-                    detailText = lines.join('\n');
+                    
+                    for (let i = originalLinesStartIndex; i < lines.length; i++) {
+                        let line = lines[i];
+                        if (line.trim()) { 
+                            if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
+                                const indentMatch = line.match(/^(\s*)/);
+                                const indent = indentMatch ? indentMatch[1] : '';
+                                line = indent + '・' + line.trimStart();
+                            }
+                            processedLines.push(line);
+                        } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
+                             processedLines.push(line);
+                        }
+                    }
+                    detailText = processedLines.join('\n');
+                    
+                } else {
+                    const lines = detailText.split('\n');
+                    const addition = `(上限回数:${parsedName.count}回)`;
+                    if (lines.length > 0) {
+                        if (lines[0].trim().startsWith('[')) {
+                            if (lines.length > 1) {
+                                lines[1] = lines[1].trim() + addition;
+                            } else {
+                                lines.push(addition);
+                            }
+                        } else {
+                            lines[0] = lines[0].trim() + addition;
+                        }
+                        detailText = lines.join('\n');
+                    }
                 }
             }
         }
@@ -1784,8 +1796,8 @@
             }
         });
     }
-    
-    function initializeResetButton() {
+
+function initializeResetButton() {
         document.getElementById('resetSearchBtn').addEventListener('click', () => {
             document.getElementById('keywordSearchInput').value = '';
             performTagSearch();
@@ -1829,50 +1841,53 @@
                         if (parsedKeyword.count) {
                             let detail = instanceData['効果詳細'] || '(効果詳細なし)';
                             if (detail !== '(効果詳細なし)') {
-                                if (db.addInfo[parsedKeyword.baseName] && !detail.includes('以下の効果が発動する')) {
-                                    const additionText = `以下の効果が発動する(上限回数:バトル中${parsedKeyword.count}回)`;
-                                    let lines = detail.split('\n');
-                                    let processedLines = [];
-                                    let originalLinesStartIndex = 0;
+                                // 修正: countExclusions に含まれていない場合のみテキスト加工を行う
+                                if (!db.countExclusions.has(parsedKeyword.baseName)) {
+                                    if (db.addInfo[parsedKeyword.baseName] && !detail.includes('以下の効果が発動する')) {
+                                        const additionText = `以下の効果が発動する(上限回数:バトル中${parsedKeyword.count}回)`;
+                                        let lines = detail.split('\n');
+                                        let processedLines = [];
+                                        let originalLinesStartIndex = 0;
 
-                                    if (lines.length > 0 && lines[0].trim().startsWith('[')) {
-                                        processedLines.push(lines[0]); 
-                                        processedLines.push(additionText);
-                                        originalLinesStartIndex = 1;
-                                    } else {
-                                        processedLines.push(additionText);
-                                        originalLinesStartIndex = 0;
-                                    }
-                                    
-                                    for (let i = originalLinesStartIndex; i < lines.length; i++) {
-                                        let line = lines[i];
-                                        if (line.trim()) { 
-                                            if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
-                                                const indentMatch = line.match(/^(\s*)/);
-                                                const indent = indentMatch ? indentMatch[1] : '';
-                                                line = indent + '・' + line.trimStart();
-                                            }
-                                            processedLines.push(line);
-                                        } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
-                                             processedLines.push(line);
-                                        }
-                                    }
-                                    instanceData['効果詳細'] = processedLines.join('\n');
-
-                                } else {
-                                    const lines = detail.split('\n');
-                                    const addition = `(上限回数:${parsedKeyword.count}回)`;
-                                    if (lines.length > 0) {
-                                        if (lines[0].trim().startsWith('[')) {
-                                            if (lines.length > 1) {
-                                                lines[1] = lines[1].trim() + addition;
-                                            } else {
-                                                lines.push(addition);
-                                            }
+                                        if (lines.length > 0 && lines[0].trim().startsWith('[')) {
+                                            processedLines.push(lines[0]); 
+                                            processedLines.push(additionText);
+                                            originalLinesStartIndex = 1;
                                         } else {
-                                            lines[0] = lines[0].trim() + addition;
+                                            processedLines.push(additionText);
+                                            originalLinesStartIndex = 0;
                                         }
-                                        instanceData['効果詳細'] = lines.join('\n');
+                                        
+                                        for (let i = originalLinesStartIndex; i < lines.length; i++) {
+                                            let line = lines[i];
+                                            if (line.trim()) { 
+                                                if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
+                                                    const indentMatch = line.match(/^(\s*)/);
+                                                    const indent = indentMatch ? indentMatch[1] : '';
+                                                    line = indent + '・' + line.trimStart();
+                                                }
+                                                processedLines.push(line);
+                                            } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
+                                                processedLines.push(line);
+                                            }
+                                        }
+                                        instanceData['効果詳細'] = processedLines.join('\n');
+
+                                    } else {
+                                        const lines = detail.split('\n');
+                                        const addition = `(上限回数:${parsedKeyword.count}回)`;
+                                        if (lines.length > 0) {
+                                            if (lines[0].trim().startsWith('[')) {
+                                                if (lines.length > 1) {
+                                                    lines[1] = lines[1].trim() + addition;
+                                                } else {
+                                                    lines.push(addition);
+                                                }
+                                            } else {
+                                                lines[0] = lines[0].trim() + addition;
+                                            }
+                                            instanceData['効果詳細'] = lines.join('\n');
+                                        }
                                     }
                                 }
                             }
@@ -2432,49 +2447,52 @@
         if (parsedName.count) {
             let detail = renderData['効果詳細'] || '(効果詳細なし)';
             if (detail !== '(効果詳細なし)') {
-                if (itemType === 'addInfo' && !detail.includes('以下の効果が発動する')) {
-                    const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
-                    let lines = detail.split('\n');
-                    let processedLines = [];
-                    let originalLinesStartIndex = 0;
+                // 修正: countExclusions に含まれていない場合のみテキスト加工を行う
+                if (!db.countExclusions.has(parsedName.baseName)) {
+                    if (itemType === 'addInfo' && !detail.includes('以下の効果が発動する')) {
+                        const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
+                        let lines = detail.split('\n');
+                        let processedLines = [];
+                        let originalLinesStartIndex = 0;
 
-                    if (lines.length > 0 && lines[0].trim().startsWith('[')) {
-                        processedLines.push(lines[0]); 
-                        processedLines.push(additionText);
-                        originalLinesStartIndex = 1;
-                    } else {
-                        processedLines.push(additionText);
-                        originalLinesStartIndex = 0;
-                    }
-                    
-                    for (let i = originalLinesStartIndex; i < lines.length; i++) {
-                        let line = lines[i];
-                        if (line.trim()) { 
-                            if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
-                                const indentMatch = line.match(/^(\s*)/);
-                                const indent = indentMatch ? indentMatch[1] : '';
-                                line = indent + '・' + line.trimStart();
-                            }
-                            processedLines.push(line);
-                        } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
-                             processedLines.push(line);
-                        }
-                    }
-                    renderData['効果詳細'] = processedLines.join('\n');
-                } else {
-                    const lines = detail.split('\n');
-                    const addition = `(上限回数:${parsedName.count}回)`;
-                    if (lines.length > 0) {
-                        if (lines[0].trim().startsWith('[')) {
-                            if (lines.length > 1) {
-                                lines[1] = lines[1].trim() + addition;
-                            } else {
-                                lines.push(addition);
-                            }
+                        if (lines.length > 0 && lines[0].trim().startsWith('[')) {
+                            processedLines.push(lines[0]); 
+                            processedLines.push(additionText);
+                            originalLinesStartIndex = 1;
                         } else {
-                            lines[0] = lines[0].trim() + addition;
+                            processedLines.push(additionText);
+                            originalLinesStartIndex = 0;
                         }
-                        renderData['効果詳細'] = lines.join('\n');
+                        
+                        for (let i = originalLinesStartIndex; i < lines.length; i++) {
+                            let line = lines[i];
+                            if (line.trim()) { 
+                                if (!line.trim().startsWith('※') && !line.trim().startsWith('・') && !line.trim().startsWith('(')) {
+                                    const indentMatch = line.match(/^(\s*)/);
+                                    const indent = indentMatch ? indentMatch[1] : '';
+                                    line = indent + '・' + line.trimStart();
+                                }
+                                processedLines.push(line);
+                            } else if (processedLines.length > 0 && processedLines[processedLines.length - 1].trim()) {
+                                processedLines.push(line);
+                            }
+                        }
+                        renderData['効果詳細'] = processedLines.join('\n');
+                    } else {
+                        const lines = detail.split('\n');
+                        const addition = `(上限回数:${parsedName.count}回)`;
+                        if (lines.length > 0) {
+                            if (lines[0].trim().startsWith('[')) {
+                                if (lines.length > 1) {
+                                    lines[1] = lines[1].trim() + addition;
+                                } else {
+                                    lines.push(addition);
+                                }
+                            } else {
+                                lines[0] = lines[0].trim() + addition;
+                            }
+                            renderData['効果詳細'] = lines.join('\n');
+                        }
                     }
                 }
             }
