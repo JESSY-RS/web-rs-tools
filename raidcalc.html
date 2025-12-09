@@ -7,7 +7,8 @@
   <link rel="shortcut icon" href="favicon-raidcalc.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-raidcalc.png">
   <link rel="icon" type="image/png" href="android-chrome-144x144-raidcalc.png">
-  <title>７周年制圧戦・報酬効率比較ツール</title> <style>
+  <title>７周年制圧戦・報酬効率比較ツール</title> 
+  <style>
 
     body {
       margin: 20px;
@@ -898,32 +899,116 @@
       countInput: '',
     };
 
-    // ▼▼▼ アイテムごとのグレードデータ（デフォルト）ここから ▼▼▼
-    const itemData = {
-      // 覇衣進化
-      shinka: {
-        0: null, 6: null, 7: 92.5, 8: null, 9: 107.5, 10: 115.3
-      },
-      // 覇衣練磨
-      renma: {
-        0: null, 6: null, 7: 77.4, 8: null, 9: 101.1, 10: 111.9
-      },
-      // 雲海魔晶
-      unkai: {
-        0: null, 6: null, 7: 3243.0, 8: null, 9: 5047.0, 10: 6068.3
-      },
-      // 雷魔の石（既存データ）
-      raima: {
-        0: null, 6: null, 7: 276.6, 8: null, 9: 458.6, 10: 559.3
-      }
-    };
-    // ★★★ アイテムごとのグレードデータ（デフォルト）ここまで ★★★
+    // ▼▼▼ 自動切り替えロジックここから ▼▼▼
+    
+    // 切り替え日時設定: 2025/12/11 12:00:00 (JST)
+    const switchDate = new Date('2025-12-11T12:00:00+09:00'); 
+    const now = new Date();
+    
+    // デバッグ用フラグ判定（タイトルに★があるか）
+    let isNewDataMode = false;
+    
+    // タイトルの★をチェック（デバッグ用）
+    if (document.title.indexOf('★') !== -1) {
+        isNewDataMode = true;
+        // ユーザーに見えないように★を削除してタイトルを更新
+        document.title = document.title.replace('★', '');
+    } else if (now >= switchDate) {
+        // 現在時刻が指定日時を過ぎている場合
+        isNewDataMode = true;
+    }
+
+    // アイテムごとのグレードデータ
+    let itemData = {};
+
+    if (isNewDataMode) {
+        // 新データ (指定日時以降、またはデバッグ時)
+        itemData = {
+          // 覇衣進化
+          shinka: {
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
+          },
+          // 覇衣練磨
+          renma: {
+            0: null, 6: null, 7: 77.4, 8: null, 9: 101.1, 10: 111.9
+          },
+          // 雷魔の石 (旧データのraimaの値をunkaiにセット。表示はスクリプトで変更)
+          unkai: {
+            0: null, 6: null, 7: 276.6, 8: null, 9: 458.6, 10: 559.3
+          },
+          // トレジャーBOX (新規データ。表示はスクリプトで変更)
+          raima: {
+            0: 1, 6: 1, 7: 1, 8: 2, 9: 3, 10: 10
+          }
+        };
+    } else {
+        // 旧データ (デフォルト)
+        itemData = {
+          // 覇衣進化
+          shinka: {
+            0: null, 6: null, 7: 92.5, 8: null, 9: 107.5, 10: 115.3
+          },
+          // 覇衣練磨
+          renma: {
+            0: null, 6: null, 7: 77.4, 8: null, 9: 101.1, 10: 111.9
+          },
+          // 雲海魔晶
+          unkai: {
+            0: null, 6: null, 7: 3243.0, 8: null, 9: 5047.0, 10: 6068.3
+          },
+          // 雷魔の石（既存データ）
+          raima: {
+            0: null, 6: null, 7: 276.6, 8: null, 9: 458.6, 10: 559.3
+          }
+        };
+    }
+    // ★★★ 自動切り替えロジックここまで ★★★
 
     // ユーザー登録データ
     let userItemData = {};
 
     // ページロード時の処理
     window.onload = function () {
+      
+      // ▼▼▼ 新モード時の表示書き換え処理 ▼▼▼
+      if (isNewDataMode) {
+          // 1. テーブルの書き換え (Gr.10 成長判定回数)
+          const tableBody = document.querySelector('.grade-table tbody');
+          if (tableBody) {
+              const rows = tableBody.querySelectorAll('tr');
+              if (rows.length >= 6) {
+                  const cells = rows[5].querySelectorAll('td');
+                  if (cells.length >= 4) {
+                      cells[3].textContent = '30回';
+                  }
+              }
+          }
+
+          // 2. ラジオボタンのラベル書き換え
+          // unkai → 雷魔の石, raima → トレジャーBOX
+          const radioMap = {
+              'unkai': '雷魔の石',
+              'raima': 'ﾄﾚｼﾞｬｰBOX' // ラベルの長さ調整のため半角カナを使用するか、全角にするかは好みで調整可。ここでは全角で統一する場合は'トレジャーBOX'。ご指定の「ﾄﾚｼﾞｬｰBOX」に合わせます。
+          };
+
+          for (const [key, labelText] of Object.entries(radioMap)) {
+              // input[value="..."] を持つすべての要素を探す
+              const inputs = document.querySelectorAll(`input[value="${key}"]`);
+              inputs.forEach(input => {
+                  const parentLabel = input.parentElement;
+                  if (parentLabel) {
+                      // テキストノードを探して書き換える
+                      parentLabel.childNodes.forEach(node => {
+                          if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== '') {
+                              node.textContent = labelText;
+                          }
+                      });
+                  }
+              });
+          }
+      }
+      // ★★★ 表示書き換えここまで ★★★
+
       // ユーザーデータの読み込み
       loadUserData();
 
@@ -936,8 +1021,14 @@
       document.getElementById('countInput1').value = initialValues.countInput;
       document.getElementById('countInput2').value = initialValues.countInput;
 
-      document.getElementById('gradeSelect1').value = "7";
+      // ▼▼▼ デフォルトグレードの切り替え ▼▼▼
+      if (isNewDataMode) {
+          document.getElementById('gradeSelect1').value = "9"; // 新モード時は9
+      } else {
+          document.getElementById('gradeSelect1').value = "7"; // 旧モード時は7
+      }
       document.getElementById('gradeSelect2').value = "10";
+      // ★★★ グレード初期値ここまで ★★★
       
       document.getElementById('targetItemCount').value = "";
 

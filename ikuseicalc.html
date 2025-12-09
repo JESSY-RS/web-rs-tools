@@ -627,6 +627,135 @@
     let calculatedResult1 = null;
     let calculatedResult2 = null;
 
+    /* ▼▼▼▼▼▼▼▼▼ 自動切り替え設定エリア ▼▼▼▼▼▼▼▼▼ */
+
+    // 1. 切り替え基準日時の設定 (2025/12/11 12:00:00)
+    const switchTargetDate = new Date('2025/12/11 12:00:00');
+
+    // 2. 現在時刻とタイトルの★判定
+    // タイトルに「★」が含まれているか、または指定日時を過ぎている場合に true (新データ使用) となる
+    const isDebugMode = document.title.indexOf('★') !== -1;
+    const isPastTargetDate = new Date() >= switchTargetDate;
+    
+    const useNewData = isDebugMode || isPastTargetDate;
+
+    // 現在のモードをコンソールに表示（確認用）
+    console.log('Switch Mode:', useNewData ? 'NEW (After 12/11 or Debug)' : 'OLD (Before 12/11)');
+
+
+    /* ---------------------------------------------------------
+       【データ定義 1】 Pattern1（旧シムメシュ・アレツ・ノーア）
+       --------------------------------------------------------- */
+    
+    // ■ 旧設定 (Old)
+    const gradeConfigPattern1_Old = [
+      { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.01, count: 3,  label: "【grade 1】500万" },
+      { id: 2,  val: 1.11, count: 4,  label: "【grade 2】1000万" },
+      { id: 3,  val: 1.15, count: 6,  label: "【grade 3】5000万" },
+      { id: 4,  val: 1.36, count: 6,  label: "【grade 4】1億" },
+      { id: 5,  val: 2.20, count: 7,  label: "【grade 5】3億" },
+      { id: 6,  val: 2.90, count: 8,  label: "【grade 6】5億" },
+      { id: 7,  val: 3.60, count: 9,  label: "【grade 7】10億" },
+      { id: 8,  val: 4.35, count: 10, label: "【grade 8】50億" },
+      { id: 9,  val: 7.00, count: 15, label: "【grade 9】100億" },
+      { id: 10, val: 9.30, count: 20, label: "【grade X】200億" }
+    ];
+
+    // ■ 新設定 (New) ※必要に応じて数値を変更してください
+    const gradeConfigPattern1_New = [
+      { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.01, count: 3,  label: "【grade 1】500万" },
+      { id: 2,  val: 1.11, count: 4,  label: "【grade 2】1000万" },
+      { id: 3,  val: 1.15, count: 6,  label: "【grade 3】5000万" },
+      { id: 4,  val: 1.36, count: 6,  label: "【grade 4】1億" },
+      { id: 5,  val: 2.20, count: 7,  label: "【grade 5】3億" },
+      { id: 6,  val: 2.90, count: 8,  label: "【grade 6】5億" },
+      { id: 7,  val: 3.60, count: 9,  label: "【grade 7】10億" },
+      { id: 8,  val: 4.35, count: 10, label: "【grade 8】50億" },
+      { id: 9,  val: 7.00, count: 15, label: "【grade 9】100億" },
+      { id: 10, val: 9.30, count: 30, label: "【grade X】200億" }
+    ];
+
+
+    /* ---------------------------------------------------------
+       【データ定義 2】 Pattern2（旧シャムマベル・ラスボス）
+       --------------------------------------------------------- */
+
+    // ■ 旧設定 (Old)
+    const gradeConfigPattern2_Old = [
+      { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.01, count: 3,  label: "【grade 1】100万" },
+      { id: 2,  val: 1.11, count: 4,  label: "【grade 2】1000万" },
+      { id: 3,  val: 1.15, count: 6,  label: "【grade 3】5000万" },
+      { id: 4,  val: 1.36, count: 6,  label: "【grade 4】1億" },
+      { id: 5,  val: 2.20, count: 7,  label: "【grade 5】3億" },
+      { id: 6,  val: 2.90, count: 8,  label: "【grade 6】5億" },
+      { id: 7,  val: 3.60, count: 9,  label: "【grade 7】10億" },
+      { id: 8,  val: 4.35, count: 10, label: "【grade 8】30億" },
+      { id: 9,  val: 7.00, count: 15, label: "【grade 9】50億" },
+      { id: 10, val: 9.30, count: 20, label: "【grade X】100億" }
+    ];
+
+    // ■ 新設定 (New) ※必要に応じて数値を変更してください
+    const gradeConfigPattern2_New = [
+      { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.01, count: 3,  label: "【grade 1】100万" },
+      { id: 2,  val: 1.11, count: 4,  label: "【grade 2】1000万" },
+      { id: 3,  val: 1.15, count: 6,  label: "【grade 3】5000万" },
+      { id: 4,  val: 1.36, count: 6,  label: "【grade 4】1億" },
+      { id: 5,  val: 2.20, count: 7,  label: "【grade 5】3億" },
+      { id: 6,  val: 2.90, count: 8,  label: "【grade 6】5億" },
+      { id: 7,  val: 3.60, count: 9,  label: "【grade 7】10億" },
+      { id: 8,  val: 4.35, count: 10, label: "【grade 8】30億" },
+      { id: 9,  val: 7.00, count: 15, label: "【grade 9】50億" },
+      { id: 10, val: 9.30, count: 30, label: "【grade X】100億" }
+    ];
+
+
+    /* ---------------------------------------------------------
+       【初期値設定】 ページ読み込み時のデフォルト値
+       --------------------------------------------------------- */
+
+    // ■ 旧設定 (Old)
+    const defaultValues_Old = {
+        pattern1: {
+            count: "9",
+            bonus: "3.6",
+            grade: "7"
+        },
+        pattern2: {
+            count: "20",
+            bonus: "9.3",
+            grade: "10"
+        }
+    };
+
+    // ■ 新設定 (New) ※必要に応じて数値を変更してください
+    const defaultValues_New = {
+        pattern1: {
+            count: "15",
+            bonus: "7.0",
+            grade: "9"
+        },
+        pattern2: {
+            count: "30",
+            bonus: "9.3",
+            grade: "10"
+        }
+    };
+
+
+    /* ---------------------------------------------------------
+       使用するデータの決定 (フラグによる切り替え)
+       --------------------------------------------------------- */
+    const gradeConfigPattern1 = useNewData ? gradeConfigPattern1_New : gradeConfigPattern1_Old;
+    const gradeConfigPattern2 = useNewData ? gradeConfigPattern2_New : gradeConfigPattern2_Old;
+    const defaultValues       = useNewData ? defaultValues_New       : defaultValues_Old;
+
+    /* ▲▲▲▲▲▲▲▲▲ 設定エリア終了 ▲▲▲▲▲▲▲▲▲ */
+
+
     function toggleMenu() {
         const sideMenu = document.getElementById('sideMenu');
         const menuOverlay = document.getElementById('menuOverlay');
@@ -750,38 +879,6 @@
         // ▲ 追加ここまで ▲
     });
 
-    // ▼▼▼▼▼▼▼▼▼ メンテナンス箇所（データ定義・切替ロジック） ▼▼▼▼▼▼▼▼▼
-    
-    // データセット：Pattern1（旧シムメシュ・アレツ・ノーア）
-    const gradeConfigPattern1 = [
-      { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
-      { id: 1,  val: 1.01, count: 3,  label: "【grade 1】500万" },
-      { id: 2,  val: 1.11, count: 4,  label: "【grade 2】1000万" },
-      { id: 3,  val: 1.15, count: 6,  label: "【grade 3】5000万" },
-      { id: 4,  val: 1.36, count: 6,  label: "【grade 4】1億" },
-      { id: 5,  val: 2.20, count: 7,  label: "【grade 5】3億" },
-      { id: 6,  val: 2.90, count: 8,  label: "【grade 6】5億" },
-      { id: 7,  val: 3.60, count: 9,  label: "【grade 7】10億" },
-      { id: 8,  val: 4.35, count: 10, label: "【grade 8】50億" },
-      { id: 9,  val: 7.00, count: 15, label: "【grade 9】100億" },
-      { id: 10, val: 9.30, count: 20, label: "【grade X】200億" }
-    ];
-
-    // データセット：Pattern2（旧シャムマベル・ラスボス） ※デフォルト
-    const gradeConfigPattern2 = [
-      { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
-      { id: 1,  val: 1.01, count: 3,  label: "【grade 1】100万" },
-      { id: 2,  val: 1.11, count: 4,  label: "【grade 2】1000万" },
-      { id: 3,  val: 1.15, count: 6,  label: "【grade 3】5000万" },
-      { id: 4,  val: 1.36, count: 6,  label: "【grade 4】1億" },
-      { id: 5,  val: 2.20, count: 7,  label: "【grade 5】3億" },
-      { id: 6,  val: 2.90, count: 8,  label: "【grade 6】5億" },
-      { id: 7,  val: 3.60, count: 9,  label: "【grade 7】10億" },
-      { id: 8,  val: 4.35, count: 10, label: "【grade 8】30億" },
-      { id: 9,  val: 7.00, count: 15, label: "【grade 9】50億" },
-      { id: 10, val: 9.30, count: 20, label: "【grade X】100億" }
-    ];
-
     // 現在使用中の設定（初期値は空配列、ロード時に決定）
     let gradeConfig = []; 
 
@@ -816,7 +913,6 @@
          updateItemValue(2);
       }
     }
-    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     // プルダウンの選択肢を生成する関数
     function initGradeOptions() {
@@ -1099,8 +1195,7 @@
     }
 
     window.onload = function () {
-      // ※ initGradeOptions等はDOMContentLoadedのタイミングで呼ばれるため削除済
-
+      
       document.getElementById("計算式1").checked = true;
       document.getElementById('育成枠1').value = "5";
       document.getElementById('戦闘時1').value = "0";
@@ -1113,9 +1208,11 @@
       document.getElementById('所要分1').value = "0";
       document.getElementById('所要秒1').value = "0";
       document.getElementById('成長確率1').value = "10";
-      document.getElementById('成長判定回数1').value = "9"; 
-      document.getElementById('ボーナス倍率1').value = "3.6";
-      document.getElementById('gradeSelect1').value = "7";
+      
+      // ★設定値から反映 (pattern1)
+      document.getElementById('成長判定回数1').value = defaultValues.pattern1.count; 
+      document.getElementById('ボーナス倍率1').value = defaultValues.pattern1.bonus;
+      document.getElementById('gradeSelect1').value = defaultValues.pattern1.grade;
 
       document.getElementById("計算式2").checked = true;
       document.getElementById('育成枠2').value = "5";
@@ -1129,9 +1226,12 @@
       document.getElementById('所要分2').value = "0";
       document.getElementById('所要秒2').value = "0";
       document.getElementById('成長確率2').value = "10";
-      document.getElementById('成長判定回数2').value = "20"; 
-      document.getElementById('ボーナス倍率2').value = "9.3";
-      document.getElementById('gradeSelect2').value = "10";
+      
+      // ★設定値から反映 (pattern2)
+      document.getElementById('成長判定回数2').value = defaultValues.pattern2.count; 
+      document.getElementById('ボーナス倍率2').value = defaultValues.pattern2.bonus;
+      document.getElementById('gradeSelect2').value = defaultValues.pattern2.grade;
+
 
       const compareNum = [1, 2];
       compareNum.forEach(num => {
