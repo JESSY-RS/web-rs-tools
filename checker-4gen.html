@@ -451,11 +451,9 @@
     function closeMenu() {
         const sideMenu = document.getElementById('sideMenu');
         const menuOverlay = document.getElementById('menuOverlay');
-        const menuClose = document.getElementById('menuClose');
 
         sideMenu.classList.remove('open');
         menuOverlay.classList.remove('open');
-        menuClose.style.color = '#eee';
     }
 
     // フリックでメニュー開閉（スクロール誤作動対策版）
@@ -541,42 +539,103 @@
             console.error("ページ設定の保存に失敗しました:", error);
         }
     }
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        loadPageSettings();
-        document.body.style.zoom = pageSettings['checker-4gen_zoom'];
 
-    // UI更新用の関数を呼び出すように変更
-    updateColumnUI(pageSettings['checker-4gen_column']);
+    // --- 管理者モード・自動保存機能 ---
+    const ADMIN_KEY = 'checker-4gen_mode';
+    const DATA_KEY = 'checker-4gen_admin_data';
+    let isAdminMode = false;
 
-    });
+    function checkMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const modeParam = urlParams.get('mode');
 
-function updateColumnUI(columns) {
-    const mainContainer = document.getElementById('statusContainer');
-    const allColumnButtons = document.querySelectorAll('.column-controls .column-button');
+        // URLパラメータによるモード切り替え
+        if (modeParam === 'secret_admin_on') {
+            localStorage.setItem(ADMIN_KEY, 'admin');
+        } else if (modeParam === 'secret_debug_on') {
+            localStorage.setItem(ADMIN_KEY, 'debug');
+        }
 
-    // レイアウトクラスを更新
-    mainContainer.classList.remove('two-columns-main', 'four-columns-main');
-    if (columns === 2) {
-        mainContainer.classList.add('two-columns-main');
-    } else if (columns === 4) {
-        mainContainer.classList.add('four-columns-main');
+        // 保存されたモード設定を読み込み
+        const savedMode = localStorage.getItem(ADMIN_KEY);
+        isAdminMode = (savedMode === 'admin');
     }
 
-    // 対応するボタンを探してアクティブにする
-    allColumnButtons.forEach(btn => btn.classList.remove('active'));
-    let activeButton;
-    if (columns === 1) {
-        activeButton = document.querySelector('.column-button[onclick*="setColumns(1,"]');
-    } else if (columns === 2) {
-        activeButton = document.querySelector('.column-button[onclick*="setColumns(2,"]');
-    } else if (columns === 4) {
-        activeButton = document.querySelector('.column-button[onclick*="setColumns(4,"]');
+    function saveAdminData() {
+        if (!isAdminMode) return; // 管理者モードでなければ保存しない
+        
+        const result = {};
+        const allStars = document.querySelectorAll('.stars');
+        allStars.forEach(stars => {
+            const key = stars.dataset.key;
+            const starElems = stars.querySelectorAll('.star');
+            let starString = '';
+            starElems.forEach(s => starString += s.textContent);
+            result[key] = starString;
+        });
+        
+        // ローカルストレージに保存
+        localStorage.setItem(DATA_KEY, JSON.stringify(result));
     }
-    if (activeButton) {
-        activeButton.classList.add('active');
+
+    function loadAdminData() {
+        if (!isAdminMode) return; // 管理者モードでなければ読み込まない
+
+        try {
+            const savedData = localStorage.getItem(DATA_KEY);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                applyData(data);
+            }
+        } catch (e) {
+            console.error('Data load error', e);
+        }
     }
-}
+
+    function applyData(data) {
+        for (const key in data) {
+            const stars = document.querySelector(`.stars[data-key="${key}"]`);
+            if (stars) {
+                const starElems = stars.querySelectorAll('.star');
+                for (let i = 0; i < 5; i++) {
+                    starElems[i].textContent = data[key][i] || '☆';
+                    if (data[key][i] === '★') {
+                        starElems[i].classList.add('on');
+                    } else {
+                        starElems[i].classList.remove('on');
+                    }
+                }
+            }
+        }
+    }
+    // ----------------------------------
+
+    function updateColumnUI(columns) {
+        const mainContainer = document.getElementById('statusContainer');
+        const allColumnButtons = document.querySelectorAll('.column-controls .column-button');
+
+        // レイアウトクラスを更新
+        mainContainer.classList.remove('two-columns-main', 'four-columns-main');
+        if (columns === 2) {
+            mainContainer.classList.add('two-columns-main');
+        } else if (columns === 4) {
+            mainContainer.classList.add('four-columns-main');
+        }
+
+        // 対応するボタンを探してアクティブにする
+        allColumnButtons.forEach(btn => btn.classList.remove('active'));
+        let activeButton;
+        if (columns === 1) {
+            activeButton = document.querySelector('.column-button[onclick*="setColumns(1,"]');
+        } else if (columns === 2) {
+            activeButton = document.querySelector('.column-button[onclick*="setColumns(2,"]');
+        } else if (columns === 4) {
+            activeButton = document.querySelector('.column-button[onclick*="setColumns(4,"]');
+        }
+        if (activeButton) {
+            activeButton.classList.add('active');
+        }
+    }
 
     function toggleZoomControls(buttonElement) {
       const zoomButtons = buttonElement.parentElement;
@@ -608,24 +667,24 @@ function updateColumnUI(columns) {
     }
 
     // 列切り替え機能
-function setColumns(columns, buttonElement) {
-    // 新しいUI更新関数を呼び出す
-    updateColumnUI(columns);
+    function setColumns(columns, buttonElement) {
+        // 新しいUI更新関数を呼び出す
+        updateColumnUI(columns);
 
-    // ボタンの表示をトグル状態に戻す（ボタンクリック時のみ実行）
-    if (buttonElement) {
-        const columnButtonsContainer = buttonElement.closest('.column-buttons');
-        const columnToggle = columnButtonsContainer.querySelector('.column-toggle');
-        const columnControls = columnButtonsContainer.querySelector('.column-controls');
-        
-        columnControls.classList.remove('show');
-        columnToggle.style.display = 'block';
+        // ボタンの表示をトグル状態に戻す（ボタンクリック時のみ実行）
+        if (buttonElement) {
+            const columnButtonsContainer = buttonElement.closest('.column-buttons');
+            const columnToggle = columnButtonsContainer.querySelector('.column-toggle');
+            const columnControls = columnButtonsContainer.querySelector('.column-controls');
+            
+            columnControls.classList.remove('show');
+            columnToggle.style.display = 'block';
+        }
+
+        // 設定を更新して保存
+        pageSettings['checker-4gen_column'] = columns;
+        savePageSettings();
     }
-
-    // 設定を更新して保存
-    pageSettings['checker-4gen_column'] = columns;
-    savePageSettings();
-}
 
     const groups = [
       { title: "◆緋のピアス", color: "緋" },
@@ -649,6 +708,14 @@ function setColumns(columns, buttonElement) {
     function init() {
       const container = document.getElementById('statusContainer');
       container.innerHTML = '';
+      
+      // 管理者モードの場合、タイトルに (Admin) を追加
+      if (isAdminMode) {
+          const h1 = document.querySelector('h1');
+          if (h1 && !h1.innerHTML.includes('[Admin Mode: Auto-Save ON]')) {
+              h1.innerHTML += ' <span style="color:red;">[Admin Mode: Auto-Save ON]</span>';
+          }
+      }
     
       groups.forEach((group, groupIndex) => {
         const groupWrapper = document.createElement('div');
@@ -725,6 +792,8 @@ function setColumns(columns, buttonElement) {
                 this.textContent = '☆';
                 this.classList.remove('on');
               }
+              // 管理者モードの場合、変更を即座に保存
+              saveAdminData();
             });
             stars.appendChild(star);
           }
@@ -757,17 +826,24 @@ function setColumns(columns, buttonElement) {
         }
       }
 
-      document.getElementById('scrollDown').addEventListener('click', () => {
-        if (currentGroupIndex < groupTitles.length - 1) {
-          scrollToGroup(currentGroupIndex + 1);
-        }
-      });
+      // 要素が存在する場合のみイベントを追加
+      const upBtn = document.getElementById('scrollUp');
+      if (upBtn) {
+          upBtn.addEventListener('click', () => {
+            if (currentGroupIndex > 0) {
+              scrollToGroup(currentGroupIndex - 1);
+            }
+          });
+      }
 
-      document.getElementById('scrollUp').addEventListener('click', () => {
-        if (currentGroupIndex > 0) {
-          scrollToGroup(currentGroupIndex - 1);
-        }
-      });
+      const downBtn = document.getElementById('scrollDown');
+      if (downBtn) {
+          downBtn.addEventListener('click', () => {
+            if (currentGroupIndex < groupTitles.length - 1) {
+              scrollToGroup(currentGroupIndex + 1);
+            }
+          });
+      }
     }
 
     function exportState() {
@@ -795,20 +871,9 @@ function setColumns(columns, buttonElement) {
       reader.onload = function (event) {
         try {
           const data = JSON.parse(event.target.result);
-          for (const key in data) {
-            const stars = document.querySelector(`.stars[data-key="${key}"]`);
-            if (stars) {
-              const starElems = stars.querySelectorAll('.star');
-              for (let i = 0; i < 5; i++) {
-                starElems[i].textContent = data[key][i] || '☆';
-                if (data[key][i] === '★') {
-                  starElems[i].classList.add('on');
-                } else {
-                  starElems[i].classList.remove('on');
-                }
-              }
-            }
-          }
+          applyData(data);
+          // 管理者モードの場合、インポートした内容も即保存
+          saveAdminData();
         } catch (error) {
           alert('ファイルの内容が不正です。');
         }
@@ -817,12 +882,16 @@ function setColumns(columns, buttonElement) {
     });
 
     // 初期化
-    init();
+    document.addEventListener('DOMContentLoaded', () => {
+        checkMode(); // モードチェック
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['checker-4gen_zoom'];
 
-    // ページをリロードしたらサイドメニューを呼び出す
-    window.onload = function () {
-        loadSideMenu();
-    }
+        init(); // 画面構築
+
+        loadAdminData(); // 管理者モードならデータを復元
+        updateColumnUI(pageSettings['checker-4gen_column']);
+    });
 
   </script>
 

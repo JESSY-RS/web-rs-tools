@@ -879,6 +879,40 @@
     // =========================================================================
     // === グローバル変数と共通関数 ==================================================
     // =========================================================================
+    
+    // --- モード設定 (URLパラメータ & ローカルストレージ判定) ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramMode = urlParams.get('mode');
+    
+    // 永続化用のキー
+    const ADMIN_MODE_PERSIST_KEY = 'RenmaArmorAdminModeEnabled'; 
+    const ADMIN_DATA_KEY = 'RenmaArmorAdminData'; // 管理者モード用保存キー
+
+    // URLパラメータがあれば設定を更新（維持または解除）
+    if (paramMode === 'secret_admin_on') {
+        // 管理者モードを有効化して永続化
+        localStorage.setItem(ADMIN_MODE_PERSIST_KEY, 'true');
+    } else if (paramMode === 'secret_debug_on') {
+        // デバッグモードでアクセスした場合、管理者モード（自動保存）を解除する
+        localStorage.removeItem(ADMIN_MODE_PERSIST_KEY);
+    }
+
+    // URLパラメータ または ローカルストレージのフラグ で管理者モードを判定
+    const isAdminMode = (localStorage.getItem(ADMIN_MODE_PERSIST_KEY) === 'true');
+    const isDebugMode = (paramMode === 'secret_debug_on');
+
+    // デバッグログ用関数
+    function debugLog(...args) {
+        if (isDebugMode) {
+            console.log('[DEBUG]', ...args);
+        }
+    }
+
+    if (isAdminMode) {
+        // タイトル変更はDOMContentLoadedで行うが、ログはここで出す
+        debugLog("Admin Mode Active (Auto-save enabled).");
+    }
+
     let sharedArmorData = []; // 3つのタブで共有するJSONデータ
     let tabScrollPositions = { list: 0, top5: 0, calc: 0 };
 
@@ -942,13 +976,22 @@
             }
         });
 
+        // データ同期
+        syncDataFromListTab();
+
         if (isDirty) {
             // 未保存の変更があるため、バックアップを保存
-            syncDataFromListTab();
             localStorage.setItem(UNSAVED_DATA_KEY, JSON.stringify(sharedArmorData));
             localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: true }));
+            
+            // --- 管理者モード：自動保存 ---
+            if (isAdminMode) {
+                localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(sharedArmorData));
+                debugLog("Auto-saved to Admin Key.");
+            }
+
         } else {
-            // データが保存されたとみなし、バックアップを削除
+            // データが保存されたとみなし、バックアップを削除 (通常モードのみ)
             localStorage.removeItem(UNSAVED_DATA_KEY);
             localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: false }));
             
@@ -975,6 +1018,7 @@
             });
         });
         sharedArmorData = partsData;
+        debugLog("Data Synced:", sharedArmorData.length, "items");
     }
 
 
@@ -1028,7 +1072,15 @@
             'top5': '練磨(防具)アビリティ TOP5',
             'calc': '練磨(防具)自動選定ツール'
         };
-        document.getElementById('page-title').textContent = titles[tabName];
+        let titleText = titles[tabName];
+        // 元のタイトルをセット
+        const pageTitleEl = document.getElementById('page-title');
+        pageTitleEl.textContent = titleText;
+        
+        // Adminモードなら赤文字のHTMLを追加
+        if (isAdminMode) {
+            pageTitleEl.innerHTML += " <span style='color: red;'>[Admin Mode: Auto-Save ON]</span>";
+        }
 
         const newScrollY = tabScrollPositions[tabName] || 0;
         window.scrollTo(0, newScrollY);
@@ -1106,6 +1158,11 @@
 
         const initialZoomKey = tabToZoomKey[activeTab];
         document.body.style.zoom = pageSettings[initialZoomKey];
+        
+        if (isAdminMode) {
+             // textContent ではなく innerHTML を使い、spanタグで色指定を行う
+             document.getElementById('page-title').innerHTML += " <span style='color: red;'>[Admin Mode: Auto-Save ON]</span>";
+        }
     });
 
     async function initializeCommonData() {
@@ -1121,6 +1178,7 @@
             loadCsvData_calc('data/armor-sub-ability.csv', subNativeAbilities),
             loadUniqueAbilities_top5()
         ]);
+        debugLog("Common Data Initialized");
     }
 
     function setupCommonUI() {
@@ -1341,23 +1399,20 @@
             });
             newPart.querySelector('.drag-handle').style.display = isEditMode ? 'block' : 'none';
             newPart.querySelector('.favorite-toggle').style.display = isEditMode ? 'none' : 'block';
-            // newPart.dataset.originalIndex = partsContainer.children.length; // [削除]
-
+            
             if (basePart) {
                 basePart.after(newPart); // DOM挿入
 
-                // [変更] originalPartOrder を更新
+                // originalPartOrder を更新
                 const baseIndex = originalPartOrder.indexOf(basePart);
                 if (baseIndex > -1) {
                     originalPartOrder.splice(baseIndex + 1, 0, newPart);
                 } else {
-                    // basePart が originalPartOrder に見つからない場合
-                    // DOMの現在の状態を originalPartOrder に反映する
                     originalPartOrder = Array.from(partsContainer.children);
                 }
             } else {
                 partsContainer.appendChild(newPart); // DOM挿入 (末尾)
-                originalPartOrder.push(newPart); // [変更]
+                originalPartOrder.push(newPart); 
             }
 
             if (data) {
@@ -1387,10 +1442,6 @@
                 setupAbilityDropdown(newPart, 'SS');
             }
             
-            // if (isEditMode) { // [削除]
-            //     originalPartOrder = Array.from(partsContainer.children); // [削除]
-            // } // [削除]
-            
             if (setDirty) {
                 setDataDirty(true);
             }
@@ -1411,8 +1462,15 @@
                     }
                     
                     partsContainer.innerHTML = '';
-                    // インポート時はsetDirtyをfalseにして、最後にまとめて状態管理する
-                    data.forEach(partData => addNewPart(partData, null, false));
+                    
+                    // 【修正】データが空配列の場合でも、少なくとも1つのパネルを追加する
+                    if (data.length === 0) {
+                        addNewPart(null, null, false);
+                    } else {
+                        // インポート時はsetDirtyをfalseにして、最後にまとめて状態管理する
+                        data.forEach(partData => addNewPart(partData, null, false));
+                    }
+
                     originalPartOrder = Array.from(partsContainer.children);
 
                     syncDataFromListTab();
@@ -1421,6 +1479,11 @@
                     
                     // インポート成功時は「保存済み」状態にする（バックアップもクリア）
                     setDataDirty(false);
+                    if (isAdminMode) {
+                         // 強制的にAdminDataに保存させる
+                         localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(sharedArmorData));
+                         debugLog("Imported data saved to Admin Key.");
+                    }
 
                 } catch (error) {
                     alert('JSONファイルの読み込みに失敗しました。\n' + error);
@@ -1657,9 +1720,6 @@
             }
             else if (part && target.matches('.add-part-inline-btn')) {
                 addNewPart(null, part);
-                // if (isEditMode) { // [削除]
-                //     originalPartOrder = Array.from(partsContainer.children); // [削除]
-                // } // [削除]
             }
             else if (part && target.matches('.delete-btn')) {
                 const deletablePanelCount = document.querySelectorAll('#tab-list .armor-part .delete-btn').length;
@@ -1668,15 +1728,11 @@
                     const scrollY = window.scrollY;
                     part.remove(); // DOMから削除
                     
-                    // [変更] originalPartOrder からも削除
                     const partIndex = originalPartOrder.indexOf(part);
                     if (partIndex > -1) {
                         originalPartOrder.splice(partIndex, 1);
                     }
                     
-                    // if (isEditMode) { // [削除]
-                    //     originalPartOrder = Array.from(partsContainer.children); // [削除]
-                    // } // [削除]
                     setDataDirty(true);
                     window.scrollTo(0, scrollY);
                 }
@@ -2347,6 +2403,11 @@
 
         function checkForUnsavedBackup() {
             try {
+                // 管理者モードの場合はこのバックアップチェックは邪魔になる可能性があるが、
+                // 既存の「未保存のExportしてないデータ」は別枠で管理されているため、そのまま動作させる。
+                // ただし、もしAdminDataがロードされているなら、この警告は不要かもしれない。
+                // 今回は既存のロジックを優先して残す。
+
                 const settings = JSON.parse(localStorage.getItem(BACKUP_SETTINGS_KEY));
                 if (settings && settings.hasUnsavedChanges) {
                     const backupData = localStorage.getItem(UNSAVED_DATA_KEY);
@@ -2376,7 +2437,7 @@
                             
                             partsContainer.innerHTML = '';
                             
-                            // 復元時はsetDirtyをfalseにして、最後にまとめて状態管理する
+                            // 【修正】復元データが空の場合でも、1つパネルを生成する
                             if (restoredData && restoredData.length > 0) {
                                restoredData.forEach(partData => addNewPart(partData, null, false));
                             } else {
@@ -2405,7 +2466,34 @@
 
         setupSearchPanel();
         setupSortPanel();
-        addNewPart(null, null, false); // 初期表示時はDirtyフラグを立てない
+        
+        // --- 初期ロード処理 ---
+        // 管理者モードなら保存されたデータをロード、そうでなければデフォルト(空1つ)
+        let loadedFromAdmin = false;
+        if (isAdminMode) {
+            const adminSavedData = localStorage.getItem(ADMIN_DATA_KEY);
+            if (adminSavedData) {
+                try {
+                    const parsedData = JSON.parse(adminSavedData);
+                    if (Array.isArray(parsedData) && parsedData.length > 0) {
+                        parsedData.forEach(partData => addNewPart(partData, null, false));
+                        loadedFromAdmin = true;
+                        debugLog("Loaded data from Admin Key");
+                        // ロード後は同期して他のタブも更新
+                        syncDataFromListTab();
+                        updateTop5Tab(sharedArmorData);
+                        updateCalcTab(sharedArmorData);
+                    }
+                } catch (e) {
+                    console.error("Admin data corrupted", e);
+                }
+            }
+        }
+
+        if (!loadedFromAdmin) {
+            addNewPart(null, null, false); // 初期表示時はDirtyフラグを立てない
+        }
+
         originalPartOrder = Array.from(partsContainer.children);
         
         document.getElementById('edit-mode-btn').addEventListener('click', toggleEditMode);
@@ -3149,6 +3237,6 @@
         document.getElementById(`result-area-${charId}`).innerHTML = `<p>条件を選択して計算を実行してください。</p>`;
     }
 
-    </script>
+</script>
 </body>
 </html>

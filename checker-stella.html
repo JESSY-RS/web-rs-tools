@@ -507,14 +507,17 @@
       const oneBtn = document.getElementById('oneColumnBtn');
       const twoBtn = document.getElementById('twoColumnsBtn');
       
+      // コンテナがまだ生成されていない場合のガード
+      if (!container) return;
+
       if (columns === 1) {
         container.classList.remove('two-columns');
-        oneBtn.classList.add('active');
-        twoBtn.classList.remove('active');
+        if(oneBtn) oneBtn.classList.add('active');
+        if(twoBtn) twoBtn.classList.remove('active');
       } else {
         container.classList.add('two-columns');
-        oneBtn.classList.remove('active');
-        twoBtn.classList.add('active');
+        if(oneBtn) oneBtn.classList.remove('active');
+        if(twoBtn) twoBtn.classList.add('active');
       }
       pageSettings['checker-stella_column'] = columns;
       savePageSettings();
@@ -566,12 +569,6 @@
         }
     }
     
-    document.addEventListener('DOMContentLoaded', () => {
-        loadPageSettings();
-        document.body.style.zoom = pageSettings['checker-stella_zoom'];
-        setColumns(pageSettings['checker-stella_column']);
-    });
-
     let zoomControlsVisible = false;
 
     function toggleZoomControls() {
@@ -589,13 +586,75 @@
       }
     }
 
-    // ズームコントロール以外をクリックしたら閉じる
-    //document.addEventListener('click', function(e) {
-    //  const zoomButtons = e.target.closest('.zoom-buttons');
-    //  if (!zoomButtons && zoomControlsVisible) {
-    //    toggleZoomControls();
-    //  }
-    //});
+    // --- 管理者モード・自動保存機能 ---
+    const ADMIN_KEY = 'checker-stella_mode';
+    const DATA_KEY = 'checker-stella_admin_data';
+    let isAdminMode = false;
+
+    function checkMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const modeParam = urlParams.get('mode');
+
+        // URLパラメータによるモード切り替え
+        if (modeParam === 'secret_admin_on') {
+            localStorage.setItem(ADMIN_KEY, 'admin');
+        } else if (modeParam === 'secret_debug_on') {
+            localStorage.setItem(ADMIN_KEY, 'debug');
+        }
+
+        // 保存されたモード設定を読み込み
+        const savedMode = localStorage.getItem(ADMIN_KEY);
+        isAdminMode = (savedMode === 'admin');
+    }
+
+    function saveAdminData() {
+        if (!isAdminMode) return; // 管理者モードでなければ保存しない
+        
+        const result = {};
+        const allStars = document.querySelectorAll('.stars');
+        allStars.forEach(stars => {
+            const key = stars.dataset.key;
+            const starElems = stars.querySelectorAll('.star');
+            let starString = '';
+            starElems.forEach(s => starString += s.textContent);
+            result[key] = starString;
+        });
+        
+        // ローカルストレージに保存
+        localStorage.setItem(DATA_KEY, JSON.stringify(result));
+    }
+
+    function loadAdminData() {
+        if (!isAdminMode) return; // 管理者モードでなければ読み込まない
+
+        try {
+            const savedData = localStorage.getItem(DATA_KEY);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                applyData(data);
+            }
+        } catch (e) {
+            console.error('Data load error', e);
+        }
+    }
+
+    function applyData(data) {
+        for (const key in data) {
+            const stars = document.querySelector(`.stars[data-key="${key}"]`);
+            if (stars) {
+                const starElems = stars.querySelectorAll('.star');
+                for (let i = 0; i < 5; i++) {
+                    starElems[i].textContent = data[key][i] || '☆';
+                    if (data[key][i] === '★') {
+                        starElems[i].classList.add('on');
+                    } else {
+                        starElems[i].classList.remove('on');
+                    }
+                }
+            }
+        }
+    }
+    // ----------------------------------
 
     const groups = [
       { title: "ステライヤリング", color: "M01" },
@@ -633,6 +692,14 @@
     function init() {
       const container = document.getElementById('statusContainer');
       container.innerHTML = '';
+      
+      // 管理者モードの場合、タイトルに (Admin) を追加
+      if (isAdminMode) {
+          const h1 = document.querySelector('h1');
+          if (h1 && !h1.innerHTML.includes('[Admin Mode: Auto-Save ON]')) {
+              h1.innerHTML += ' <span style="color:red;">[Admin Mode: Auto-Save ON]</span>';
+          }
+      }
 
       groups.forEach(group => {
         const groupTitle = document.createElement('div');
@@ -693,6 +760,8 @@
                 this.textContent = '☆';
                 this.classList.remove('on');
               }
+              // 管理者モードの場合、変更を即座に保存
+              saveAdminData();
             });
             stars.appendChild(star);
           }
@@ -738,21 +807,9 @@
       reader.onload = function (event) {
         try {
           const data = JSON.parse(event.target.result);
-          for (const key in data) {
-            const stars = document.querySelector(`.stars[data-key="${key}"]`);
-            if (stars) {
-              const starElems = stars.querySelectorAll('.star');
-              for (let i = 0; i < 5; i++) {
-                starElems[i].textContent = data[key][i] || '☆';
-                if (data[key][i] === '★') {
-                  starElems[i].classList.add('on');
-                } else {
-                  starElems[i].classList.remove('on');
-                }
-              }
-            }
-          }
-          //alert('状態を読み込みました。');
+          applyData(data);
+          // 管理者モードの場合、インポートした内容も即保存
+          saveAdminData();
         } catch (error) {
           alert('ファイルの内容が不正です。');
         }
@@ -761,12 +818,18 @@
     });
 
     // 初期化
-    init();
+    document.addEventListener('DOMContentLoaded', () => {
+        checkMode(); // モードチェック
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['checker-stella_zoom'];
+        
+        init(); // 画面構築
 
-    // ページをリロードしたらサイドメニューを呼び出す
-    window.onload = function () {
-        loadSideMenu();
-    }
+        loadAdminData(); // 管理者モードならデータを復元
+        
+        // 列設定の適用（init後に実行が必要）
+        setColumns(pageSettings['checker-stella_column']);
+    });
 
   </script>
 
