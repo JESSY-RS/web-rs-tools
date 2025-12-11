@@ -27,7 +27,6 @@
     #deleteMessage {
       color: #2A2A2A;
       margin-top: 5px;
-      /* ▼修正：下の表との余白を広げる */
       margin-bottom: 20px; 
       min-height: 1.2em; 
       font-weight: normal;
@@ -926,7 +925,7 @@
         itemData = {
           // 覇衣進化
           shinka: {
-            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: 341.9
           },
           // 覇衣練磨
           renma: {
@@ -962,7 +961,7 @@
           }
         };
     }
-    // ★★★ 自動切り替えロジックここまで ★★★
+    // ◆◆◆ 自動切り替えロジックここまで ◆◆◆
 
     // ユーザー登録データ
     let userItemData = {};
@@ -1023,7 +1022,7 @@
 
       // ▼▼▼ デフォルトグレードの切り替え ▼▼▼
       if (isNewDataMode) {
-          document.getElementById('gradeSelect1').value = "9"; // 新モード時は9
+          document.getElementById('gradeSelect1').value = "7"; // 新モード時は9
       } else {
           document.getElementById('gradeSelect1').value = "7"; // 旧モード時は7
       }
