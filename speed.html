@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>周回スピード検索</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
+    <style>
+        /* style-info.html のデザイン定義を流用 */
+        :root {
+            --main-bg: #fff;
+            --main-text: #000;
+            --controls-bg: #f0f0f0;
+            --controls-border: #ddd;
+            --select-bg: #fff;
+            --select-text: #000;
+            --select-border: #ccc;
+            --link-color: #007bff;
+            --table-border: #ddd;
+            --table-stripe: #f9f9f9;
+            --th-bg: #e9ecef;
+        }
+        [data-theme="dark"] {
+            --main-bg: #2A2A2A;
+            --main-text: #f2f2f2;
+            --controls-bg: #3a3a3a;
+            --controls-border: #555;
+            --select-bg: #4a4a4a;
+            --select-text: #f2f2f2;
+            --select-border: #666;
+            --link-color: #1D9BF0;
+            --table-border: #555;
+            --table-stripe: #333;
+            --th-bg: #444;
+        }
+
+        body {
+            font-family: 'Segoe UI', Meiryo, sans-serif;
+            margin: 0;
+            padding: 15px;
+            background-color: var(--main-bg);
+            color: var(--main-text);
+            font-size: 16px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #theme-toggle {
+            cursor: pointer;
+            color: #f5c542;
+            user-select: none;
+            margin-right: -5px;
+        }
+
+        .controls-wrapper {
+            background: var(--controls-bg);
+            border: 1px solid var(--controls-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .tag-category {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .tag-category-title {
+            font-weight: bold;
+            min-width: 80px;
+            flex-shrink: 0;
+            color: var(--link-color);
+            padding-top: 6px;
+            line-height: 1.5;
+        }
+
+        .tag-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            flex: 1;
+        }
+
+        /* 通常のタグボタン */
+        .tag-btn {
+            padding: 6px 12px;
+            font-size: 0.95em;
+            border: 1px solid var(--select-border);
+            border-radius: 15px;
+            background-color: var(--select-bg);
+            color: var(--select-text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .tag-btn:hover {
+            border-color: var(--link-color);
+        }
+
+        .tag-btn.active {
+            background-color: var(--link-color);
+            color: white;
+            font-weight: bold;
+            border-color: var(--link-color);
+        }
+
+        /* --- カラー定義 --- */
+        .tag-btn[data-value="火"].active,
+        .tag-btn[data-value="熱"].active {
+            background-color: red !important;
+            border-color: red !important;
+            color: white !important;
+        }
+        .tag-btn[data-value="水"].active,
+        .tag-btn[data-value="冷"].active {
+            background-color: dodgerblue !important;
+            border-color: dodgerblue !important;
+            color: white !important;
+        }
+        .tag-btn[data-value="風"].active {
+            background-color: forestgreen !important;
+            border-color: forestgreen !important;
+            color: white !important;
+        }
+        .tag-btn[data-value="土"].active {
+            background-color: chocolate !important;
+            border-color: chocolate !important;
+            color: white !important;
+        }
+        .tag-btn[data-value="雷"].active {
+            background-color: darkorange !important;
+            border-color: darkorange !important;
+            color: white !important;
+        }
+        .tag-btn[data-value="光"].active,
+        .tag-btn[data-value="陽"].active {
+            background-color: orangered !important;
+            border-color: orangered !important;
+            color: white !important;
+        }
+        .tag-btn[data-value="闇"].active,
+        .tag-btn[data-value="陰"].active {
+            background-color: darkorchid !important;
+            border-color: darkorchid !important;
+            color: white !important;
+        }
+
+        /* 検索入力欄周り */
+        .search-input-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+
+        #skillNameInput {
+            padding: 8px;
+            font-size: 1em;
+            border: 1px solid var(--select-border);
+            border-radius: 4px;
+            background-color: var(--select-bg);
+            color: var(--select-text);
+            width: 300px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .search-radio-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            padding-top: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .search-input-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                width: 100%;
+            }
+            #skillNameInput {
+                width: 100%;
+            }
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .radio-label input[type="radio"] {
+            cursor: pointer;
+            transform: scale(1.1);
+        }
+
+        /* テーブルレイアウト */
+        .results-table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.95em;
+            table-layout: fixed; 
+        }
+
+        th, td {
+            border: 1px solid var(--table-border);
+            padding: 8px 12px;
+            text-align: left;
+            word-wrap: break-word;
+        }
+
+        th {
+            background-color: var(--th-bg);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--table-stripe);
+        }
+        
+        .num-col {
+            text-align: right;
+        }
+
+        .result-count {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .sorted-col {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+        [data-theme="dark"] .sorted-col {
+            background-color: rgba(29, 155, 240, 0.2);
+        }
+
+        /* キャラ名展開リンクのスタイル */
+        .expand-chars-link {
+            color: var(--link-color);
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+        .expand-chars-link:hover {
+            opacity: 0.8;
+        }
+
+        /* 機能制限時のメッセージ */
+        #access-denied-message {
+            display: none;
+            text-align: center;
+            padding: 50px 20px;
+            font-size: 1.2em;
+            color: #888;
+            border: 1px dashed var(--controls-border);
+            border-radius: 8px;
+            margin-top: 20px;
+            background-color: var(--controls-bg);
+        }
+
+        /* --- 列幅の指定 --- */
+        th:nth-child(1), td:nth-child(1) { width: 20%; } /* キャラ名 */
+        th:nth-child(2), td:nth-child(2) { width: 25%; } /* スキル名 */
+        th:nth-child(3), td:nth-child(3) { width: 8%; } /* 種別 */
+        th:nth-child(4), td:nth-child(4) { width: 8%; } /* 属性 */
+        th:nth-child(5), td:nth-child(5) { width: 8%; } /* 範囲 */
+        th:nth-child(6), td:nth-child(6) { width: 8%; } /* 威力 */
+        th:nth-child(7), td:nth-child(7) { width: 8%; } /* 攻撃回数 */
+        th:nth-child(8), td:nth-child(8) { width: 8%; } /* 1R */
+        th:nth-child(9), td:nth-child(9) { width: 8%; } /* 2R */
+
+    </style>
+</head>
+<body>
+
+    <h1><span id="theme-toggle">★</span>周回スピード検索 <span id="admin-indicator"></span></h1>
+
+    <div id="access-denied-message">
+        現在、この機能は一般公開されていません。
+    </div>
+
+    <div id="search-app-container" style="display: none;">
+        <div class="controls-wrapper">
+            <div class="tag-category">
+                <div class="tag-category-title">名前検索</div>
+                <div class="search-input-group">
+                    <input type="text" id="skillNameInput" placeholder="検索語を入力...">
+                    <div class="search-radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="searchTarget" value="chara" checked>
+                            キャラ名
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="searchTarget" value="skill">
+                            スキル名
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tag-category">
+                <div class="tag-category-title">ラウンド</div>
+                <div class="tag-buttons" id="roundContainer"></div>
+                <small style="margin-left: 10px;">※数値が小さい順にソート</small>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--controls-border); margin: 15px 0;">
+
+            <div class="tag-category">
+                <div class="tag-category-title">種別</div>
+                <div class="tag-buttons" id="typeContainer"></div>
+            </div>
+
+            <div class="tag-category">
+                <div class="tag-category-title">属性</div>
+                <div class="tag-buttons" id="attrContainer"></div>
+            </div>
+
+            <div class="tag-category">
+                <div class="tag-category-title">範囲</div>
+                <div class="tag-buttons" id="rangeContainer">
+                    <button class="tag-btn" data-group="range" data-value="単体">単体</button>
+                    <button class="tag-btn" data-group="range" data-value="全体">全体</button>
+                    <button class="tag-btn" data-group="range" data-value="縦一列">縦一列</button>
+                    <button class="tag-btn" data-group="range" data-value="横一列">横一列</button>
+                </div>
+            </div>
+
+            <div class="tag-category">
+                <div class="tag-category-title">威力</div>
+                <div class="tag-buttons" id="powerContainer"></div>
+            </div>
+
+        </div>
+
+        <div id="resultCount" class="result-count"></div>
+        <div class="results-table-wrapper">
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>キャラ名</th>
+                        <th>スキル名</th>
+                        <th>種別</th>
+                        <th>属性</th>
+                        <th>範囲</th>
+                        <th>威力</th>
+                        <th>攻撃回数</th>
+                        <th class="num-col">1R</th>
+                        <th class="num-col">2R</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- 定数定義 ---
+        const ADMIN_KEY = 'SpeedSearchAdminModeEnabled';
+        const TYPES = ['剣', '大剣', '斧', '棍棒', '体術', '銃', '小剣', '槍', '弓', '火', '水', '風', '土', '光', '闇'];
+        const ATTRS = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
+        const POWERS = ['SSSS', 'SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E'];
+        const ROUNDS = ['1R', '2R'];
+
+        let allData = [];
+
+        // --- 初期化 ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            checkAdminMode(); // Adminモードチェック
+
+            // Adminモードの時のみ検索機能を初期化
+            if (isAdminMode()) {
+                initSearchApp();
+            } else {
+                showAccessDenied();
+            }
+        });
+
+        // --- Adminモード判定ロジック ---
+        function checkAdminMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+
+            if (mode === 'secret_admin_on') {
+                localStorage.setItem(ADMIN_KEY, 'true');
+            } else if (mode === 'secret_debug_on') {
+                localStorage.removeItem(ADMIN_KEY);
+            }
+        }
+
+        function isAdminMode() {
+            return localStorage.getItem(ADMIN_KEY) === 'true';
+        }
+
+        function showAccessDenied() {
+            document.getElementById('access-denied-message').style.display = 'block';
+            document.getElementById('search-app-container').style.display = 'none';
+        }
+
+        function initSearchApp() {
+            // UI表示
+            document.getElementById('access-denied-message').style.display = 'none';
+            document.getElementById('search-app-container').style.display = 'block';
+            document.getElementById('admin-indicator').innerHTML = "<span style='color: red; font-size: 0.6em; vertical-align: middle;'></span>";
+
+            generateButtons('typeContainer', 'type', TYPES);
+            generateButtons('attrContainer', 'attr', ATTRS);
+            generateButtons('powerContainer', 'power', POWERS);
+            generateButtons('roundContainer', 'round', ROUNDS);
+
+            // タグボタンのイベント
+            document.querySelectorAll('.tag-buttons').forEach(container => {
+                container.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('tag-btn')) {
+                        toggleButton(e.target);
+                        performSearch();
+                    }
+                });
+            });
+
+            // 名前検索入力欄のイベント
+            const skillNameInput = document.getElementById('skillNameInput');
+            skillNameInput.addEventListener('input', performSearch);
+            skillNameInput.addEventListener('focus', function() {
+                this.select();
+            });
+            
+            // ラジオボタンの切り替え
+            document.querySelectorAll('input[name="searchTarget"]').forEach(radio => {
+                radio.addEventListener('change', performSearch);
+            });
+
+            // テーブル内のクリックイベント (キャラ名展開用)
+            document.querySelector('#resultsTable').addEventListener('click', (e) => {
+                if (e.target.classList.contains('expand-chars-link')) {
+                    e.preventDefault();
+                    const cell = e.target.closest('td');
+                    const summary = cell.querySelector('.char-summary');
+                    const full = cell.querySelector('.char-full');
+                    if (summary && full) {
+                        summary.style.display = 'none';
+                        full.style.display = 'inline';
+                    }
+                }
+            });
+
+            loadCsvData();
+        }
+
+        // --- CSV読み込み ---
+        function loadCsvData(encoding = null) {
+            const config = {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                transformHeader: function(h) {
+                    return h.trim();
+                },
+                complete: (results) => {
+                    const data = results.data;
+                    if (data.length === 0 || data[0]['種別'] === undefined) {
+                        if (!encoding) {
+                            loadCsvData('Shift-JIS');
+                            return;
+                        } else {
+                            document.querySelector('#resultsTable tbody').innerHTML = 
+                                '<tr><td colspan="9" style="color:red; text-align:center;">データの読み込みに失敗しました。</td></tr>';
+                            return;
+                        }
+                    }
+                    allData = data;
+                    performSearch();
+                },
+                error: (err) => {
+                    document.querySelector('#resultsTable tbody').innerHTML = '<tr><td colspan="9">エラー: ' + err.message + '</td></tr>';
+                }
+            };
+            if (encoding) {
+                config.encoding = encoding;
+            }
+            Papa.parse('data/skill-speed.csv', config);
+        }
+
+        // --- ヘルパー関数: 行から全キャラ名を取得 ---
+        function getAllCharacters(row) {
+            const chars = [];
+            if (row['キャラ']) chars.push(row['キャラ']);
+            let i = 2;
+            while (row['キャラ' + i] !== undefined) {
+                if (row['キャラ' + i].trim() !== '') {
+                    chars.push(row['キャラ' + i]);
+                }
+                i++;
+            }
+            return chars;
+        }
+
+        // --- ボタン生成/切替 ---
+        function generateButtons(containerId, groupName, values) {
+            const container = document.getElementById(containerId);
+            values.forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = 'tag-btn';
+                btn.textContent = val;
+                btn.dataset.group = groupName;
+                btn.dataset.value = val;
+                container.appendChild(btn);
+            });
+        }
+
+        function toggleButton(btn) {
+            const group = btn.dataset.group;
+            if (group === 'round') {
+                const parent = btn.parentElement;
+                const isActive = btn.classList.contains('active');
+                parent.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('active'));
+                if (!isActive) btn.classList.add('active');
+            } else {
+                btn.classList.toggle('active');
+            }
+        }
+
+        // --- 検索・表示 ---
+        function performSearch() {
+            const inputVal = document.getElementById('skillNameInput').value.trim();
+            const searchTarget = document.querySelector('input[name="searchTarget"]:checked').value;
+
+            const getActiveValues = (group) => {
+                return Array.from(document.querySelectorAll(`.tag-btn[data-group="${group}"].active`))
+                            .map(btn => btn.dataset.value);
+            };
+
+            const activeTypes = getActiveValues('type');
+            const activeAttrs = getActiveValues('attr');
+            const activeRanges = getActiveValues('range');
+            const activePowers = getActiveValues('power');
+            const activeRounds = getActiveValues('round');
+
+            // --- デフォルト表示制御 ---
+            if (!inputVal && activeTypes.length === 0 && activeAttrs.length === 0 && 
+                activeRanges.length === 0 && activePowers.length === 0) {
+                document.getElementById('resultCount').textContent = '';
+                document.querySelector('#resultsTable tbody').innerHTML = '';
+                return;
+            }
+
+            // --- 検索処理 ---
+            let filtered = allData.filter(row => {
+                if (inputVal) {
+                    if (searchTarget === 'chara') {
+                        const charList = getAllCharacters(row);
+                        const match = charList.some(c => c.includes(inputVal));
+                        if (!match) return false;
+                    } else {
+                        if (!row['スキル名'] || !row['スキル名'].includes(inputVal)) return false;
+                    }
+                }
+                
+                if (activeTypes.length > 0 && row['種別'] && !activeTypes.includes(row['種別'])) return false;
+                
+                if (activeAttrs.length > 0) {
+                    const a1 = row['属性1'] || '';
+                    const a2 = row['属性2'] || '';
+                    const hasAttr = activeAttrs.includes(a1) || activeAttrs.includes(a2);
+                    if (!hasAttr) return false;
+                }
+
+                if (activeRanges.length > 0 && row['範囲'] && !activeRanges.includes(row['範囲'])) return false;
+                if (activePowers.length > 0 && row['威力'] && !activePowers.includes(row['威力'])) return false;
+
+                return true;
+            });
+
+            const sortKey = activeRounds.length > 0 ? activeRounds[0] : null;
+            if (sortKey) {
+                filtered.sort((a, b) => {
+                    const valA = a[sortKey] ? parseInt(a[sortKey], 10) : 9999;
+                    const valB = b[sortKey] ? parseInt(b[sortKey], 10) : 9999;
+                    return valA - valB;
+                });
+            }
+
+            renderTable(filtered, sortKey);
+        }
+
+        function renderTable(data, sortKey) {
+            const tbody = document.querySelector('#resultsTable tbody');
+            const countDiv = document.getElementById('resultCount');
+            
+            countDiv.textContent = `検索結果: ${data.length}件`;
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">該当するデータはありません。</td></tr>';
+                return;
+            }
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                // キャラ名表示ロジック
+                const chars = getAllCharacters(row);
+                let charDisplayHtml = '-';
+
+                if (chars.length === 1) {
+                    charDisplayHtml = chars[0];
+                } else if (chars.length === 2) {
+                    charDisplayHtml = chars.join('、');
+                } else if (chars.length >= 3) {
+                    const firstChar = chars[0];
+                    const allChars = chars.join('、');
+                    charDisplayHtml = `
+                        <span class="char-summary">
+                            ${firstChar}、<span class="expand-chars-link">複数該当あり</span>
+                        </span>
+                        <span class="char-full" style="display:none;">
+                            ${allChars}
+                        </span>
+                    `;
+                }
+
+                // 種別表示加工 (術を追加)
+                let typeDisplay = row['種別'] || '-';
+                const magicTypes = ['火', '水', '風', '土', '光', '闇'];
+                if (magicTypes.includes(typeDisplay)) {
+                    typeDisplay += '術';
+                }
+
+                let attrDisplay = (row['属性1'] || '') + (row['属性2'] || '');
+                if (attrDisplay === '') attrDisplay = '-';
+
+                let attackCount = '';
+                const min = row['最小'];
+                const max = row['最大'];
+
+                if (min && max) {
+                    if (min === max) {
+                        attackCount = min;
+                    } else {
+                        attackCount = `${min}-${max}`;
+                    }
+                } else if (min) {
+                    attackCount = min;
+                } else if (max) {
+                    attackCount = max;
+                } else {
+                    attackCount = '';
+                }
+
+                const r1Class = sortKey === '1R' ? 'num-col sorted-col' : 'num-col';
+                const r2Class = sortKey === '2R' ? 'num-col sorted-col' : 'num-col';
+
+                tr.innerHTML = `
+                    <td>${charDisplayHtml}</td>
+                    <td style="font-weight:bold; color: var(--link-color);">${row['スキル名'] || '-'}</td>
+                    <td>${typeDisplay}</td>
+                    <td>${attrDisplay}</td>
+                    <td>${row['範囲'] || '-'}</td>
+                    <td>${row['威力'] || '-'}</td>
+                    <td>${attackCount}</td>
+                    <td class="${r1Class}">${row['1R'] || '-'}</td>
+                    <td class="${r2Class}">${row['2R'] || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function initTheme() {
+            const toggleBtn = document.getElementById('theme-toggle');
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const applyTheme = (theme) => document.documentElement.setAttribute('data-theme', theme);
+            applyTheme(savedTheme);
+            toggleBtn.addEventListener('click', () => {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                applyTheme(next);
+                localStorage.setItem('theme', next);
+            });
+            if (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                applyTheme('dark');
+            }
+        }
+    </script>
+</body>
+</html>
