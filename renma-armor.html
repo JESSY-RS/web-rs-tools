@@ -1992,27 +1992,49 @@
                                 result = aIndex - bIndex;
                             }
                         } else if (sortArmorName === 'list_order') {
-                            const getBase = (name) => {
-                                const found = allArmorData.find(d => d.displayName === name);
-                                return found ? found.baseName : name;
-                            };
-                            
                             const regex = /\(([^)]+)\)/;
-                            if (aData.armorName.includes('名将の鎧') && bData.armorName.includes('名将の鎧')) {
+                            const isWarlordA = aData.armorName.includes('名将の鎧');
+                            const isWarlordB = bData.armorName.includes('名将の鎧');
+                            // バトルヴァンブレイスは半角・全角の両方を考慮
+                            const isVanbraceA = aData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || aData.armorName.includes('バトルヴァンブレイス');
+                            const isVanbraceB = bData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || bData.armorName.includes('バトルヴァンブレイス');
+
+                            // 両方とも名将の鎧シリーズの場合のソート
+                            if (isWarlordA && isWarlordB) {
                                 const aMatch = aData.armorName.match(regex);
                                 const bMatch = bData.armorName.match(regex);
                                 const aIdx = aMatch ? warlordArmorSublist.indexOf(aMatch[1]) : -1;
                                 const bIdx = bMatch ? warlordArmorSublist.indexOf(bMatch[1]) : -1;
                                 if(aIdx !== bIdx) result = aIdx - bIdx;
-                            } else if (aData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') && bData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+                            // 両方ともバトルヴァンブレイスシリーズの場合のソート
+                            } else if (isVanbraceA && isVanbraceB) {
                                 const aMatch = aData.armorName.match(regex);
                                 const bMatch = bData.armorName.match(regex);
                                 const aIdx = aMatch ? vanbraceArmorSublist.indexOf(aMatch[1]) : -1;
                                 const bIdx = bMatch ? vanbraceArmorSublist.indexOf(bMatch[1]) : -1;
                                 if(aIdx !== bIdx) result = aIdx - bIdx;
                             } else {
-                                const aIndex = allArmorData.findIndex(item => item.displayName === aData.armorName);
-                                const bIndex = allArmorData.findIndex(item => item.displayName === bData.armorName);
+                                // インデックス取得用のヘルパー関数
+                                const getMasterIndex = (name) => {
+                                    // 1. 完全一致で検索
+                                    let idx = allArmorData.findIndex(item => item.displayName === name);
+                                    if (idx !== -1) return idx;
+                                    
+                                    // 2. バトルヴァンブレイス（半角/全角混在）の対応
+                                    // CSV読み込み時にbaseNameは半角「ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ」に変換されています
+                                    if (name.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || name.includes('バトルヴァンブレイス')) {
+                                        return allArmorData.findIndex(item => item.baseName === 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                    }
+                                    
+                                    // 3. 名将の鎧（シリーズ付き）の対応
+                                    if (name.includes('名将の鎧')) {
+                                        return allArmorData.findIndex(item => item.baseName === '名将の鎧');
+                                    }
+                                    return -1;
+                                };
+
+                                const aIndex = getMasterIndex(aData.armorName);
+                                const bIndex = getMasterIndex(bData.armorName);
                                 if (aIndex !== bIndex) result = aIndex - bIndex;
                             }
                         } else if (sortArmorName.endsWith('(全対象)')) {
