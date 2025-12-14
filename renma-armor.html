@@ -864,7 +864,7 @@
                 ※使用は自己責任にて。<br>
                 ※最適な組み合わせが選定出来ない可能性もあります。あくまで参考としてお考えください。<br>
                 ※名将の鎧の固有アビリティ考慮で威力＋選択のキャラにシリーズ指定した場合は、味方威力＋選択のキャラも威力＋選択のキャラとシリーズが同じであるなら必ず指定してください。<br>
-                ※シリーズで「その他」を選択してもバトルヴァンブレイズに対応するものはありません。
+                ※シリーズで「その他」を選択してもバトルヴァンブレイスに対応するものはありません。
             </footer>
     <div class="bottom3">
         <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a>
@@ -872,69 +872,54 @@
         </div>
     </div>
     
-    <script>
+<script>
     // =========================================================================
     // === グローバル変数と共通関数 ==================================================
     // =========================================================================
     
-    // --- モード設定 (URLパラメータ & ローカルストレージ判定) ---
     const urlParams = new URLSearchParams(window.location.search);
     const paramMode = urlParams.get('mode');
     
-    // 永続化用のキー
     const ADMIN_MODE_PERSIST_KEY = 'RenmaArmorAdminModeEnabled'; 
-    const ADMIN_DATA_KEY = 'RenmaArmorAdminData'; // 管理者モード用保存キー
+    const ADMIN_DATA_KEY = 'RenmaArmorAdminData'; 
 
-    // URLパラメータがあれば設定を更新（維持または解除）
     if (paramMode === 'secret_admin_on') {
-        // 管理者モードを有効化して永続化
         localStorage.setItem(ADMIN_MODE_PERSIST_KEY, 'true');
     } else if (paramMode === 'secret_debug_on') {
-        // デバッグモードでアクセスした場合、管理者モード（自動保存）を解除する
         localStorage.removeItem(ADMIN_MODE_PERSIST_KEY);
     }
 
-    // URLパラメータ または ローカルストレージのフラグ で管理者モードを判定
     const isAdminMode = (localStorage.getItem(ADMIN_MODE_PERSIST_KEY) === 'true');
     const isDebugMode = (paramMode === 'secret_debug_on');
 
-    // デバッグログ用関数
     function debugLog(...args) {
-        if (isDebugMode) {
-            console.log('[DEBUG]', ...args);
-        }
+        if (isDebugMode) console.log('[DEBUG]', ...args);
     }
 
-    if (isAdminMode) {
-        // タイトル変更はDOMContentLoadedで行うが、ログはここで出す
-        debugLog("Admin Mode Active (Auto-save enabled).");
-    }
+    if (isAdminMode) debugLog("Admin Mode Active (Auto-save enabled).");
 
-    let sharedArmorData = []; // 3つのタブで共有するJSONデータ
+    let sharedArmorData = []; 
     let tabScrollPositions = { list: 0, top5: 0, calc: 0 };
-
     let isDataDirty = false;
     
     // --- CSVデータ用のグローバル変数 ---
     let armorMainData = [], armorSubData = [], renmaAbilityData = [], allArmorData = [];
-    let mainNativeAbilities = new Map(); // 自動選定ツール用
-    let subNativeAbilities = new Map();  // 自動選定ツール用
-    let uniqueAbilities = {};            // TOP5確認用
+    let mainNativeAbilities = new Map();
+    let subNativeAbilities = new Map();
+    let uniqueAbilities = {};
 
     const PAGE_SETTING_KEY = 'PageSettings';
     const BACKUP_SETTINGS_KEY = 'RenmaArmorBackupSettings';
     const UNSAVED_DATA_KEY = 'RenmaArmorUnsavedData';
-    let activeTab = 'list'; // 現在アクティブなタブを管理
+    let activeTab = 'list';
 
-    // 全ての設定をこのオブジェクトで管理
     let pageSettings = {
         'renma-armor_zoom1': 1.0,
         'renma-armor_zoom2': 1.0,
         'renma-armor_zoom3': 1.0,
-        'renma-armor_pin': true // true: ピン留め, false: ピン留め解除
+        'renma-armor_pin': true
     };
 
-    // タブ名と設定オブジェクトのプロパティ名を対応付ける
     const tabToZoomKey = {
         list: 'renma-armor_zoom1',
         top5: 'renma-armor_zoom2',
@@ -944,9 +929,7 @@
     function loadPageSettings() {
         try {
             const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
-            if (savedSettings) {
-                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
-            }
+            if (savedSettings) pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
         } catch (error) {
             console.error("ページ設定の読み込みに失敗しました:", error);
         }
@@ -973,41 +956,33 @@
             }
         });
 
-        // データ同期
         syncDataFromListTab();
 
         if (isDirty) {
-            // 未保存の変更があるため、バックアップを保存
             localStorage.setItem(UNSAVED_DATA_KEY, JSON.stringify(sharedArmorData));
             localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: true }));
-            
-            // --- 管理者モード：自動保存 ---
-            if (isAdminMode) {
-                localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(sharedArmorData));
-                debugLog("Auto-saved to Admin Key.");
-            }
-
+            if (isAdminMode) localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(sharedArmorData));
         } else {
-            // データが保存されたとみなし、バックアップを削除 (通常モードのみ)
             localStorage.removeItem(UNSAVED_DATA_KEY);
             localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: false }));
-            
-            // 警告メッセージが存在すれば削除
             const existingWarning = document.getElementById('backup-warning');
-            if (existingWarning) {
-                existingWarning.remove();
-            }
+            if (existingWarning) existingWarning.remove();
         }
     }
 
-
-    // [新規] 「リスト管理」タブのデータを読み取り、共有データ変数を更新する関数
     function syncDataFromListTab() {
         const partsData = [];
         document.querySelectorAll('#parts-container .armor-part').forEach(part => {
+            let armorName = part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
+            
+            // バトルヴァンブレイスが含まれていたら強制的に半角に置換して保存
+            if (armorName && armorName.includes('バトルヴァンブレイス')) {
+                armorName = armorName.replace('バトルヴァンブレイス', 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+            }
+
             partsData.push({
                 armorType: part.querySelector('input[name*="armor-type"]:checked')?.value || 'main',
-                armorName: part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value,
+                armorName: armorName,
                 grade: part.querySelector('input[name*="ability-grade"]:checked')?.value || 'SS',
                 abilityName: part.querySelector('.ability-select').value,
                 value: part.querySelector('.ability-value').value,
@@ -1015,21 +990,15 @@
             });
         });
         sharedArmorData = partsData;
-        debugLog("Data Synced:", sharedArmorData.length, "items");
     }
 
-
-    // --- 共通関数 ---
     function showTab(tabName, event) {
         const previousTabName = activeTab;
         tabScrollPositions[previousTabName] = window.scrollY;
 
-        const clickedButton = event.currentTarget;
-        if (clickedButton.classList.contains('active') && window.scrollY > 0) {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+        const clickedButton = event ? event.currentTarget : document.querySelector(`.tab-button[onclick*="showTab('${tabName}'"]`);
+        if (clickedButton && clickedButton.classList.contains('active') && window.scrollY > 0) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 
@@ -1039,42 +1008,24 @@
 
         if (tabName === 'top5' || tabName === 'calc') {
             syncDataFromListTab();
-            if (tabName === 'top5') {
-                updateTop5Tab(sharedArmorData);
-            }
-            if (tabName === 'calc') {
-                updateCalcTab(sharedArmorData);
-            }
+            if (tabName === 'top5') updateTop5Tab(sharedArmorData);
+            if (tabName === 'calc') updateCalcTab(sharedArmorData);
         }
 
-        const contents = document.querySelectorAll('.tab-content');
-        contents.forEach(content => {
-            content.classList.remove('active');
-        });
-
-        const buttons = document.querySelectorAll('.tab-button');
-        buttons.forEach(button => {
-            button.classList.remove('active');
-        });
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
 
         document.getElementById(`tab-${tabName}`).classList.add('active');
-        if (event && event.currentTarget) {
-             event.currentTarget.classList.add('active');
-        } else {
-             document.querySelector(`.tab-button[onclick*="showTab('${tabName}'"]`).classList.add('active');
-        }
+        if (clickedButton) clickedButton.classList.add('active');
         
         const titles = {
             'list': '練磨(防具)リスト管理',
             'top5': '練磨(防具)アビリティ TOP5',
             'calc': '練磨(防具)自動選定ツール'
         };
-        let titleText = titles[tabName];
-        // 元のタイトルをセット
         const pageTitleEl = document.getElementById('page-title');
-        pageTitleEl.textContent = titleText;
+        pageTitleEl.textContent = titles[tabName];
         
-        // Adminモードなら赤文字のHTMLを追加
         if (isAdminMode) {
             pageTitleEl.innerHTML += " <span style='color: red;'>[Admin Mode: Auto-Save ON]</span>";
         }
@@ -1084,10 +1035,8 @@
     }
     
     function toggleMenu() {
-        const sideMenu = document.getElementById('sideMenu');
-        const menuOverlay = document.getElementById('menuOverlay');
-        sideMenu.classList.toggle('open');
-        menuOverlay.classList.toggle('open');
+        document.getElementById('sideMenu').classList.toggle('open');
+        document.getElementById('menuOverlay').classList.toggle('open');
     }
 
     function closeMenu() {
@@ -1098,38 +1047,22 @@
     function changeZoom(delta) {
         const zoomKey = tabToZoomKey[activeTab];
         let currentZoom = pageSettings[zoomKey];
-
         currentZoom += delta;
         currentZoom = Math.round(currentZoom * 10) / 10;
-
         if (currentZoom < 0.5) currentZoom = 0.5;
         if (currentZoom > 2.0) currentZoom = 2.0;
-        
         document.body.style.zoom = currentZoom;
-        
         pageSettings[zoomKey] = currentZoom;
-        
         savePageSettings();
     }
-
 
     function scrollToCategory(categoryId) {
         const element = document.getElementById(categoryId);
         if (element) {
             const mainHeader = document.querySelector('.main-header');
-            let headerHeight = 0;
-
-            if (mainHeader.classList.contains('pinned')) {
-                headerHeight = mainHeader.offsetHeight;
-            }
-
+            let headerHeight = mainHeader.classList.contains('pinned') ? mainHeader.offsetHeight : 0;
             const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-            const offsetPosition = elementPosition - headerHeight;
-
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: 'smooth'
-            });
+            window.scrollTo({ top: elementPosition - headerHeight, behavior: 'smooth' });
         }
     }
 
@@ -1138,7 +1071,6 @@
     // =========================================================================
     document.addEventListener('DOMContentLoaded', async () => {
         loadPageSettings();
-
         await initializeCommonData();
 
         initializeListTab();
@@ -1152,12 +1084,9 @@
         const isPinned = pageSettings['renma-armor_pin'];
         mainHeader.classList.toggle('pinned', isPinned);
         pinButton.textContent = isPinned ? '📍' : '📌';
-
-        const initialZoomKey = tabToZoomKey[activeTab];
-        document.body.style.zoom = pageSettings[initialZoomKey];
+        document.body.style.zoom = pageSettings[tabToZoomKey[activeTab]];
         
         if (isAdminMode) {
-             // textContent ではなく innerHTML を使い、spanタグで色指定を行う
              document.getElementById('page-title').innerHTML += " <span style='color: red;'>[Admin Mode: Auto-Save ON]</span>";
         }
     });
@@ -1184,46 +1113,29 @@
             const list = document.getElementById(targetId);
             if(list) list.style.display = "none";
             button.addEventListener("click", () => {
-                if (list.style.display === "block") list.style.display = "none";
-                else list.style.display = "block";
+                list.style.display = (list.style.display === "block") ? "none" : "block";
             });
         });
         
         const pinButton = document.getElementById('pin-button');
-        const mainHeader = document.querySelector('.main-header');
-
         pinButton.addEventListener('click', () => {
+            const mainHeader = document.querySelector('.main-header');
             const isPinned = mainHeader.classList.toggle('pinned');
             pinButton.textContent = isPinned ? '📍' : '📌';
-            
             pageSettings['renma-armor_pin'] = isPinned;
-            
             savePageSettings();
         });
 
-        let startX = 0, startY = 0;
-        document.addEventListener('touchstart', e => {
-            startX = e.changedTouches[0].screenX;
-            startY = e.changedTouches[0].screenY;
-        }, false);
-
+        let startX = 0;
+        document.addEventListener('touchstart', e => { startX = e.changedTouches[0].screenX; }, false);
         document.addEventListener('touchend', e => {
-            const endX = e.changedTouches[0].screenX;
-            const endY = e.changedTouches[0].screenY;
-            const diffX = endX - startX;
-            const diffY = endY - startY;
-
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                if (diffX > 50 && startX < 30) toggleMenu();
-                else if (diffX < -50) closeMenu();
-            }
+            const diffX = e.changedTouches[0].screenX - startX;
+            if (diffX > 50 && startX < 30) toggleMenu();
+            else if (diffX < -50) closeMenu();
         }, false);
         
-        // ページ離脱時の警告機能
         window.addEventListener('beforeunload', (event) => {
-            if (isDataDirty) {
-                event.preventDefault();
-            }
+            if (isDataDirty) event.preventDefault();
         });
     }
     
@@ -1242,6 +1154,22 @@
                 const values = row.split(',');
                 let obj = {};
                 header.forEach((key, i) => { obj[key.trim()] = values[i] ? values[i].trim() : ''; });
+                
+                const symbol = obj['記号'] || ''; 
+                const rawName = obj['名称'] || ''; // CSVの全角名称
+
+                let baseName = rawName;
+                if (baseName === 'バトルヴァンブレイス') {
+                    baseName = 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ'; 
+                }
+
+                obj.symbol = symbol;
+                obj.baseName = baseName;       
+                obj.rawBaseName = rawName;     
+                
+                obj.displayName = symbol + rawName; // 表示用は全角
+                obj.名称 = obj.displayName; 
+
                 return obj;
             });
         } catch (error) {
@@ -1250,6 +1178,46 @@
         }
     }
     
+    function resolveArmorName(inputName) {
+        if (!inputName) return "";
+
+        let targetBaseName = null;
+        let extractedSeries = "";
+
+        if (inputName.includes('名将の鎧')) {
+            targetBaseName = '名将の鎧';
+            const match = inputName.match(/[\(（](.+)[\)）]/);
+            if (match) extractedSeries = `(${match[1]})`;
+        }
+        else if (inputName.includes('バトルヴァンブレイス') || inputName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+            targetBaseName = 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ'; 
+            const match = inputName.match(/[\(（](.+)[\)）]/);
+            if (match) extractedSeries = `(${match[1]})`;
+        }
+
+        if (targetBaseName) {
+            const currentItem = allArmorData.find(item => item.baseName === targetBaseName);
+            if (currentItem) {
+                if (targetBaseName === 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ' && extractedSeries) {
+                    return currentItem.symbol + currentItem.baseName + extractedSeries;
+                } else {
+                    return currentItem.symbol + currentItem.rawBaseName + extractedSeries;
+                }
+            }
+        }
+
+        const exactMatch = allArmorData.find(item => item.displayName === inputName);
+        if (exactMatch) return exactMatch.displayName;
+        
+        const baseMatch = allArmorData.find(item => item.baseName === inputName);
+        if (baseMatch) return baseMatch.displayName;
+
+        const fuzzyMatch = allArmorData.find(item => item.baseName && inputName.endsWith(item.baseName));
+        if (fuzzyMatch) return fuzzyMatch.displayName;
+
+        return inputName;
+    }
+
     function initializeListTab() {
         let isEditMode = false, sortableInstance = null;
         let originalPartOrder = [];
@@ -1304,13 +1272,13 @@
 
             data.forEach(item => {
                 if (item.名称) {
-                        if (item.名称 === '◆名将の鎧' || item.名称 === '☆バトルヴァンブレイス') {
+                    if (item.baseName === '名将の鎧' || item.baseName === 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') {
                         const optionEl = document.createElement('div');
                         optionEl.className = 'dropdown-option';
                         optionEl.dataset.hasSubmenu = 'true';
                         
                         const textSpan = document.createElement('span');
-                        textSpan.textContent = item.名称;
+                        textSpan.textContent = item.displayName; 
                         
                         const arrowSpan = document.createElement('span');
                         arrowSpan.className = 'submenu-arrow';
@@ -1322,8 +1290,8 @@
                     } else {
                         const optionEl = document.createElement('div');
                         optionEl.className = 'dropdown-option';
-                        optionEl.textContent = item.名称;
-                        optionEl.dataset.value = item.名称;
+                        optionEl.textContent = item.displayName;
+                        optionEl.dataset.value = item.displayName;
                         optionsList.appendChild(optionEl);
                     }
                 }
@@ -1350,7 +1318,7 @@
                 noneOption.textContent = '※指定しない';
                 selectEl.appendChild(noneOption);
             }
-                if (addListOrder) {
+            if (addListOrder) {
                 const listOrderOption = document.createElement('option');
                 listOrderOption.value = 'list_order';
                 listOrderOption.textContent = '※メニューの順番で並び替え';
@@ -1358,10 +1326,7 @@
             }
 
             filteredData.forEach(item => {
-                if (item.種類) {
-                    if (isControlPanel && item.種類 === "アビリティを選択") {
-                        return; 
-                    }
+                if (item.種類 && (!isControlPanel || item.種類 !== "アビリティを選択")) {
                     const optionEl = document.createElement('option');
                     optionEl.value = item.種類;
                     optionEl.textContent = item.種類;
@@ -1370,7 +1335,6 @@
             });
             if (!isControlPanel) updateValueSymbol(part, '');
         }
-
 
         function updateValueSymbol(part, abilityName) {
             const prefix = part.querySelector('.symbol.prefix');
@@ -1383,6 +1347,7 @@
                 else prefix.style.display = 'inline';
             }
         }
+
         function addNewPart(data = null, basePart = null, setDirty = true) { 
             const newPart = template.content.cloneNode(true).querySelector('.armor-part');
             const uniqueId = Date.now() + Math.random();
@@ -1398,17 +1363,12 @@
             newPart.querySelector('.favorite-toggle').style.display = isEditMode ? 'none' : 'block';
             
             if (basePart) {
-                basePart.after(newPart); // DOM挿入
-
-                // originalPartOrder を更新
+                basePart.after(newPart);
                 const baseIndex = originalPartOrder.indexOf(basePart);
-                if (baseIndex > -1) {
-                    originalPartOrder.splice(baseIndex + 1, 0, newPart);
-                } else {
-                    originalPartOrder = Array.from(partsContainer.children);
-                }
+                if (baseIndex > -1) originalPartOrder.splice(baseIndex + 1, 0, newPart);
+                else originalPartOrder = Array.from(partsContainer.children);
             } else {
-                partsContainer.appendChild(newPart); // DOM挿入 (末尾)
+                partsContainer.appendChild(newPart);
                 originalPartOrder.push(newPart); 
             }
 
@@ -1439,9 +1399,7 @@
                 setupAbilityDropdown(newPart, 'SS');
             }
             
-            if (setDirty) {
-                setDataDirty(true);
-            }
+            if (setDirty) setDataDirty(true);
         }
         
         function importData(event) {
@@ -1454,30 +1412,27 @@
                     const data = JSON.parse(e.target.result);
                     if (!Array.isArray(data)) throw new Error("JSON is not an array.");
                     
-                    if (isEditMode) {
-                        toggleEditMode();
-                    }
-                    
+                    if (isEditMode) toggleEditMode();
                     partsContainer.innerHTML = '';
                     
-                    // 【修正】データが空配列の場合でも、少なくとも1つのパネルを追加する
                     if (data.length === 0) {
                         addNewPart(null, null, false);
                     } else {
-                        // インポート時はsetDirtyをfalseにして、最後にまとめて状態管理する
-                        data.forEach(partData => addNewPart(partData, null, false));
+                        data.forEach(partData => {
+                            if (partData.armorName) {
+                                partData.armorName = resolveArmorName(partData.armorName);
+                            }
+                            addNewPart(partData, null, false);
+                        });
                     }
 
                     originalPartOrder = Array.from(partsContainer.children);
-
                     syncDataFromListTab();
                     updateTop5Tab(sharedArmorData);
                     updateCalcTab(sharedArmorData);
                     
-                    // インポート成功時は「保存済み」状態にする（バックアップもクリア）
                     setDataDirty(false);
                     if (isAdminMode) {
-                         // 強制的にAdminDataに保存させる
                          localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(sharedArmorData));
                          debugLog("Imported data saved to Admin Key.");
                     }
@@ -1493,9 +1448,7 @@
         }
 
         document.getElementById('tab-list').addEventListener('focusin', (e) => {
-            if (e.target.classList.contains('ability-value')) {
-                e.target.select();
-            }
+            if (e.target.classList.contains('ability-value')) e.target.select();
         });
 
         document.addEventListener('click', (e) => {
@@ -1504,9 +1457,7 @@
                     panel.classList.remove('show');
                     panel.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
                     const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
-                    if (submenu) {
-                        submenu.style.display = 'none';
-                    }
+                    if (submenu) submenu.style.display = 'none';
                 });
             }
         });
@@ -1515,31 +1466,15 @@
             if(e.target.closest('.armor-part') && !e.target.closest('#search-panel') && !e.target.closest('#sort-panel')) {
                 setDataDirty(true);
             }
-        });
-
-        document.getElementById('tab-list').addEventListener('input', (e) => {
             if (e.target.classList.contains('dropdown-search-input')) {
                 const searchTerm = hiraganaToKatakana(e.target.value).toLowerCase();
                 const panel = e.target.closest('.custom-dropdown-panel');
-                if (!panel) return;
-                const optionsList = panel.querySelector('.dropdown-options-list');
-                if (!optionsList) return;
-
-                optionsList.querySelectorAll('.dropdown-option').forEach(option => {
-                    let textToCompare = '';
-                    if (option.dataset.hasSubmenu) {
-                        const textSpan = option.querySelector('span:first-child');
-                        textToCompare = textSpan ? textSpan.textContent : '';
-                    } else {
-                        textToCompare = option.textContent;
-                    }
-                    const optionText = hiraganaToKatakana(textToCompare).toLowerCase();
-                    if (optionText.includes(searchTerm)) {
-                        option.style.display = ''; 
-                    } else {
-                        option.style.display = 'none';
-                    }
-                });
+                if (panel) {
+                    panel.querySelectorAll('.dropdown-option').forEach(option => {
+                        const text = option.dataset.hasSubmenu ? option.querySelector('span').textContent : option.textContent;
+                        option.style.display = hiraganaToKatakana(text).toLowerCase().includes(searchTerm) ? '' : 'none';
+                    });
+                }
             }
         });
         
@@ -1549,9 +1484,7 @@
             const isSearchPanel = part.id === 'search-panel';
             const isSortPanel = part.id === 'sort-panel';
 
-            if (!isSearchPanel && !isSortPanel) {
-                setDataDirty(true);
-            }
+            if (!isSearchPanel && !isSortPanel) setDataDirty(true);
 
             if(e.target.matches('.ability-select')){
                 if (!isSearchPanel && !isSortPanel) updateValueSymbol(part, e.target.value);
@@ -1560,21 +1493,16 @@
                 const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel && !!checkedRadio };
                 setupDropdown(part, checkedRadio ? checkedRadio.value : null, options);
                 
-                if (isSearchPanel) {
-                    const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
-                    armorBtn.dataset.value = 'none';
-                    armorBtn.querySelector('.button-label').textContent = '※指定しない';
-                    if (document.getElementById('filter-btn').classList.contains('is-active')) {
-                        applyFilterFunction();
-                    }
-                } else if (isSortPanel) {
-                    const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
+                if (isSearchPanel || isSortPanel) {
                     armorBtn.dataset.value = 'none';
                     armorBtn.querySelector('.button-label').textContent = '※指定しない';
                 } else {
-                    const armorBtn = part.querySelector('.armor-name-dropdown .custom-dropdown-button');
                     armorBtn.dataset.value = '';
                     armorBtn.querySelector('.button-label').textContent = '防具を選択';
+                }
+                if (isSearchPanel && document.getElementById('filter-btn').classList.contains('is-active')) {
+                    applyFilterFunction();
                 }
 
             } else if (e.target.matches('input[name*="ability-grade"]')) {
@@ -1582,15 +1510,10 @@
                 const options = { addNone: isSearchPanel || isSortPanel, addListOrder: isSortPanel && !!checkedRadio };
                 setupAbilityDropdown(part, checkedRadio ? checkedRadio.value : null, options);
                 
-                if (isSearchPanel) {
-                    part.querySelector('.ability-select').value = 'none';
-                        if (document.getElementById('filter-btn').classList.contains('is-active')) {
-                        applyFilterFunction();
-                    }
-                } else if (isSortPanel) {
-                        part.querySelector('.ability-select').value = 'none';
-                } else {
-                        part.querySelector('.ability-select').value = '';
+                const select = part.querySelector('.ability-select');
+                select.value = (isSearchPanel || isSortPanel) ? 'none' : '';
+                if (isSearchPanel && document.getElementById('filter-btn').classList.contains('is-active')) {
+                    applyFilterFunction();
                 }
             }
         });
@@ -1614,65 +1537,21 @@
                 const isOpening = !panel.classList.contains('show');
                 
                 document.querySelectorAll('.custom-dropdown-submenu').forEach(submenu => submenu.style.display = 'none');
-                
                 document.querySelectorAll('.custom-dropdown-panel.show').forEach(p => {
-                    if (p !== panel) {
-                        p.classList.remove('show');
-                        p.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
-                    }
+                    if (p !== panel) p.classList.remove('show');
                 });
                 
                 panel.classList.toggle('show');
 
-                if (!isOpening) {
-                    panel.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
-                    const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
-                    if (submenu) submenu.style.display = 'none';
-                } else {
+                if (isOpening) {
                     const searchInput = panel.querySelector('.dropdown-search-input');
                     if (searchInput) searchInput.value = '';
+                    panel.querySelectorAll('.dropdown-option').forEach(opt => opt.style.display = '');
                     
-                    panel.querySelectorAll('.dropdown-option').forEach(opt => {
-                        opt.style.display = '';
-                        opt.classList.remove('hidden');
-                    });
-
-                    const optionsList = panel.querySelector('.dropdown-options-list');
-                    optionsList.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
-
                     const selectedValue = button.dataset.value;
-                    let selectedOption = null;
-
                     if (selectedValue && selectedValue !== 'none' && selectedValue !== 'list_order') {
-                        const selectedText = button.querySelector('.button-label').textContent;
-                        selectedOption = optionsList.querySelector(`.dropdown-option[data-value="${selectedValue}"]`);
-
-                        if (!selectedOption) {
-                            const match = selectedText.match(/(.+)\(.*\)/);
-                            let parentText = match ? match[1] : null;
-
-                            if (parentText) {
-                                parentText = parentText.replace('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ', 'バトルヴァンブレイス');
-                            }
-
-                            if (parentText) {
-                                const parentOptions = optionsList.querySelectorAll('.dropdown-option[data-has-submenu]');
-                                for (const opt of parentOptions) {
-                                    const optText = opt.querySelector('span')?.textContent;
-                                    if (optText === parentText) {
-                                        selectedOption = opt;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (selectedOption) {
-                        selectedOption.classList.add('focused');
-                        selectedOption.scrollIntoView({ block: 'nearest' });
-                    } else {
-                        optionsList.scrollTop = 0;
+                        const selectedOption = Array.from(panel.querySelectorAll('.dropdown-option')).find(opt => opt.dataset.value === selectedValue || opt.textContent === selectedValue.split('(')[0]);
+                        if(selectedOption) selectedOption.scrollIntoView({ block: 'nearest' });
                     }
                 }
             }
@@ -1683,14 +1562,15 @@
                 let value, text;
 
                 if (target.dataset.parent) {
-                    let parentName = target.dataset.parent;
-                    const valueText = target.textContent;
+                    let parentName = target.dataset.parent; 
+                    const valueText = target.textContent; 
 
                     if (target.dataset.value && (target.dataset.value.includes('(全対象)') || target.dataset.value.includes('(シリーズ順)'))) {
-                            text = target.dataset.value;
-                            value = target.dataset.value;
+                        text = target.dataset.value;
+                        value = target.dataset.value;
                     } else {
-                        if (parentName === '☆バトルヴァンブレイス') {
+                        // 結合時に強制的に半角にする
+                        if (parentName.includes('バトルヴァンブレイス')) {
                             parentName = toHalfWidthBattleVanbrace(parentName);
                         }
                         text = `${parentName}(${valueText})`;
@@ -1710,26 +1590,19 @@
                 label.textContent = text;
                 button.dataset.value = value;
                 
-                const mainPanel = dropdown.querySelector('.custom-dropdown-panel');
+                dropdown.querySelector('.custom-dropdown-panel').classList.remove('show');
                 const submenu = dropdown.querySelector('.custom-dropdown-submenu');
-                if (mainPanel) mainPanel.classList.remove('show');
                 if (submenu) submenu.style.display = 'none';
             }
             else if (part && target.matches('.add-part-inline-btn')) {
                 addNewPart(null, part);
             }
             else if (part && target.matches('.delete-btn')) {
-                const deletablePanelCount = document.querySelectorAll('#tab-list .armor-part .delete-btn').length;
-
-                if (deletablePanelCount > 1) {
+                if (document.querySelectorAll('#tab-list .armor-part .delete-btn').length > 1) {
                     const scrollY = window.scrollY;
-                    part.remove(); // DOMから削除
-                    
+                    part.remove();
                     const partIndex = originalPartOrder.indexOf(part);
-                    if (partIndex > -1) {
-                        originalPartOrder.splice(partIndex, 1);
-                    }
-                    
+                    if (partIndex > -1) originalPartOrder.splice(partIndex, 1);
                     setDataDirty(true);
                     window.scrollTo(0, scrollY);
                 }
@@ -1740,53 +1613,44 @@
             const option = e.target.closest('.dropdown-option');
             if (!option) return;
 
-            const optionsList = option.closest('.dropdown-options-list');
-            if (optionsList) {
-                optionsList.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
-            }
-
             const panel = option.closest('.custom-dropdown-panel');
             if (!panel) return;
-
             const submenu = panel.parentElement.querySelector('.custom-dropdown-submenu');
             if (!submenu) return;
 
             if (option.dataset.hasSubmenu) {
                 submenu.innerHTML = '';
-                const parentText = option.querySelector('span').textContent;
+                const parentText = option.querySelector('span').textContent; 
                 let sublist = [];
                 let formattedParentText = parentText;
 
-                if (parentText === '◆名将の鎧') {
+                if (parentText.includes('名将の鎧')) {
                     sublist = warlordArmorSublist;
-                } else if (parentText === '☆バトルヴァンブレイス') {
+                } else if (parentText.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || parentText.includes('バトルヴァンブレイス')) {
                     sublist = vanbraceArmorSublist;
                     formattedParentText = toHalfWidthBattleVanbrace(parentText);
                 }
 
                 const parentPart = option.closest('.armor-part');
                 if (parentPart && (parentPart.id === 'search-panel' || parentPart.id === 'sort-panel')) {
-                    const allSeriesOption = document.createElement('div');
-                    allSeriesOption.className = 'dropdown-option';
-                    allSeriesOption.textContent = '全対象';
-                    allSeriesOption.dataset.value = `${formattedParentText}(全対象)`;
-                    allSeriesOption.dataset.parent = parentText;
-                    submenu.appendChild(allSeriesOption);
-
+                    const createOpt = (txt, val) => {
+                         const d = document.createElement('div');
+                         d.className = 'dropdown-option';
+                         d.textContent = txt;
+                         d.dataset.value = val;
+                         d.dataset.parent = parentText;
+                         return d;
+                    };
+                    submenu.appendChild(createOpt('全対象', `${formattedParentText}(全対象)`));
                     if (parentPart.id === 'sort-panel') {
-                        const seriesOrderOption = document.createElement('div');
-                        seriesOrderOption.className = 'dropdown-option';
-                        seriesOrderOption.textContent = 'シリーズ順';
-                        seriesOrderOption.dataset.value = `${formattedParentText}(シリーズ順)`;
-                        seriesOrderOption.dataset.parent = parentText;
-                        submenu.appendChild(seriesOrderOption);
+                        submenu.appendChild(createOpt('シリーズ順', `${formattedParentText}(シリーズ順)`));
                     }
                 }
                 
                 sublist.forEach(subItemText => {
                     const subOption = document.createElement('div');
                     subOption.className = 'dropdown-option';
-                    subOption.textContent = subItemText;
+                    subOption.textContent = subItemText; 
                     subOption.dataset.value = subItemText;
                     subOption.dataset.parent = parentText;
                     submenu.appendChild(subOption);
@@ -1794,16 +1658,12 @@
                 
                 submenu.style.display = 'block';
 
-                const listRect = optionsList.getBoundingClientRect();
+                const listRect = panel.querySelector('.dropdown-options-list').getBoundingClientRect();
                 const optionRect = option.getBoundingClientRect();
                 const buffer = 5; 
-
                 if (optionRect.bottom > listRect.bottom - buffer) {
-                    optionsList.scrollTop += (optionRect.bottom - listRect.bottom + buffer);
-                } else if (optionRect.top < listRect.top + buffer) {
-                    optionsList.scrollTop -= (listRect.top - optionRect.top + buffer);
+                    panel.querySelector('.dropdown-options-list').scrollTop += (optionRect.bottom - listRect.bottom + buffer);
                 }
-
             } else if (!e.target.closest('.custom-dropdown-submenu')) {
                 submenu.style.display = 'none';
             }
@@ -1818,7 +1678,6 @@
             a.download = '練磨_防具_リスト.json';
             a.click();
             URL.revokeObjectURL(a.href);
-            // エクスポート後は「保存済み」状態にする（バックアップもクリア）
             setDataDirty(false);
         }
 
@@ -1826,30 +1685,19 @@
             panel.querySelectorAll('.radio-group').forEach(group => {
                 if (group.dataset.radioToggleHandler) return;
                 group.dataset.radioToggleHandler = 'true';
-                
                 let wasCheckedOnMousedown = false;
-
                 group.addEventListener('mousedown', e => {
                     const el = e.target;
                     if (el.tagName !== 'INPUT' && el.tagName !== 'LABEL') return;
-
                     const radio = el.type === 'radio' ? el : document.getElementById(el.htmlFor);
-                    if (radio) {
-                        wasCheckedOnMousedown = radio.checked;
-                    }
+                    if (radio) wasCheckedOnMousedown = radio.checked;
                 });
-
                 group.addEventListener('click', e => {
                     const el = e.target;
                     if (el.tagName !== 'INPUT' && el.tagName !== 'LABEL') return;
-
                     if (wasCheckedOnMousedown) {
                         const radio = el.type === 'radio' ? el : document.getElementById(el.htmlFor);
-                        if (radio) {
-                            e.preventDefault();
-                            radio.checked = false;
-                            radio.dispatchEvent(new Event('change', { bubbles: true }));
-                        }
+                        if (radio) { e.preventDefault(); radio.checked = false; radio.dispatchEvent(new Event('change', { bubbles: true })); }
                     }
                 });
             });
@@ -1866,13 +1714,10 @@
             approxCheck.checked = false;
             
             function deactivateFilter() {
-                const filterBtn = document.getElementById('filter-btn');
                 if (filterBtn.classList.contains('is-active')) {
                     const scrollY = window.scrollY;
                     originalPartOrder.forEach(part => partsContainer.appendChild(part));
-                    document.querySelectorAll('#parts-container .armor-part').forEach(part => {
-                        part.style.display = '';
-                    });
+                    document.querySelectorAll('#parts-container .armor-part').forEach(part => part.style.display = '');
                     filterBtn.textContent = '絞り込み';
                     filterBtn.classList.remove('is-active');
                     updateInfoText();
@@ -1886,16 +1731,12 @@
                 const scrollY = window.scrollY;
                 const checkedArmorTypeRadio = searchPanel.querySelector('input[name="search-armor-type"]:checked');
                 const filterArmorType = checkedArmorTypeRadio ? checkedArmorTypeRadio.value : null;
-                
                 const armorDropdown = searchPanel.querySelector('.armor-name-dropdown .custom-dropdown-button');
                 const filterArmorName = armorDropdown.dataset.value === 'none' ? '' : armorDropdown.dataset.value;
-
                 const checkedGradeRadio = searchPanel.querySelector('input[name="search-ability-grade"]:checked');
                 const filterGrade = checkedGradeRadio ? checkedGradeRadio.value : null;
-                
                 const abilitySelect = searchPanel.querySelector('.ability-select');
                 const filterAbilityName = abilitySelect.value === 'none' ? '' : abilitySelect.value;
-                
                 const isApprox = approxCheck.checked;
                 const filterFavorite = searchPanel.querySelector('.favorite-toggle').dataset.favorite === 'true';
                 
@@ -1909,19 +1750,23 @@
                     const partFavorite = part.querySelector('.favorite-toggle').dataset.favorite === 'true';
 
                     const typeMatch = !filterArmorType || filterArmorType === partArmorType;
-                    
                     let nameMatch = false;
+                    
                     if (!filterArmorName) {
                         nameMatch = true; 
-                    } else if (filterArmorName === '◆名将の鎧(全対象)') {
-                        nameMatch = partArmorName.startsWith('◆名将の鎧');
-                    } else if (filterArmorName === '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ(全対象)') {
-                        nameMatch = partArmorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                    } else if (filterArmorName.endsWith('(全対象)')) {
+                        if (filterArmorName.includes('名将の鎧')) nameMatch = partArmorName.includes('名将の鎧');
+                        else if (filterArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) nameMatch = partArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
                     } else {
                         const parentArmorMatch = partArmorName.match(/(.+)\((.+)\)/);
                         if (parentArmorMatch) {
                             const parentName = parentArmorMatch[1];
-                            nameMatch = filterArmorName === parentName || filterArmorName === partArmorName;
+                            const filterParentMatch = filterArmorName.match(/(.+)\((.+)\)/);
+                            if(filterParentMatch) {
+                                nameMatch = filterArmorName === partArmorName; 
+                            } else {
+                                nameMatch = filterArmorName === parentName || filterArmorName === partArmorName;
+                            }
                         } else {
                             nameMatch = filterArmorName === partArmorName;
                         }
@@ -1929,7 +1774,6 @@
 
                     const gradeMatch = !filterGrade || filterGrade === partGrade;
                     const favoriteMatch = !filterFavorite || partFavorite;
-                    
                     let abilityMatch = false;
                     if (isApprox && filterAbilityName && partAbilityName) {
                         const searchTerm = filterAbilityName.split('(')[0];
@@ -1940,9 +1784,7 @@
 
                     const isVisible = typeMatch && nameMatch && gradeMatch && abilityMatch && favoriteMatch;
                     part.style.display = isVisible ? '' : 'none';
-                    if (isVisible) {
-                        visibleParts.push(part);
-                    }
+                    if (isVisible) visibleParts.push(part);
                 });
 
                 if (valueSortState > 0) {
@@ -1958,21 +1800,14 @@
             applyFilterFunction = applyFilter;
             
             function triggerLiveFilter() {
-                if (filterBtn.classList.contains('is-active')) {
-                    applyFilter();
-                }
+                if (filterBtn.classList.contains('is-active')) applyFilter();
             }
 
             function updateInfoText() {
                 const isFilterActive = filterBtn.classList.contains('is-active');
                 if (searchPanel.classList.contains('is-collapsed')) {
-                    if (isFilterActive) {
-                        infoText.textContent = '絞り込み中...';
-                        infoText.style.color = 'red';
-                    } else {
-                        infoText.textContent = 'クリックして検索パネルを開く';
-                        infoText.style.color = '#bbb';
-                    }
+                    infoText.textContent = isFilterActive ? '絞り込み中...' : 'クリックして検索パネルを開く';
+                    infoText.style.color = isFilterActive ? 'red' : '#bbb';
                     infoText.style.display = 'block';
                 } else {
                     infoText.style.display = 'none';
@@ -1988,11 +1823,9 @@
 
             searchPanel.addEventListener('click', (e) => {
                 const target = e.target;
-                if (searchPanel.classList.contains('is-collapsed') && !target.closest('button')) {
-                    toggleCollapse(false);
-                } else if (target.matches('.dropdown-option') && target.closest('#search-panel')) {
-                    setTimeout(triggerLiveFilter, 0);
-                } else if (target.matches('.favorite-toggle')) {
+                if (searchPanel.classList.contains('is-collapsed') && !target.closest('button')) toggleCollapse(false);
+                else if (target.matches('.dropdown-option') && target.closest('#search-panel')) setTimeout(triggerLiveFilter, 0);
+                else if (target.matches('.favorite-toggle')) {
                     const isFavorite = target.dataset.favorite === 'true';
                     target.dataset.favorite = String(!isFavorite);
                     target.textContent = isFavorite ? '☆' : '★';
@@ -2002,10 +1835,7 @@
             });
 
             searchPanel.addEventListener('change', triggerLiveFilter);
-
-            collapseBtn.addEventListener('click', () => {
-                    toggleCollapse(!searchPanel.classList.contains('is-collapsed'));
-            });
+            collapseBtn.addEventListener('click', () => toggleCollapse(!searchPanel.classList.contains('is-collapsed')));
             
             setupDropdown(searchPanel, null, { addNone: true });
             setupAbilityDropdown(searchPanel, null, { addNone: true });
@@ -2015,7 +1845,6 @@
             armorBtn.dataset.value = 'none';
             armorBtn.querySelector('.button-label').textContent = '※指定しない';
             searchPanel.querySelector('.ability-select').value = 'none';
-
 
             filterBtn.addEventListener('click', () => {
                 const isActive = filterBtn.classList.contains('is-active');
@@ -2029,7 +1858,6 @@
                 filterBtn.classList.toggle('is-active', !isActive);
                 updateInfoText();
             });
-            
             toggleCollapse(true);
         }
 
@@ -2044,17 +1872,14 @@
                 content.style.display = shouldCollapse ? 'none' : '';
                 infoText.style.display = shouldCollapse ? 'block' : 'none';
                 collapseBtn.textContent = shouldCollapse ? '▼' : '▲';
-
-                if (sortableInstance) {
-                    sortableInstance.option('disabled', !shouldCollapse);
-                }
+                if (sortableInstance) sortableInstance.option('disabled', !shouldCollapse);
                 
                 document.querySelectorAll('#parts-container .armor-part').forEach(part => {
                     const addButton = part.querySelector('.add-part-inline-btn');
                     const deleteButton = part.querySelector('.delete-btn');
-                    const buttonDisplayStyle = shouldCollapse ? '' : 'none';
-                    if (addButton) addButton.style.display = buttonDisplayStyle;
-                    if (deleteButton) deleteButton.style.display = buttonDisplayStyle;
+                    const display = shouldCollapse ? '' : 'none';
+                    if (addButton) addButton.style.display = display;
+                    if (deleteButton) deleteButton.style.display = display;
                     
                     const handle = part.querySelector('.drag-handle');
                     const favorite = part.querySelector('.favorite-toggle');
@@ -2072,22 +1897,16 @@
 
             sortPanel.addEventListener('click', (e) => {
                 const target = e.target;
-                    if (sortPanel.classList.contains('is-collapsed') && !target.closest('button')) {
-                    toggleCollapse(false);
-                } else if (target.matches('.favorite-toggle')) {
+                if (sortPanel.classList.contains('is-collapsed') && !target.closest('button')) toggleCollapse(false);
+                else if (target.matches('.favorite-toggle')) {
                     const isFavorite = target.dataset.favorite === 'true';
                     target.dataset.favorite = String(!isFavorite);
                     target.textContent = isFavorite ? '☆' : '★';
                     target.classList.toggle('is-favorite');
                 }
             });
-
-            collapseBtn.addEventListener('click', () => {
-                    toggleCollapse(!sortPanel.classList.contains('is-collapsed'));
-            });
-
+            collapseBtn.addEventListener('click', () => toggleCollapse(!sortPanel.classList.contains('is-collapsed')));
             sortBtn.addEventListener('click', performSort);
-
             setupRadioDeselection(sortPanel);
 
             toggleCollapse(true);
@@ -2098,16 +1917,13 @@
             sortPanel.querySelector('.favorite-toggle').textContent = '☆';
             sortPanel.querySelector('.favorite-toggle').dataset.favorite = 'false';
             sortPanel.querySelector('.favorite-toggle').classList.remove('is-favorite');
-
             document.getElementById('sort-type-asc').checked = true;
             document.getElementById('sort-ability-asc').checked = true;
             document.getElementById('save-sort-check').checked = false;
-            
             sortPanel.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
             
-            const sortOptions = { addNone: true, addListOrder: false };
-            setupDropdown(sortPanel, null, sortOptions);
-            setupAbilityDropdown(sortPanel, null, sortOptions);
+            setupDropdown(sortPanel, null, { addNone: true, addListOrder: false });
+            setupAbilityDropdown(sortPanel, null, { addNone: true, addListOrder: false });
 
             const armorBtn = sortPanel.querySelector('.armor-name-dropdown .custom-dropdown-button');
             armorBtn.dataset.value = 'none';
@@ -2150,24 +1966,20 @@
 
                 if (sortArmorType) {
                     const direction = sortArmorAsc ? 1 : -1;
-                    let result = 0;
-                    
                     const aIsType = aData.armorType === sortArmorType;
                     const bIsType = bData.armorType === sortArmorType;
-                    if (aIsType !== bIsType) {
-                        result = aIsType ? -1 : 1;
-                        return result * direction;
-                    }
+                    if (aIsType !== bIsType) return (aIsType ? -1 : 1) * direction;
 
                     if (sortArmorName && sortArmorName !== 'none') {
+                        let result = 0;
                         if (sortArmorName.endsWith('(シリーズ順)')) {
-                            const isWarlord = sortArmorName.startsWith('◆名将の鎧');
-                            const isVanbrace = sortArmorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
-                            const prefix = isWarlord ? '◆名将の鎧' : '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ';
+                            const isWarlord = sortArmorName.includes('名将の鎧');
+                            const isVanbrace = sortArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                            const targetStr = isWarlord ? '名将の鎧' : (isVanbrace ? 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ' : '');
                             const sublist = isWarlord ? warlordArmorSublist : vanbraceArmorSublist;
 
-                            const aIsTarget = aData.armorName.startsWith(prefix);
-                            const bIsTarget = bData.armorName.startsWith(prefix);
+                            const aIsTarget = aData.armorName.includes(targetStr);
+                            const bIsTarget = bData.armorName.includes(targetStr);
 
                             if (aIsTarget !== bIsTarget) {
                                 result = aIsTarget ? -1 : 1;
@@ -2180,36 +1992,33 @@
                                 result = aIndex - bIndex;
                             }
                         } else if (sortArmorName === 'list_order') {
-                            const aIsWarlord = aData.armorName.startsWith('◆名将の鎧');
-                            const bIsWarlord = bData.armorName.startsWith('◆名将の鎧');
-                            const aIsVanbrace = aData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
-                            const bIsVanbrace = bData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                            const getBase = (name) => {
+                                const found = allArmorData.find(d => d.displayName === name);
+                                return found ? found.baseName : name;
+                            };
+                            
                             const regex = /\(([^)]+)\)/;
-
-                            if (aIsWarlord && bIsWarlord) {
+                            if (aData.armorName.includes('名将の鎧') && bData.armorName.includes('名将の鎧')) {
                                 const aMatch = aData.armorName.match(regex);
                                 const bMatch = bData.armorName.match(regex);
-                                const aSeriesIndex = aMatch ? warlordArmorSublist.indexOf(aMatch[1]) : -1;
-                                const bSeriesIndex = bMatch ? warlordArmorSublist.indexOf(bMatch[1]) : -1;
-                                if(aSeriesIndex !== bSeriesIndex) result = aSeriesIndex - bSeriesIndex;
-                            } else if (aIsVanbrace && bIsVanbrace) {
+                                const aIdx = aMatch ? warlordArmorSublist.indexOf(aMatch[1]) : -1;
+                                const bIdx = bMatch ? warlordArmorSublist.indexOf(bMatch[1]) : -1;
+                                if(aIdx !== bIdx) result = aIdx - bIdx;
+                            } else if (aData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') && bData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
                                 const aMatch = aData.armorName.match(regex);
                                 const bMatch = bData.armorName.match(regex);
-                                const aSeriesIndex = aMatch ? vanbraceArmorSublist.indexOf(aMatch[1]) : -1;
-                                const bSeriesIndex = bMatch ? vanbraceArmorSublist.indexOf(bMatch[1]) : -1;
-                                if(aSeriesIndex !== bSeriesIndex) result = aSeriesIndex - bSeriesIndex;
+                                const aIdx = aMatch ? vanbraceArmorSublist.indexOf(aMatch[1]) : -1;
+                                const bIdx = bMatch ? vanbraceArmorSublist.indexOf(bMatch[1]) : -1;
+                                if(aIdx !== bIdx) result = aIdx - bIdx;
                             } else {
-                                const aIndex = allArmorData.findIndex(item => item.名称 === aData.armorName);
-                                const bIndex = allArmorData.findIndex(item => item.名称 === bData.armorName);
+                                const aIndex = allArmorData.findIndex(item => item.displayName === aData.armorName);
+                                const bIndex = allArmorData.findIndex(item => item.displayName === bData.armorName);
                                 if (aIndex !== bIndex) result = aIndex - bIndex;
                             }
-                        } else if (sortArmorName === '◆名将の鎧(全対象)') {
-                            const aIsTarget = aData.armorName.startsWith('◆名将の鎧');
-                            const bIsTarget = bData.armorName.startsWith('◆名将の鎧');
-                            if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
-                        } else if (sortArmorName === '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ(全対象)') {
-                            const aIsTarget = aData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
-                            const bIsTarget = bData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                        } else if (sortArmorName.endsWith('(全対象)')) {
+                            const targetStr = sortArmorName.includes('名将の鎧') ? '名将の鎧' : 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ';
+                            const aIsTarget = aData.armorName.includes(targetStr);
+                            const bIsTarget = bData.armorName.includes(targetStr);
                             if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
                         } else {
                             const aIsTarget = aData.armorName === sortArmorName;
@@ -2221,17 +2030,13 @@
                 }
 
                 if (sortAbilityGrade) {
-                        const direction = sortAbilityAsc ? 1 : -1;
-                        let result = 0;
-
+                    const direction = sortAbilityAsc ? 1 : -1;
                     const aIsGrade = aData.grade === sortAbilityGrade;
                     const bIsGrade = bData.grade === sortAbilityGrade;
-                        if (aIsGrade !== bIsGrade) {
-                        result = aIsGrade ? -1 : 1;
-                        return result * direction;
-                        }
+                    if (aIsGrade !== bIsGrade) return (aIsGrade ? -1 : 1) * direction;
                     
                     if (sortAbilityName && sortAbilityName !== 'none') {
+                        let result = 0;
                         if (sortAbilityName === 'list_order') {
                             const aIndex = renmaAbilityData.findIndex(item => item.種類 === aData.abilityName);
                             const bIndex = renmaAbilityData.findIndex(item => item.種類 === bData.abilityName);
@@ -2248,18 +2053,14 @@
                 if (valueSortState > 0) {
                     const valA = parseFloat(aData.value) || 0;
                     const valB = parseFloat(bData.value) || 0;
-                    if (valA !== valB) {
-                        return valueSortState === 1 ? valB - valA : valA - valB;
-                    }
+                    if (valA !== valB) return (valueSortState === 1 ? valB - valA : valA - valB);
                 }
-
                 return 0;
             });
 
             parts.forEach(p => partsContainer.appendChild(p));
             
-            const isSave = document.getElementById('save-sort-check').checked;
-            if(isSave) {
+            if(document.getElementById('save-sort-check').checked) {
                 originalPartOrder = Array.from(partsContainer.children);
                 resetSortPanel(true);
                 resetValueSortButtons();
@@ -2280,8 +2081,7 @@
         }
 
         function resetValueSortButtons() {
-            const btns = document.querySelectorAll('#tab-list .value-sort-btn');
-            btns.forEach(btn => {
+            document.querySelectorAll('#tab-list .value-sort-btn').forEach(btn => {
                 btn.textContent = '9↓';
                 btn.classList.remove('active');
             });
@@ -2291,27 +2091,13 @@
         function handleValueSort(event) {
             const btn = event.currentTarget;
             valueSortState = (valueSortState + 1) % 3;
-
-            switch (valueSortState) {
-                case 0:
-                    btn.textContent = '9↓';
-                    btn.classList.remove('active');
-                    break;
-                case 1:
-                    btn.textContent = '9↓';
-                    btn.classList.add('active');
-                    break;
-                case 2:
-                    btn.textContent = '1↓';
-                    btn.classList.add('active');
-                    break;
-            }
+            btn.textContent = (valueSortState === 2) ? '1↓' : '9↓';
+            btn.classList.toggle('active', valueSortState > 0);
             
             if (document.getElementById('filter-btn').classList.contains('is-active')) {
                 const scrollY = window.scrollY;
-                if (valueSortState === 0) {
-                    applyFilter();
-                } else {
+                if (valueSortState === 0) applyFilterFunction();
+                else {
                     const visibleParts = Array.from(partsContainer.children).filter(p => p.style.display !== 'none');
                     visibleParts.sort((a, b) => {
                         const valA = parseFloat(a.querySelector('.ability-value').value) || 0;
@@ -2326,7 +2112,6 @@
 
         function toggleEditMode() {
             isEditMode = !isEditMode;
-            
             if (window.deactivateFilter) window.deactivateFilter();
             searchPanel.style.display = isEditMode ? 'none' : 'block';
             sortPanel.style.display = isEditMode ? 'block' : 'none';
@@ -2368,7 +2153,7 @@
 
             if (isEditMode) {
                 if (!sortableInstance) {
-                        sortableInstance = new Sortable(partsContainer, { 
+                    sortableInstance = new Sortable(partsContainer, { 
                         animation: 150, 
                         handle: '.drag-handle',
                         onEnd: function(evt) {
@@ -2400,59 +2185,36 @@
 
         function checkForUnsavedBackup() {
             try {
-                // 管理者モードの場合はこのバックアップチェックは邪魔になる可能性があるが、
-                // 既存の「未保存のExportしてないデータ」は別枠で管理されているため、そのまま動作させる。
-                // ただし、もしAdminDataがロードされているなら、この警告は不要かもしれない。
-                // 今回は既存のロジックを優先して残す。
-
                 const settings = JSON.parse(localStorage.getItem(BACKUP_SETTINGS_KEY));
                 if (settings && settings.hasUnsavedChanges) {
                     const backupData = localStorage.getItem(UNSAVED_DATA_KEY);
                     if (backupData) {
                         const warningDiv = document.createElement('div');
                         warningDiv.id = 'backup-warning';
-                        warningDiv.style.color = 'red';
-                        warningDiv.style.backgroundColor = 'rgb(67, 46, 46)';
-                        warningDiv.style.padding = '10px';
-                        warningDiv.style.margin = '10px 0';
-                        warningDiv.style.border = '1px solid red';
-                        warningDiv.style.borderRadius = '5px';
-                        warningDiv.style.textAlign = 'center';
-                        
-                        warningDiv.innerHTML = `
-                            前回、エクスポートされていないデータがあります。
-                            <button id="restore-backup-btn" style="margin-left: 15px; padding: 5px 10px; cursor: pointer;">データの復元</button>
-                            <button id="delete-backup-btn" style="margin-left: 10px; padding: 5px 10px; cursor: pointer;">データの削除</button>
-                        `;
-                        
+                        warningDiv.style.cssText = 'color: red; background-color: rgb(67, 46, 46); padding: 10px; margin: 10px 0; border: 1px solid red; border-radius: 5px; text-align: center;';
+                        warningDiv.innerHTML = `前回、エクスポートされていないデータがあります。<button id="restore-backup-btn" style="margin-left: 15px; padding: 5px 10px; cursor: pointer;">データの復元</button><button id="delete-backup-btn" style="margin-left: 10px; padding: 5px 10px; cursor: pointer;">データの削除</button>`;
                         const mainElement = document.querySelector('#tab-list main');
                         mainElement.insertBefore(warningDiv, mainElement.firstChild);
 
-                        // Restore button event listener
                         document.getElementById('restore-backup-btn').addEventListener('click', () => {
                             const restoredData = JSON.parse(backupData);
-                            
                             partsContainer.innerHTML = '';
-                            
-                            // 【修正】復元データが空の場合でも、1つパネルを生成する
                             if (restoredData && restoredData.length > 0) {
-                               restoredData.forEach(partData => addNewPart(partData, null, false));
+                                restoredData.forEach(partData => {
+                                    // 【修正】バックアップ復元時にも名寄せを実行
+                                    if (partData.armorName) {
+                                        partData.armorName = resolveArmorName(partData.armorName);
+                                    }
+                                    addNewPart(partData, null, false);
+                                });
                             } else {
-                               addNewPart(null, null, false);
+                                addNewPart(null, null, false);
                             }
-                            
-                            // 復元後は未保存状態にする
                             setDataDirty(true);
-                            // 警告メッセージはsetDataDirty(true)では消えないため、手動で削除
                             warningDiv.remove();
                         });
-                        
-                        // Delete button event listener
                         document.getElementById('delete-backup-btn').addEventListener('click', () => {
-                            if (window.confirm('バックアップデータを本当に削除しますか？この操作は元に戻せません。')) {
-                                // バックアップをクリア
-                                setDataDirty(false); 
-                            }
+                            if (window.confirm('バックアップデータを本当に削除しますか？この操作は元に戻せません。')) setDataDirty(false);
                         });
                     }
                 }
@@ -2464,8 +2226,6 @@
         setupSearchPanel();
         setupSortPanel();
         
-        // --- 初期ロード処理 ---
-        // 管理者モードなら保存されたデータをロード、そうでなければデフォルト(空1つ)
         let loadedFromAdmin = false;
         if (isAdminMode) {
             const adminSavedData = localStorage.getItem(ADMIN_DATA_KEY);
@@ -2473,10 +2233,15 @@
                 try {
                     const parsedData = JSON.parse(adminSavedData);
                     if (Array.isArray(parsedData) && parsedData.length > 0) {
-                        parsedData.forEach(partData => addNewPart(partData, null, false));
+                        parsedData.forEach(partData => {
+                            // 【修正】管理者モード自動ロード時にも名寄せを実行
+                            if (partData.armorName) {
+                                partData.armorName = resolveArmorName(partData.armorName);
+                            }
+                            addNewPart(partData, null, false);
+                        });
                         loadedFromAdmin = true;
                         debugLog("Loaded data from Admin Key");
-                        // ロード後は同期して他のタブも更新
                         syncDataFromListTab();
                         updateTop5Tab(sharedArmorData);
                         updateCalcTab(sharedArmorData);
@@ -2487,10 +2252,7 @@
             }
         }
 
-        if (!loadedFromAdmin) {
-            addNewPart(null, null, false); // 初期表示時はDirtyフラグを立てない
-        }
-
+        if (!loadedFromAdmin) addNewPart(null, null, false);
         originalPartOrder = Array.from(partsContainer.children);
         
         document.getElementById('edit-mode-btn').addEventListener('click', toggleEditMode);
@@ -2507,7 +2269,7 @@
         document.getElementById('sort-value-sort').addEventListener('click', handleValueSort);
 
         resetValueSortButtons();
-        checkForUnsavedBackup(); // ページ読み込み時にバックアップを確認
+        checkForUnsavedBackup();
     }
 
 
@@ -2543,9 +2305,7 @@
             const value = parseInt(parts[2].trim(), 10);
 
             if (attributeMap[target] && !isNaN(value)) {
-                if (!data[armorName]) {
-                    data[armorName] = {};
-                }
+                if (!data[armorName]) data[armorName] = {};
                 data[armorName][target] = value;
             }
         });
@@ -2554,7 +2314,7 @@
 
     function initializeTop5Tab() {
         document.getElementById('include-unique-ability').addEventListener('change', () => {
-            syncDataFromListTab(); // データを最新にしてから更新
+            syncDataFromListTab(); 
             updateTop5Tab(sharedArmorData);
         });
         updateTop5Tab(sharedArmorData);
@@ -2562,7 +2322,6 @@
     
     function updateTop5Tab(data) {
         const placeholder = document.getElementById('top5-placeholder');
-        
         try {
             const processed = processData_top5(data || []); 
             displayReport_top5(processed);
@@ -2608,20 +2367,21 @@
             item.isCombined = false;
             let totalAddedValue = 0;
 
-            if (includeUnique && uniqueAbilities[item.armorName]) {
-                const isSpecialArmor = item.armorName.includes("名将の鎧") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ");
+            if (includeUnique) {
+                const isSpecialArmor = item.armorName.includes("名将の鎧") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ") || item.armorName.includes("バトルヴァンブレイス");
                 if (!isSpecialArmor) {
-                    const armorBonuses = uniqueAbilities[item.armorName];
-                    const specificTarget = getTargetFromAbilityName_top5(item.abilityName);
-                    if (specificTarget && armorBonuses[specificTarget]) {
-                        totalAddedValue += armorBonuses[specificTarget];
+                    let armorBonuses = uniqueAbilities[item.armorName];
+                    if (!armorBonuses) {
+                        const foundKey = Object.keys(uniqueAbilities).find(k => item.armorName.endsWith(k) || k.endsWith(item.armorName));
+                        if(foundKey) armorBonuses = uniqueAbilities[foundKey];
                     }
-                    const isSelfPower = selfPowerAbilities.includes(item.abilityName);
-                    if (isSelfPower && armorBonuses['味方威力']) {
-                        totalAddedValue += armorBonuses['味方威力'];
-                    }
-                    if (isSelfPower && armorBonuses['威力']) {
-                        totalAddedValue += armorBonuses['威力'];
+
+                    if (armorBonuses) {
+                        const specificTarget = getTargetFromAbilityName_top5(item.abilityName);
+                        if (specificTarget && armorBonuses[specificTarget]) totalAddedValue += armorBonuses[specificTarget];
+                        const isSelfPower = selfPowerAbilities.includes(item.abilityName);
+                        if (isSelfPower && armorBonuses['味方威力']) totalAddedValue += armorBonuses['味方威力'];
+                        if (isSelfPower && armorBonuses['威力']) totalAddedValue += armorBonuses['威力'];
                     }
                 }
             }
@@ -2633,7 +2393,6 @@
             }
 
             const newItem = { ...item, value };
-
             if (selfPowerAbilities.includes(item.abilityName)) {
                 if (item.armorType === 'main') categorizedData.mainSelf[item.abilityName].push(newItem);
                 else if (item.armorType === 'sub') categorizedData.subSelf[item.abilityName].push(newItem);
@@ -2665,9 +2424,7 @@
         categories.forEach(cat => {
             const container = document.querySelector(`#${cat.id} .table-wrapper`);
             container.innerHTML = '';
-            if (!sharedArmorData || sharedArmorData.length === 0 || (sharedArmorData.length === 1 && !sharedArmorData[0].armorName)) {
-                return; 
-            }
+            if (!sharedArmorData || sharedArmorData.length === 0 || (sharedArmorData.length === 1 && !sharedArmorData[0].armorName)) return; 
 
             const table = document.createElement('table');
             table.innerHTML = `<thead><tr><th class="col-ability">アビリティ</th><th class="col-armor">装備</th><th class="col-value value-col">効果値</th></tr></thead>`;
@@ -2690,22 +2447,12 @@
                     
                     let firstCellHTML = '';
                     if (i === 0) {
-                        const rowspan = 4;
-                        firstCellHTML = `<td class="merged-ability-cell" rowspan="${rowspan}">${abilityName}</td>`;
-                    }
-                    else if (i === 4) {
-                        if (showTotal) {
-                            firstCellHTML = `<td class="ability-total-cell">合計: ${abilityTotal}%</td>`;
-                        } else {
-                            // 「威力＋」系テーブル用に、罫線を表示させるための空セルを挿入
-                            firstCellHTML = `<td class="ability-total-cell">&nbsp;</td>`;
-                        }
+                        firstCellHTML = `<td class="merged-ability-cell" rowspan="4">${abilityName}</td>`;
+                    } else if (i === 4) {
+                        firstCellHTML = showTotal ? `<td class="ability-total-cell">合計: ${abilityTotal}%</td>` : `<td class="ability-total-cell">&nbsp;</td>`;
                     }
 
-                    let armorCellHTML = '&nbsp;';
-                    let valueCellHTML = '&nbsp;';
-                    let valueCellClass = 'value-col';
-
+                    let armorCellHTML = '&nbsp;', valueCellHTML = '&nbsp;', valueCellClass = 'value-col';
                     if (item) {
                         if (item.isCombined) {
                             armorCellHTML = `<span class="combined-armor-name">${item.armorName} (+${item.addedValue})</span>`;
@@ -2717,7 +2464,6 @@
                         }
                         valueCellHTML = item.value + '%';
                     }
-                    
                     row.innerHTML = `${firstCellHTML}<td>${armorCellHTML}</td><td class="${valueCellClass}">${valueCellHTML}</td>`;
                 }
             });
@@ -2745,9 +2491,7 @@
                 if (name && target && valueStr) {
                     const value = parseInt(valueStr.trim(), 10);
                     if (!isNaN(value)) {
-                        if (!targetMap.has(name.trim())) {
-                            targetMap.set(name.trim(), []);
-                        }
+                        if (!targetMap.has(name.trim())) targetMap.set(name.trim(), []);
                         targetMap.get(name.trim()).push({ target: target.trim(), value });
                     }
                 }
@@ -2820,7 +2564,6 @@
             
             const navUpButton = charContainer.querySelector(`#nav-up-${i}`);
             const navDownButton = charContainer.querySelector(`#nav-down-${i}`);
-
             if (i === 1) navUpButton.disabled = true;
             else navUpButton.addEventListener('click', () => scrollToCategory(`char-${i - 1}`));
             if (i === 5) navDownButton.disabled = true;
@@ -2831,16 +2574,14 @@
             const newCheckboxes = charContainer.querySelectorAll(`input[name="condition-${i}"]`);
             newCheckboxes.forEach(checkbox => checkbox.addEventListener('change', () => handleConditionSync(i, 'checkbox-change')));
         }
-        
         calculateAllButton.addEventListener('click', calculateAllCharacters);
     }
     
     function updateCalcTab(data) {
-        // データ変換時にユニークIDを付与するように修正
         armorData_calc = data.map((item, index) => ({
             ...item, 
             value: parseInt(item.value, 10),
-            uniqueId: `item-${index}-${Date.now()}` // インデックスと時間で固有IDを作成
+            uniqueId: `item-${index}-${Date.now()}`
         })).filter(item => !isNaN(item.value));
         
         const fileStatus = document.getElementById('file-status');
@@ -2861,14 +2602,9 @@
             for (let i = 2; i <= 5; i++) {
                 document.querySelector(`input[name="ability-type-${i}"][value="味方威力＋"]`).checked = true;
                 const targetCheckboxes = document.querySelectorAll(`input[name="condition-${i}"]`);
-                targetCheckboxes.forEach(cb => {
-                    cb.checked = sourceConditions.includes(cb.value);
-                });
+                targetCheckboxes.forEach(cb => cb.checked = sourceConditions.includes(cb.value));
             }
-            const calculateButton = document.getElementById('calculate-all-button');
-            if (calculateButton) {
-                calculateButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            document.getElementById('calculate-all-button').scrollIntoView({ behavior: 'smooth', block: 'center' });
             return; 
         }
 
@@ -2884,9 +2620,7 @@
             }
             if (conditionsToCopy !== null) {
                 const currentCheckboxes = document.querySelectorAll(`input[name="condition-${charId}"]`);
-                currentCheckboxes.forEach(cb => {
-                    cb.checked = conditionsToCopy.includes(cb.value);
-                });
+                currentCheckboxes.forEach(cb => cb.checked = conditionsToCopy.includes(cb.value));
             }
         }
 
@@ -2896,9 +2630,7 @@
                 const nextAbilityType = document.querySelector(`input[name="ability-type-${i}"]:checked`).value;
                 if (nextAbilityType === '味方威力＋') {
                     const nextCheckboxes = document.querySelectorAll(`input[name="condition-${i}"]`);
-                    nextCheckboxes.forEach(cb => {
-                        cb.checked = sourceConditions.includes(cb.value);
-                    });
+                    nextCheckboxes.forEach(cb => cb.checked = sourceConditions.includes(cb.value));
                 }
             }
         }
@@ -2906,29 +2638,37 @@
 
     function getConditionFromAbilityName_calc(abilityName) {
         if (!abilityName) return null;
-        // 全角カッコにも対応し、前後の空白を除去する
         const match = abilityName.match(/[\(（](.*)[\)）]/);
         return match ? match[1].trim() : null;
     }
 
     function getNativeAbilityValue_calc(armorName, armorType, selectedConditions, abilityType, charId) {
         const nativeAbilityMap = armorType === 'main' ? mainNativeAbilities : subNativeAbilities;
-        if (!nativeAbilityMap.has(armorName)) return 0;
+        let abilities = nativeAbilityMap.get(armorName);
+        if (!abilities) {
+            for (const [key, val] of nativeAbilityMap.entries()) {
+                if (armorName.endsWith(key) || key.endsWith(armorName) || 
+                    (armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') && key.includes('バトルヴァンブレイス'))) {
+                    abilities = val;
+                    break;
+                }
+            }
+        }
+        if (!abilities) return 0;
         
         const selectedSeries = document.getElementById(`series-select-${charId}`).value;
         let totalValue = 0;
-        const abilities = nativeAbilityMap.get(armorName);
 
         for (const ability of abilities) {
             let shouldAddValue = true;
-            if (armorName.includes('名将の鎧') || armorName.includes('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+            if (armorName.includes('名将の鎧') || armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || armorName.includes('バトルヴァンブレイス')) {
                 if (selectedSeries === '未選択') {
                     shouldAddValue = false;
                 } else {
                     const armorSeriesMatch = armorName.match(/\(([^)]+)\)/);
                     if (armorSeriesMatch) {
                         const armorSeriesStr = armorSeriesMatch[1];
-                        if (armorName.includes('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') && armorSeriesStr === 'US・ES・IS') {
+                        if ((armorName.includes('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || armorName.includes('バトルヴァンブレイス')) && armorSeriesStr === 'US・ES・IS') {
                             if (!['US', 'ES', 'IS'].includes(selectedSeries)) shouldAddValue = false;
                         } else {
                             const armorSeriesList = armorSeriesStr.split(/[&＆]/).map(s => s.trim());
@@ -2955,12 +2695,9 @@
     function findBestArmorWithNativeAbilities_calc(armorType, character, excludedItems, partyConfig) {
         const { abilityType, selectedConditions, charId, series } = character;
         const candidates = [];
-        
-        // 除外チェックを armorName ではなく uniqueId で行うように変更
         const availableArmor = armorData_calc.filter(item => item.armorType === armorType && !excludedItems.has(item.uniqueId));
 
         for (const armor of availableArmor) {
-            // アビリティ名抽出（前回の修正内容含む）
             const jsonAbilityCondition = getConditionFromAbilityName_calc(armor.abilityName);
             const jsonAbilityType = armor.abilityName.includes('味方威力＋') ? '味方威力＋' : '威力＋';
             let typeMatch = (abilityType === jsonAbilityType);
@@ -3008,29 +2745,20 @@
             lastLoadoutStr = JSON.stringify(partyLoadout);
             iterations++;
             const equippedThisPass = new Set();
-            
-            // ロックされた装備のIDを除外リストに追加
             lockedEquipment.forEach(loadout => {
                 if (loadout.mainArmor) equippedThisPass.add(loadout.mainArmor.uniqueId);
                 if (loadout.subArmor) equippedThisPass.add(loadout.subArmor.uniqueId);
             });
-            
             const nextLoadout = [];
-
             for (const character of partyConfig) {
                 const { charId } = character;
                 let mainArmor, subArmor;
-                
                 if (lockedEquipment.has(charId) && lockedEquipment.get(charId).mainArmor) mainArmor = lockedEquipment.get(charId).mainArmor;
                 else mainArmor = findBestArmorWithNativeAbilities_calc('main', character, equippedThisPass, partyConfig);
-                
-                // 該当装備があった場合、IDを除外リストに追加（名前ではなくuniqueIdを使う）
                 if (mainArmor.armorName !== '該当なし') equippedThisPass.add(mainArmor.uniqueId);
                 
                 if (lockedEquipment.has(charId) && lockedEquipment.get(charId).subArmor) subArmor = lockedEquipment.get(charId).subArmor;
                 else subArmor = findBestArmorWithNativeAbilities_calc('sub', character, equippedThisPass, partyConfig);
-                
-                // 該当装備があった場合、IDを除外リストに追加
                 if (subArmor.armorName !== '該当なし') equippedThisPass.add(subArmor.uniqueId);
                 
                 nextLoadout[charId - 1] = { mainArmor, subArmor };
@@ -3067,20 +2795,23 @@
                 if (provider.mainArmor.abilityName.includes("味方威力＋") && provider.selectedConditions.includes(mainCond)) {
                     contribution += provider.mainArmor.value;
                 }
-                if (mainNativeAbilities.has(provider.mainArmor.armorName) && mainNativeAbilities.get(provider.mainArmor.armorName).some(a => a.target === '味方威力')) {
-                    const hasMeisho = provider.mainArmor.armorName.includes('名将の鎧');
-                    if (hasMeisho) {
-                        let isMatch = false;
-                        if (receiver.series !== '未選択' && receiver.series === provider.series) {
-                            const armorSeriesMatch = provider.mainArmor.armorName.match(/\(([^)]+)\)/);
-                            if (armorSeriesMatch) {
-                                const armorSeriesList = armorSeriesMatch[1].split(/[&＆]/).map(s => s.trim());
-                                if (armorSeriesList.includes(receiver.series)) isMatch = true;
+                if (mainNativeAbilities.has(provider.mainArmor.armorName) || Array.from(mainNativeAbilities.keys()).some(k => provider.mainArmor.armorName.endsWith(k))) {
+                    const abilities = mainNativeAbilities.get(provider.mainArmor.armorName) || Array.from(mainNativeAbilities.entries()).find(e => provider.mainArmor.armorName.endsWith(e[0]))?.[1];
+                    if (abilities && abilities.some(a => a.target === '味方威力')) {
+                        const hasMeisho = provider.mainArmor.armorName.includes('名将の鎧');
+                        if (hasMeisho) {
+                            let isMatch = false;
+                            if (receiver.series !== '未選択' && receiver.series === provider.series) {
+                                const armorSeriesMatch = provider.mainArmor.armorName.match(/\(([^)]+)\)/);
+                                if (armorSeriesMatch) {
+                                    const armorSeriesList = armorSeriesMatch[1].split(/[&＆]/).map(s => s.trim());
+                                    if (armorSeriesList.includes(receiver.series)) isMatch = true;
+                                }
                             }
+                            if (isMatch) contribution += provider.mainArmor.nativeValue;
+                        } else {
+                            contribution += provider.mainArmor.nativeValue;
                         }
-                        if (isMatch) contribution += provider.mainArmor.nativeValue;
-                    } else {
-                        contribution += provider.mainArmor.nativeValue;
                     }
                 }
 
@@ -3088,7 +2819,8 @@
                 if (provider.subArmor.abilityName.includes("味方威力＋") && provider.selectedConditions.includes(subCond)) {
                     contribution += provider.subArmor.value;
                 }
-                if (subNativeAbilities.has(provider.subArmor.armorName) && subNativeAbilities.get(provider.subArmor.armorName).some(a => a.target === '味方威力')) {
+                const subAbilities = subNativeAbilities.get(provider.subArmor.armorName) || Array.from(subNativeAbilities.entries()).find(e => provider.subArmor.armorName.endsWith(e[0]))?.[1];
+                if (subAbilities && subAbilities.some(a => a.target === '味方威力')) {
                     contribution += provider.subArmor.nativeValue;
                 }
                 partyValue += contribution;
@@ -3111,7 +2843,6 @@
 
     function calculateAllCharacters() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
         const partyConfig = [];
         let primaryAttacker = null;
         for (let i = 1; i <= 5; i++) {
@@ -3122,9 +2853,7 @@
                 series: document.getElementById(`series-select-${i}`).value
             };
             partyConfig.push(charConfig);
-            if (charConfig.abilityType === '威力＋' && !primaryAttacker) {
-                primaryAttacker = charConfig;
-            }
+            if (charConfig.abilityType === '威力＋' && !primaryAttacker) primaryAttacker = charConfig;
         }
 
         if (!primaryAttacker) {
@@ -3136,36 +2865,25 @@
 
         let bestLoadout = null;
         let bestTotal = -1;
-
         const attackerCandidates = [];
         const availableMainArmor = armorData_calc.filter(item => item.armorType === 'main');
         for (const armor of availableMainArmor) {
             const jsonAbilityCondition = getConditionFromAbilityName_calc(armor.abilityName);
             if (primaryAttacker.selectedConditions.includes(jsonAbilityCondition)) {
                 const jsonAbilityType = armor.abilityName.includes('味方威力＋') ? '味方威力＋' : '威力＋';
-                if (jsonAbilityType === '威力＋' || jsonAbilityType === '味方威力＋') {
-                        attackerCandidates.push(armor);
-                }
+                if (jsonAbilityType === '威力＋' || jsonAbilityType === '味方威力＋') attackerCandidates.push(armor);
             }
         }
 
-        const powerPlusCandidates = attackerCandidates
-            .filter(a => !a.abilityName.includes('味方威力＋'))
-            .map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue_calc(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) }))
-            .sort((a, b) => b.totalValue - a.totalValue);
-        const partyBuffCandidates = attackerCandidates
-            .filter(a => a.abilityName.includes('味方威力＋'))
-            .map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue_calc(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) }))
-            .sort((a, b) => b.totalValue - a.totalValue);
+        const powerPlusCandidates = attackerCandidates.filter(a => !a.abilityName.includes('味方威力＋')).map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue_calc(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) })).sort((a, b) => b.totalValue - a.totalValue);
+        const partyBuffCandidates = attackerCandidates.filter(a => a.abilityName.includes('味方威力＋')).map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue_calc(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) })).sort((a, b) => b.totalValue - a.totalValue);
         const scenariosToTest = [...powerPlusCandidates.slice(0, 2), ...partyBuffCandidates.slice(0, 3)];
         const uniqueScenarios = [...new Map(scenariosToTest.map(item => [item.armorName, item])).values()];
         uniqueScenarios.push(null); 
 
         for (const attackerMainArmor of uniqueScenarios) {
             const lockedEquipment = new Map();
-            if (attackerMainArmor) {
-                lockedEquipment.set(primaryAttacker.charId, { mainArmor: attackerMainArmor, subArmor: null });
-            }
+            if (attackerMainArmor) lockedEquipment.set(primaryAttacker.charId, { mainArmor: attackerMainArmor, subArmor: null });
             const scenarioLoadout = runIterativeSolver_calc(partyConfig, lockedEquipment);
             const scenarioResults = calculateFinalResults_calc(scenarioLoadout, partyConfig);
             const scenarioAttackerResult = scenarioResults.find(r => r.charId === primaryAttacker.charId);
@@ -3188,16 +2906,16 @@
         const { charId, mainArmor, subArmor, totals } = result;
         const resultArea = document.getElementById(`result-area-${charId}`);
         
-        let mainArmorNameStyle = '';
+        let mainArmorNameStyle = '', subArmorNameStyle = '';
         if (!mainArmor || mainArmor.armorName === '該当なし') mainArmorNameStyle = 'style="color: red;"';
         else if (mainArmor.armorName.includes('名将の鎧') || mainArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) mainArmorNameStyle = 'style="color: magenta;"';
         else if (mainArmor.nativeValue > 0) mainArmorNameStyle = 'style="color: orange;"';
-        const mainArmorNameText = mainArmor.nativeValue > 0 && mainArmor.armorName !== '該当なし' ? `${mainArmor.armorName}(+${mainArmor.nativeValue})` : mainArmor.armorName;
         
-        let subArmorNameStyle = '';
-            if (!subArmor || subArmor.armorName === '該当なし') subArmorNameStyle = 'style="color: red;"';
+        if (!subArmor || subArmor.armorName === '該当なし') subArmorNameStyle = 'style="color: red;"';
         else if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) subArmorNameStyle = 'style="color: magenta;"';
         else if (subArmor.nativeValue > 0) subArmorNameStyle = 'style="color: orange;"';
+
+        const mainArmorNameText = mainArmor.nativeValue > 0 && mainArmor.armorName !== '該当なし' ? `${mainArmor.armorName}(+${mainArmor.nativeValue})` : mainArmor.armorName;
         const subArmorNameText = subArmor.nativeValue > 0 && subArmor.armorName !== '該当なし' ? `${subArmor.armorName}(+${subArmor.nativeValue})` : subArmor.armorName;
 
         let totalHTML = '';
@@ -3212,18 +2930,8 @@
         resultArea.innerHTML = `
             <div class="result-details">
                 <table class="result-table"><tbody>
-                    <tr>
-                        <td class="col-heading"><span class="heading-text">主防具</span></td>
-                        <td class="col-armor"><span class="data-label">装備:</span><span class="armor-text" ${mainArmorNameStyle}>${mainArmorNameText || ''}</span></td>
-                        <td class="col-ability"><span class="data-label">アビリティ:</span><span class="ability-text">${mainArmor.abilityName || '-'}</span></td>
-                        <td class="col-value"><span class="data-label">効果値:</span><span class="value-text">${mainArmor.value || 0}%</span></td>
-                    </tr>
-                    <tr>
-                        <td class="col-heading"><span class="heading-text">副防具</span></td>
-                        <td class="col-armor"><span class="data-label">装備:</span><span class="armor-text" ${subArmorNameStyle}>${subArmorNameText || ''}</span></td>
-                        <td class="col-ability"><span class="data-label">アビリティ:</span><span class="ability-text">${subArmor.abilityName || '-'}</span></td>
-                        <td class="col-value"><span class="data-label">効果値:</span><span class="value-text">${subArmor.value || 0}%</span></td>
-                    </tr>
+                    <tr><td class="col-heading"><span class="heading-text">主防具</span></td><td class="col-armor"><span class="data-label">装備:</span><span class="armor-text" ${mainArmorNameStyle}>${mainArmorNameText || ''}</span></td><td class="col-ability"><span class="data-label">アビリティ:</span><span class="ability-text">${mainArmor.abilityName || '-'}</span></td><td class="col-value"><span class="data-label">効果値:</span><span class="value-text">${mainArmor.value || 0}%</span></td></tr>
+                    <tr><td class="col-heading"><span class="heading-text">副防具</span></td><td class="col-armor"><span class="data-label">装備:</span><span class="armor-text" ${subArmorNameStyle}>${subArmorNameText || ''}</span></td><td class="col-ability"><span class="data-label">アビリティ:</span><span class="ability-text">${subArmor.abilityName || '-'}</span></td><td class="col-value"><span class="data-label">効果値:</span><span class="value-text">${subArmor.value || 0}%</span></td></tr>
                 </tbody></table>
             </div>
             ${totalHTML}
@@ -3233,7 +2941,7 @@
     function displayEmptyResult_calc(charId) {
         document.getElementById(`result-area-${charId}`).innerHTML = `<p>条件を選択して計算を実行してください。</p>`;
     }
-
 </script>
+
 </body>
 </html>

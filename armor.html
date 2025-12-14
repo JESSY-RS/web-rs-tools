@@ -54,6 +54,19 @@
           });
         };
 
+        // ▼▼▼ 修正: データ加工関数（記号と名称を結合） ▼▼▼
+        const processDataWithSymbols = (data) => {
+            if (!data) return [];
+            return data.map(item => {
+                const symbol = item['記号'] ? String(item['記号']) : '';
+                const name = item['名称'] ? String(item['名称']) : '';
+                // 記号と名称を結合して新しい名称とする
+                const combinedName = symbol + name;
+                return { ...item, '名称': combinedName };
+            });
+        };
+        // ▲▲▲ 修正ここまで ▲▲▲
+
         const ArmorCombinationAnalyzer = () => {
           // ===== ここから拡大縮小機能の修正 =====
           const [zoomLevel, setZoomLevel] = useState(1.0);
@@ -760,11 +773,12 @@ const deleteExcludeProfile = (type) => {
             };
           }, []); // 依存配列を空にして、コンポーネントマウント時に一度だけ実行するように戻す
 
-          // メインスレッドでのCSVデータロード（個別のキャラ検索用）
+          // ▼▼▼ 修正: データ読み込み・LocalStorage読み込み・マイグレーションを一括処理 ▼▼▼
           useEffect(() => {
             const loadDataForMainThread = async () => {
                 setError('');
                 try {
+                    // 1. CSVデータの読み込み
                     const [mainArmorData, subArmorData, decorationData, characterData] = await Promise.all([
                         loadCSVFile(dataFiles.mainArmor),
                         loadCSVFile(dataFiles.subArmor),
@@ -772,29 +786,88 @@ const deleteExcludeProfile = (type) => {
                         loadCharacterResistances()
                     ]);
 
-                    setMainArmor(mainArmorData);
-                    setSubArmor(subArmorData);
-                    setDecorations(decorationData);
+                    // 2. 記号と名称を結合
+                    const processedMainArmor = processDataWithSymbols(mainArmorData);
+                    const processedSubArmor = processDataWithSymbols(subArmorData);
+                    const processedDecorations = processDataWithSymbols(decorationData);
+
+                    setMainArmor(processedMainArmor);
+                    setSubArmor(processedSubArmor);
+                    setDecorations(processedDecorations);
                     setCharacterResistances(characterData);
 
-                    // Filter for bulk selection (quantity >= 5)
-                    setAvailableBulkMainArmor(mainArmorData.filter(item => (item['所持数'] || 0) >= 5));
-                    setAvailableBulkSubArmor(subArmorData.filter(item => (item['所持数'] || 0) >= 5));
-                    setAvailableBulkDecorations(decorationData.filter(item => (item['所持数'] || 0) >= 5));
-
+                    // 3. 所持数フィルタリングなど
+                    setAvailableBulkMainArmor(processedMainArmor.filter(item => (item['所持数'] || 0) >= 5));
+                    setAvailableBulkSubArmor(processedSubArmor.filter(item => (item['所持数'] || 0) >= 5));
+                    setAvailableBulkDecorations(processedDecorations.filter(item => (item['所持数'] || 0) >= 5));
 
                     const initialQuantities = {};
-                    mainArmorData.forEach(item => initialQuantities[`main_${item['名称']}`] = item['所持数'] || Infinity);
-                    subArmorData.forEach(item => initialQuantities[`sub_${item['名称']}`] = item['所持数'] || Infinity);
-                    decorationData.forEach(item => initialQuantities[`deco_${item['名称']}`] = item['所持数'] || Infinity);
+                    processedMainArmor.forEach(item => initialQuantities[`main_${item['名称']}`] = item['所持数'] || Infinity);
+                    processedSubArmor.forEach(item => initialQuantities[`sub_${item['名称']}`] = item['所持数'] || Infinity);
+                    processedDecorations.forEach(item => initialQuantities[`deco_${item['名称']}`] = item['所持数'] || Infinity);
                     setItemQuantities(initialQuantities);
 
+                    // 4. 設定のマイグレーション関数（内部定義）
+                    const migrateList = (jsonString, masterData) => {
+                        try {
+                            const list = JSON.parse(jsonString || '[]');
+                            if (!Array.isArray(list)) return [];
+                            return list.map(savedName => {
+                                // 1. 完全一致（すでに新しい名前の場合）
+                                if (masterData.some(d => d['名称'] === savedName)) return savedName;
+
+                                // 2. 記号変更への対応（1文字の記号が変わった場合）
+                                // 保存名の「2文字目以降（記号を除いた名前）」が、新しいデータの末尾と一致するか判定
+                                const found = masterData.find(d => {
+                                    // 文字数が短すぎる場合は無視
+                                    if (savedName.length < 2) return false;
+
+                                    // 保存名の先頭1文字（古い記号）をカット
+                                    // 例: "☆黒紅の術衣" → "黒紅の術衣"
+                                    const namePart = savedName.substring(1);
+
+                                    // 新しい名称が、その名前部分で終わっているか確認
+                                    // 例: "●黒紅の術衣" は "黒紅の術衣" で終わる → true
+                                    return d['名称'].endsWith(namePart);
+                                });
+
+                                return found ? found['名称'] : savedName;
+                            });
+                        } catch (e) {
+                            return [];
+                        }
+                    };
+
+                    // 5. LocalStorageから読み込み & 即座にマイグレーション適用
+                    const rawMain = localStorage.getItem('exclude_main');
+                    const rawSub = localStorage.getItem('exclude_sub');
+                    const rawDeco = localStorage.getItem('exclude_deco');
+
+                    const migratedMain = migrateList(rawMain, processedMainArmor);
+                    const migratedSub = migrateList(rawSub, processedSubArmor);
+                    const migratedDeco = migrateList(rawDeco, processedDecorations);
+
+                    // 6. 状態の更新
+                    setExcludeSettings({
+                        main: migratedMain,
+                        sub: migratedSub,
+                        deco: migratedDeco,
+                        showMain: false, 
+                        showSub: false, 
+                        showDeco: false
+                    });
+
+                    setExcludeProfileExists({
+                        main: rawMain !== null,
+                        sub: rawSub !== null,
+                        deco: rawDeco !== null
+                    });
+
                     setMainThreadDataLoaded(true);
-                    // Workerのデータロード状態も確認して、両方完了したらローディングを解除
-                    if (workerDataLoaded) { // ここを調整
+                    if (workerDataLoaded) {
                         setLoading(false);
                     }
-                    console.log('メインスレッド: データ読み込み完了');
+                    console.log('メインスレッド: データ読み込み・設定移行完了');
                 } catch (error) {
                     setError(`メインスレッドでのデータ読み込みエラー: ${error.message}`);
                     console.error('Main thread Load error:', error);
@@ -803,7 +876,8 @@ const deleteExcludeProfile = (type) => {
                 }
             };
             loadDataForMainThread();
-          }, [workerDataLoaded]); // workerDataLoaded が変更されたら再実行（Workerのinit完了を待つ）
+          }, [workerDataLoaded]);
+          // ▲▲▲ 修正ここまで ▲▲▲
 
           useEffect(() => {
             const storedProfiles = localStorage.getItem('profiles');
@@ -811,23 +885,6 @@ const deleteExcludeProfile = (type) => {
               setSavedProfiles(JSON.parse(storedProfiles));
             }
           }, []);
-
-useEffect(() => {
-  const mainData = localStorage.getItem('exclude_main');
-  const subData = localStorage.getItem('exclude_sub');
-  const decoData = localStorage.getItem('exclude_deco');
-
-  setExcludeProfileExists({
-    main: mainData !== null,
-    sub: subData !== null,
-    deco: decoData !== null
-  });
-
-  const main = JSON.parse(mainData || '[]');
-  const sub = JSON.parse(subData || '[]');
-  const deco = JSON.parse(decoData || '[]');
-  setExcludeSettings(prev => ({ ...prev, main, sub, deco }));
-}, []);
           
           // プルダウンが開かれたときに選択項目へスクロールしフォーカスする
           // useEffectをuseLayoutEffectに変更し、setTimeoutを削除
@@ -1389,6 +1446,11 @@ useEffect(() => {
             }
           }, [currentThemeColors]);
 
+        // ▼▼▼ ここから修正 ▼▼▼
+        // 各プルダウンメニューの親要素に適用する共通スタイル
+        //const contextAnchorStyle = { transform: 'translateZ(0)' };
+        const contextAnchorStyle = {};
+        // ▲▲▲ ここまで修正 ▲▲▲
 
 return (
             <div ref={heightAdjustmentContainerRef}>
@@ -1401,7 +1463,7 @@ return (
                             <button onClick={() => changeZoom(0.1)}>＋</button>
                         </div>
                         <div className={`${currentThemeColors.wholeTxt} p-6`}>
-                          <h1 className={`text-3xl font-bold mb-6 ${currentThemeColors.titleTxt} relative`}>
+                          <h1 style={contextAnchorStyle} className={`text-3xl font-bold mb-6 ${currentThemeColors.titleTxt} relative`}>
                             <span
                               id="title-star"
                               className="cursor-pointer text-yellow-500"
@@ -1624,7 +1686,7 @@ return (
                       <div className="grid mb-6"></div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="relative">
+                          <div className="relative" style={contextAnchorStyle}>
                             <label className={`text-sm ${currentThemeColors.basicTxt} mb-1 block`}>主防具 除外:</label>
                             <button
                               onClick={(e) => {
@@ -1711,7 +1773,7 @@ return (
                             )}
                           </div>
 
-                          <div className="relative">
+                          <div className="relative" style={contextAnchorStyle}>
                             <label className={`text-sm ${currentThemeColors.basicTxt} mb-1 block`}>副防具 除外:</label>
                             <button
                               onClick={(e) => {
@@ -1798,7 +1860,7 @@ return (
                             )}
                           </div>
 
-                          <div className="relative">
+                          <div className="relative" style={contextAnchorStyle}>
                             <label className={`text-sm ${currentThemeColors.basicTxt} mb-1 block`}>装飾品 除外:</label>
                             <button
                               onClick={(e) => {
@@ -2049,7 +2111,7 @@ return (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                           <div className="flex items-center gap-2">
                             <label className={`w-15 text-sm ${characterColors[activeTab].text}`}>キャラクター選択:</label>
-                            <div className="relative flex-1 min-w-64" ref={characterDropdownRef}>
+                            <div className="relative flex-1 min-w-64" ref={characterDropdownRef} style={contextAnchorStyle}>
                                 <button
                                   data-char-select
                                   onClick={() => {
@@ -2101,7 +2163,7 @@ return (
 
                           <div className="flex items-center gap-1">
                             <label className={`w-15 text-sm ${characterColors[activeTab].text}`}>状態異常耐性:</label>
-                            <div className="relative flex-1 min-w-40" ref={el => dropdownRefs.current[activeTab] = el}>
+                            <div className="relative flex-1 min-w-40" ref={el => dropdownRefs.current[activeTab] = el} style={contextAnchorStyle}>
                               <button
                                 onClick={() => toggleStatusAilmentDropdown(activeTab)}
                                 className={`border rounded px-3 py-2 flex items-center gap-2 w-full justify-between ${currentThemeColors.pullmTxt} ${
@@ -2190,7 +2252,7 @@ return (
                                   : `${currentThemeColors.btn4rBak}`
                               }`}
                             >
-                              全異反映
+                              全状反映
                             </button>
                           </div>
                         </div>
@@ -2242,7 +2304,7 @@ return (
                         </div>
 
                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                          <div className="relative">
+                          <div className="relative" style={contextAnchorStyle}>
                             <label className={`text-sm ${characterColors[activeTab].text}`}>主防具 指定:</label>
                             <button
                               data-fixed-type="main"
@@ -2273,7 +2335,7 @@ return (
                               </div>
                             )}
                           </div>
-                          <div className="relative">
+                          <div className="relative" style={contextAnchorStyle}>
                             <label className={`text-sm ${characterColors[activeTab].text}`}>副防具 指定:</label>
                              <button
                               data-fixed-type="sub"
@@ -2304,7 +2366,7 @@ return (
                               </div>
                             )}
                           </div>
-                          <div className="relative">
+                          <div className="relative" style={contextAnchorStyle}>
                             <label className={`text-sm ${characterColors[activeTab].text}`}>装飾品 指定:</label>
                              <button
                               data-fixed-type="deco"
@@ -2340,7 +2402,7 @@ return (
                         {/* Bulk Equipment Selection Section */}
                         <div className="mb-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="relative">
+                                <div className="relative" style={contextAnchorStyle}>
                                     <label className={`text-sm block ${characterColors[activeTab].text}`}>主防具 一括:</label>
                                     <div className="flex gap-2">
                                         <div className="relative flex-1">
@@ -2370,7 +2432,7 @@ return (
                                         <button onClick={() => applyBulkEquipment('main')} className={`px-4 py-2 ${currentThemeColors.btn4cTxt} rounded ${currentThemeColors.btn4bBak} transition-colors`}>反映</button>
                                     </div>
                                 </div>
-                                <div className="relative">
+                                <div className="relative" style={contextAnchorStyle}>
                                     <label className={`text-sm block ${characterColors[activeTab].text}`}>副防具 一括:</label>
                                     <div className="flex gap-2">
                                          <div className="relative flex-1">
@@ -2400,7 +2462,7 @@ return (
                                         <button onClick={() => applyBulkEquipment('sub')} className={`px-4 py-2 ${currentThemeColors.btn4cTxt} rounded ${currentThemeColors.btn4gBak} transition-colors`}>反映</button>
                                     </div>
                                 </div>
-                                <div className="relative">
+                                <div className="relative" style={contextAnchorStyle}>
                                     <label className={`text-sm block ${characterColors[activeTab].text}`}>装飾品 一括:</label>
                                     <div className="flex gap-2">
                                          <div className="relative flex-1">

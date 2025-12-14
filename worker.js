@@ -15,6 +15,18 @@ let workerDataStore = {
     characterResistances: []
 };
 
+// ▼▼▼ 修正: データ加工関数（記号と名称を結合） ▼▼▼
+const processDataWithSymbolsInWorker = (data) => {
+    if (!data) return [];
+    return data.map(item => {
+        const symbol = item['記号'] ? String(item['記号']) : '';
+        const name = item['名称'] ? String(item['名称']) : '';
+        const combinedName = symbol + name;
+        return { ...item, '名称': combinedName };
+    });
+};
+// ▲▲▲ 修正ここまで ▲▲▲
+
 // CSVファイルをロードするユーティリティ関数（Worker内部用）
 async function loadCSVFileInWorker(url) {
     try {
@@ -33,7 +45,10 @@ async function loadCSVFileInWorker(url) {
         if (parsed.errors.length > 0) {
             console.warn(`[Worker] CSV parsing warnings for ${url}:`, parsed.errors);
         }
-        return parsed.data;
+        
+        // ▼▼▼ 修正: ロード直後に加工処理を適用 ▼▼▼
+        return processDataWithSymbolsInWorker(parsed.data);
+        // ▲▲▲ 修正ここまで ▲▲▲
     } catch (error) {
         throw new Error(`Failed to load ${url} in worker: ${error.message}`);
     }
@@ -49,7 +64,7 @@ self.onmessage = async function(e) {
             workerDataStore.mainArmor = await loadCSVFileInWorker(dataFiles.mainArmor);
             workerDataStore.subArmor = await loadCSVFileInWorker(dataFiles.subArmor);
             workerDataStore.decorations = await loadCSVFileInWorker(dataFiles.decorations);
-            workerDataStore.characterResistances = await loadCSVFileInWorker(dataFiles.characterResistances);
+            workerDataStore.characterResistances = await loadCSVFileInWorker(dataFiles.characterResistances); // キャラのCSVは通常名称変更なしと仮定しますが、統一のため加工が入ります
 
             self.postMessage({ type: 'dataLoaded', message: 'Worker内でデータロードが完了しました。' });
             console.log("[Worker] All data loaded successfully.");
@@ -67,7 +82,6 @@ self.onmessage = async function(e) {
     }
 
     if (type === 'startSearch') {
-        // [修正点] 新しい検索開始時にtimeoutSignaledをリセットする
         timeoutSignaled = false;
 
         const { excludeSettings, characterValues, characterAdjustmentValues, targetValues, statusAilmentSettings, fixedEquipments, itemQuantities, sortSettings } = payload;
@@ -85,8 +99,6 @@ self.onmessage = async function(e) {
             return;
         }
 
-        // これらのavailableリストは、固定装備が設定されていない場合にのみ使用される。
-        // 固定装備が設定されている場合は、全体データから直接フィルタリングする。
         const availableMainFromExclusion = mainArmor.filter(a => !excludeSettings.main.includes(a['名称']));
         const availableSubFromExclusion = subArmor.filter(a => !excludeSettings.sub.includes(a['名称']));
         const availableDecoFromExclusion = decorations.filter(a => !excludeSettings.deco.includes(a['名称']));
@@ -149,11 +161,9 @@ self.onmessage = async function(e) {
                     for (const deco of charDecoList) {
                         if (timeoutSignaled) return;
                         const decoKey = `deco_${deco['名称']}`;
-                        // この所持数チェックはdeco['所持数']がundefinedまたはInfinityでない場合のみ行われるべき
                         if (deco['所持数'] !== undefined && deco['所持数'] !== Infinity) {
                              if (currentRemainingQuantities[decoKey] !== undefined && currentRemainingQuantities[decoKey] < 1) continue;
                         }
-
 
                         let meetsConditions = true;
                         const charTotals = {};
@@ -184,7 +194,6 @@ self.onmessage = async function(e) {
                             if (sub['所持数'] !== undefined && sub['所持数'] !== Infinity) {
                                 nextRemainingQuantities[subKey] = (nextRemainingQuantities[subKey] || 0) > 0 ? nextRemainingQuantities[subKey] - 1 : 0;
                             }
-                            // typo修正: '所氏数' -> '所持数'
                             if (deco['所持数'] !== undefined && deco['所持数'] !== Infinity) {
                                 nextRemainingQuantities[decoKey] = (nextRemainingQuantities[decoKey] || 0) > 0 ? nextRemainingQuantities[decoKey] - 1 : 0;
                             }
