@@ -745,28 +745,37 @@
                 let totalAddedValue = 0;
 
                 // 固有アビリティを加味する場合の処理
-                if (includeUnique && uniqueAbilities[item.armorName]) {
-                    const isSpecialArmor = item.armorName.includes("名将の鎧") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ");
+                if (includeUnique) {
+                    // 特殊防具の判定（記号が含まれていてもヒットするようにincludesを使用）
+                    const isSpecialArmor = item.armorName.includes("名将の鎧") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ") || item.armorName.includes("バトルヴァンブレイス");
 
                     // 名将の鎧とバトルヴァンブレイスの場合は、固有アビリティを加算しない
                     if (!isSpecialArmor) {
-                        const armorBonuses = uniqueAbilities[item.armorName];
-
-                        // 1. 対応する属性のボーナスを加算
-                        const specificTarget = getTargetFromAbilityName(item.abilityName);
-                        if (specificTarget && armorBonuses[specificTarget]) {
-                            totalAddedValue += armorBonuses[specificTarget];
+                        let armorBonuses = uniqueAbilities[item.armorName];
+                        
+                        // 記号付きなどで完全一致しない場合、後方一致で検索
+                        if (!armorBonuses) {
+                             const foundKey = Object.keys(uniqueAbilities).find(k => item.armorName.endsWith(k) || k.endsWith(item.armorName));
+                             if(foundKey) armorBonuses = uniqueAbilities[foundKey];
                         }
 
-                        // 2. 「威力＋」系の場合、さらに「味方威力」ボーナスも加算 (重複はしない)
-                        const isSelfPower = selfPowerAbilities.includes(item.abilityName);
-                        if (isSelfPower && armorBonuses['味方威力']) {
-                            totalAddedValue += armorBonuses['味方威力'];
-                        }
+                        if (armorBonuses) {
+                            // 1. 対応する属性のボーナスを加算
+                            const specificTarget = getTargetFromAbilityName(item.abilityName);
+                            if (specificTarget && armorBonuses[specificTarget]) {
+                                totalAddedValue += armorBonuses[specificTarget];
+                            }
 
-                        // 3. 「威力＋」系の場合、「威力」ボーナスも加算する
-                        if (isSelfPower && armorBonuses['威力']) {
-                            totalAddedValue += armorBonuses['威力'];
+                            // 2. 「威力＋」系の場合、さらに「味方威力」ボーナスも加算 (重複はしない)
+                            const isSelfPower = selfPowerAbilities.includes(item.abilityName);
+                            if (isSelfPower && armorBonuses['味方威力']) {
+                                totalAddedValue += armorBonuses['味方威力'];
+                            }
+
+                            // 3. 「威力＋」系の場合、「威力」ボーナスも加算する
+                            if (isSelfPower && armorBonuses['威力']) {
+                                totalAddedValue += armorBonuses['威力'];
+                            }
                         }
                     }
                 }
@@ -860,7 +869,7 @@
                             if (item.isCombined) {
                                 armorCellHTML = `<span class="combined-armor-name">${item.armorName} (+${item.addedValue})</span>`;
                                 valueCellClass += ' combined-value';
-                            } else if (item.armorName.includes("名将の鎧") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ")) {
+                            } else if (item.armorName.includes("名将の鎧") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ") || item.armorName.includes("バトルヴァンブレイス")) {
                                 armorCellHTML = `<span class="special-armor-name">${item.armorName}</span>`;
                             } else {
                                 armorCellHTML = item.armorName;

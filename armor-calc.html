@@ -1078,24 +1078,36 @@
          */
         function getNativeAbilityValue(armorName, armorType, selectedConditions, abilityType, charId) {
             const nativeAbilityMap = armorType === 'main' ? mainNativeAbilities : subNativeAbilities;
-            if (!nativeAbilityMap.has(armorName)) return 0;
+            
+            let abilities = nativeAbilityMap.get(armorName);
+            // CSVのキーと完全一致しない場合（記号の違いなど）、後方一致等で検索
+            if (!abilities) {
+                for (const [key, val] of nativeAbilityMap.entries()) {
+                    if (armorName.endsWith(key) || key.endsWith(armorName) || 
+                        (armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') && key.includes('バトルヴァンブレイス')) ||
+                        (armorName.includes('バトルヴァンブレイス') && key.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ'))) {
+                        abilities = val;
+                        break;
+                    }
+                }
+            }
+            if (!abilities) return 0;
             
             const selectedSeries = document.getElementById(`series-select-${charId}`).value;
             let totalValue = 0;
-            const abilities = nativeAbilityMap.get(armorName);
 
             for (const ability of abilities) {
                 let shouldAddValue = true;
 
                 // シリーズ装備のシリーズ一致判定
-                if (armorName.includes('名将の鎧') || armorName.includes('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+                if (armorName.includes('名将の鎧') || armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || armorName.includes('バトルヴァンブレイス')) {
                     if (selectedSeries === '未選択') {
                         shouldAddValue = false;
                     } else {
                         const armorSeriesMatch = armorName.match(/\(([^)]+)\)/);
                         if (armorSeriesMatch) {
                             const armorSeriesStr = armorSeriesMatch[1];
-                            if (armorName.includes('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') && armorSeriesStr === 'US・ES・IS') {
+                            if ((armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || armorName.includes('バトルヴァンブレイス')) && armorSeriesStr === 'US・ES・IS') {
                                 if (!['US', 'ES', 'IS'].includes(selectedSeries)) {
                                     shouldAddValue = false;
                                 }
@@ -1281,8 +1293,16 @@
                     if (provider.mainArmor.abilityName.includes("味方威力＋") && provider.selectedConditions.includes(mainCond)) {
                         contribution += provider.mainArmor.value;
                     }
+                    
                     // 固有アビリティ(CSV)に「味方威力」がある場合の貢献
-                    if (mainNativeAbilities.has(provider.mainArmor.armorName) && mainNativeAbilities.get(provider.mainArmor.armorName).some(a => a.target === '味方威力')) {
+                    // CSVマップのキーと一致しない場合も考慮して検索
+                    let mainNative = mainNativeAbilities.get(provider.mainArmor.armorName);
+                    if(!mainNative) {
+                         const found = Array.from(mainNativeAbilities.entries()).find(e => provider.mainArmor.armorName.endsWith(e[0]));
+                         if(found) mainNative = found[1];
+                    }
+
+                    if (mainNative && mainNative.some(a => a.target === '味方威力')) {
                         const hasMeisho = provider.mainArmor.armorName.includes('名将の鎧');
                         if (hasMeisho) {
                             let isMatch = false;
@@ -1310,7 +1330,14 @@
                     if (provider.subArmor.abilityName.includes("味方威力＋") && provider.selectedConditions.includes(subCond)) {
                         contribution += provider.subArmor.value;
                     }
-                    if (subNativeAbilities.has(provider.subArmor.armorName) && subNativeAbilities.get(provider.subArmor.armorName).some(a => a.target === '味方威力')) {
+                    
+                    let subNative = subNativeAbilities.get(provider.subArmor.armorName);
+                    if(!subNative) {
+                         const found = Array.from(subNativeAbilities.entries()).find(e => provider.subArmor.armorName.endsWith(e[0]));
+                         if(found) subNative = found[1];
+                    }
+
+                    if (subNative && subNative.some(a => a.target === '味方威力')) {
                         contribution += provider.subArmor.nativeValue;
                     }
                     
@@ -1397,9 +1424,8 @@
                 ...partyBuffCandidates.slice(0, 3)
             ];
             
-            // uniqueIdではなくarmorNameとスペックでシナリオを作るが、
-            // 実際にロックするときはオブジェクトそのもの(uniqueId含む)を使うため
-            // ここでの重複排除はarmorName基準でOKだが、Mapに入れるときは実体を使う
+            // armorNameだけで重複排除すると「◆名将」と「名将」が別扱いになる可能性があるが、
+            // 装備としての実体はuniqueIdで管理されているため、ここでは実体（オブジェクト）を基準にする
             const uniqueScenarios = [...new Map(scenariosToTest.map(item => [item.armorName, item])).values()];
             // 「ロックなし」のケースを追加。これにより、ソルバーが自由に選択するベースラインも評価される
             uniqueScenarios.push(null); 
@@ -1441,7 +1467,7 @@
             let mainArmorNameStyle = '';
             if (!mainArmor || mainArmor.armorName === '該当なし') {
                 mainArmorNameStyle = 'style="color: red;"';
-            } else if (mainArmor.armorName.includes('名将の鎧') || mainArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+            } else if (mainArmor.armorName.includes('名将の鎧') || mainArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || mainArmor.armorName.includes('バトルヴァンブレイス')) {
                 mainArmorNameStyle = 'style="color: magenta;"';
             } else if (mainArmor.nativeValue > 0) {
                 mainArmorNameStyle = 'style="color: orange;"';
@@ -1451,7 +1477,7 @@
             let subArmorNameStyle = '';
              if (!subArmor || subArmor.armorName === '該当なし') {
                 subArmorNameStyle = 'style="color: red;"';
-            } else if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+            } else if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || subArmor.armorName.includes('バトルヴァンブレイス')) {
                 subArmorNameStyle = 'style="color: magenta;"';
             } else if (subArmor.nativeValue > 0) {
                 subArmorNameStyle = 'style="color: orange;"';

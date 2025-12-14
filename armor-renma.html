@@ -7,9 +7,7 @@
     <link rel="shortcut icon" href="favicon-renma.ico">
     <link rel="apple-touch-icon" href="apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="web-app-manifest-192x192-renma.png">
-    <title>練磨(防具)リスト</title> <!-- Created by じぇ -->
-
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <title>練磨(防具)リスト</title> <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <style>
         body {
@@ -1164,12 +1162,68 @@
                         const values = row.split(',');
                         let obj = {};
                         header.forEach((key, i) => { obj[key.trim()] = values[i] ? values[i].trim() : ''; });
+                        
+                        const symbol = obj['記号'] || ''; 
+                        const rawName = obj['名称'] || ''; // CSVの全角名称
+
+                        let baseName = rawName;
+                        if (baseName === 'バトルヴァンブレイス') {
+                            baseName = 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ'; 
+                        }
+
+                        obj.symbol = symbol;
+                        obj.baseName = baseName;       
+                        obj.rawBaseName = rawName;     
+                        
+                        obj.displayName = symbol + rawName; // 表示用は全角
+                        obj.名称 = obj.displayName; // 後方互換性のため
+
                         return obj;
                     });
                 } catch (error) {
                     console.error(`Error loading CSV from ${filePath}:`, error);
                     return [];
                 }
+            }
+            
+            function resolveArmorName(inputName) {
+                if (!inputName) return "";
+
+                let targetBaseName = null;
+                let extractedSeries = "";
+
+                if (inputName.includes('名将の鎧')) {
+                    targetBaseName = '名将の鎧';
+                    const match = inputName.match(/[\(（](.+)[\)）]/);
+                    if (match) extractedSeries = `(${match[1]})`;
+                }
+                else if (inputName.includes('バトルヴァンブレイス') || inputName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
+                    targetBaseName = 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ'; 
+                    const match = inputName.match(/[\(（](.+)[\)）]/);
+                    if (match) extractedSeries = `(${match[1]})`;
+                }
+
+                if (targetBaseName) {
+                    const currentItem = allArmorData.find(item => item.baseName === targetBaseName);
+                    if (currentItem) {
+                        if (targetBaseName === 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ' && extractedSeries) {
+                            return currentItem.symbol + currentItem.baseName + extractedSeries;
+                        } else {
+                            return currentItem.symbol + currentItem.rawBaseName + extractedSeries;
+                        }
+                    }
+                }
+
+                const exactMatch = allArmorData.find(item => item.displayName === inputName);
+                if (exactMatch) return exactMatch.displayName;
+                
+                const baseMatch = allArmorData.find(item => item.baseName === inputName);
+                if (baseMatch) return baseMatch.displayName;
+
+                const fuzzyMatch = allArmorData.find(item => item.baseName && inputName.endsWith(item.baseName));
+                if (fuzzyMatch) return fuzzyMatch.displayName;
+
+                return inputName;
             }
 
             function setupDropdown(part, armorType, options = {}) {
@@ -1207,14 +1261,14 @@
                 }
 
                 data.forEach(item => {
-                    if (item.名称) {
-                         if (item.名称 === '◆名将の鎧' || item.名称 === '☆バトルヴァンブレイス') {
+                    if (item.displayName) {
+                         if (item.baseName === '名将の鎧' || item.baseName === 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') {
                             const optionEl = document.createElement('div');
                             optionEl.className = 'dropdown-option';
                             optionEl.dataset.hasSubmenu = 'true';
                             
                             const textSpan = document.createElement('span');
-                            textSpan.textContent = item.名称;
+                            textSpan.textContent = item.displayName;
                             
                             const arrowSpan = document.createElement('span');
                             arrowSpan.className = 'submenu-arrow';
@@ -1226,8 +1280,8 @@
                         } else {
                             const optionEl = document.createElement('div');
                             optionEl.className = 'dropdown-option';
-                            optionEl.textContent = item.名称;
-                            optionEl.dataset.value = item.名称;
+                            optionEl.textContent = item.displayName;
+                            optionEl.dataset.value = item.displayName;
                             optionsList.appendChild(optionEl);
                         }
                     }
@@ -1355,12 +1409,10 @@
                 }
             });
 
-            // ▼▼▼ 最終修正箇所 Part 1 of 2 ▼▼▼
             document.addEventListener('input', (e) => {
                 if (e.target.classList.contains('dropdown-search-input')) {
                     const searchTerm = hiraganaToKatakana(e.target.value).toLowerCase();
                     
-                    // 以前の方法(nextElementSibling)は不安定な場合があるため、より確実な方法でリストを取得します。
                     const panel = e.target.closest('.custom-dropdown-panel');
                     if (!panel) return;
                     const optionsList = panel.querySelector('.dropdown-options-list');
@@ -1378,8 +1430,6 @@
                         
                         const optionText = hiraganaToKatakana(textToCompare).toLowerCase();
                         
-                        // CSSクラスではなく、直接styleを操作して表示/非表示を切り替えます。
-                        // これにより、他のCSS設定による影響を完全に排除します。
                         if (optionText.includes(searchTerm)) {
                             option.style.display = ''; 
                         } else {
@@ -1473,14 +1523,10 @@
                         const searchInput = panel.querySelector('.dropdown-search-input');
                         if (searchInput) searchInput.value = '';
                         
-                        // ▼▼▼ 最終修正箇所 Part 2 of 2 ▼▼▼
-                        // inputイベントでstyle.displayを直接変更したため、
-                        // ドロップダウンを開き直した際に、そのスタイルをリセットする必要があります。
                         panel.querySelectorAll('.dropdown-option').forEach(opt => {
-                            opt.style.display = ''; // 直接指定したdisplayプロパティを解除
-                            opt.classList.remove('hidden'); // hiddenクラスも念のため解除
+                            opt.style.display = ''; 
+                            opt.classList.remove('hidden'); 
                         });
-                        // ▲▲▲ 最終修正箇所 ▲▲▲
 
                         const optionsList = panel.querySelector('.dropdown-options-list');
                         optionsList.querySelectorAll('.focused').forEach(opt => opt.classList.remove('focused'));
@@ -1504,7 +1550,7 @@
                                     const parentOptions = optionsList.querySelectorAll('.dropdown-option[data-has-submenu]');
                                     for (const opt of parentOptions) {
                                         const optText = opt.querySelector('span')?.textContent;
-                                        if (optText === parentText) {
+                                        if (optText.includes(parentText.replace(/[☆◆]/g, ''))) {
                                             selectedOption = opt;
                                             break;
                                         }
@@ -1535,7 +1581,7 @@
                              text = target.dataset.value;
                              value = target.dataset.value;
                         } else {
-                            if (parentName === '☆バトルヴァンブレイス') {
+                            if (parentName.includes('バトルヴァンブレイス')) {
                                 parentName = toHalfWidthBattleVanbrace(parentName);
                             }
                             text = `${parentName}(${valueText})`;
@@ -1596,9 +1642,9 @@
                     let sublist = [];
                     let formattedParentText = parentText;
 
-                    if (parentText === '◆名将の鎧') {
+                    if (parentText.includes('名将の鎧')) {
                         sublist = warlordArmorSublist;
-                    } else if (parentText === '☆バトルヴァンブレイス') {
+                    } else if (parentText.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || parentText.includes('バトルヴァンブレイス')) {
                         sublist = vanbraceArmorSublist;
                         formattedParentText = toHalfWidthBattleVanbrace(parentText);
                     }
@@ -1683,7 +1729,12 @@
                         }
 
                         partsContainer.innerHTML = '';
-                        data.forEach(partData => addNewPart(partData));
+                        data.forEach(partData => {
+                             if (partData.armorName) {
+                                partData.armorName = resolveArmorName(partData.armorName);
+                            }
+                            addNewPart(partData)
+                        });
                         originalPartOrder = Array.from(partsContainer.children);
 
                     } catch (error) {
@@ -1782,15 +1833,19 @@
                         let nameMatch = false;
                         if (!filterArmorName) {
                             nameMatch = true; 
-                        } else if (filterArmorName === '◆名将の鎧(全対象)') {
-                            nameMatch = partArmorName.startsWith('◆名将の鎧');
-                        } else if (filterArmorName === '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ(全対象)') {
-                            nameMatch = partArmorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                        } else if (filterArmorName.endsWith('(全対象)')) {
+                            if (filterArmorName.includes('名将の鎧')) nameMatch = partArmorName.includes('名将の鎧');
+                            else if (filterArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) nameMatch = partArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
                         } else {
                             const parentArmorMatch = partArmorName.match(/(.+)\((.+)\)/);
                             if (parentArmorMatch) {
                                 const parentName = parentArmorMatch[1];
-                                nameMatch = filterArmorName === parentName || filterArmorName === partArmorName;
+                                const filterParentMatch = filterArmorName.match(/(.+)\((.+)\)/);
+                                if(filterParentMatch) {
+                                    nameMatch = filterArmorName === partArmorName; 
+                                } else {
+                                    nameMatch = filterArmorName === parentName || filterArmorName === partArmorName;
+                                }
                             } else {
                                 nameMatch = filterArmorName === partArmorName;
                             }
@@ -2033,13 +2088,13 @@
 
                         if (sortArmorName && sortArmorName !== 'none') {
                            if (sortArmorName.endsWith('(シリーズ順)')) {
-                                const isWarlord = sortArmorName.startsWith('◆名将の鎧');
-                                const isVanbrace = sortArmorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
-                                const prefix = isWarlord ? '◆名将の鎧' : '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ';
+                                const isWarlord = sortArmorName.includes('名将の鎧');
+                                const isVanbrace = sortArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                                const targetStr = isWarlord ? '名将の鎧' : (isVanbrace ? 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ' : '');
                                 const sublist = isWarlord ? warlordArmorSublist : vanbraceArmorSublist;
 
-                                const aIsTarget = aData.armorName.startsWith(prefix);
-                                const bIsTarget = bData.armorName.startsWith(prefix);
+                                const aIsTarget = aData.armorName.includes(targetStr);
+                                const bIsTarget = bData.armorName.includes(targetStr);
 
                                 if (aIsTarget !== bIsTarget) {
                                     result = aIsTarget ? -1 : 1;
@@ -2052,36 +2107,28 @@
                                     result = aIndex - bIndex;
                                 }
                             } else if (sortArmorName === 'list_order') {
-                                const aIsWarlord = aData.armorName.startsWith('◆名将の鎧');
-                                const bIsWarlord = bData.armorName.startsWith('◆名将の鎧');
-                                const aIsVanbrace = aData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
-                                const bIsVanbrace = bData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
                                 const regex = /\(([^)]+)\)/;
-
-                                if (aIsWarlord && bIsWarlord) {
+                                if (aData.armorName.includes('名将の鎧') && bData.armorName.includes('名将の鎧')) {
                                     const aMatch = aData.armorName.match(regex);
                                     const bMatch = bData.armorName.match(regex);
-                                    const aSeriesIndex = aMatch ? warlordArmorSublist.indexOf(aMatch[1]) : -1;
-                                    const bSeriesIndex = bMatch ? warlordArmorSublist.indexOf(bMatch[1]) : -1;
-                                    if(aSeriesIndex !== bSeriesIndex) result = aSeriesIndex - bSeriesIndex;
-                                } else if (aIsVanbrace && bIsVanbrace) {
+                                    const aIdx = aMatch ? warlordArmorSublist.indexOf(aMatch[1]) : -1;
+                                    const bIdx = bMatch ? warlordArmorSublist.indexOf(bMatch[1]) : -1;
+                                    if(aIdx !== bIdx) result = aIdx - bIdx;
+                                } else if (aData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') && bData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
                                     const aMatch = aData.armorName.match(regex);
                                     const bMatch = bData.armorName.match(regex);
-                                    const aSeriesIndex = aMatch ? vanbraceArmorSublist.indexOf(aMatch[1]) : -1;
-                                    const bSeriesIndex = bMatch ? vanbraceArmorSublist.indexOf(bMatch[1]) : -1;
-                                    if(aSeriesIndex !== bSeriesIndex) result = aSeriesIndex - bSeriesIndex;
+                                    const aIdx = aMatch ? vanbraceArmorSublist.indexOf(aMatch[1]) : -1;
+                                    const bIdx = bMatch ? vanbraceArmorSublist.indexOf(bMatch[1]) : -1;
+                                    if(aIdx !== bIdx) result = aIdx - bIdx;
                                 } else {
-                                    const aIndex = allArmorData.findIndex(item => item.名称 === aData.armorName);
-                                    const bIndex = allArmorData.findIndex(item => item.名称 === bData.armorName);
+                                    const aIndex = allArmorData.findIndex(item => item.displayName === aData.armorName);
+                                    const bIndex = allArmorData.findIndex(item => item.displayName === bData.armorName);
                                     if (aIndex !== bIndex) result = aIndex - bIndex;
                                 }
-                            } else if (sortArmorName === '◆名将の鎧(全対象)') {
-                                const aIsTarget = aData.armorName.startsWith('◆名将の鎧');
-                                const bIsTarget = bData.armorName.startsWith('◆名将の鎧');
-                                if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
-                            } else if (sortArmorName === '☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ(全対象)') {
-                                const aIsTarget = aData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
-                                const bIsTarget = bData.armorName.startsWith('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                            } else if (sortArmorName.endsWith('(全対象)')) {
+                                const targetStr = sortArmorName.includes('名将の鎧') ? '名将の鎧' : 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ';
+                                const aIsTarget = aData.armorName.includes(targetStr);
+                                const bIsTarget = bData.armorName.includes(targetStr);
                                 if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
                             } else {
                                 const aIsTarget = aData.armorName === sortArmorName;
