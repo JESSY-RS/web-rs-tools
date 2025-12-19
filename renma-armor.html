@@ -965,10 +965,10 @@
     } else if (paramMode === 'secret_debug_on') {
         localStorage.removeItem(ADMIN_MODE_PERSIST_KEY);
         localStorage.removeItem(CLOUD_MODE_KEY); 
-    } else if (paramMode === 'secret_cloud_on') {
+    } else if (paramMode === 'secret_jessy_on') {
         localStorage.setItem(CLOUD_MODE_KEY, 'true');
         localStorage.removeItem(ADMIN_MODE_PERSIST_KEY); 
-    } else if (paramMode === 'secret_cloud_off') {
+    } else if (paramMode === 'secret_jessy_off') {
         localStorage.removeItem(CLOUD_MODE_KEY);
     }
 
