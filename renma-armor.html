@@ -956,7 +956,7 @@
     const ADMIN_DATA_KEY = 'RenmaArmorAdminData'; 
     const CLOUD_MODE_KEY = 'RenmaArmorCloudMode'; 
     const CLOUD_TEMP_KEY = 'RenmaArmorCloudTemp'; // クラウドモード用一時バックアップキー
-    const EXPORT_STATE_KEY = 'RenmaArmorExportDirty'; // ★追加: エクスポート未完了状態の維持用
+    const EXPORT_STATE_KEY = 'RenmaArmorExportDirty'; // エクスポート未完了状態の維持用
 
     // モード切り替え・競合回避ロジック
     if (paramMode === 'secret_admin_on') {
@@ -970,6 +970,12 @@
         localStorage.removeItem(ADMIN_MODE_PERSIST_KEY); 
     } else if (paramMode === 'secret_cloud_off') {
         localStorage.removeItem(CLOUD_MODE_KEY);
+    }
+
+    // ★追加: 競合状態の強制解決
+    // もし何らかの理由でクラウドモードと管理者モードの両方が残っていた場合、クラウドモードを優先して管理者フラグを消す
+    if (localStorage.getItem(CLOUD_MODE_KEY) === 'true') {
+        localStorage.removeItem(ADMIN_MODE_PERSIST_KEY);
     }
 
     const isAdminMode = (localStorage.getItem(ADMIN_MODE_PERSIST_KEY) === 'true');
@@ -1033,14 +1039,14 @@
     function setDataDirty(isDirty) {
         isDataDirty = isDirty;
         
-        // ★追加: エクスポート状態をLocalStorageに保存（リロード対策）
+        // エクスポート状態をLocalStorageに保存
         if (isDirty) {
             localStorage.setItem(EXPORT_STATE_KEY, 'true');
         } else {
             localStorage.removeItem(EXPORT_STATE_KEY);
         }
         
-        // エクスポートボタンの警告表示制御（モードに関係なく常に機能させる）
+        // エクスポートボタンの警告表示制御
         const exportButtons = document.querySelectorAll('#export-btn, #export-btn-footer');
         exportButtons.forEach(button => {
             if (isDirty) {
@@ -1060,8 +1066,6 @@
             if (isDirty && window.handleAutoSave) {
                 window.handleAutoSave(); 
             }
-            // ※クラウドモードでは、エクスポートボタンの状態(isDirty)と
-            // クラウド同期の状態(RenmaArmorCloudTemp)は独立して管理する。
         } else {
             // 通常モードの場合: ローカルストレージに未保存データを記録
             if (isDirty) {
@@ -1788,7 +1792,7 @@
         async function exportData() {
             syncDataFromListTab();
             
-            // ★追加: クラウドモードなら即時保存
+            // クラウドモードなら即時保存
             if (isCloudMode && window.saveToCloud) {
                 await window.saveToCloud();
             }
@@ -1801,7 +1805,7 @@
             a.click();
             URL.revokeObjectURL(a.href);
             
-            // ★修正: どのモードでもエクスポートしたら「未保存」フラグ（ボタンの警告）を消す
+            // どのモードでもエクスポートしたら「未保存」フラグ（ボタンの警告）を消す
             setDataDirty(false);
         }
 
@@ -2330,8 +2334,7 @@
         });
 
         function checkForUnsavedBackup() {
-            // ★修正: クラウドモードの場合は、通常モード用チェックはスキップ
-            // (クラウドモード用チェックはモジュール側 checkCloudTempData で行う)
+            // クラウドモードの場合は、通常モード用チェックはスキップ
             if (isCloudMode) return;
 
             try {
@@ -2405,7 +2408,7 @@
         if (!loadedFromAdmin) addNewPart(null, null, false);
         originalPartOrder = Array.from(partsContainer.children);
         
-        // ★追加: ページロード時にエクスポート未完了状態を復元
+        // ページロード時にエクスポート未完了状態を復元
         if (localStorage.getItem(EXPORT_STATE_KEY) === 'true') {
             setDataDirty(true);
         }
@@ -3122,7 +3125,7 @@
 
     if (isCloudMode) {
         document.getElementById('cloud-ui-container').style.display = 'flex';
-        // ★追加: クラウドモード時の免責事項を表示
+        // クラウドモード時の免責事項を表示
         const disclaimer = document.getElementById('cloud-disclaimer');
         if (disclaimer) disclaimer.style.display = 'block';
         
@@ -3197,8 +3200,7 @@
                     armorData: dataToSave
                 });
 
-                // ★修正: クラウド保存が完了したので「クラウド用一時バックアップ」は消す
-                // (ただし、エクスポート用の「未保存」状態は維持する)
+                // クラウド保存が完了したので「クラウド用一時バックアップ」は消す
                 localStorage.removeItem(CLOUD_TEMP_KEY);
                 updateStatus('saved');
 
@@ -3207,7 +3209,7 @@
                 updateStatus('error');
             }
         }
-        // ★追加: グローバル関数として公開 (exportDataから呼べるようにする)
+        // グローバル関数として公開
         window.saveToCloud = saveToCloud;
 
         // クラウドモード専用バックアップチェック
@@ -3223,7 +3225,7 @@
                 warningDiv.id = 'cloud-backup-warning';
                 warningDiv.style.cssText = 'color: red; background-color: rgb(67, 46, 46); padding: 10px; margin: 10px 0; border: 1px solid red; border-radius: 5px; text-align: center;';
                 
-                // ★修正: ボタンのキャプションとスタイルを変更
+                // ボタンのキャプションとスタイルを変更
                 warningDiv.innerHTML = `前回、クラウドに保存されていないデータがあります。<button id="cloud-restore-btn" style="margin-left: 15px; padding: 5px 10px; cursor: pointer;">データの保存</button><button id="cloud-discard-btn" style="color: #fff; background-color: #e53e3e; margin-left: 10px; padding: 5px 10px; cursor: pointer;">データの破棄</button>`;
                 
                 const mainElement = document.querySelector('#tab-list main');
@@ -3236,15 +3238,13 @@
                     warningDiv.remove();
                     // 復元したらすぐにクラウドへ保存して同期をとる
                     saveToCloud();
-                    // 復元＝ローカルとクラウドの差分を埋めた -> エクスポート的にはDirtyにすべきか？
-                    // 「データの保存」ボタンを押した = クラウドには保存されるが、ファイルエクスポートはされていない
-                    // よってDirtyにする
+                    // 復元＝ローカルとクラウドの差分を埋めた -> エクスポート的にはDirtyにすべき
                     if (typeof window.setDataDirty === 'function') window.setDataDirty(true);
                 });
 
                 // 破棄ボタン
                 document.getElementById('cloud-discard-btn').addEventListener('click', () => {
-                    // ★追加: 確認メッセージ
+                    // 確認メッセージ
                     if (window.confirm('バックアップデータを本当に削除しますか？この操作は元に戻せません。')) {
                         localStorage.removeItem(CLOUD_TEMP_KEY);
                         warningDiv.remove();
@@ -3308,7 +3308,7 @@
             if (typeof window.updateTop5Tab === 'function') window.updateTop5Tab(window.sharedArmorData);
             if (typeof window.updateCalcTab === 'function') window.updateCalcTab(window.sharedArmorData);
             
-            // ★修正: クラウド読込時、LocalStorageに保存された「エクスポート未完了状態」を確認して復元
+            // クラウド読込時、LocalStorageに保存された「エクスポート未完了状態」を確認して復元
             if (typeof window.setDataDirty === 'function') {
                 const isExportDirty = localStorage.getItem('RenmaArmorExportDirty') === 'true';
                 if (isExportDirty) {
