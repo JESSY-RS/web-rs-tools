@@ -972,8 +972,7 @@
         localStorage.removeItem(CLOUD_MODE_KEY);
     }
 
-    // ★追加: 競合状態の強制解決
-    // もし何らかの理由でクラウドモードと管理者モードの両方が残っていた場合、クラウドモードを優先して管理者フラグを消す
+    // 競合状態の強制解決
     if (localStorage.getItem(CLOUD_MODE_KEY) === 'true') {
         localStorage.removeItem(ADMIN_MODE_PERSIST_KEY);
     }
@@ -1526,7 +1525,7 @@
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 const scrollY = window.scrollY;
                 try {
                     const data = JSON.parse(e.target.result);
@@ -1551,7 +1550,18 @@
                     updateTop5Tab(sharedArmorData);
                     updateCalcTab(sharedArmorData);
                     
+                    // ▼▼▼ 修正箇所ここから ▼▼▼
+                    
+                    // 1. クラウドモードなら即時保存 (同期)
+                    if (isCloudMode && window.saveToCloud) {
+                        await window.saveToCloud();
+                    }
+
+                    // 2. エクスポートボタンは「未保存」にせず通常状態にする
                     setDataDirty(false);
+
+                    // ▲▲▲ 修正箇所ここまで ▲▲▲
+
                     if (isAdminMode) {
                          localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(sharedArmorData));
                          debugLog("Imported data saved to Admin Key.");
