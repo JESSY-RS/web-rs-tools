@@ -186,7 +186,7 @@
         #tab-list .header-controls {
             display: flex; justify-content: space-between; align-items: center; gap: 10px;
         }
-        #tab-list .header-controls .left-buttons, #tab-list .header-controls .right-buttons { display: flex; gap: 10px; }
+        #tab-list .header-controls .left-buttons, #tab-list .header-controls .right-buttons { display: flex; gap: 10px; align-items: center; }
         #tab-list button {
             padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer;
             font-size: 0.9em; transition: background-color 0.3s, box-shadow 0.3s;
@@ -495,6 +495,66 @@
             #tab-calc .form-horizontal-row { flex-direction: column; align-items: stretch; }
             #tab-calc .form-type .styled-form-group { flex-wrap: wrap; }
         }
+
+        /* ▼▼▼ Firebaseログイン・クラウド用UIスタイル ▼▼▼ */
+        .cloud-ui-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-left: 10px;
+            border-left: 1px solid #555;
+        }
+
+        .user-icon-small {
+            width: 36px; /* 36pxに変更 */
+            height: 36px; /* 36pxに変更 */
+            border-radius: 50%;
+            object-fit: cover; /* 画像の歪み防止 */
+        }
+        
+        .cloud-status {
+            font-size: 1em;
+            color: #aaa;
+            white-space: nowrap;
+        }
+        .cloud-status.saving { color: #ffd700; } /* 保存中: 金 (文字非表示制御はJSで行う) */
+        .cloud-status.saved { color: #98fb98; } /* 保存完了: 緑 (文字非表示制御はJSで行う) */
+        .cloud-status.error { color: #ff4500; } /* エラー: 赤 */
+
+        #login-btn-header {
+            background-color: #dd4b39; /* Google Red */
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        #login-btn-header:hover { background-color: #c23321; }
+
+        #logout-btn-header {
+            background-color: #555;
+            color: white;
+            border: 1px solid #777;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        #logout-btn-header:hover { background-color: #666; }
+        /* ▲▲▲ 追加ここまで ▲▲▲ */
+
+        /* ▼▼▼ 免責事項（クラウドモード用） ▼▼▼ */
+        .cloud-disclaimer {
+            display: none; /* JSで制御 */
+            border-top: 1px dashed #555;
+            margin-top: 15px;
+            padding-top: 10px;
+            font-size: 1em; /* 1emに変更 */
+            color: #ff4444; /* 赤文字 */
+            line-height: 1.5;
+        }
+        /* ▲▲▲ 追加ここまで ▲▲▲ */
         
     </style>
 </head>
@@ -569,7 +629,14 @@
                         <button id="import-btn">インポート</button>
                         <input type="file" id="import-file-input" accept=".json">
                         <button id="export-btn">エクスポート</button>
-                    </div>
+                        
+                        <div id="cloud-ui-container" class="cloud-ui-group" style="display: none;">
+                            <button id="login-btn-header">Googleログイン</button>
+                            <button id="logout-btn-header" style="display: none;">ログアウト</button>
+                            <img id="header-user-icon" src="" class="user-icon-small" style="display: none;" title="ログイン中">
+                            <span id="cloud-status-text" class="cloud-status"></span>
+                        </div>
+                        </div>
                     <div class="right-buttons">
                         <button id="edit-mode-btn">編集モード開始</button>
                     </div>
@@ -756,7 +823,13 @@
                     ※並び替え機能で昇順のチェックがオフの場合は降順で並び替えられます。<br>
                     ※並び替え機能で保存のチェックがオフの場合はプレビューとして、並び順が希望の順番になっていれば、保存のチェックをオンにして、再び並び替えボタンを押して状態を反映させてください。並び順が希望の順番になっていない場合は、編集モードを一度終了させる事でキャンセル出来ます。<br>
                 </div>
-            </footer>
+                <div id="cloud-disclaimer" class="cloud-disclaimer">
+                    【免責事項・プライバシーポリシー】<br>
+                    ※クラウドモードではGoogle Firebaseを利用して認証およびデータ保存を行っています。<br>
+                    ※保存されるデータは、ユーザーが作成した練磨(防具)リストのみであり、個人を特定する情報は収集していません。<br>
+                    ※Googleアカウントの認証情報はGoogle側で管理されており、当ツール管理者がパスワード等を知ることはありません。<br>
+                </div>
+                </footer>
             <div class="bottom-links">
                 <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a><br>
                 <span id="toggle-max-value" style="cursor: pointer; color: dodgerblue; text-decoration: underline;">▼最大値確認</span>
@@ -871,7 +944,6 @@
     </div>
         </div>
     </div>
-    
 <script>
     // =========================================================================
     // === グローバル変数と共通関数 ==================================================
@@ -882,23 +954,38 @@
     
     const ADMIN_MODE_PERSIST_KEY = 'RenmaArmorAdminModeEnabled'; 
     const ADMIN_DATA_KEY = 'RenmaArmorAdminData'; 
+    const CLOUD_MODE_KEY = 'RenmaArmorCloudMode'; 
+    const CLOUD_TEMP_KEY = 'RenmaArmorCloudTemp'; // クラウドモード用一時バックアップキー
+    const EXPORT_STATE_KEY = 'RenmaArmorExportDirty'; // ★追加: エクスポート未完了状態の維持用
 
+    // モード切り替え・競合回避ロジック
     if (paramMode === 'secret_admin_on') {
         localStorage.setItem(ADMIN_MODE_PERSIST_KEY, 'true');
+        localStorage.removeItem(CLOUD_MODE_KEY); 
     } else if (paramMode === 'secret_debug_on') {
         localStorage.removeItem(ADMIN_MODE_PERSIST_KEY);
+        localStorage.removeItem(CLOUD_MODE_KEY); 
+    } else if (paramMode === 'secret_cloud_on') {
+        localStorage.setItem(CLOUD_MODE_KEY, 'true');
+        localStorage.removeItem(ADMIN_MODE_PERSIST_KEY); 
+    } else if (paramMode === 'secret_cloud_off') {
+        localStorage.removeItem(CLOUD_MODE_KEY);
     }
 
     const isAdminMode = (localStorage.getItem(ADMIN_MODE_PERSIST_KEY) === 'true');
+    const isCloudMode = (localStorage.getItem(CLOUD_MODE_KEY) === 'true');
     const isDebugMode = (paramMode === 'secret_debug_on');
 
     function debugLog(...args) {
         if (isDebugMode) console.log('[DEBUG]', ...args);
     }
 
-    if (isAdminMode) debugLog("Admin Mode Active (Auto-save enabled).");
+    if (isAdminMode) debugLog("Admin Mode Active.");
+    if (isCloudMode) debugLog("Cloud Mode Active.");
 
     let sharedArmorData = []; 
+    window.sharedArmorData = sharedArmorData; 
+
     let tabScrollPositions = { list: 0, top5: 0, calc: 0 };
     let isDataDirty = false;
     
@@ -945,6 +1032,15 @@
 
     function setDataDirty(isDirty) {
         isDataDirty = isDirty;
+        
+        // ★追加: エクスポート状態をLocalStorageに保存（リロード対策）
+        if (isDirty) {
+            localStorage.setItem(EXPORT_STATE_KEY, 'true');
+        } else {
+            localStorage.removeItem(EXPORT_STATE_KEY);
+        }
+        
+        // エクスポートボタンの警告表示制御（モードに関係なく常に機能させる）
         const exportButtons = document.querySelectorAll('#export-btn, #export-btn-footer');
         exportButtons.forEach(button => {
             if (isDirty) {
@@ -958,24 +1054,35 @@
 
         syncDataFromListTab();
 
-        if (isDirty) {
-            localStorage.setItem(UNSAVED_DATA_KEY, JSON.stringify(sharedArmorData));
-            localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: true }));
-            if (isAdminMode) localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(sharedArmorData));
+        // モードによる保存処理の分岐
+        if (isCloudMode) {
+            // クラウドモードの場合: 自動保存フックを呼び出す
+            if (isDirty && window.handleAutoSave) {
+                window.handleAutoSave(); 
+            }
+            // ※クラウドモードでは、エクスポートボタンの状態(isDirty)と
+            // クラウド同期の状態(RenmaArmorCloudTemp)は独立して管理する。
         } else {
-            localStorage.removeItem(UNSAVED_DATA_KEY);
-            localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: false }));
-            const existingWarning = document.getElementById('backup-warning');
-            if (existingWarning) existingWarning.remove();
+            // 通常モードの場合: ローカルストレージに未保存データを記録
+            if (isDirty) {
+                localStorage.setItem(UNSAVED_DATA_KEY, JSON.stringify(sharedArmorData));
+                localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: true }));
+                if (isAdminMode) localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(sharedArmorData));
+            } else {
+                localStorage.removeItem(UNSAVED_DATA_KEY);
+                localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: false }));
+                const existingWarning = document.getElementById('backup-warning');
+                if (existingWarning) existingWarning.remove();
+            }
         }
     }
+    window.setDataDirty = setDataDirty;
 
     function syncDataFromListTab() {
         const partsData = [];
         document.querySelectorAll('#parts-container .armor-part').forEach(part => {
             let armorName = part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
             
-            // バトルヴァンブレイスが含まれていたら強制的に半角に置換して保存
             if (armorName && armorName.includes('バトルヴァンブレイス')) {
                 armorName = armorName.replace('バトルヴァンブレイス', 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
             }
@@ -990,7 +1097,9 @@
             });
         });
         sharedArmorData = partsData;
+        window.sharedArmorData = sharedArmorData;
     }
+    window.syncDataFromListTab = syncDataFromListTab;
 
     function showTab(tabName, event) {
         const previousTabName = activeTab;
@@ -1024,10 +1133,12 @@
             'calc': '練磨(防具)自動選定ツール'
         };
         const pageTitleEl = document.getElementById('page-title');
-        pageTitleEl.textContent = titles[tabName];
+        pageTitleEl.innerHTML = titles[tabName];
         
         if (isAdminMode) {
             pageTitleEl.innerHTML += " <span style='color: red;'>[Admin Mode: Auto-Save ON]</span>";
+        } else if (isCloudMode) {
+            pageTitleEl.innerHTML += " <span style='color: dodgerblue;'>[Cloud Mode: Auto-Save ON]</span>";
         }
 
         const newScrollY = tabScrollPositions[tabName] || 0;
@@ -1086,8 +1197,11 @@
         pinButton.textContent = isPinned ? '📍' : '📌';
         document.body.style.zoom = pageSettings[tabToZoomKey[activeTab]];
         
+        const pageTitleEl = document.getElementById('page-title');
         if (isAdminMode) {
-             document.getElementById('page-title').innerHTML += " <span style='color: red;'>[Admin Mode: Auto-Save ON]</span>";
+             pageTitleEl.innerHTML += " <span style='color: red;'>[Admin Mode: Auto-Save ON]</span>";
+        } else if (isCloudMode) {
+             pageTitleEl.innerHTML += " <span style='color: dodgerblue;'>[Cloud Mode: Auto-Save ON]</span>";
         }
     });
 
@@ -1156,7 +1270,7 @@
                 header.forEach((key, i) => { obj[key.trim()] = values[i] ? values[i].trim() : ''; });
                 
                 const symbol = obj['記号'] || ''; 
-                const rawName = obj['名称'] || ''; // CSVの全角名称
+                const rawName = obj['名称'] || ''; 
 
                 let baseName = rawName;
                 if (baseName === 'バトルヴァンブレイス') {
@@ -1167,7 +1281,7 @@
                 obj.baseName = baseName;       
                 obj.rawBaseName = rawName;     
                 
-                obj.displayName = symbol + rawName; // 表示用は全角
+                obj.displayName = symbol + rawName; 
                 obj.名称 = obj.displayName; 
 
                 return obj;
@@ -1217,6 +1331,7 @@
 
         return inputName;
     }
+    window.resolveArmorName = resolveArmorName; 
 
     function initializeListTab() {
         let isEditMode = false, sortableInstance = null;
@@ -1347,7 +1462,7 @@
                 else prefix.style.display = 'inline';
             }
         }
-
+        
         function addNewPart(data = null, basePart = null, setDirty = true) { 
             const newPart = template.content.cloneNode(true).querySelector('.armor-part');
             const uniqueId = Date.now() + Math.random();
@@ -1401,6 +1516,7 @@
             
             if (setDirty) setDataDirty(true);
         }
+        window.addNewPart = addNewPart; 
         
         function importData(event) {
             const file = event.target.files[0];
@@ -1669,8 +1785,14 @@
             }
         });
 
-        function exportData() {
+        async function exportData() {
             syncDataFromListTab();
+            
+            // ★追加: クラウドモードなら即時保存
+            if (isCloudMode && window.saveToCloud) {
+                await window.saveToCloud();
+            }
+
             const jsonString = JSON.stringify(sharedArmorData, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const a = document.createElement('a');
@@ -1678,6 +1800,8 @@
             a.download = '練磨_防具_リスト.json';
             a.click();
             URL.revokeObjectURL(a.href);
+            
+            // ★修正: どのモードでもエクスポートしたら「未保存」フラグ（ボタンの警告）を消す
             setDataDirty(false);
         }
 
@@ -2206,6 +2330,10 @@
         });
 
         function checkForUnsavedBackup() {
+            // ★修正: クラウドモードの場合は、通常モード用チェックはスキップ
+            // (クラウドモード用チェックはモジュール側 checkCloudTempData で行う)
+            if (isCloudMode) return;
+
             try {
                 const settings = JSON.parse(localStorage.getItem(BACKUP_SETTINGS_KEY));
                 if (settings && settings.hasUnsavedChanges) {
@@ -2223,7 +2351,6 @@
                             partsContainer.innerHTML = '';
                             if (restoredData && restoredData.length > 0) {
                                 restoredData.forEach(partData => {
-                                    // 【修正】バックアップ復元時にも名寄せを実行
                                     if (partData.armorName) {
                                         partData.armorName = resolveArmorName(partData.armorName);
                                     }
@@ -2247,6 +2374,8 @@
 
         setupSearchPanel();
         setupSortPanel();
+        window.updateTop5Tab = updateTop5Tab;
+        window.updateCalcTab = updateCalcTab;
         
         let loadedFromAdmin = false;
         if (isAdminMode) {
@@ -2256,7 +2385,6 @@
                     const parsedData = JSON.parse(adminSavedData);
                     if (Array.isArray(parsedData) && parsedData.length > 0) {
                         parsedData.forEach(partData => {
-                            // 【修正】管理者モード自動ロード時にも名寄せを実行
                             if (partData.armorName) {
                                 partData.armorName = resolveArmorName(partData.armorName);
                             }
@@ -2277,6 +2405,11 @@
         if (!loadedFromAdmin) addNewPart(null, null, false);
         originalPartOrder = Array.from(partsContainer.children);
         
+        // ★追加: ページロード時にエクスポート未完了状態を復元
+        if (localStorage.getItem(EXPORT_STATE_KEY) === 'true') {
+            setDataDirty(true);
+        }
+
         document.getElementById('edit-mode-btn').addEventListener('click', toggleEditMode);
         document.getElementById('export-btn').addEventListener('click', exportData);
         document.getElementById('import-btn').addEventListener('click', () => document.getElementById('import-file-input').click());
@@ -2965,5 +3098,280 @@
     }
 </script>
 
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
+           from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } 
+           from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    // ▼▼▼ ご自身の firebaseConfig に書き換えてください ▼▼▼
+    const firebaseConfig = {
+  apiKey: "AIzaSyCEaZLuD45Zu6OKco8EHtNjfBBmTW2SPik",
+  authDomain: "renmabase.firebaseapp.com",
+  projectId: "renmabase",
+  storageBucket: "renmabase.firebasestorage.app",
+  messagingSenderId: "154320130326",
+  appId: "1:154320130326:web:cb448ec515f709fcbf4037"
+    };
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+    const isCloudMode = (localStorage.getItem('RenmaArmorCloudMode') === 'true');
+    // モジュール内で使うキー定義
+    const CLOUD_TEMP_KEY = 'RenmaArmorCloudTemp';
+
+    if (isCloudMode) {
+        document.getElementById('cloud-ui-container').style.display = 'flex';
+        // ★追加: クラウドモード時の免責事項を表示
+        const disclaimer = document.getElementById('cloud-disclaimer');
+        if (disclaimer) disclaimer.style.display = 'block';
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        let currentUser = null;
+        let autoSaveTimer = null;
+        const AUTO_SAVE_DELAY = 3000;
+
+        // UI要素
+        const loginBtn = document.getElementById('login-btn-header');
+        const logoutBtn = document.getElementById('logout-btn-header');
+        const userIcon = document.getElementById('header-user-icon');
+        const statusText = document.getElementById('cloud-status-text');
+
+        // ログイン状態監視
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            if (user) {
+                // ログイン時
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'block';
+                userIcon.src = user.photoURL || '';
+                userIcon.style.display = 'block';
+                userIcon.title = user.displayName;
+                statusText.textContent = '';
+                
+                // クラウドモード専用のバックアップチェックから開始
+                await checkCloudTempData();
+            } else {
+                // 未ログイン時
+                loginBtn.style.display = 'block';
+                logoutBtn.style.display = 'none';
+                userIcon.style.display = 'none';
+                statusText.textContent = '';
+            }
+        });
+
+        loginBtn.onclick = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
+        logoutBtn.onclick = () => signOut(auth).then(() => location.reload());
+
+        // --- 自動保存フック ---
+        window.handleAutoSave = function() {
+            if (!currentUser) return;
+            
+            // 1. 即時ローカルバックアップ (保険: クラウド専用キー)
+            saveToLocalBackup();
+            
+            // 2. ステータス更新 (保存中メッセージは非表示)
+            updateStatus('saving');
+            if (autoSaveTimer) clearTimeout(autoSaveTimer);
+            
+            // 3. 3秒後にクラウド送信
+            autoSaveTimer = setTimeout(() => {
+                saveToCloud();
+            }, AUTO_SAVE_DELAY);
+        };
+
+        // --- クラウド保存処理 ---
+        async function saveToCloud() {
+            if (!currentUser) return;
+
+            try {
+                if (typeof window.syncDataFromListTab === 'function') window.syncDataFromListTab();
+                const dataToSave = window.sharedArmorData || [];
+
+                await setDoc(doc(db, "users", currentUser.uid, "renma_data", "armor_list"), {
+                    updatedAt: new Date(),
+                    armorData: dataToSave
+                });
+
+                // ★修正: クラウド保存が完了したので「クラウド用一時バックアップ」は消す
+                // (ただし、エクスポート用の「未保存」状態は維持する)
+                localStorage.removeItem(CLOUD_TEMP_KEY);
+                updateStatus('saved');
+
+            } catch (e) {
+                console.error(e);
+                updateStatus('error');
+            }
+        }
+        // ★追加: グローバル関数として公開 (exportDataから呼べるようにする)
+        window.saveToCloud = saveToCloud;
+
+        // クラウドモード専用バックアップチェック
+        async function checkCloudTempData() {
+            const tempBackup = localStorage.getItem(CLOUD_TEMP_KEY);
+            
+            if (tempBackup) {
+                console.log("未完了のクラウド送信データがあります。");
+                updateStatus('waiting'); // ステータス表示
+                
+                // 復元パネルを生成
+                const warningDiv = document.createElement('div');
+                warningDiv.id = 'cloud-backup-warning';
+                warningDiv.style.cssText = 'color: red; background-color: rgb(67, 46, 46); padding: 10px; margin: 10px 0; border: 1px solid red; border-radius: 5px; text-align: center;';
+                
+                // ★修正: ボタンのキャプションとスタイルを変更
+                warningDiv.innerHTML = `前回、クラウドに保存されていないデータがあります。<button id="cloud-restore-btn" style="margin-left: 15px; padding: 5px 10px; cursor: pointer;">データの保存</button><button id="cloud-discard-btn" style="color: #fff; background-color: #e53e3e; margin-left: 10px; padding: 5px 10px; cursor: pointer;">データの破棄</button>`;
+                
+                const mainElement = document.querySelector('#tab-list main');
+                mainElement.insertBefore(warningDiv, mainElement.firstChild);
+
+                // 保存ボタン (旧復元ボタン)
+                document.getElementById('cloud-restore-btn').addEventListener('click', () => {
+                    const restoredData = JSON.parse(tempBackup);
+                    applyDataToUI(restoredData);
+                    warningDiv.remove();
+                    // 復元したらすぐにクラウドへ保存して同期をとる
+                    saveToCloud();
+                    // 復元＝ローカルとクラウドの差分を埋めた -> エクスポート的にはDirtyにすべきか？
+                    // 「データの保存」ボタンを押した = クラウドには保存されるが、ファイルエクスポートはされていない
+                    // よってDirtyにする
+                    if (typeof window.setDataDirty === 'function') window.setDataDirty(true);
+                });
+
+                // 破棄ボタン
+                document.getElementById('cloud-discard-btn').addEventListener('click', () => {
+                    // ★追加: 確認メッセージ
+                    if (window.confirm('バックアップデータを本当に削除しますか？この操作は元に戻せません。')) {
+                        localStorage.removeItem(CLOUD_TEMP_KEY);
+                        warningDiv.remove();
+                        loadFromCloud();
+                    }
+                });
+
+            } else {
+                // バックアップがなければ通常通りロード
+                await loadFromCloud();
+            }
+        }
+
+        // --- クラウド読込処理 ---
+        async function loadFromCloud() {
+            if (!currentUser) return;
+            updateStatus('loading');
+
+            try {
+                const docRef = doc(db, "users", currentUser.uid, "renma_data", "armor_list");
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const loadedData = docSnap.data().armorData;
+                    applyDataToUI(loadedData);
+                    updateStatus('loaded');
+                } else {
+                    updateStatus('');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('読み込みに失敗しました: ' + e.message);
+                updateStatus('error');
+            }
+        }
+
+        // UI反映用ヘルパー
+        function applyDataToUI(data) {
+            const partsContainer = document.getElementById('parts-container');
+            const searchPanel = document.getElementById('search-panel');
+            if (searchPanel.style.display === 'none') {
+                document.getElementById('edit-mode-btn').click(); 
+            }
+
+            partsContainer.innerHTML = ''; 
+
+            if (data && data.length > 0) {
+                data.forEach(partData => {
+                    if (window.resolveArmorName && partData.armorName) {
+                        partData.armorName = window.resolveArmorName(partData.armorName);
+                    }
+                    if (typeof window.addNewPart === 'function') {
+                        window.addNewPart(partData, null, false);
+                    }
+                });
+            } else {
+                if (typeof window.addNewPart === 'function') window.addNewPart(null, null, false);
+            }
+
+            if (typeof window.syncDataFromListTab === 'function') window.syncDataFromListTab();
+            if (typeof window.updateTop5Tab === 'function') window.updateTop5Tab(window.sharedArmorData);
+            if (typeof window.updateCalcTab === 'function') window.updateCalcTab(window.sharedArmorData);
+            
+            // ★修正: クラウド読込時、LocalStorageに保存された「エクスポート未完了状態」を確認して復元
+            if (typeof window.setDataDirty === 'function') {
+                const isExportDirty = localStorage.getItem('RenmaArmorExportDirty') === 'true';
+                if (isExportDirty) {
+                    window.setDataDirty(true);
+                } else {
+                    // ボタンを通常状態に戻す
+                    const exportButtons = document.querySelectorAll('#export-btn, #export-btn-footer');
+                    exportButtons.forEach(button => {
+                        button.classList.remove('needs-export');
+                        button.textContent = 'エクスポート';
+                    });
+                }
+            }
+        }
+
+        // --- ヘルパー関数 ---
+        function updateStatus(state) {
+            statusText.className = 'cloud-status';
+            statusText.style.color = ''; 
+
+            if (state === 'saving') {
+                statusText.textContent = ''; 
+                statusText.classList.add('saving');
+            } else if (state === 'saved') {
+                statusText.textContent = ''; 
+                statusText.classList.add('saved');
+            } else if (state === 'loading') {
+                statusText.textContent = '読込中...';
+            } else if (state === 'loaded') {
+                statusText.textContent = '読込完了';
+                setTimeout(() => { statusText.textContent = ''; }, 3000);
+            } else if (state === 'waiting') {
+                statusText.textContent = '未保存データ有';
+                statusText.style.color = '#ff4500'; 
+            } else if (state === 'error') {
+                statusText.textContent = 'エラー';
+                statusText.classList.add('error');
+            } else {
+                statusText.textContent = '';
+            }
+        }
+
+        function saveToLocalBackup() {
+            if (window.sharedArmorData) {
+                // クラウドモード専用キーに保存
+                localStorage.setItem(CLOUD_TEMP_KEY, JSON.stringify(window.sharedArmorData));
+            }
+        }
+
+        window.addEventListener('beforeunload', (e) => {
+            if (statusText.classList.contains('saving')) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && statusText.classList.contains('saving')) {
+                if (autoSaveTimer) clearTimeout(autoSaveTimer);
+                saveToCloud(); 
+            }
+        });
+    }
+</script>
 </body>
 </html>
