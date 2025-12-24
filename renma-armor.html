@@ -2477,7 +2477,11 @@ function getPartData(part) {
         resetValueSortButtons();
         checkForUnsavedBackup();
     }
-    
+
+    // =========================================================================
+    // === 2. TOP5確認タブ (armor-top5.html) のスクリプト ==========================
+    // =========================================================================
+
     async function loadUniqueAbilities_top5() {
         const files = ['data/armor-main-ability.csv', 'data/armor-sub-ability.csv'];
         const promises = files.map(file => fetch(file).then(response => {
