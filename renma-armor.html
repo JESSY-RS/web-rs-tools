@@ -914,7 +914,7 @@
                 <footer>
                     <br>
                     ※使用は自己責任にて。<br>
-                    ※名将の鎧(+15)とバトルヴァンブレイス(+20)のシリーズ一致分は加味されていませんので注意してください。
+                    ※名将の鎧(+15)、英傑の足甲(+50/+20)、バトルヴァンブレイス(+20)のシリーズ一致分は加味されていませんので注意してください。
                 </footer>
     <div class="bottom2">
         <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a>
@@ -937,7 +937,7 @@
             <footer>
                 ※使用は自己責任にて。<br>
                 ※最適な組み合わせが選定出来ない可能性もあります。あくまで参考としてお考えください。<br>
-                ※名将の鎧の固有アビリティ考慮で威力＋選択のキャラにシリーズ指定した場合は、味方威力＋選択のキャラも威力＋選択のキャラとシリーズが同じであるなら必ず指定してください。<br>
+                ※名将の鎧・英傑の足甲の固有アビリティ考慮で威力＋選択のキャラにシリーズ指定した場合は、味方威力＋選択のキャラも威力＋選択のキャラとシリーズが同じであるなら必ず指定してください。<br>
                 ※シリーズで「その他」を選択してもバトルヴァンブレイスに対応するものはありません。
             </footer>
     <div class="bottom3">
@@ -1307,6 +1307,11 @@
             const match = inputName.match(/[\(（](.+)[\)）]/);
             if (match) extractedSeries = `(${match[1]})`;
         }
+        else if (inputName.includes('英傑の足甲')) {
+            targetBaseName = '英傑の足甲';
+            const match = inputName.match(/[\(（](.+)[\)）]/);
+            if (match) extractedSeries = `(${match[1]})`;
+        }
         else if (inputName.includes('バトルヴァンブレイス') || inputName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
             targetBaseName = 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ'; 
             const match = inputName.match(/[\(（](.+)[\)）]/);
@@ -1348,6 +1353,7 @@
         const template = document.getElementById('armor-part-template');
         
         const warlordArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'];
+        const eiketsuArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'];
         const vanbraceArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US・ES・IS','SSG','SaGaRS','SaGaEB'];
 
         let applyFilterFunction = () => {};
@@ -1391,7 +1397,7 @@
 
             data.forEach(item => {
                 if (item.名称) {
-                    if (item.baseName === '名将の鎧' || item.baseName === 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') {
+                    if (item.baseName === '名将の鎧' || item.baseName === '英傑の足甲' || item.baseName === 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') {
                         const optionEl = document.createElement('div');
                         optionEl.className = 'dropdown-option';
                         optionEl.dataset.hasSubmenu = 'true';
@@ -1757,6 +1763,8 @@
 
                 if (parentText.includes('名将の鎧')) {
                     sublist = warlordArmorSublist;
+                } else if (parentText.includes('英傑の足甲')) {
+                    sublist = eiketsuArmorSublist;
                 } else if (parentText.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || parentText.includes('バトルヴァンブレイス')) {
                     sublist = vanbraceArmorSublist;
                     formattedParentText = toHalfWidthBattleVanbrace(parentText);
@@ -1895,6 +1903,7 @@
                         nameMatch = true; 
                     } else if (filterArmorName.endsWith('(全対象)')) {
                         if (filterArmorName.includes('名将の鎧')) nameMatch = partArmorName.includes('名将の鎧');
+                        else if (filterArmorName.includes('英傑の足甲')) nameMatch = partArmorName.includes('英傑の足甲');
                         else if (filterArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) nameMatch = partArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
                     } else {
                         const parentArmorMatch = partArmorName.match(/(.+)\((.+)\)/);
@@ -2113,9 +2122,10 @@
                         let result = 0;
                         if (sortArmorName.endsWith('(シリーズ順)')) {
                             const isWarlord = sortArmorName.includes('名将の鎧');
+                            const isEiketsu = sortArmorName.includes('英傑の足甲');
                             const isVanbrace = sortArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
-                            const targetStr = isWarlord ? '名将の鎧' : (isVanbrace ? 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ' : '');
-                            const sublist = isWarlord ? warlordArmorSublist : vanbraceArmorSublist;
+                            const targetStr = isWarlord ? '名将の鎧' : (isEiketsu ? '英傑の足甲' : (isVanbrace ? 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ' : ''));
+                            const sublist = isWarlord ? warlordArmorSublist : (isEiketsu ? eiketsuArmorSublist : vanbraceArmorSublist);
 
                             const aIsTarget = aData.armorName.includes(targetStr);
                             const bIsTarget = bData.armorName.includes(targetStr);
@@ -2134,6 +2144,8 @@
                             const regex = /\(([^)]+)\)/;
                             const isWarlordA = aData.armorName.includes('名将の鎧');
                             const isWarlordB = bData.armorName.includes('名将の鎧');
+                            const isEiketsuA = aData.armorName.includes('英傑の足甲');
+                            const isEiketsuB = bData.armorName.includes('英傑の足甲');
                             // バトルヴァンブレイスは半角・全角の両方を考慮
                             const isVanbraceA = aData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || aData.armorName.includes('バトルヴァンブレイス');
                             const isVanbraceB = bData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || bData.armorName.includes('バトルヴァンブレイス');
@@ -2144,6 +2156,13 @@
                                 const bMatch = bData.armorName.match(regex);
                                 const aIdx = aMatch ? warlordArmorSublist.indexOf(aMatch[1]) : -1;
                                 const bIdx = bMatch ? warlordArmorSublist.indexOf(bMatch[1]) : -1;
+                                if(aIdx !== bIdx) result = aIdx - bIdx;
+                            // 両方とも英傑の足甲シリーズの場合のソート
+                            } else if (isEiketsuA && isEiketsuB) {
+                                const aMatch = aData.armorName.match(regex);
+                                const bMatch = bData.armorName.match(regex);
+                                const aIdx = aMatch ? eiketsuArmorSublist.indexOf(aMatch[1]) : -1;
+                                const bIdx = bMatch ? eiketsuArmorSublist.indexOf(bMatch[1]) : -1;
                                 if(aIdx !== bIdx) result = aIdx - bIdx;
                             // 両方ともバトルヴァンブレイスシリーズの場合のソート
                             } else if (isVanbraceA && isVanbraceB) {
@@ -2169,6 +2188,11 @@
                                     if (name.includes('名将の鎧')) {
                                         return allArmorData.findIndex(item => item.baseName === '名将の鎧');
                                     }
+
+                                    // 4. 英傑の足甲（シリーズ付き）の対応
+                                    if (name.includes('英傑の足甲')) {
+                                        return allArmorData.findIndex(item => item.baseName === '英傑の足甲');
+                                    }
                                     return -1;
                                 };
 
@@ -2177,7 +2201,7 @@
                                 if (aIndex !== bIndex) result = aIndex - bIndex;
                             }
                         } else if (sortArmorName.endsWith('(全対象)')) {
-                            const targetStr = sortArmorName.includes('名将の鎧') ? '名将の鎧' : 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ';
+                            const targetStr = sortArmorName.includes('名将の鎧') ? '名将の鎧' : (sortArmorName.includes('英傑の足甲') ? '英傑の足甲' : 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
                             const aIsTarget = aData.armorName.includes(targetStr);
                             const bIsTarget = bData.armorName.includes(targetStr);
                             if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
@@ -2229,8 +2253,7 @@
             }
             window.scrollTo(0, scrollY);
         }
-
-        function getPartData(part) {
+function getPartData(part) {
             return {
                 armorType: part.querySelector('input[name*="armor-type"]:checked')?.value,
                 armorName: part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value,
@@ -2419,10 +2442,24 @@
         if (!loadedFromAdmin) addNewPart(null, null, false);
         originalPartOrder = Array.from(partsContainer.children);
         
-        // ページロード時にエクスポート未完了状態を復元
-        if (localStorage.getItem(EXPORT_STATE_KEY) === 'true') {
-            setDataDirty(true);
+        // ▼▼▼ 修正箇所: バックアップ存在確認とDirty状態復元の順序制御 ▼▼▼
+        // バックアップ設定の確認
+        let hasLocalBackup = false;
+        try {
+            if (!isCloudMode) { // クラウドモードでない場合のみ確認
+                const settings = JSON.parse(localStorage.getItem(BACKUP_SETTINGS_KEY));
+                hasLocalBackup = settings && settings.hasUnsavedChanges;
+            }
+        } catch(e) {}
+
+        // バックアップが存在しない場合のみ、エクスポート未完了状態(Dirty)を復元する
+        // (バックアップがある場合にこれをやると、空データでバックアップを上書きしてしまうため)
+        if (!hasLocalBackup) {
+            if (localStorage.getItem(EXPORT_STATE_KEY) === 'true') {
+                setDataDirty(true);
+            }
         }
+        // ▲▲▲ 修正箇所ここまで ▲▲▲
 
         document.getElementById('edit-mode-btn').addEventListener('click', toggleEditMode);
         document.getElementById('export-btn').addEventListener('click', exportData);
@@ -2440,11 +2477,6 @@
         resetValueSortButtons();
         checkForUnsavedBackup();
     }
-
-
-    // =========================================================================
-    // === 2. TOP5確認タブ (armor-top5.html) のスクリプト ==========================
-    // =========================================================================
     
     async function loadUniqueAbilities_top5() {
         const files = ['data/armor-main-ability.csv', 'data/armor-sub-ability.csv'];
@@ -2537,7 +2569,7 @@
             let totalAddedValue = 0;
 
             if (includeUnique) {
-                const isSpecialArmor = item.armorName.includes("名将の鎧") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ") || item.armorName.includes("バトルヴァンブレイス");
+                const isSpecialArmor = item.armorName.includes("名将の鎧") || item.armorName.includes("英傑の足甲") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ") || item.armorName.includes("バトルヴァンブレイス");
                 if (!isSpecialArmor) {
                     let armorBonuses = uniqueAbilities[item.armorName];
                     if (!armorBonuses) {
@@ -2626,7 +2658,7 @@
                         if (item.isCombined) {
                             armorCellHTML = `<span class="combined-armor-name">${item.armorName} (+${item.addedValue})</span>`;
                             valueCellClass += ' combined-value';
-                        } else if (item.armorName.includes("名将の鎧") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ")) {
+                        } else if (item.armorName.includes("名将の鎧") || item.armorName.includes("英傑の足甲") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ")) {
                             armorCellHTML = `<span class="special-armor-name">${item.armorName}</span>`;
                         } else {
                             armorCellHTML = item.armorName;
@@ -2830,7 +2862,7 @@
 
         for (const ability of abilities) {
             let shouldAddValue = true;
-            if (armorName.includes('名将の鎧') || armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || armorName.includes('バトルヴァンブレイス')) {
+            if (armorName.includes('名将の鎧') || armorName.includes('英傑の足甲') || armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || armorName.includes('バトルヴァンブレイス')) {
                 if (selectedSeries === '未選択') {
                     shouldAddValue = false;
                 } else {
@@ -2876,8 +2908,14 @@
                 const jsonValue = armor.value;
                 const nativeValue = getNativeAbilityValue_calc(armor.armorName, armorType, selectedConditions, abilityType, charId);
                 let combinedValue;
-                if (abilityType === '味方威力＋' && armor.armorName.includes('名将の鎧') && armor.armorType === 'main') {
-                    let isBeneficialToParty = false;
+                
+                // 名将の鎧（主）または英傑の足甲（副）で、かつ「味方威力+」の場合、
+                // シリーズが一致する他のメンバー（アタッカー）がいるかをチェック
+                let isBeneficialToParty = false;
+                if (abilityType === '味方威力＋' && 
+                    ((armor.armorName.includes('名将の鎧') && armor.armorType === 'main') || 
+                     (armor.armorName.includes('英傑の足甲') && armor.armorType === 'sub'))) {
+                    
                     if (series !== '未選択') {
                         const armorSeriesMatch = armor.armorName.match(/\(([^)]+)\)/);
                         if (armorSeriesMatch) {
@@ -2990,7 +3028,20 @@
                 }
                 const subAbilities = subNativeAbilities.get(provider.subArmor.armorName) || Array.from(subNativeAbilities.entries()).find(e => provider.subArmor.armorName.endsWith(e[0]))?.[1];
                 if (subAbilities && subAbilities.some(a => a.target === '味方威力')) {
-                    contribution += provider.subArmor.nativeValue;
+                    const hasEiketsu = provider.subArmor.armorName.includes('英傑の足甲');
+                    if (hasEiketsu) {
+                        let isMatch = false;
+                        if (receiver.series !== '未選択' && receiver.series === provider.series) {
+                            const armorSeriesMatch = provider.subArmor.armorName.match(/\(([^)]+)\)/);
+                            if (armorSeriesMatch) {
+                                const armorSeriesList = armorSeriesMatch[1].split(/[&＆]/).map(s => s.trim());
+                                if (armorSeriesList.includes(receiver.series)) isMatch = true;
+                            }
+                        }
+                        if (isMatch) contribution += provider.subArmor.nativeValue;
+                    } else {
+                        contribution += provider.subArmor.nativeValue;
+                    }
                 }
                 partyValue += contribution;
             }
@@ -2999,8 +3050,11 @@
                 receiver.totals = { self: selfValue, party: partyValue, grand: selfValue + partyValue };
             } else {
                 const hasMeisho = receiver.mainArmor.armorName.includes('名将の鎧');
-                if (hasMeisho) {
-                    const normalValue = (receiver.mainArmor.value || 0) + (receiver.subArmor.value || 0) + (receiver.subArmor.nativeValue || 0);
+                const hasEiketsu = receiver.subArmor.armorName.includes('英傑の足甲');
+                if (hasMeisho || hasEiketsu) {
+                    const normalValue = (receiver.mainArmor.value || 0) + (receiver.subArmor.value || 0) + 
+                                      (hasMeisho ? 0 : (receiver.mainArmor.nativeValue || 0)) + 
+                                      (hasEiketsu ? 0 : (receiver.subArmor.nativeValue || 0));
                     receiver.totals = { isMeisho: true, meishoTotal: selfValue, normalTotal: normalValue };
                 } else {
                     receiver.totals = { self: selfValue };
@@ -3081,7 +3135,7 @@
         else if (mainArmor.nativeValue > 0) mainArmorNameStyle = 'style="color: orange;"';
         
         if (!subArmor || subArmor.armorName === '該当なし') subArmorNameStyle = 'style="color: red;"';
-        else if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) subArmorNameStyle = 'style="color: magenta;"';
+        else if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('英傑の足甲') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) subArmorNameStyle = 'style="color: magenta;"';
         else if (subArmor.nativeValue > 0) subArmorNameStyle = 'style="color: orange;"';
 
         const mainArmorNameText = mainArmor.nativeValue > 0 && mainArmor.armorName !== '該当なし' ? `${mainArmor.armorName}(+${mainArmor.nativeValue})` : mainArmor.armorName;
@@ -3089,7 +3143,7 @@
 
         let totalHTML = '';
         if (totals.isMeisho) {
-            totalHTML = `<div class="total-container"><div class="total-row"><span class="label">名将:</span><span class="value">${totals.meishoTotal}%</span></div><div class="total-row final-total"><span class="label">通常:</span><span class="value">${totals.normalTotal}%</span></div></div>`;
+            totalHTML = `<div class="total-container"><div class="total-row"><span class="label">雷窟:</span><span class="value">${totals.meishoTotal}%</span></div><div class="total-row final-total"><span class="label">通常:</span><span class="value">${totals.normalTotal}%</span></div></div>`;
         } else if (totals.grand !== undefined) { 
             totalHTML = `<div class="total-container"><div class="total-row"><span class="label">自身:</span><span class="value">${totals.self}%</span></div><div class="total-row"><span class="label">味方:</span><span class="value">${totals.party}%</span></div><div class="total-row final-total"><span class="label">合計:</span><span class="value">${totals.grand}%</span></div></div>`;
         } else { 
