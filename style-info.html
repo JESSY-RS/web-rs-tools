@@ -1546,8 +1546,21 @@
         if (data['遠近']) slashParts.push(data['遠近']);
         if (data['方法']) slashParts.push(data['方法']);
         if (data['行動順'] && type !== 'addInfo') slashParts.push(data['行動順']);
-        let targetRange = (data['対象'] || '') + (data['範囲'] || '');
+        
+        // --- 修正箇所: 範囲に「+」が含まれる場合の処理 ---
+        let rawRange = data['範囲'] || '';
+        let rawTarget = data['対象'] || '';
+        let targetRange = '';
+        if (rawRange.includes('+')) {
+            // "横一列+縦一列" のような場合、"対象"+"横一列" + "対象"+"縦一列" にする
+            targetRange = rawRange.split('+').map(r => rawTarget + r).join('+');
+        } else {
+            targetRange = rawTarget + rawRange;
+        }
+        
         if (targetRange) slashParts.push(targetRange);
+        // ------------------------------------------------
+        
         let slashStr = slashParts.join('/');
         let attrStr = '';
         if (data['種類'] !== '補助') {
@@ -2346,6 +2359,14 @@ function initializeResetButton() {
             }
             if (field === 'detailAttr') return item['属性1'] === value || item['属性2'] === value;
             if (value === 'exists') return item[field] && item[field].trim() !== '';
+            
+            // --- 修正箇所: 範囲の+区切り判定を追加 ---
+            if (field === '範囲' && item[field] && item[field].includes('+')) {
+                const parts = item[field].split('+');
+                return parts.includes(value);
+            }
+            // ----------------------------------------
+            
             return item[field] === value;
         };
         const results = stylesWithDetails.map(styleData => {
@@ -2875,6 +2896,8 @@ function initializeResetButton() {
     }
 </script>
 
+</body>
+</html>
 
 </body>
 </html>
