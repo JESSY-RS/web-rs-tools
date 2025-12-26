@@ -421,8 +421,12 @@
   <div class="radio-group" style="display: flex; margin: 5px 0 5px 5px;">
     <span style="font-weight:bold; color:#FF6E3D; flex-shrink: 0;">基準:</span>
     <div style="display: flex; flex-wrap: wrap; margin-left: 5px;">
-      <label style="margin-right: 10px; white-space: nowrap;"><input type="radio" name="gradeMode" value="pattern1" onchange="changeGradeMode('pattern1')">シムメシュ・アレツ・ノーア</label>
-      <label style="white-space: nowrap;"><input type="radio" name="gradeMode" value="pattern2" onchange="changeGradeMode('pattern2')">シャムマベル・ラスボス</label>
+      <label style="margin-right: 10px; white-space: nowrap;">
+        <input type="radio" name="gradeMode" id="modePattern1" value="pattern1" onclick="toggleGradeMode(this)">シムメシュ・アレツ・ノーア
+      </label>
+      <label style="white-space: nowrap;">
+        <input type="radio" name="gradeMode" id="modePattern2" value="pattern2" onclick="toggleGradeMode(this)">シャムマベル・ラスボス
+      </label>
     </div>
   </div>
   <div class="zoom-buttons">
@@ -621,33 +625,26 @@
       <a href="index.html">INDEXへ戻る</a><br>
     </footer>
   </div>
-
-  <script>
+<script>
 
     let calculatedResult1 = null;
     let calculatedResult2 = null;
 
     /* ▼▼▼▼▼▼▼▼▼ 自動切り替え設定エリア ▼▼▼▼▼▼▼▼▼ */
 
-    // 1. 切り替え基準日時の設定 (2025/12/11 12:00:00)
     const switchTargetDate = new Date('2025-12-11T12:00:00+09:00');
-
-    // 2. 現在時刻とタイトルの★判定
-    // タイトルに「★」が含まれているか、または指定日時を過ぎている場合に true (新データ使用) となる
     const isDebugMode = document.title.indexOf('★') !== -1;
     const isPastTargetDate = new Date() >= switchTargetDate;
-    
     const useNewData = isDebugMode || isPastTargetDate;
 
-    // 現在のモードをコンソールに表示（確認用）
     console.log('Switch Mode:', useNewData ? 'NEW (After 12/11 or Debug)' : 'OLD (Before 12/11)');
 
 
     /* ---------------------------------------------------------
-       【データ定義 1】 Pattern1（旧シムメシュ・アレツ・ノーア）
+       【データ定義】
        --------------------------------------------------------- */
     
-    // ■ 旧設定 (Old)
+    // ■ Pattern1
     const gradeConfigPattern1_Old = [
       { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
       { id: 1,  val: 1.01, count: 3,  label: "【grade 1】500万" },
@@ -661,8 +658,6 @@
       { id: 9,  val: 7.00, count: 15, label: "【grade 9】100億" },
       { id: 10, val: 9.30, count: 20, label: "【grade X】200億" }
     ];
-
-    // ■ 新設定 (New) ※必要に応じて数値を変更してください
     const gradeConfigPattern1_New = [
       { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
       { id: 1,  val: 1.01, count: 3,  label: "【grade 1】500万" },
@@ -677,12 +672,7 @@
       { id: 10, val: 9.30, count: 30, label: "【grade X】200億" }
     ];
 
-
-    /* ---------------------------------------------------------
-       【データ定義 2】 Pattern2（旧シャムマベル・ラスボス）
-       --------------------------------------------------------- */
-
-    // ■ 旧設定 (Old)
+    // ■ Pattern2
     const gradeConfigPattern2_Old = [
       { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
       { id: 1,  val: 1.01, count: 3,  label: "【grade 1】100万" },
@@ -696,8 +686,6 @@
       { id: 9,  val: 7.00, count: 15, label: "【grade 9】50億" },
       { id: 10, val: 9.30, count: 20, label: "【grade X】100億" }
     ];
-
-    // ■ 新設定 (New) ※必要に応じて数値を変更してください
     const gradeConfigPattern2_New = [
       { id: 0,  val: 1.00, count: 3,  label: "【grade 0】0" },
       { id: 1,  val: 1.01, count: 3,  label: "【grade 1】100万" },
@@ -712,50 +700,39 @@
       { id: 10, val: 9.30, count: 30, label: "【grade X】100億" }
     ];
 
-
     /* ---------------------------------------------------------
-       【初期値設定】 ページ読み込み時のデフォルト値
+       【初期値設定】
        --------------------------------------------------------- */
+    
+    // ▼ 育成枠の初期値設定
+    const defaultIkuseiWaku1 = 4; 
+    const defaultIkuseiWaku2 = 5; 
 
-    // ■ 旧設定 (Old)
+    // ▼ パターンごとのデフォルト値
     const defaultValues_Old = {
-        pattern1: {
-            count: "9",
-            bonus: "3.6",
-            grade: "7"
-        },
-        pattern2: {
-            count: "20",
-            bonus: "9.3",
-            grade: "10"
-        }
+        pattern1: { count: "9", bonus: "3.6", grade: "7" },
+        pattern2: { count: "20", bonus: "9.3", grade: "10" }
     };
-
-    // ■ 新設定 (New) ※必要に応じて数値を変更してください
     const defaultValues_New = {
-        pattern1: {
-            count: "9",
-            bonus: "3.6",
-            grade: "7"
-        },
-        pattern2: {
-            count: "30",
-            bonus: "9.3",
-            grade: "10"
-        }
+        pattern1: { count: "9", bonus: "3.6", grade: "7" },
+        pattern2: { count: "30", bonus: "9.3", grade: "10" }
     };
 
+    // ▼ 基準選択なし(manual)時のデフォルト値設定
+    const defaultValues_Manual = {
+        count: "1",
+        bonus: "1",
+        grade: "" 
+    };
 
-    /* ---------------------------------------------------------
-       使用するデータの決定 (フラグによる切り替え)
-       --------------------------------------------------------- */
+    // 使用データの決定
     const gradeConfigPattern1 = useNewData ? gradeConfigPattern1_New : gradeConfigPattern1_Old;
     const gradeConfigPattern2 = useNewData ? gradeConfigPattern2_New : gradeConfigPattern2_Old;
     const defaultValues       = useNewData ? defaultValues_New       : defaultValues_Old;
 
     /* ▲▲▲▲▲▲▲▲▲ 設定エリア終了 ▲▲▲▲▲▲▲▲▲ */
 
-
+    // メニュー関連
     function toggleMenu() {
         const sideMenu = document.getElementById('sideMenu');
         const menuOverlay = document.getElementById('menuOverlay');
@@ -770,76 +747,58 @@
     function closeMenu() {
         const sideMenu = document.getElementById('sideMenu');
         const menuOverlay = document.getElementById('menuOverlay');
-        const menuClose = document.getElementById('menuClose');
         sideMenu.classList.remove('open');
         menuOverlay.classList.remove('open');
-        menuClose.style.color = '#eee';
     }
 
+    // スワイプ操作
     let startX = 0, startY = 0;
     let endX = 0, endY = 0;
-
-    document.addEventListener('touchstart', function (e) {
+    document.addEventListener('touchstart', e => {
       startX = e.changedTouches[0].screenX;
       startY = e.changedTouches[0].screenY;
     }, false);
-
-    document.addEventListener('touchend', function (e) {
+    document.addEventListener('touchend', e => {
       endX = e.changedTouches[0].screenX;
       endY = e.changedTouches[0].screenY;
       handleGesture();
     }, false);
-
     function handleGesture() {
       const diffX = endX - startX;
       const diffY = endY - startY;
       if (Math.abs(diffX) > Math.abs(diffY)) {
-        if (diffX > 50 && startX < 30) {
-          toggleMenu();
-        } 
-        else if (diffX < -50) {
-          closeMenu();
-        }
+        if (diffX > 50 && startX < 30) toggleMenu(); 
+        else if (diffX < -50) closeMenu();
       }
     }
 
+    // ページ設定
     const PAGE_SETTING_KEY = 'PageSettings'; 
-    // デフォルト: ikuseicalc_grade_mode: 'pattern2' (シャムマベル側がデフォルト)
     let pageSettings = { 'ikuseicalc_zoom': 1.0, 'ikuseicalc_column': 1, 'ikuseicalc_grade_mode': 'pattern2' };
     
     function changeZoom(delta) {
-        const zoomKey = 'ikuseicalc_zoom';
-        let currentZoom = pageSettings[zoomKey];
+        let currentZoom = pageSettings['ikuseicalc_zoom'];
         currentZoom += delta;
         currentZoom = Math.round(currentZoom * 10) / 10;
         if (currentZoom < 0.5) currentZoom = 0.5;
         if (currentZoom > 2.0) currentZoom = 2.0;
         document.body.style.zoom = currentZoom;
-        pageSettings[zoomKey] = currentZoom;
+        pageSettings['ikuseicalc_zoom'] = currentZoom;
         savePageSettings();
     }
 
-    // レイアウト切り替え機能
     function toggleLayout() {
-      // 1=縦, 2=横。現在の値を反転
       const current = pageSettings['ikuseicalc_column'] || 1;
       pageSettings['ikuseicalc_column'] = current === 1 ? 2 : 1;
-      
       applyLayout();
       savePageSettings();
     }
 
-    // レイアウト適用
     function applyLayout() {
       const container = document.getElementById('compareContainer');
-      // 2の場合が横（Horizontal）
       const isHorizontal = pageSettings['ikuseicalc_column'] === 2;
-      
-      if (isHorizontal) {
-        container.classList.add('horizontal');
-      } else {
-        container.classList.remove('horizontal');
-      }
+      if (isHorizontal) container.classList.add('horizontal');
+      else container.classList.remove('horizontal');
     }
     
     function loadPageSettings() {
@@ -848,90 +807,73 @@
             if (savedSettings) {
                 pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
             }
-        } catch (error) {
-            console.error("ページ設定の読み込みに失敗しました:", error);
-        }
+        } catch (error) { console.error(error); }
     }
     
     function savePageSettings() {
-        try {
-            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
-        } catch (error) {
-            console.error("ページ設定の保存に失敗しました:", error);
-        }
+        try { localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings)); }
+        catch (error) { console.error(error); }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        loadPageSettings();
-        document.body.style.zoom = pageSettings['ikuseicalc_zoom'];
-        applyLayout(); // レイアウト設定の反映
+    // ▼▼▼ 基準モード制御 ▼▼▼
 
-        // ▼ 追加：計算基準設定の反映 ▼
-        // デフォルトは pattern2 (シャムマベル側)
-        const savedMode = pageSettings['ikuseicalc_grade_mode'] || 'pattern2';
-        
-        // ラジオボタンのチェック状態を同期
-        const radio = document.querySelector(`input[name="gradeMode"][value="${savedMode}"]`);
-        if(radio) radio.checked = true;
-        
-        // データをセットしてプルダウン生成
-        changeGradeMode(savedMode);
-        // ▲ 追加ここまで ▲
-    });
-
-    // 現在使用中の設定（初期値は空配列、ロード時に決定）
     let gradeConfig = []; 
 
-    // 切り替え関数（汎用名: changeGradeMode）
-    function changeGradeMode(mode) {
-      // データの切り替え
-      if (mode === 'pattern1') {
-        gradeConfig = gradeConfigPattern1;
+    function toggleGradeMode(radio) {
+      if (pageSettings['ikuseicalc_grade_mode'] === radio.value) {
+        radio.checked = false;
+        changeGradeMode('manual');
       } else {
-        // pattern2, または不明な場合はデフォルトへ
-        gradeConfig = gradeConfigPattern2;
+        changeGradeMode(radio.value);
       }
+    }
 
-      // 設定保存
+    function changeGradeMode(mode) {
       pageSettings['ikuseicalc_grade_mode'] = mode;
       savePageSettings();
 
-      // 現在選択されているIndexを保持しておく
-      const currentVal1 = document.getElementById('gradeSelect1') ? document.getElementById('gradeSelect1').value : null;
-      const currentVal2 = document.getElementById('gradeSelect2') ? document.getElementById('gradeSelect2').value : null;
+      if (mode === 'pattern1') {
+        gradeConfig = gradeConfigPattern1;
+      } else if (mode === 'pattern2') {
+        gradeConfig = gradeConfigPattern2;
+      } else {
+        gradeConfig = []; 
+      }
 
-      // プルダウン再生成
+      // UI同期: manualの場合はどのラジオもチェックしない
+      document.querySelectorAll('input[name="gradeMode"]').forEach(r => {
+        r.checked = (r.value === mode);
+      });
+
       initGradeOptions();
-
-      // 可能な限り元の選択位置を維持、なければデフォルトへ
-      if (currentVal1 !== null) {
-         document.getElementById('gradeSelect1').value = currentVal1;
-         updateItemValue(1);
-      }
-      if (currentVal2 !== null) {
-         document.getElementById('gradeSelect2').value = currentVal2;
-         updateItemValue(2);
-      }
     }
 
-    // プルダウンの選択肢を生成する関数
     function initGradeOptions() {
       const targets = ['gradeSelect1', 'gradeSelect2'];
       targets.forEach(id => {
         const select = document.getElementById(id);
-        // 既存のoptionをクリア
         select.innerHTML = '';
-        gradeConfig.forEach(item => {
-          const option = document.createElement('option');
-          option.value = item.id;
-          option.textContent = item.label;
-          select.appendChild(option);
-        });
+        if (gradeConfig.length === 0) {
+            const option = document.createElement('option');
+            option.value = "";
+            option.textContent = "任意設定 (Manual)";
+            select.appendChild(option);
+            select.disabled = true;
+        } else {
+            select.disabled = false;
+            gradeConfig.forEach(item => {
+              const option = document.createElement('option');
+              option.value = item.id;
+              option.textContent = item.label;
+              select.appendChild(option);
+            });
+        }
       });
     }
 
-    // 選択変更時に値をセットする関数
     function updateItemValue(number) {
+      if (gradeConfig.length === 0) return;
+
       const selectVal = parseInt(document.getElementById(`gradeSelect${number}`).value, 10);
       const targetConfig = gradeConfig.find(item => item.id === selectVal);
       
@@ -945,24 +887,13 @@
       const targetNum = (sourceNum === 1) ? 2 : 1;
       const selectedValue = document.querySelector(`input[name="計算方式${sourceNum}"]:checked`).value;
       const targetRadio = document.querySelector(`input[name="計算方式${targetNum}"][value="${selectedValue}"]`);
-      if (targetRadio) {
-        targetRadio.checked = true;
-      }
+      if (targetRadio) targetRadio.checked = true;
 
-      // リセット処理
       [1, 2].forEach(num => {
-        // 結果のクリア
         document.getElementById(`結果${num}`).textContent = "";
-        
-        // 注意書き(error)のクリア
-        const errorDiv = document.getElementById(`error${num}`);
-        errorDiv.textContent = "";
-        
-        // 逆算ボタンの無効化
+        document.getElementById(`error${num}`).textContent = "";
         document.getElementById(`reverseBtn${num}`).disabled = true;
       });
-
-      // 計算結果変数のリセット
       calculatedResult1 = null;
       calculatedResult2 = null;
     }
@@ -1047,11 +978,8 @@
 
     function 計算する(number) {
       const selectedMethod = document.querySelector(`input[name="計算方式${number}"]:checked`).value;
-      if (selectedMethod === "J") {
-        J式で計算する(number);
-      } else if (selectedMethod === "M") {
-        M式で計算する(number);
-      }
+      if (selectedMethod === "J") J式で計算する(number);
+      else if (selectedMethod === "M") M式で計算する(number);
     }
 
     function 逆算する(targetNum) {
@@ -1079,11 +1007,9 @@
             alert("目標値が0以下のため計算できません。");
             return;
         }
-
         const 係数 = 所要時間 * 育成枠数 * 成長判定回数 * (成長確率/100) * ボーナス倍率;
         const cycleTime = 係数 / targetExpectation;
         requiredBattleTime = cycleTime - 間隔時間;
-
       } else {
         requiredBattleTime = (targetExpectation * 育成枠数 * 成長判定回数 * ボーナス倍率) - 間隔時間;
       }
@@ -1112,30 +1038,28 @@
       value = Math.round(value * 100) / 100;
       
       if (value < 1) value = 1;
-
-      // 修正：上限値のロジック
-      let max = 30; // デフォルト上限（成長判定回数など）
-      if (id.indexOf('育成枠') !== -1) {
-        max = 5; // 育成枠の場合は5
-      }
-
+      
+      // 上限設定
+      let max = 30; 
+      if (id.indexOf('育成枠') !== -1) max = 5;
       if (value > max) value = max; 
+      
       input.value = value;
     }
 
-    // プロファイルの有無を確認してボタンの状態を更新する関数
     function checkProfileExistence() {
       const hasProfile = localStorage.getItem('ikusei_profile1') || localStorage.getItem('ikusei_profile2');
       const deleteBtn = document.getElementById('deleteProfileBtn');
-      if (deleteBtn) {
-        deleteBtn.disabled = !hasProfile;
-      }
+      if (deleteBtn) deleteBtn.disabled = !hasProfile;
     }
 
-    function saveDefaultProfile() {
+    function saveDefaultProfile(btnNum) {
       const compareNum = [1, 2];
+      const currentMode = pageSettings['ikuseicalc_grade_mode'];
+
       compareNum.forEach(num => {
         const profile = {
+          savedMode: currentMode, // ★ モード情報を保存
           計算式: document.querySelector(`input[name="計算方式${num}"]:checked`).value,
           育成枠: document.getElementById(`育成枠${num}`).value,
           戦闘時: document.getElementById(`戦闘時${num}`).value,
@@ -1150,41 +1074,28 @@
           成長確率: document.getElementById(`成長確率${num}`).value,
           成長判定回数: document.getElementById(`成長判定回数${num}`).value,
           ボーナス倍率: document.getElementById(`ボーナス倍率${num}`).value,
-          gradeSelect: document.getElementById(`gradeSelect${num}`).value
+          gradeSelect: document.getElementById(`gradeSelect${num}`).value 
         };
         localStorage.setItem(`ikusei_profile${num}`, JSON.stringify(profile));
       });
       
-      const messageDiv = document.getElementById('profileMessage');
-      messageDiv.textContent = '※プロファイルに現在の状態を保存しました。';
-      // 保存後にボタンの状態を更新
+      document.getElementById('profileMessage').textContent = '※プロファイルに現在の状態を保存しました。';
       checkProfileExistence();
     }
 
     function deleteAllProfiles() {
-      // raidcalc.htmlのロジックに合わせて確認ダイアログを追加
-      const confirmed = window.confirm("プロファイルの情報を削除してよろしいですか？");
-      if (!confirmed) {
-          return;
-      }
-
+      if (!window.confirm("プロファイルの情報を削除してよろしいですか？")) return;
       const compareNum = [1, 2];
       compareNum.forEach(num => {
         localStorage.removeItem(`ikusei_profile${num}`);
-        localStorage.removeItem(`profile${num}`);
       });
-      
-      const messageDiv = document.getElementById('profileMessage');
-      messageDiv.textContent = '※プロファイルの情報を削除しました。';
-      // 削除後にボタンの状態を更新
-      checkProfileExistence();
+      document.getElementById('profileMessage').textContent = '※プロファイルの情報を削除しました。';
+      location.reload(); 
     }
 
-    // 表示切り替え機能
     function toggleFooter() {
       const footerArea = document.getElementById('footerArea');
       const btn = document.getElementById('toggleDisplayBtn');
-      
       if (footerArea.style.display === 'none') {
         footerArea.style.display = 'block';
         btn.textContent = '× 以下の項目を非表示にする';
@@ -1194,52 +1105,69 @@
       }
     }
 
+    document.addEventListener("DOMContentLoaded", function(){
+      var toggleButtons = document.querySelectorAll(".toggle-button");
+      toggleButtons.forEach(function(button) {
+        var targetId = button.getAttribute("data-target");
+        var list = document.getElementById(targetId);
+        list.style.display = "none";
+        button.addEventListener("click", function(){
+          list.style.display = (list.style.display === "block") ? "none" : "block";
+        });
+      });
+    });
+
+
+    // ▼▼▼ 初期化処理（厳格版） ▼▼▼
+
     window.onload = function () {
-      
-      document.getElementById("計算式1").checked = true;
-      document.getElementById('育成枠1').value = "5";
-      document.getElementById('戦闘時1').value = "0";
-      document.getElementById('戦闘分1').value = "";
-      document.getElementById('戦闘秒1').value = "";
-      document.getElementById('間隔時1').value = "0";
-      document.getElementById('間隔分1').value = "0";
-      document.getElementById('間隔秒1').value = "13";
-      document.getElementById('所要時1').value = "24";
-      document.getElementById('所要分1').value = "0";
-      document.getElementById('所要秒1').value = "0";
-      document.getElementById('成長確率1').value = "10";
-      
-      // ★設定値から反映 (pattern1)
-      document.getElementById('成長判定回数1').value = defaultValues.pattern1.count; 
-      document.getElementById('ボーナス倍率1').value = defaultValues.pattern1.bonus;
-      document.getElementById('gradeSelect1').value = defaultValues.pattern1.grade;
+      loadPageSettings();
+      document.body.style.zoom = pageSettings['ikuseicalc_zoom'];
+      applyLayout();
 
-      document.getElementById("計算式2").checked = true;
-      document.getElementById('育成枠2').value = "5";
-      document.getElementById('戦闘時2').value = "0";
-      document.getElementById('戦闘分2').value = "";
-      document.getElementById('戦闘秒2').value = "";
-      document.getElementById('間隔時2').value = "0";
-      document.getElementById('間隔分2').value = "0";
-      document.getElementById('間隔秒2').value = "13";
-      document.getElementById('所要時2').value = "24";
-      document.getElementById('所要分2').value = "0";
-      document.getElementById('所要秒2').value = "0";
-      document.getElementById('成長確率2').value = "10";
-      
-      // ★設定値から反映 (pattern2)
-      document.getElementById('成長判定回数2').value = defaultValues.pattern2.count; 
-      document.getElementById('ボーナス倍率2').value = defaultValues.pattern2.bonus;
-      document.getElementById('gradeSelect2').value = defaultValues.pattern2.grade;
+      // 1. プロファイルの読み込み
+      const profile1Str = localStorage.getItem('ikusei_profile1');
+      const profile2Str = localStorage.getItem('ikusei_profile2');
+      const p1 = profile1Str ? JSON.parse(profile1Str) : null;
+      const p2 = profile2Str ? JSON.parse(profile2Str) : null;
 
+      // 2. 適用するモードの決定 (初期値はPageSettings)
+      let modeToApply = pageSettings['ikuseicalc_grade_mode'] || 'pattern2';
 
+      // プロファイルが存在する場合のモード決定ロジック
+      if (p1 || p2) {
+          // undefined チェックを厳密に行い、新しい保存形式かどうか判定
+          const savedMode1 = p1 ? p1.savedMode : undefined;
+          const savedMode2 = p2 ? p2.savedMode : undefined;
+
+          if (savedMode1 !== undefined) {
+              // プロファイル1にモード情報がある -> 新しい形式
+              modeToApply = savedMode1;
+          } else if (savedMode2 !== undefined) {
+              // プロファイル2にモード情報がある -> 新しい形式
+              modeToApply = savedMode2;
+          } else {
+              // ★ プロファイルはあるが、モード情報がどこにもない -> レガシーデータ
+              // PageSettingsの値に関わらず、強制的にManual(OFF)にする
+              modeToApply = 'manual';
+          }
+      }
+
+      // 3. モードの適用 (ここでPageSettingsも更新・保存される)
+      changeGradeMode(modeToApply);
+
+      // 4. 各カラムへの値適用
       const compareNum = [1, 2];
       compareNum.forEach(num => {
         const profileStr = localStorage.getItem(`ikusei_profile${num}`);
+        
         if (profileStr) {
+          // --- プロファイル読み込み ---
           const profile = JSON.parse(profileStr);
+          
           const radio = document.querySelector(`input[name="計算方式${num}"][value="${profile.計算式}"]`);
           if (radio) radio.checked = true;
+
           document.getElementById(`育成枠${num}`).value = profile.育成枠;
           document.getElementById(`戦闘時${num}`).value = profile.戦闘時;
           document.getElementById(`戦闘分${num}`).value = profile.戦闘分;
@@ -1251,35 +1179,56 @@
           document.getElementById(`所要分${num}`).value = profile.所要分;
           document.getElementById(`所要秒${num}`).value = profile.所要秒;
           document.getElementById(`成長確率${num}`).value = profile.成長確率;
+          
+          // 値の上書き
           document.getElementById(`成長判定回数${num}`).value = profile.成長判定回数;
           document.getElementById(`ボーナス倍率${num}`).value = profile.ボーナス倍率;
-          document.getElementById(`gradeSelect${num}`).value = profile.gradeSelect;
-          // プロファイル読み込み後に値を再セットして整合性を取る
-          updateItemValue(num);
+
+          // Manualモードでなければ、プルダウンの位置も復元試行
+          if (modeToApply !== 'manual' && profile.gradeSelect) {
+             document.getElementById(`gradeSelect${num}`).value = profile.gradeSelect;
+          }
+
+        } else {
+          // --- プロファイルなし（デフォルト値） ---
+          
+          document.getElementById(`計算式${num}`).checked = true;
+          // 育成枠初期値
+          const defaultWaku = (num === 1) ? defaultIkuseiWaku1 : defaultIkuseiWaku2;
+          document.getElementById(`育成枠${num}`).value = defaultWaku;
+
+          document.getElementById(`戦闘時${num}`).value = "0";
+          document.getElementById(`戦闘分${num}`).value = "";
+          document.getElementById(`戦闘秒${num}`).value = "";
+          document.getElementById(`間隔時${num}`).value = "0";
+          document.getElementById(`間隔分${num}`).value = "0";
+          document.getElementById(`間隔秒${num}`).value = "13";
+          document.getElementById(`所要時${num}`).value = "24";
+          document.getElementById(`所要分${num}`).value = "0";
+          document.getElementById(`所要秒${num}`).value = "0";
+          document.getElementById(`成長確率${num}`).value = "10";
+
+          if (modeToApply === 'manual') {
+             // Manual時のデフォルト値
+             document.getElementById(`成長判定回数${num}`).value = defaultValues_Manual.count;
+             document.getElementById(`ボーナス倍率${num}`).value = defaultValues_Manual.bonus;
+          } else {
+             // Pattern1/2時のデフォルト値
+             const defaults = (modeToApply === 'pattern1') ? defaultValues.pattern1 : defaultValues.pattern2;
+             document.getElementById(`成長判定回数${num}`).value = defaults.count;
+             document.getElementById(`ボーナス倍率${num}`).value = defaults.bonus;
+             document.getElementById(`gradeSelect${num}`).value = defaults.grade;
+          }
         }
       });
 
-      // ページ読み込み時にボタンの状態をチェック
       checkProfileExistence();
     };
 
-    document.addEventListener("DOMContentLoaded", function(){
-      var toggleButtons = document.querySelectorAll(".toggle-button");
-      toggleButtons.forEach(function(button) {
-        var targetId = button.getAttribute("data-target");
-        var list = document.getElementById(targetId);
-        list.style.display = "none";
-        button.addEventListener("click", function(){
-          if (list.style.display === "block") {
-            list.style.display = "none";
-          } else {
-            list.style.display = "block";
-          }
-        });
-      });
-    });
-
   </script>
+
+</body>
+</html>
 
 </body>
 </html>
