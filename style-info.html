@@ -1137,7 +1137,8 @@
              if (!detailText) return;
              [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
                 const parsedKeyword = parseName(keyword);
-                const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+                // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
+                const existsInDb = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
                 if (existsInDb && !allInitialItems.has(parsedKeyword.fullName) && !fixedExclusionList.has(parsedKeyword.fullName) && !additionalExclusionList.includes(parsedKeyword.baseName)) {
                     keywordsToProcess.add(parsedKeyword.fullName);
                 }
@@ -1155,7 +1156,8 @@
             if (!detailText) continue;
             [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
                 const parsedKeyword = parseName(keyword);
-                const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+                // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
+                const existsInDb = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
                 if(existsInDb && !allInitialItems.has(parsedKeyword.fullName) && !fixedExclusionList.has(parsedKeyword.fullName) && !processedKeywords.has(parsedKeyword.fullName) && !additionalExclusionList.includes(parsedKeyword.baseName)){
                     keywordsToProcess.add(parsedKeyword.fullName);
                 }
@@ -1459,7 +1461,8 @@
     
     function buildReverseIndex() {
         reverseIndex = {};
-        const allItems = [...Object.values(db.skills), ...Object.values(db.abilities), ...Object.values(db.addInfo)];
+        // 変更: db.addInfoは含めない
+        const allItems = [...Object.values(db.skills), ...Object.values(db.abilities)];
         for (const parentItem of allItems) {
             if (!parentItem) continue;
             const parentName = parentItem['スキル名'] || parentItem['アビリティ名'] || parentItem['名称'];
@@ -1611,7 +1614,8 @@
             data = db.abilities[parsedName.baseName];
             containerId = 'abilityDisplay';
         } else if (type === 'addInfo') {
-            data = db.addInfo[parsedName.baseName] || db.skills[parsedName.baseName] || db.abilities[parsedName.baseName];
+            // 変更: db.addInfoは使用せず、skills/abilitiesからデータを取得
+            data = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName];
             containerId = 'addInfoDisplay';
             if (!data) return;
             if (db.skills[parsedName.baseName]) isSkill = true;
@@ -1694,7 +1698,8 @@
 
         const linkedDetailText = detailText.replace(/「([^」]+)」/g, (match, keyword) => {
             const parsedKeyword = parseName(keyword);
-            const existsInDb = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+            // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
+            const existsInDb = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
 
             if (!existsInDb || fixedExclusionList.has(parsedKeyword.fullName) || parsedKeyword.fullName === name || allInitialItems.has(parsedKeyword.fullName) || additionalExclusionList.includes(parsedKeyword.baseName)) {
                 return match;
@@ -1735,7 +1740,7 @@
     function findDetailText(name) {
         if(db.skills[name]) return db.skills[name]['効果詳細'];
         if(db.abilities[name]) return db.abilities[name]['効果詳細'];
-        if(db.addInfo[name]) return db.addInfo[name]['効果詳細'];
+        // 変更: db.addInfoから詳細を取得しない
         return null;
     }
 
@@ -1836,7 +1841,8 @@ function initializeResetButton() {
 
                     if (scannedKeywords.has(parsedKeyword.fullName)) continue;
                     
-                    const infoData = db.addInfo[parsedKeyword.baseName] || db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+                    // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
+                    const infoData = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
                     
                     if (infoData) {
                         scannedKeywords.add(parsedKeyword.fullName);
@@ -1856,7 +1862,7 @@ function initializeResetButton() {
                             if (detail !== '(効果詳細なし)') {
                                 // 修正: countExclusions に含まれていない場合のみテキスト加工を行う
                                 if (!db.countExclusions.has(parsedKeyword.baseName)) {
-                                    if (db.addInfo[parsedKeyword.baseName] && !detail.includes('以下の効果が発動する')) {
+                                    if (!detail.includes('以下の効果が発動する')) { // addInfoテーブルを使わなくなったため条件簡略化
                                         const additionText = `以下の効果が発動する(上限回数:バトル中${parsedKeyword.count}回)`;
                                         let lines = detail.split('\n');
                                         let processedLines = [];
@@ -1908,7 +1914,8 @@ function initializeResetButton() {
 
                         if (!linkedInfoItems.has(parsedKeyword.fullName)) {
                             linkedInfoItems.set(parsedKeyword.fullName, instanceData);
-                            if (db.addInfo[parsedKeyword.baseName]) {
+                            // 変更: db.skillsに存在する場合のみ再スキャン (addInfoは使わない)
+                            if (db.skills[parsedKeyword.baseName]) {
                                 itemsToScan.push(infoData);
                             }
                         }
@@ -1964,7 +1971,10 @@ function initializeResetButton() {
         let itemsToScan = [];
         if (isSkillScope) itemsToScan.push(...Object.values(db.skills));
         if (isAbilityScope) itemsToScan.push(...Object.values(db.abilities));
-        if (isAddInfoScope) itemsToScan.push(...Object.values(db.addInfo));
+        // 変更: addInfoScopeの場合も、実データはskills/abilitiesから来るため、ここでは特に追加しない
+        // (prepareSearchDataで抽出されたlinkedInfoが検索対象になるが、タグ自動抽出の母集団としてはskills/abilitiesで十分カバーできると仮定、
+        // もしくはaddInfo.csvの中身を見ないのであればここに追加すべきではない)
+        
         const timingKeywords = new Set();
         const regex = /\[([^\]]+?)\]/g;
         itemsToScan.forEach(item => {
@@ -2456,7 +2466,8 @@ function initializeResetButton() {
 
     function generateItemCardHTML(itemName, keywords = [], contextCharacter, contextStyleName, searchContext, itemTypeFromSearch) {
         const parsedName = parseName(itemName);
-        const itemData = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName] || db.addInfo[parsedName.baseName];
+        // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
+        const itemData = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName];
 
         if (!itemData) return '';
 
@@ -2676,7 +2687,8 @@ function initializeResetButton() {
                 if (p !== clickedPanel && !p.contains(showLink)) p.remove();
             });
             const parentName = showLink.dataset.parentName;
-            const parentData = db.skills[parentName] || db.abilities[parentName] || db.addInfo[parentName];
+            // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
+            const parentData = db.skills[parentName] || db.abilities[parentName];
             if (!parentData) return;
             const owners = itemToStyleMap[parentName];
             let character, styleName;
@@ -2895,9 +2907,5 @@ function initializeResetButton() {
         }
     }
 </script>
-
-</body>
-</html>
-
 </body>
 </html>
