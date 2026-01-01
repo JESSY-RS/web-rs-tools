@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>スタイル情報ビューア</title>
+    <title>★スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
@@ -711,7 +711,6 @@
             background-color: darkorchid !important;
             border-color: darkorchid !important;
         }
-        /* --- ここから修正: 色付きボタンの定義を追加 --- */
         .skill-filter-btn[data-value="火"].active,
         .skill-filter-btn[data-value="熱"].active,
         .skill-filter-btn[data-value="火術"].active {
@@ -750,7 +749,18 @@
             background-color: darkorchid !important;
             border-color: darkorchid !important;
         }
-        /* --- ここまで修正 --- */
+        /* --- エクストラフォース検索用CSS --- */
+        .extra-force-btn.active {
+             background-color: #d63384 !important; /* ピンク系 */
+             border-color: #d63384 !important;
+             color: white !important;
+        }
+        .extra-force-scope-btn.active {
+             background-color: #20c997 !important; /* ティール系 */
+             border-color: #20c997 !important;
+             color: white !important;
+        }
+        /* --- ここまで --- */
         #toggleVisibilityBtn.active {
             background-color: #6c757d !important;
             color: white !important;
@@ -759,7 +769,7 @@
     </style>
 </head>
 <body>
-    <h1 class="main-title">
+<h1 class="main-title">
         <span id="theme-toggle-button" style="cursor: pointer; color: #f5c542; margin-right: -8px;">★</span>
         スタイル情報ビューア
         <div id="theme-options">
@@ -868,6 +878,7 @@
                 </div>
             </div>
             
+            <div id="extraForceSearchContainer" style="display: none;"></div>
             <div id="charWeaponSearchContainer" style="display: none;"></div>
             
             <div id="skillSearchOptionsContainer" style="display: none;"></div>
@@ -894,7 +905,6 @@
     <div class="bottom">
         <a href="index.html" class="web-link">INDEXへ戻る</a>
     </div>
-
 <script>
     // 拡大縮小の関数
     const PAGE_SETTING_KEY = 'PageSettings'; 
@@ -926,7 +936,6 @@
         try {
             const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
             if (savedSettings) {
-                // 保存済みの設定があれば、デフォルト値と結合して上書きします。
                 pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
             }
         } catch (error) {
@@ -953,7 +962,7 @@
         searchTags: [], 
         autoTagExclusions: [], 
         characterOrder: [],
-        countExclusions: new Set() // 追加: 除外リスト用
+        countExclusions: new Set() 
     };
     let additionalExclusionList = [];
     let allExclusionKeywords = [];
@@ -965,7 +974,6 @@
     const fixedExclusionList = new Set(["攻撃", "アビリティ効果により発動する技・術", "特殊状態の効果により発動する技・術", "技・術の効果により発動する技・術", "溜め技・術", "溜め状態を付与する技・術", "カウンター効果による反撃技・術", "\"追撃\"により発動する技・術"]);
     let originalTitle = "";
 
-    // ひらがなをカタカナに変換する関数
     const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
 
     // --------------------------------------------------
@@ -973,10 +981,10 @@
     // --------------------------------------------------
     document.addEventListener('DOMContentLoaded', async () => {
         loadPageSettings();
+        injectDynamicStyles();
 
         originalTitle = document.title;
         
-        // --- テキスト選択と右クリックの制御 ---
         const pageTitle = document.title;
         if (!pageTitle.includes('★')) {
             document.addEventListener('contextmenu', event => event.preventDefault());
@@ -1031,7 +1039,6 @@
             }
         });
         handleThemeChange();
-        // --- End of theme switcher logic ---
 
         try {
             await Promise.all([
@@ -1042,7 +1049,7 @@
                 loadCsv('data/search-tags.csv', 'searchTags'),
                 loadCsv('data/auto-tag-exclusions.csv', 'autoTagExclusions'),
                 loadCsv('data/character.csv', 'characterOrder'),
-                loadCsv('data/count-exclusions.csv', 'countExclusions') // 追加: 除外リスト読み込み
+                loadCsv('data/count-exclusions.csv', 'countExclusions')
             ]);
             
             grayTextPhrases = db.autoTagExclusions.map(row => row.text_to_exclude).filter(Boolean);
@@ -1069,6 +1076,18 @@
         }
         document.body.style.zoom = pageSettings['style-info_zoom'];
     });
+
+    function injectDynamicStyles() {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .extra-force-btn[data-ef-type="熱"].active { background-color: red !important; border-color: red !important; }
+            .extra-force-btn[data-ef-type="冷"].active { background-color: dodgerblue !important; border-color: dodgerblue !important; }
+            .extra-force-btn[data-ef-type="雷"].active { background-color: darkorange !important; border-color: darkorange !important; }
+            .extra-force-btn[data-ef-type="陽"].active { background-color: orangered !important; border-color: orangered !important; }
+            .extra-force-btn[data-ef-type="陰"].active { background-color: darkorchid !important; border-color: darkorchid !important; }
+        `;
+        document.head.appendChild(style);
+    }
 
     // --- ▼▼▼ 表示・URL・タイトル更新のロジック ▼▼▼ ---
 
@@ -1137,8 +1156,7 @@
              if (!detailText) return;
              [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
                 const parsedKeyword = parseName(keyword);
-                // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
-                const existsInDb = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+                const existsInDb = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName] || db.addInfo[parsedKeyword.baseName];
                 if (existsInDb && !allInitialItems.has(parsedKeyword.fullName) && !fixedExclusionList.has(parsedKeyword.fullName) && !additionalExclusionList.includes(parsedKeyword.baseName)) {
                     keywordsToProcess.add(parsedKeyword.fullName);
                 }
@@ -1156,8 +1174,7 @@
             if (!detailText) continue;
             [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]).forEach(keyword => {
                 const parsedKeyword = parseName(keyword);
-                // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
-                const existsInDb = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+                const existsInDb = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName] || db.addInfo[parsedKeyword.baseName];
                 if(existsInDb && !allInitialItems.has(parsedKeyword.fullName) && !fixedExclusionList.has(parsedKeyword.fullName) && !processedKeywords.has(parsedKeyword.fullName) && !additionalExclusionList.includes(parsedKeyword.baseName)){
                     keywordsToProcess.add(parsedKeyword.fullName);
                 }
@@ -1233,7 +1250,6 @@
     }
 
     // --- 補助関数 ---
-    
     function parseName(name) {
         const variableMatch = name.match(/(.+)(\((\d+)回\))$/);
         return {
@@ -1243,7 +1259,6 @@
         };
     }
 
-    // スタイル選択カスタムプルダウンの初期化
     function initializeStyleSelect() {
         const btn = document.getElementById('styleBtn');
         const text = document.getElementById('styleText');
@@ -1255,14 +1270,13 @@
             const isOpen = dropdown.style.display === 'flex';
             dropdown.style.display = isOpen ? 'none' : 'flex';
             if (!isOpen) {
-                searchInput.value = ''; // 検索ボックスを初期化
+                searchInput.value = ''; 
                 const charaText = document.getElementById('characterText').textContent;
-                populateStyleSelect(charaText); // フィルタなしでオプションを再描画
+                populateStyleSelect(charaText); 
 
                 const currentStyleName = btn.dataset.value;
                 const currentStyleText = text.textContent;
 
-                // 値が選択されている場合のみ、選択中の項目をハイライト
                 if (currentStyleName && currentStyleName !== '---' && !currentStyleText.startsWith('現在の登録数')) {
                     const options = optionsContainer.querySelectorAll('.custom-select-option');
                     for (const option of options) {
@@ -1297,7 +1311,6 @@
         });
     }
 
-    // スタイル選択カスタムプルダウンのオプションを生成・更新
     function populateStyleSelect(characterName, filter = '') {
         const btn = document.getElementById('styleBtn');
         const text = document.getElementById('styleText');
@@ -1317,7 +1330,6 @@
             .filter(style => {
                 const displayName = `[${style['グレード']}] ${style['スタイル名']}`;
                 const kanaName = hiraganaToKatakana(displayName);
-                // 漢字とカタカナの両方を含むため、元の表示名でも検索
                 return kanaName.includes(searchTerm) || displayName.includes(searchTerm);
             });
 
@@ -1346,7 +1358,6 @@
         btn.disabled = false;
     }
 
-    // キャラクター選択カスタムプルダウンの初期化
     function initializeCharacterSelect() {
         const btn = document.getElementById('characterBtn');
         const dropdown = document.getElementById('characterDropdown');
@@ -1356,7 +1367,6 @@
         const styleBtn = document.getElementById('styleBtn');
         const styleText = document.getElementById('styleText');
 
-        // character.csv から読み込んだキャラ順とフリガナを保持
         const characterListWithFurigana = db.characterOrder.map(row => ({
             name: row['キャラ名'],
             furigana: row['フリガナ'] || ''
@@ -1364,15 +1374,13 @@
         
         const allUniqueCharactersInStyles = new Set(db.styles.map(item => item['キャラ名']));
         
-        // character.csv の順番を維持しつつ、style.csv に存在するキャラのみをリストアップ
         const sortedList = characterListWithFurigana.filter(char => allUniqueCharactersInStyles.has(char.name));
         const sortedSet = new Set(sortedList.map(char => char.name));
 
-        // character.csv にいないが style.csv にはいるキャラを末尾に追加
         const remainingCharacters = [...allUniqueCharactersInStyles]
             .filter(name => !sortedSet.has(name))
             .sort((a,b) => a.localeCompare(b, 'ja'))
-            .map(name => ({ name: name, furigana: '' })); // フリガナがないので空文字
+            .map(name => ({ name: name, furigana: '' }));
 
         const finalList = [...sortedList, ...remainingCharacters];
 
@@ -1386,7 +1394,6 @@
             const searchTerm = hiraganaToKatakana(filter);
             
             const filteredList = finalList.filter(char => {
-                // 検索語がフリガナに含まれるか、またはキャラ名自体に含まれるかチェック
                 const furiganaMatch = char.furigana && char.furigana.includes(searchTerm);
                 const nameMatch = char.name.includes(searchTerm);
                 return furiganaMatch || nameMatch;
@@ -1419,11 +1426,10 @@
             const isOpen = dropdown.style.display === 'flex';
             dropdown.style.display = isOpen ? 'none' : 'flex';
             if (!isOpen) {
-                searchInput.value = ''; // 検索ボックスを初期化
-                renderCharacterOptions(); // 常にフィルタなしでオプションを再描画
+                searchInput.value = '';
+                renderCharacterOptions();
                 const currentCharacterName = selectedText.textContent;
                 
-                // 値が選択されている場合（プレースホルダーではない場合）のみ、選択中の項目をハイライト
                 if (currentCharacterName && !currentCharacterName.startsWith('現在の登録数')) {
                     const options = optionsContainer.querySelectorAll('.custom-select-option');
                     for (const option of options) {
@@ -1437,7 +1443,6 @@
             }
         });
         
-        // マウスオーバーで初期フォーカスを解除する
         optionsContainer.addEventListener('mouseover', (e) => {
             if (e.target.classList.contains('custom-select-option')) {
                 const currentlyFocused = optionsContainer.querySelector('.custom-select-option.focused');
@@ -1461,8 +1466,7 @@
     
     function buildReverseIndex() {
         reverseIndex = {};
-        // 変更: db.addInfoは含めない
-        const allItems = [...Object.values(db.skills), ...Object.values(db.abilities)];
+        const allItems = [...Object.values(db.skills), ...Object.values(db.abilities), ...Object.values(db.addInfo)];
         for (const parentItem of allItems) {
             if (!parentItem) continue;
             const parentName = parentItem['スキル名'] || parentItem['アビリティ名'] || parentItem['名称'];
@@ -1503,7 +1507,7 @@
             
             if (['styles', 'searchTags', 'autoTagExclusions', 'characterOrder'].includes(dbKey)) {
                 db[dbKey] = results.data;
-            } else if (dbKey === 'countExclusions') { // 追加: countExclusions用の読み込み処理
+            } else if (dbKey === 'countExclusions') { 
                 db[dbKey] = new Set();
                 results.data.forEach(row => {
                     const name = row['名称'];
@@ -1520,7 +1524,7 @@
                 });
             }
         } catch (error) {
-            if (['searchTags', 'autoTagExclusions', 'countExclusions'].includes(dbKey)) { // 修正: エラー許容リストに追加
+            if (['searchTags', 'autoTagExclusions', 'countExclusions'].includes(dbKey)) {
                 console.warn(`${fileName} の読み込みに失敗しましたが、処理を続行します。`);
                 if (dbKey === 'countExclusions') db[dbKey] = new Set();
                 else db[dbKey] = [];
@@ -1542,7 +1546,10 @@
     }
     
     function generateSkillDetailHtml(data, type = 'skill') {
-        if (!data || !data['スキル名']) return '';
+        if (!data) return '';
+        if (!data['スキル名'] && data['名称']) data['スキル名'] = data['名称'];
+        if (!data['スキル名']) return '';
+
         let html = '';
         const summaryParts = [], slashParts = [];
         if (data['種類']) slashParts.push(data['種類']);
@@ -1550,19 +1557,16 @@
         if (data['方法']) slashParts.push(data['方法']);
         if (data['行動順'] && type !== 'addInfo') slashParts.push(data['行動順']);
         
-        // --- 修正箇所: 範囲に「+」が含まれる場合の処理 ---
         let rawRange = data['範囲'] || '';
         let rawTarget = data['対象'] || '';
         let targetRange = '';
         if (rawRange.includes('+')) {
-            // "横一列+縦一列" のような場合、"対象"+"横一列" + "対象"+"縦一列" にする
             targetRange = rawRange.split('+').map(r => rawTarget + r).join('+');
         } else {
             targetRange = rawTarget + rawRange;
         }
         
         if (targetRange) slashParts.push(targetRange);
-        // ------------------------------------------------
         
         let slashStr = slashParts.join('/');
         let attrStr = '';
@@ -1597,6 +1601,13 @@
         return html;
     }
     
+    function findDetailText(name) {
+        if(db.skills[name]) return db.skills[name]['効果詳細'];
+        if(db.abilities[name]) return db.abilities[name]['効果詳細'];
+        if(db.addInfo[name]) return db.addInfo[name]['効果詳細'];
+        return null;
+    }
+
     function displayInfo(type, name, allInitialItems, displayedAddInfo) {
         const parsedName = parseName(name);
 
@@ -1614,8 +1625,7 @@
             data = db.abilities[parsedName.baseName];
             containerId = 'abilityDisplay';
         } else if (type === 'addInfo') {
-            // 変更: db.addInfoは使用せず、skills/abilitiesからデータを取得
-            data = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName];
+            data = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName] || db.addInfo[parsedName.baseName];
             containerId = 'addInfoDisplay';
             if (!data) return;
             if (db.skills[parsedName.baseName]) isSkill = true;
@@ -1643,7 +1653,6 @@
         let detailText = cardData['効果詳細'] || '(効果詳細なし)';
 
         if (parsedName.count && detailText !== '(効果詳細なし)') {
-            // 修正: countExclusions に含まれていない場合のみテキスト加工を行う
             if (!db.countExclusions.has(parsedName.baseName)) {
                 if (type === 'addInfo' && !detailText.includes('以下の効果が発動する')) {
                     const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
@@ -1698,8 +1707,7 @@
 
         const linkedDetailText = detailText.replace(/「([^」]+)」/g, (match, keyword) => {
             const parsedKeyword = parseName(keyword);
-            // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
-            const existsInDb = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+            const existsInDb = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName] || db.addInfo[parsedKeyword.baseName];
 
             if (!existsInDb || fixedExclusionList.has(parsedKeyword.fullName) || parsedKeyword.fullName === name || allInitialItems.has(parsedKeyword.fullName) || additionalExclusionList.includes(parsedKeyword.baseName)) {
                 return match;
@@ -1732,17 +1740,8 @@
                 targetCard.scrollIntoView({ behavior: 'smooth' });
                 history.replaceState(null, '', `#${targetId}`);
             }
-        } else if (backLink) {
-            // This event is now primarily handled by the browser's default anchor behavior
         }
     });
-
-    function findDetailText(name) {
-        if(db.skills[name]) return db.skills[name]['効果詳細'];
-        if(db.abilities[name]) return db.abilities[name]['効果詳細'];
-        // 変更: db.addInfoから詳細を取得しない
-        return null;
-    }
 
     function clearDisplays() {
         document.getElementById('skillDisplay').innerHTML = '';
@@ -1765,6 +1764,8 @@
         document.querySelector('#searchLogicCategory .logic-btn[data-logic="and"]').classList.add('active');
         
         document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active').forEach(btn => btn.classList.remove('active'));
+
+        document.querySelectorAll('#extraForceSearchContainer .tag-btn.active').forEach(btn => btn.classList.remove('active'));
 
         toggleSkillOptions();
         updateSearchUIState();
@@ -1815,7 +1816,7 @@
         });
     }
 
-function initializeResetButton() {
+    function initializeResetButton() {
         document.getElementById('resetSearchBtn').addEventListener('click', () => {
             document.getElementById('keywordSearchInput').value = '';
             performTagSearch();
@@ -1841,16 +1842,17 @@ function initializeResetButton() {
 
                     if (scannedKeywords.has(parsedKeyword.fullName)) continue;
                     
-                    // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
-                    const infoData = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName];
+                    const infoData = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName] || db.addInfo[parsedKeyword.baseName];
                     
                     if (infoData) {
                         scannedKeywords.add(parsedKeyword.fullName);
                         
                         const instanceData = { ...infoData };
                         
-                        if (instanceData.hasOwnProperty('名称')) {
-                            instanceData['名称'] = parsedKeyword.fullName;
+                        if (!instanceData['スキル名'] && !instanceData['アビリティ名'] && instanceData['名称']) {
+                             instanceData['名称'] = parsedKeyword.fullName;
+                        } else if (instanceData.hasOwnProperty('名称')) {
+                             instanceData['名称'] = parsedKeyword.fullName;
                         } else if (instanceData.hasOwnProperty('スキル名')) {
                             instanceData['スキル名'] = parsedKeyword.fullName;
                         } else if (instanceData.hasOwnProperty('アビリティ名')) {
@@ -1860,9 +1862,8 @@ function initializeResetButton() {
                         if (parsedKeyword.count) {
                             let detail = instanceData['効果詳細'] || '(効果詳細なし)';
                             if (detail !== '(効果詳細なし)') {
-                                // 修正: countExclusions に含まれていない場合のみテキスト加工を行う
                                 if (!db.countExclusions.has(parsedKeyword.baseName)) {
-                                    if (!detail.includes('以下の効果が発動する')) { // addInfoテーブルを使わなくなったため条件簡略化
+                                    if (!detail.includes('以下の効果が発動する')) {
                                         const additionText = `以下の効果が発動する(上限回数:バトル中${parsedKeyword.count}回)`;
                                         let lines = detail.split('\n');
                                         let processedLines = [];
@@ -1914,8 +1915,7 @@ function initializeResetButton() {
 
                         if (!linkedInfoItems.has(parsedKeyword.fullName)) {
                             linkedInfoItems.set(parsedKeyword.fullName, instanceData);
-                            // 変更: db.skillsに存在する場合のみ再スキャン (addInfoは使わない)
-                            if (db.skills[parsedKeyword.baseName]) {
+                            if (db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName]) {
                                 itemsToScan.push(infoData);
                             }
                         }
@@ -1967,13 +1967,9 @@ function initializeResetButton() {
         if (!isEnabled) return;
         const isSkillScope = document.querySelector('.search-scope-btn[data-scope="skill"]').classList.contains('active');
         const isAbilityScope = document.querySelector('.search-scope-btn[data-scope="ability"]').classList.contains('active');
-        const isAddInfoScope = document.querySelector('.search-scope-btn[data-scope="addInfo"]').classList.contains('active');
         let itemsToScan = [];
         if (isSkillScope) itemsToScan.push(...Object.values(db.skills));
         if (isAbilityScope) itemsToScan.push(...Object.values(db.abilities));
-        // 変更: addInfoScopeの場合も、実データはskills/abilitiesから来るため、ここでは特に追加しない
-        // (prepareSearchDataで抽出されたlinkedInfoが検索対象になるが、タグ自動抽出の母集団としてはskills/abilitiesで十分カバーできると仮定、
-        // もしくはaddInfo.csvの中身を見ないのであればここに追加すべきではない)
         
         const timingKeywords = new Set();
         const regex = /\[([^\]]+?)\]/g;
@@ -2032,6 +2028,86 @@ function initializeResetButton() {
         document.querySelectorAll('#csvTagArea .tag-btn.active').forEach(btn => {
             btn.classList.remove('active');
         });
+    }
+
+    function generateExtraForceTags() {
+        const container = document.getElementById('extraForceSearchContainer');
+        container.style.borderTop = '1px solid var(--controls-border)';
+        container.style.paddingTop = '10px';
+        container.style.marginTop = '15px';
+        container.style.display = 'block';
+
+        const header = document.createElement('h3');
+        header.textContent = 'エクストラフォース検索';
+        header.style.color = '#d63384';
+        header.style.marginBottom = '10px';
+        container.appendChild(header);
+
+        const typesWeapon = ['剣', '大剣', '斧', '棍棒', '体術', '銃', '槍', '小剣', '弓', '杖'];
+        const typesAttr = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
+        // 修正: 全体・範囲を連携の前に
+        const typesOtherFixed = ['Critical', 'OD', 'Weak', '技', '術', '直接', '間接', '単体', '単体攻撃', '縦攻撃', '横攻撃', '全体攻撃', '全体', '範囲', '全体・範囲', '連携'];
+        const effects = ['極小', '小', '中', '大', '特大', '極大', '超極大', '超極大+'];
+
+        const knownTypes = new Set([...typesWeapon, ...typesAttr, ...typesOtherFixed]);
+        const otherTypesSet = new Set();
+        Object.keys(db.addInfo).forEach(key => {
+            if (key.startsWith('エクストラフォース')) {
+                const match = key.match(/エクストラフォース\((.+?)\/.+\)/) || key.match(/エクストラフォース\((.+?)\)/);
+                if (match) {
+                    const typeContent = match[1];
+                    if (!knownTypes.has(typeContent)) {
+                        otherTypesSet.add(typeContent);
+                    }
+                }
+            }
+        });
+        const typesOtherDynamic = [...otherTypesSet].sort();
+
+        const createSection = (title, items, datasetKey, btnClass = 'extra-force-btn') => {
+            const div = document.createElement('div');
+            div.className = 'tag-category single-line-layout';
+            div.innerHTML = `<div class="tag-category-title">${title}:</div>`;
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'tag-buttons';
+            items.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = `tag-btn ${btnClass}`;
+                btn.textContent = item;
+                btn.dataset[datasetKey] = item;
+                btn.addEventListener('click', (e) => {
+                    e.currentTarget.classList.toggle('active');
+                    performTagSearch();
+                });
+                buttonsDiv.appendChild(btn);
+            });
+            div.appendChild(buttonsDiv);
+            container.appendChild(div);
+        };
+
+        createSection('武器種', typesWeapon, 'efType');
+        createSection('属性', typesAttr, 'efType');
+        createSection('その他', [...typesOtherFixed, ...typesOtherDynamic], 'efType');
+        createSection('効果', effects, 'efEffect');
+        
+        const scopeDiv = document.createElement('div');
+        scopeDiv.className = 'tag-category single-line-layout';
+        scopeDiv.innerHTML = `<div class="tag-category-title">対象:</div>`;
+        const scopeButtonsDiv = document.createElement('div');
+        scopeButtonsDiv.className = 'tag-buttons';
+        ['自身', '味方'].forEach(scope => {
+            const btn = document.createElement('button');
+            btn.className = 'tag-btn extra-force-scope-btn';
+            btn.textContent = scope;
+            btn.dataset.scope = scope;
+            btn.addEventListener('click', (e) => {
+                e.currentTarget.classList.toggle('active');
+                performTagSearch();
+            });
+            scopeButtonsDiv.appendChild(btn);
+        });
+        scopeDiv.appendChild(scopeButtonsDiv);
+        container.appendChild(scopeDiv);
     }
     
     function generateSearchTags() {
@@ -2272,6 +2348,9 @@ function initializeResetButton() {
                 performTagSearch();
             });
         });
+
+        generateExtraForceTags();
+
         updateSearchUIState();
         const isStarTitle = document.title.includes('★');
         document.getElementById('autoTagCategory').innerHTML = `<div class="tag-category-title">タイミング (自動抽出)<label style="margin-left: 10px; font-size: 0.9em; font-weight: normal;"><input type="checkbox" id="autoTagToggle" ${isStarTitle ? 'checked' : ''}> 有効にする</label></div>`;
@@ -2345,7 +2424,13 @@ function initializeResetButton() {
         const activeCharWeaponBtns = [...document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active')];
         const hasCharWeaponFilter = activeCharWeaponBtns.length > 0;
         
-        const hasActiveFilters = keywords.length > 0 || bpFilter !== null || activeSkillFilterBtns.length > 0 || activeTags.length > 0 || hasCharWeaponFilter;
+        // --- エクストラフォース用フィルタの取得 ---
+        const activeExtraForceTypeBtns = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn[data-ef-type].active')];
+        const activeExtraForceEffectBtns = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn[data-ef-effect].active')];
+        const activeExtraForceScopeBtns = [...document.querySelectorAll('#extraForceSearchContainer .extra-force-scope-btn.active')];
+        const hasExtraForceFilter = activeExtraForceTypeBtns.length > 0 || activeExtraForceEffectBtns.length > 0 || activeExtraForceScopeBtns.length > 0;
+
+        const hasActiveFilters = keywords.length > 0 || bpFilter !== null || activeSkillFilterBtns.length > 0 || activeTags.length > 0 || hasCharWeaponFilter || hasExtraForceFilter;
         if (!hasActiveFilters) {
             document.getElementById('searchResults').innerHTML = '';
             document.getElementById('searchResults').style.display = 'none';
@@ -2363,22 +2448,21 @@ function initializeResetButton() {
             const field = btn.dataset.field;
             const value = btn.dataset.value;
             if (field === 'combinedType') {
-                const type = value.slice(-1); // '技' or '術'
-                const attr = value.slice(0, -1); // '剣', '大剣', '火' etc.
+                const type = value.slice(-1); 
+                const attr = value.slice(0, -1);
                 return item['属性'] === attr && item['技術'] === type;
             }
             if (field === 'detailAttr') return item['属性1'] === value || item['属性2'] === value;
             if (value === 'exists') return item[field] && item[field].trim() !== '';
             
-            // --- 修正箇所: 範囲の+区切り判定を追加 ---
             if (field === '範囲' && item[field] && item[field].includes('+')) {
                 const parts = item[field].split('+');
                 return parts.includes(value);
             }
-            // ----------------------------------------
             
             return item[field] === value;
         };
+
         const results = stylesWithDetails.map(styleData => {
             
             if (hasCharWeaponFilter) {
@@ -2392,21 +2476,29 @@ function initializeResetButton() {
             if (isSkillScope) itemsToSearch.push(...styleData.skills.map(item => ({ ...item, type: 'skill' })));
             if (isAbilityScope) itemsToSearch.push(...styleData.abilities.map(item => ({ ...item, type: 'ability' })));
             if (isAddInfoScope) itemsToSearch.push(...styleData.linkedInfo.map(item => ({ ...item, type: 'addInfo' })));
+
             itemsToSearch.forEach(item => {
                 if (!item) return;
                 const isSkill = item.type === 'skill' || (item.type === 'addInfo' && !!item['スキル名']);
                 const itemName = item['スキル名'] || item['アビリティ名'] || item['名称'] || '';
-                const itemDetail = item['効果詳細'] || '';
-                const cleanedDetail = cleanText(itemDetail);
+                // ハイライト処理を行うため、元のテキストを保持しつつ、加工用変数を分ける
+                let processedDetail = item['効果詳細'] || '';
+                const cleanedDetail = cleanText(processedDetail);
                 const allChecks = [];
+                
+                // 通常キーワード検索
                 if (keywords.length > 0) {
                     const keywordMatch = searchLogic === 'and' ? keywords.every(kw => itemName.includes(kw) || cleanedDetail.includes(kw)) : keywords.some(kw => itemName.includes(kw) || cleanedDetail.includes(kw));
                     allChecks.push(keywordMatch);
                 }
+                
+                // スキルフィルタ
                 activeSkillFilterBtns.forEach(btn => {
                     if (isSkill) allChecks.push(checkSkillBtn(item, btn));
                     else allChecks.push(false);
                 });
+                
+                // BPフィルタ
                 if (bpFilter) {
                     if (isSkill) {
                         const itemBp = parseInt(item['BP'], 10);
@@ -2421,28 +2513,141 @@ function initializeResetButton() {
                         allChecks.push(false);
                     }
                 }
+                
+                // 共通タグフィルタ
                 activeTags.forEach(tag => {
                     allChecks.push(tag.keywords.some(kw => cleanedDetail.includes(kw)));
                 });
+
+                // --- エクストラフォース検索ロジック (ハイライト適用版) ---
+                if (hasExtraForceFilter) {
+                    if (item.type === 'addInfo' && itemName.startsWith('エクストラフォース')) {
+                        allChecks.push(false);
+                    } else {
+                        // Regex: 文脈(Context) / 接頭辞(Prefix) / 名称(Name) / 種類(Type) / 効果(Effect)
+                        const efRegex = /(?<context>味方生存者|敵生存者)?(?<prefix>自身に|全体に|対象と自身に)「(?<efName>エクストラフォース)\((?<type>[^/]+)\/(?<effect>[^)]+)\)」/g;
+                        
+                        let isEfMatch = false;
+                        
+                        // マッチ処理と同時にハイライト置換を行う
+                        // マッチが見つかれば isEfMatch を true にする
+                        const replacedDetail = processedDetail.replace(efRegex, (match, context, prefix, efName, type, effect) => {
+                            // undefined対策
+                            context = context || "";
+                            
+                            const hasTypeFilter = activeExtraForceTypeBtns.length > 0;
+                            const hasEffectFilter = activeExtraForceEffectBtns.length > 0;
+                            const hasScopeFilter = activeExtraForceScopeBtns.length > 0;
+
+                            // 条件判定関数
+                            const checkConditions = () => {
+                                let typeHit = !hasTypeFilter || activeExtraForceTypeBtns.some(b => type === b.dataset.efType);
+                                let effectHit = !hasEffectFilter || activeExtraForceEffectBtns.some(b => effect === b.dataset.efEffect);
+                                let scopeHit = !hasScopeFilter || activeExtraForceScopeBtns.some(b => {
+                                    if (b.dataset.scope === '自身') return prefix === '自身に';
+                                    if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に');
+                                    return false;
+                                });
+
+                                if (searchLogic === 'and') {
+                                    // AND: 全カテゴリ条件を満たす必要がある
+                                    return typeHit && effectHit && scopeHit;
+                                } else {
+                                    // OR: いずれかのカテゴリ条件を満たせば良い (ただし無選択カテゴリは無視)
+                                    // hasFilterがあるカテゴリについてのみヒット判定を行う
+                                    if (hasTypeFilter && typeHit) return true;
+                                    if (hasEffectFilter && effectHit) return true;
+                                    if (hasScopeFilter && scopeHit) return true;
+                                    return false;
+                                }
+                            };
+
+                            if (checkConditions()) {
+                                isEfMatch = true; // 検索ヒットフラグON
+
+                                // ハイライト構成
+                                // "エクストラフォース"は必ずハイライト
+                                let resName = `<span class="highlight">${efName}</span>`;
+                                
+                                // 他の部分はタグが選択されている場合のみハイライト
+                                let resType = (hasTypeFilter && activeExtraForceTypeBtns.some(b => type === b.dataset.efType)) 
+                                    ? `<span class="highlight">${type}</span>` : type;
+                                
+                                let resEffect = (hasEffectFilter && activeExtraForceEffectBtns.some(b => effect === b.dataset.efEffect))
+                                    ? `<span class="highlight">${effect}</span>` : effect;
+                                
+                                // Scope部分はContextも含めてハイライト判定
+                                let resPrefix = prefix;
+                                let resContext = context;
+                                
+                                if (hasScopeFilter) {
+                                    const scopeMatched = activeExtraForceScopeBtns.some(b => {
+                                        if (b.dataset.scope === '自身') return prefix === '自身に';
+                                        if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に');
+                                        return false;
+                                    });
+                                    if (scopeMatched) {
+                                        resPrefix = `<span class="highlight">${prefix}</span>`;
+                                        // 味方判定でかつ文脈がある場合のみハイライト
+                                        if (context && (prefix === '全体に' || prefix === '対象と自身に')) {
+                                            resContext = `<span class="highlight">${context}</span>`;
+                                        }
+                                    }
+                                }
+
+                                return `${resContext}${resPrefix}「${resName}(${resType}/${resEffect})」`;
+                            } else {
+                                // 条件不一致なら元の文字列のまま
+                                return match;
+                            }
+                        });
+
+                        if (isEfMatch) {
+                            processedDetail = replacedDetail; // ハイライト適用済みテキストで更新
+                        }
+                        allChecks.push(isEfMatch);
+                    }
+                }
+
                 const finalMatch = allChecks.length > 0 && (searchLogic === 'and' ? allChecks.every(r => r) : allChecks.some(r => r));
+                
                 if (finalMatch) {
                     let shouldBeIncluded = true;
-                    const ultimateRoots = traceToStyleRoot(itemName, { character: styleData.character, styleName: styleData.styleName });
-                    if (ultimateRoots.length === 0) {
-                        shouldBeIncluded = false;
-                    } else {
-                        const isAnyRootVisible = ultimateRoots.some(root => (root.type === 'スキル' && isSkillScope) || (root.type === 'アビリティ' && isAbilityScope));
-                        if (!isAnyRootVisible) shouldBeIncluded = false;
-                    }
-                    if (shouldBeIncluded) {
-                        let matchingKeywordsForHighlight = activeTags.flatMap(tag => tag.keywords).filter(kw => cleanedDetail.includes(kw));
-                        if (keywords.length > 0) matchingKeywordsForHighlight.push(...keywords);
-                        if (isSkill) {
-                            activeSkillFilterBtns.forEach(btn => {
-                                if (checkSkillBtn(item, btn)) matchingKeywordsForHighlight.push(btn.textContent);
-                            });
+                    if (!hasExtraForceFilter) {
+                        const ultimateRoots = traceToStyleRoot(itemName, { character: styleData.character, styleName: styleData.styleName });
+                        if (ultimateRoots.length === 0) {
+                            shouldBeIncluded = false;
+                        } else {
+                            const isAnyRootVisible = ultimateRoots.some(root => (root.type === 'スキル' && isSkillScope) || (root.type === 'アビリティ' && isAbilityScope));
+                            if (!isAnyRootVisible) shouldBeIncluded = false;
                         }
-                        foundItems.push({ name: itemName, detail: itemDetail, keywords: [...new Set(matchingKeywordsForHighlight)], type: item.type });
+                    }
+
+                    if (shouldBeIncluded) {
+                        let matchingKeywordsForHighlight = [];
+                        
+                        // EF以外のハイライト処理（汎用）
+                        if (!hasExtraForceFilter) {
+                            matchingKeywordsForHighlight = activeTags.flatMap(tag => tag.keywords).filter(kw => cleanedDetail.includes(kw));
+                            if (keywords.length > 0) matchingKeywordsForHighlight.push(...keywords);
+                            if (isSkill) {
+                                activeSkillFilterBtns.forEach(btn => {
+                                    if (checkSkillBtn(item, btn)) matchingKeywordsForHighlight.push(btn.textContent);
+                                });
+                            }
+                        } else {
+                            // EF検索時は、EF以外のキーワード（通常のタグなど）もハイライト対象にするならここに追加
+                            // ただしEF部分は既に processedDetail 内で <span> 化されている
+                            if (keywords.length > 0) matchingKeywordsForHighlight.push(...keywords);
+                        }
+
+                        foundItems.push({ 
+                            name: itemName, 
+                            detail: processedDetail, // ハイライト済みテキストを渡す
+                            keywords: [...new Set(matchingKeywordsForHighlight)], 
+                            type: item.type,
+                            isPreHighlighted: hasExtraForceFilter // フラグ
+                        });
                     }
                 }
             });
@@ -2458,16 +2663,18 @@ function initializeResetButton() {
         sortedKeywords.forEach(keyword => {
             if (keyword === '') return;
             const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // 既存のHTMLタグを壊さないようにLookbehind等を利用するか、単純置換
+            // 既にハイライト済みの span class="highlight" 内を避けるのは難しいが、
+            // キーワードがタグそのものでなければ概ね動作する
             const regex = new RegExp(`(?<!<[^>]*)${escapedKeyword}(?![^<]*>)`, 'gi');
             highlightedText = highlightedText.replace(regex, `<span class="highlight">$&</span>`);
         });
         return highlightedText;
     }
 
-    function generateItemCardHTML(itemName, keywords = [], contextCharacter, contextStyleName, searchContext, itemTypeFromSearch) {
+    function generateItemCardHTML(itemName, keywords = [], contextCharacter, contextStyleName, searchContext, itemTypeFromSearch, preHighlightedDetail = null) {
         const parsedName = parseName(itemName);
-        // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
-        const itemData = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName];
+        const itemData = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName] || db.addInfo[parsedName.baseName];
 
         if (!itemData) return '';
 
@@ -2479,7 +2686,6 @@ function initializeResetButton() {
         if (parsedName.count) {
             let detail = renderData['効果詳細'] || '(効果詳細なし)';
             if (detail !== '(効果詳細なし)') {
-                // 修正: countExclusions に含まれていない場合のみテキスト加工を行う
                 if (!db.countExclusions.has(parsedName.baseName)) {
                     if (itemType === 'addInfo' && !detail.includes('以下の効果が発動する')) {
                         const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
@@ -2558,6 +2764,7 @@ function initializeResetButton() {
                 parents = parents.filter(parent => styleItemNames.has(parent.name));
             }
         }
+        
         if (parents && searchContext) {
             parents = parents.filter(parent => {
                 if (parent.type === 'スキル' && !searchContext.isSkillScope) return false;
@@ -2572,68 +2779,67 @@ function initializeResetButton() {
             referenceInfo = `<div class="summary-line">参照元: ${parentLinks}</div>`;
         }
         
-        const styledDetail = applyGrayTextStyle(renderData['効果詳細'] || '').replace(/\n/g, '<br>');
-        const finalDetailHtml = highlightKeywords(styledDetail, keywords);
+        // EF検索時は既にハイライト済みのテキストを使用、そうでなければ通常処理
+        let finalDetailHtml;
+        if (preHighlightedDetail) {
+            finalDetailHtml = applyGrayTextStyle(preHighlightedDetail).replace(/\n/g, '<br>');
+            // 追加のキーワードがあればさらにハイライト（ただしHTMLタグを壊さないよう注意が必要だが今回は簡易実装）
+            if (keywords.length > 0) {
+                finalDetailHtml = highlightKeywords(finalDetailHtml, keywords);
+            }
+        } else {
+            const styledDetail = applyGrayTextStyle(renderData['効果詳細'] || '').replace(/\n/g, '<br>');
+            finalDetailHtml = highlightKeywords(styledDetail, keywords);
+        }
         
         return `<h3>${itemName} ${typeSpan}</h3>${referenceInfo}${highlightedSummary}<div class="detail-line">${finalDetailHtml}</div>`;
     }
 
     function displaySearchResults(results, searchContext) {
         const searchResultsContainer = document.getElementById('searchResults');
-        // 結果をフラット化
         const flatResults = results.flatMap(styleResult => styleResult.items.map(item => ({ character: styleResult.character, styleName: styleResult.styleName, ...item })));
         
-        // 検索ロジックの取得
         const searchLogic = document.querySelector('#searchLogicCategory .logic-btn.active').dataset.logic;
-        // 接続詞（赤色付き）
         const conjunction = searchLogic === 'or' ? ' <span style="color: red;">または</span> ' : ' <span style="color: red;">かつ</span> ';
         
         const searchParts = [];
         
-        // --- 1. キーワード ---
         const keywordString = document.getElementById('keywordSearchInput').value.trim();
         const keywords = keywordString.split(/[\s　]+/).filter(k => k);
         if (keywords.length > 0) {
-            // キーワード内の接続詞も赤にする
             const keywordConjunction = searchLogic === 'or' ? ' <span style="color: red;">または</span> ' : ' <span style="color: red;">かつ</span> ';
             const keywordsText = keywords.map(kw => `'${kw}'`).join(keywordConjunction);
             searchParts.push(`キーワード:(${keywordsText})`);
         }
 
-        // --- 2. BP ---
         const bpBtn = document.querySelector('#skillSearchOptionsContainer .bp-op-btn.active');
         const bpVal = document.getElementById('bpSearchInput').value;
         if (bpBtn && bpVal) {
             searchParts.push(`BP(${bpVal}${bpBtn.textContent})`);
         }
 
-        // --- 3. タグ（スキル項目 + 共通項目） ---
         const activeSkillFilters = [...document.querySelectorAll('#skillSearchOptionsContainer .skill-filter-btn.active')];
         const activeCsvTags = [...document.querySelectorAll('#csvTagArea .tag-btn.active')];
-        const allActiveTags = [...activeSkillFilters, ...activeCsvTags];
+        const activeExtraForce = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn.active')];
+
+        const allActiveTags = [...activeSkillFilters, ...activeCsvTags, ...activeExtraForce];
 
         if (allActiveTags.length > 0) {
-            // タグ内の接続詞もグレーにする
             const tagsText = allActiveTags.map(btn => btn.textContent).join(conjunction);
             searchParts.push(`タグ:(${tagsText})`);
         }
         
-        // 条件部分のテキスト結合
         const otherConditionsText = searchParts.join(conjunction);
         
-        // --- 4. タイトルの組み立て ---
         let searchText = "";
         
-        // キャラ武器種（前提条件）
         const activeCharWeaponBtns = [...document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active')];
         
         if (activeCharWeaponBtns.length > 0) {
-            // 武器種内の「または」を赤に
             const weaponsText = activeCharWeaponBtns.map(btn => btn.textContent).join(' <span style="color: red;">または</span> ');
             const weaponPart = `キャラ武器種:(${weaponsText})`;
             
             if (otherConditionsText) {
-                // 武器種 と その他の条件 は常に「かつ」で結合（赤）
                 searchText = `${weaponPart} <span style="color: red;">かつ</span> [${otherConditionsText}]`;
             } else {
                 searchText = weaponPart;
@@ -2642,7 +2848,6 @@ function initializeResetButton() {
             searchText = otherConditionsText;
         }
         
-        // --- 5. 結果の表示 ---
         searchResultsContainer.innerHTML = flatResults.length === 0 
             ? `<h2>「${searchText}」の検索結果: 0件</h2><p style="color: red;">該当するスキル・アビリティは見つかりませんでした。</p>` 
             : `<h2>「${searchText}」の検索結果: ${flatResults.length}件</h2>` + flatResults.map(res => {
@@ -2652,7 +2857,8 @@ function initializeResetButton() {
             else if (res.type === 'ability') panelBgColor = 'var(--ability-col-bg)';
             else panelBgColor = 'var(--addinfo-col-bg)';
             
-            const cardHtml = generateItemCardHTML(res.name, res.keywords, res.character, res.styleName, searchContext, res.type);
+            // ハイライト済みテキストがある場合はそれを渡す
+            const cardHtml = generateItemCardHTML(res.name, res.keywords, res.character, res.styleName, searchContext, res.type, res.isPreHighlighted ? res.detail : null);
             return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${res.character}</h3><h4>${res.styleName}</h4><div class="card">${cardHtml}</div></div>`;
         }).join('');
         
@@ -2687,8 +2893,7 @@ function initializeResetButton() {
                 if (p !== clickedPanel && !p.contains(showLink)) p.remove();
             });
             const parentName = showLink.dataset.parentName;
-            // 変更: db.addInfoは除外し、skills/abilitiesのみで判定
-            const parentData = db.skills[parentName] || db.abilities[parentName];
+            const parentData = db.skills[parentName] || db.abilities[parentName] || db.addInfo[parentName];
             if (!parentData) return;
             const owners = itemToStyleMap[parentName];
             let character, styleName;
