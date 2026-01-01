@@ -555,6 +555,54 @@
             line-height: 1.5;
         }
         /* ▲▲▲ 追加ここまで ▲▲▲ */
+
+        /* ▼▼▼ 自動選定ツール：装備変更モーダル用追加CSS ▼▼▼ */
+        .calc-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .calc-modal-overlay.active { display: flex; }
+        .calc-modal-window {
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #777;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .calc-modal-window h3 { margin-top: 0; color: #fff; border-bottom: 1px solid #555; padding-bottom: 10px; }
+        #calc-modal-list { flex-grow: 1; overflow-y: auto; margin-bottom: 15px; }
+        .calc-candidate-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #555;
+            cursor: pointer;
+            color: #eee;
+        }
+        .calc-candidate-item:hover { background-color: #444; }
+        .calc-candidate-item .main-info { font-size: 1.1em; font-weight: bold; }
+        .calc-candidate-item .sub-info { font-size: 0.9em; color: #aaa; }
+        .calc-candidate-item .val-info { font-size: 1.2em; color: #ffd700; font-weight: bold; }
+        .armor-text.clickable {
+            cursor: pointer;
+            text-decoration: none; /* underlineを削除 */
+            transition: color 0.2s;
+        }
+
+        /* ▲▲▲ 追加ここまで ▲▲▲ */
         
     </style>
 </head>
@@ -938,11 +986,20 @@
                 ※使用は自己責任にて。<br>
                 ※最適な組み合わせが選定出来ない可能性もあります。あくまで参考としてお考えください。<br>
                 ※名将の鎧・英傑の足甲の固有アビリティ考慮で威力＋選択のキャラにシリーズ指定した場合は、味方威力＋選択のキャラも威力＋選択のキャラとシリーズが同じであるなら必ず指定してください。<br>
-                ※シリーズで「その他」を選択してもバトルヴァンブレイスに対応するものはありません。
+                ※シリーズで「その他」を選択してもバトルヴァンブレイスに対応するものはありません。<br>
+                <span style="color: yellow;">※計算結果の防具名をクリックすると、他の候補を選択できます。</span>
             </footer>
     <div class="bottom3">
         <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a>
     </div>
+
+        <div id="calc-modal" class="calc-modal-overlay">
+            <div class="calc-modal-window">
+                <h3 id="calc-modal-title">装備変更</h3>
+                <div id="calc-modal-list"></div>
+                <button id="calc-modal-close" onclick="closeCalcModal()" style="margin-top: 10px; padding: 10px; background-color: #555; color: white; border: none; border-radius: 4px; cursor: pointer;">閉じる</button>
+            </div>
+        </div>
         </div>
     </div>
 <script>
@@ -2682,6 +2739,8 @@ function getPartData(part) {
     // =========================================================================
     
     let armorData_calc = [];
+    let lastCalcConfig = null; // 直前の計算設定を保持
+    let lastCalcLoadout = null; // 直前の計算結果（装備構成）を保持
 
     async function loadCsvData_calc(url, targetMap) {
         try {
@@ -3083,62 +3142,88 @@ function getPartData(part) {
             if (charConfig.abilityType === '威力＋' && !primaryAttacker) primaryAttacker = charConfig;
         }
 
-        if (!primaryAttacker) {
-            const loadout = runIterativeSolver_calc(partyConfig);
-            const results = calculateFinalResults_calc(loadout, partyConfig);
-            results.forEach(r => displayResult_calc(r));
-            return;
-        }
-
         let bestLoadout = null;
-        let bestTotal = -1;
-        const attackerCandidates = [];
-        const availableMainArmor = armorData_calc.filter(item => item.armorType === 'main');
-        for (const armor of availableMainArmor) {
-            const jsonAbilityCondition = getConditionFromAbilityName_calc(armor.abilityName);
-            if (primaryAttacker.selectedConditions.includes(jsonAbilityCondition)) {
-                const jsonAbilityType = armor.abilityName.includes('味方威力＋') ? '味方威力＋' : '威力＋';
-                if (jsonAbilityType === '威力＋' || jsonAbilityType === '味方威力＋') attackerCandidates.push(armor);
+
+        if (!primaryAttacker) {
+            bestLoadout = runIterativeSolver_calc(partyConfig);
+        } else {
+            let bestTotal = -1;
+            const attackerCandidates = [];
+            const availableMainArmor = armorData_calc.filter(item => item.armorType === 'main');
+            for (const armor of availableMainArmor) {
+                const jsonAbilityCondition = getConditionFromAbilityName_calc(armor.abilityName);
+                if (primaryAttacker.selectedConditions.includes(jsonAbilityCondition)) {
+                    const jsonAbilityType = armor.abilityName.includes('味方威力＋') ? '味方威力＋' : '威力＋';
+                    if (jsonAbilityType === '威力＋' || jsonAbilityType === '味方威力＋') attackerCandidates.push(armor);
+                }
             }
-        }
 
-        const powerPlusCandidates = attackerCandidates.filter(a => !a.abilityName.includes('味方威力＋')).map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue_calc(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) })).sort((a, b) => b.totalValue - a.totalValue);
-        const partyBuffCandidates = attackerCandidates.filter(a => a.abilityName.includes('味方威力＋')).map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue_calc(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) })).sort((a, b) => b.totalValue - a.totalValue);
-        const scenariosToTest = [...powerPlusCandidates.slice(0, 2), ...partyBuffCandidates.slice(0, 3)];
-        const uniqueScenarios = [...new Map(scenariosToTest.map(item => [item.armorName, item])).values()];
-        uniqueScenarios.push(null); 
+            const powerPlusCandidates = attackerCandidates.filter(a => !a.abilityName.includes('味方威力＋')).map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue_calc(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) })).sort((a, b) => b.totalValue - a.totalValue);
+            const partyBuffCandidates = attackerCandidates.filter(a => a.abilityName.includes('味方威力＋')).map(a => ({ ...a, totalValue: a.value + getNativeAbilityValue_calc(a.armorName, 'main', primaryAttacker.selectedConditions, primaryAttacker.abilityType, primaryAttacker.charId) })).sort((a, b) => b.totalValue - a.totalValue);
+            const scenariosToTest = [...powerPlusCandidates.slice(0, 2), ...partyBuffCandidates.slice(0, 3)];
+            const uniqueScenarios = [...new Map(scenariosToTest.map(item => [item.armorName, item])).values()];
+            uniqueScenarios.push(null); 
 
-        for (const attackerMainArmor of uniqueScenarios) {
-            const lockedEquipment = new Map();
-            if (attackerMainArmor) lockedEquipment.set(primaryAttacker.charId, { mainArmor: attackerMainArmor, subArmor: null });
-            const scenarioLoadout = runIterativeSolver_calc(partyConfig, lockedEquipment);
-            const scenarioResults = calculateFinalResults_calc(scenarioLoadout, partyConfig);
-            const scenarioAttackerResult = scenarioResults.find(r => r.charId === primaryAttacker.charId);
-            
-            if (scenarioAttackerResult && scenarioAttackerResult.totals && scenarioAttackerResult.totals.grand > bestTotal) {
-                bestTotal = scenarioAttackerResult.totals.grand;
-                bestLoadout = scenarioLoadout;
+            for (const attackerMainArmor of uniqueScenarios) {
+                const lockedEquipment = new Map();
+                if (attackerMainArmor) lockedEquipment.set(primaryAttacker.charId, { mainArmor: attackerMainArmor, subArmor: null });
+                const scenarioLoadout = runIterativeSolver_calc(partyConfig, lockedEquipment);
+                const scenarioResults = calculateFinalResults_calc(scenarioLoadout, partyConfig);
+                const scenarioAttackerResult = scenarioResults.find(r => r.charId === primaryAttacker.charId);
+                
+                if (scenarioAttackerResult && scenarioAttackerResult.totals && scenarioAttackerResult.totals.grand > bestTotal) {
+                    bestTotal = scenarioAttackerResult.totals.grand;
+                    bestLoadout = scenarioLoadout;
+                }
             }
         }
 
         if (bestLoadout) {
+            // ▼▼▼ 追加：直前の計算結果を保持 ▼▼▼
+            lastCalcConfig = partyConfig;
+            lastCalcLoadout = bestLoadout;
+            // ▲▲▲ 追加ここまで ▲▲▲
+
             const finalResults = calculateFinalResults_calc(bestLoadout, partyConfig);
-            finalResults.forEach(r => displayResult_calc(r));
+            
+            // ▼▼▼ 追加：装備の重複チェック ▼▼▼
+            const usageCounts = {};
+            finalResults.forEach(r => {
+                if (r.mainArmor && r.mainArmor.uniqueId) {
+                    usageCounts[r.mainArmor.uniqueId] = (usageCounts[r.mainArmor.uniqueId] || 0) + 1;
+                }
+                if (r.subArmor && r.subArmor.uniqueId) {
+                    usageCounts[r.subArmor.uniqueId] = (usageCounts[r.subArmor.uniqueId] || 0) + 1;
+                }
+            });
+            // ▲▲▲ 追加ここまで ▲▲▲
+
+            finalResults.forEach(r => displayResult_calc(r, usageCounts)); // usageCountsを渡す
         } else {
             partyConfig.forEach(c => displayEmptyResult_calc(c.charId));
         }
     }
     
-    function displayResult_calc(result) {
+    // ▼▼▼ 修正：usageCountsを受け取るように変更 ▼▼▼
+    function displayResult_calc(result, usageCounts) {
         const { charId, mainArmor, subArmor, totals } = result;
         const resultArea = document.getElementById(`result-area-${charId}`);
         
-        let mainArmorNameStyle = '', subArmorNameStyle = '';
+        // 主防具のスタイル判定
+        let mainArmorNameStyle = '';
+        const isMainDupe = (usageCounts && mainArmor && usageCounts[mainArmor.uniqueId] > 1);
+        
         if (!mainArmor || mainArmor.armorName === '該当なし') mainArmorNameStyle = 'style="color: red;"';
+        else if (isMainDupe) mainArmorNameStyle = 'style="color: red;"'; // 重複時は赤 (最優先)
         else if (mainArmor.armorName.includes('名将の鎧') || mainArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) mainArmorNameStyle = 'style="color: magenta;"';
         else if (mainArmor.nativeValue > 0) mainArmorNameStyle = 'style="color: orange;"';
         
+        // 副防具のスタイル判定
+        let subArmorNameStyle = '';
+        const isSubDupe = (usageCounts && subArmor && usageCounts[subArmor.uniqueId] > 1);
+
         if (!subArmor || subArmor.armorName === '該当なし') subArmorNameStyle = 'style="color: red;"';
+        else if (isSubDupe) subArmorNameStyle = 'style="color: red;"'; // 重複時は赤 (最優先)
         else if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('英傑の足甲') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) subArmorNameStyle = 'style="color: magenta;"';
         else if (subArmor.nativeValue > 0) subArmorNameStyle = 'style="color: orange;"';
 
@@ -3157,8 +3242,8 @@ function getPartData(part) {
         resultArea.innerHTML = `
             <div class="result-details">
                 <table class="result-table"><tbody>
-                    <tr><td class="col-heading"><span class="heading-text">主防具</span></td><td class="col-armor"><span class="data-label">装備:</span><span class="armor-text" ${mainArmorNameStyle}>${mainArmorNameText || ''}</span></td><td class="col-ability"><span class="data-label">アビリティ:</span><span class="ability-text">${mainArmor.abilityName || '-'}</span></td><td class="col-value"><span class="data-label">効果値:</span><span class="value-text">${mainArmor.value || 0}%</span></td></tr>
-                    <tr><td class="col-heading"><span class="heading-text">副防具</span></td><td class="col-armor"><span class="data-label">装備:</span><span class="armor-text" ${subArmorNameStyle}>${subArmorNameText || ''}</span></td><td class="col-ability"><span class="data-label">アビリティ:</span><span class="ability-text">${subArmor.abilityName || '-'}</span></td><td class="col-value"><span class="data-label">効果値:</span><span class="value-text">${subArmor.value || 0}%</span></td></tr>
+                    <tr><td class="col-heading"><span class="heading-text">主防具</span></td><td class="col-armor"><span class="data-label">装備:</span><span class="armor-text clickable" onclick="openCalcModal(${charId}, 'main')" ${mainArmorNameStyle}>${mainArmorNameText || ''}</span></td><td class="col-ability"><span class="data-label">アビリティ:</span><span class="ability-text">${mainArmor.abilityName || '-'}</span></td><td class="col-value"><span class="data-label">効果値:</span><span class="value-text">${mainArmor.value || 0}%</span></td></tr>
+                    <tr><td class="col-heading"><span class="heading-text">副防具</span></td><td class="col-armor"><span class="data-label">装備:</span><span class="armor-text clickable" onclick="openCalcModal(${charId}, 'sub')" ${subArmorNameStyle}>${subArmorNameText || ''}</span></td><td class="col-ability"><span class="data-label">アビリティ:</span><span class="ability-text">${subArmor.abilityName || '-'}</span></td><td class="col-value"><span class="data-label">効果値:</span><span class="value-text">${subArmor.value || 0}%</span></td></tr>
                 </tbody></table>
             </div>
             ${totalHTML}
@@ -3168,6 +3253,105 @@ function getPartData(part) {
     function displayEmptyResult_calc(charId) {
         document.getElementById(`result-area-${charId}`).innerHTML = `<p>条件を選択して計算を実行してください。</p>`;
     }
+
+    // ▼▼▼ 追加：モーダル関連関数 ▼▼▼
+    function openCalcModal(charId, armorType) {
+        if (!lastCalcConfig || !lastCalcLoadout) return; // 計算前なら何もしない
+
+        const config = lastCalcConfig.find(c => c.charId === charId);
+        if (!config) return;
+
+        const modal = document.getElementById('calc-modal');
+        const list = document.getElementById('calc-modal-list');
+        const title = document.getElementById('calc-modal-title');
+        
+        title.textContent = `装備変更 (キャラ${charId} - ${armorType === 'main' ? '主防具' : '副防具'})`;
+        list.innerHTML = '';
+
+        // 候補を抽出（条件一致のみ）
+        const candidates = [];
+        const availableArmor = armorData_calc.filter(item => item.armorType === armorType);
+        
+        availableArmor.forEach(armor => {
+            const jsonAbilityCondition = getConditionFromAbilityName_calc(armor.abilityName);
+            const jsonAbilityType = armor.abilityName.includes('味方威力＋') ? '味方威力＋' : '威力＋';
+            
+            // 装備可能なタイプか判定（威力+選択時に味方威力+も候補に含めるなど、solverのロジックに準拠）
+            let typeMatch = (config.abilityType === jsonAbilityType);
+            if (config.abilityType === '威力＋' && jsonAbilityType === '味方威力＋') typeMatch = true;
+
+            if (typeMatch && config.selectedConditions.includes(jsonAbilityCondition)) {
+                // ここでの計算は「そのキャラ自身が得られる効果値」の概算（ネイティブ込み）
+                const nativeValue = getNativeAbilityValue_calc(armor.armorName, armorType, config.selectedConditions, config.abilityType, charId);
+                const totalVal = armor.value + nativeValue;
+                candidates.push({ ...armor, nativeValue, totalVal });
+            }
+        });
+
+        // ソート: 合計値の降順
+        candidates.sort((a, b) => b.totalVal - a.totalVal);
+
+        candidates.forEach(cand => {
+            const div = document.createElement('div');
+            div.className = 'calc-candidate-item';
+            div.onclick = () => selectManualArmor(charId, armorType, cand.uniqueId);
+            
+            let nameDisplay = cand.armorName;
+            if (cand.nativeValue > 0) nameDisplay += ` (+${cand.nativeValue})`;
+
+            div.innerHTML = `
+                <div>
+                    <div class="main-info">${nameDisplay}</div>
+                    <div class="sub-info">${cand.abilityName}</div>
+                </div>
+                <div class="val-info">${cand.value}%</div>
+            `;
+            list.appendChild(div);
+        });
+
+        modal.classList.add('active');
+    }
+
+    function selectManualArmor(charId, armorType, uniqueId) {
+        if (!lastCalcConfig || !lastCalcLoadout) return;
+
+        // 選択された装備データを取得
+        const selectedArmor = armorData_calc.find(item => item.uniqueId === uniqueId);
+        if (!selectedArmor) return;
+
+        // 構成を更新
+        const loadout = lastCalcLoadout[charId - 1];
+        if (armorType === 'main') loadout.mainArmor = selectedArmor;
+        else loadout.subArmor = selectedArmor;
+
+        // 再計算（味方威力などの影響を及ぼすため全体を再評価）
+        const finalResults = calculateFinalResults_calc(lastCalcLoadout, lastCalcConfig);
+        
+        // ▼▼▼ 追加：再計算時も重複チェックを行う ▼▼▼
+        const usageCounts = {};
+        finalResults.forEach(r => {
+            if (r.mainArmor && r.mainArmor.uniqueId) {
+                usageCounts[r.mainArmor.uniqueId] = (usageCounts[r.mainArmor.uniqueId] || 0) + 1;
+            }
+            if (r.subArmor && r.subArmor.uniqueId) {
+                usageCounts[r.subArmor.uniqueId] = (usageCounts[r.subArmor.uniqueId] || 0) + 1;
+            }
+        });
+        // ▲▲▲ 追加ここまで ▲▲▲
+
+        // 結果表示を更新
+        finalResults.forEach(r => displayResult_calc(r, usageCounts)); // usageCountsを渡す
+
+        closeCalcModal();
+    }
+
+    function closeCalcModal() {
+        document.getElementById('calc-modal').classList.remove('active');
+    }
+    window.openCalcModal = openCalcModal; // HTML onclickから呼ぶためにグローバル化
+    window.closeCalcModal = closeCalcModal;
+    // ▲▲▲ 追加ここまで ▲▲▲
+
 </script>
 
 <script type="module">
