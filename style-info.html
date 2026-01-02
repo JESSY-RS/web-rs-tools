@@ -569,8 +569,21 @@
             font-weight: bold;
             border-color: #007bff;
         }
+        .tag-btn.disabled {
+            background-color: #e0e0e0;
+            color: #a0a0a0;
+            border-color: #d0d0d0;
+            cursor: not-allowed;
+            opacity: 0.6;
+            pointer-events: none;
+        }
         [data-theme="dark"] .tag-btn.active {
             background-color: #1D9BF0;
+        }
+        [data-theme="dark"] .tag-btn.disabled {
+            background-color: #555;
+            color: #777;
+            border-color: #666;
         }
         .tag-category.single-line-layout {
             display: flex;
@@ -756,8 +769,8 @@
              color: white !important;
         }
         .extra-force-scope-btn.active {
-             background-color: #20c997 !important; /* ティール系 */
-             border-color: #20c997 !important;
+             background-color: #d63384 !important; /* ティール系をピンク系に変更 */
+             border-color: #d63384 !important;
              color: white !important;
         }
         /* --- ここまで --- */
@@ -2043,6 +2056,25 @@
         header.style.marginBottom = '10px';
         container.appendChild(header);
 
+        // --- 存在チェック用セットの作成 ---
+        const existingTypes = new Set();
+        const existingEffects = new Set();
+        
+        Object.keys(db.addInfo).forEach(key => {
+            if (key.startsWith('エクストラフォース')) {
+                const match = key.match(/エクストラフォース\((.+?)\/(.+?)\)/); // 名称形式: エクストラフォース(タイプ/効果)
+                if (match) {
+                    existingTypes.add(match[1]);
+                    existingEffects.add(match[2]);
+                } else {
+                     // エクストラフォース(タイプ) のみのパターンも一応考慮
+                     const match2 = key.match(/エクストラフォース\((.+?)\)/);
+                     if(match2) existingTypes.add(match2[1]);
+                }
+            }
+        });
+        // -------------------------------
+
         const typesWeapon = ['剣', '大剣', '斧', '棍棒', '体術', '銃', '槍', '小剣', '弓', '杖'];
         const typesAttr = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
         // 修正: 全体・範囲を連携の前に
@@ -2070,19 +2102,32 @@
             div.innerHTML = `<div class="tag-category-title">${title}:</div>`;
             const buttonsDiv = document.createElement('div');
             buttonsDiv.className = 'tag-buttons';
+            let hasButtons = false;
+
             items.forEach(item => {
+                // --- 変更点: 存在しない場合は作成せずスキップ ---
+                if (datasetKey === 'efType' && !existingTypes.has(item)) return;
+                if (datasetKey === 'efEffect' && !existingEffects.has(item)) return;
+                // ---------------------------------------------
+                
+                hasButtons = true;
                 const btn = document.createElement('button');
                 btn.className = `tag-btn ${btnClass}`;
                 btn.textContent = item;
                 btn.dataset[datasetKey] = item;
+                
                 btn.addEventListener('click', (e) => {
                     e.currentTarget.classList.toggle('active');
                     performTagSearch();
                 });
                 buttonsDiv.appendChild(btn);
             });
-            div.appendChild(buttonsDiv);
-            container.appendChild(div);
+            
+            // ボタンが存在する場合のみ表示
+            if (hasButtons) {
+                div.appendChild(buttonsDiv);
+                container.appendChild(div);
+            }
         };
 
         createSection('武器種', typesWeapon, 'efType');
@@ -2800,14 +2845,16 @@
         const flatResults = results.flatMap(styleResult => styleResult.items.map(item => ({ character: styleResult.character, styleName: styleResult.styleName, ...item })));
         
         const searchLogic = document.querySelector('#searchLogicCategory .logic-btn.active').dataset.logic;
-        const conjunction = searchLogic === 'or' ? ' <span style="color: red;">または</span> ' : ' <span style="color: red;">かつ</span> ';
+        const orSpan = ' <span style="color: red;">または</span> ';
+        const andSpan = ' <span style="color: red;">かつ</span> ';
+        const conjunction = searchLogic === 'or' ? orSpan : andSpan;
         
         const searchParts = [];
         
         const keywordString = document.getElementById('keywordSearchInput').value.trim();
         const keywords = keywordString.split(/[\s　]+/).filter(k => k);
         if (keywords.length > 0) {
-            const keywordConjunction = searchLogic === 'or' ? ' <span style="color: red;">または</span> ' : ' <span style="color: red;">かつ</span> ';
+            const keywordConjunction = searchLogic === 'or' ? orSpan : andSpan;
             const keywordsText = keywords.map(kw => `'${kw}'`).join(keywordConjunction);
             searchParts.push(`キーワード:(${keywordsText})`);
         }
@@ -2820,13 +2867,53 @@
 
         const activeSkillFilters = [...document.querySelectorAll('#skillSearchOptionsContainer .skill-filter-btn.active')];
         const activeCsvTags = [...document.querySelectorAll('#csvTagArea .tag-btn.active')];
-        const activeExtraForce = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn.active')];
+        
+        const activeEfTypeBtns = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn[data-ef-type].active')];
+        const activeEfEffectBtns = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn[data-ef-effect].active')];
+        const activeEfScopeBtns = [...document.querySelectorAll('#extraForceSearchContainer .extra-force-scope-btn.active')];
+        
+        let tagsDisplayText = "";
+        
+        if (searchLogic === 'and') {
+             const groups = [];
+             
+             // 1. エクストラフォース：タイプ (内部OR)
+             if (activeEfTypeBtns.length > 0) {
+                 const text = activeEfTypeBtns.map(b => b.textContent).join(orSpan);
+                 groups.push(activeEfTypeBtns.length > 1 ? `(${text})` : text);
+             }
+             
+             // 2. エクストラフォース：効果 (内部OR)
+             if (activeEfEffectBtns.length > 0) {
+                 const text = activeEfEffectBtns.map(b => b.textContent).join(orSpan);
+                 groups.push(activeEfEffectBtns.length > 1 ? `(${text})` : text);
+             }
+             
+             // 3. エクストラフォース：対象 (内部OR)
+             if (activeEfScopeBtns.length > 0) {
+                 const text = activeEfScopeBtns.map(b => b.textContent).join(orSpan);
+                 groups.push(activeEfScopeBtns.length > 1 ? `(${text})` : text);
+             }
+             
+             // 4. その他のタグ (内部AND) ※通常のタグクラウドの挙動に準拠
+             const activeOtherTags = [...activeSkillFilters, ...activeCsvTags];
+             if (activeOtherTags.length > 0) {
+                 const text = activeOtherTags.map(b => b.textContent).join(andSpan);
+                 groups.push(activeOtherTags.length > 1 ? `(${text})` : text);
+             }
+             
+             tagsDisplayText = groups.join(andSpan);
 
-        const allActiveTags = [...activeSkillFilters, ...activeCsvTags, ...activeExtraForce];
+        } else {
+             // OR検索時：すべてORで結合
+             const allActiveTags = [...activeSkillFilters, ...activeCsvTags, ...activeEfTypeBtns, ...activeEfEffectBtns, ...activeEfScopeBtns];
+             if (allActiveTags.length > 0) {
+                 tagsDisplayText = allActiveTags.map(btn => btn.textContent).join(orSpan);
+             }
+        }
 
-        if (allActiveTags.length > 0) {
-            const tagsText = allActiveTags.map(btn => btn.textContent).join(conjunction);
-            searchParts.push(`タグ:(${tagsText})`);
+        if (tagsDisplayText) {
+            searchParts.push(`タグ:(${tagsDisplayText})`);
         }
         
         const otherConditionsText = searchParts.join(conjunction);
@@ -2836,7 +2923,7 @@
         const activeCharWeaponBtns = [...document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active')];
         
         if (activeCharWeaponBtns.length > 0) {
-            const weaponsText = activeCharWeaponBtns.map(btn => btn.textContent).join(' <span style="color: red;">または</span> ');
+            const weaponsText = activeCharWeaponBtns.map(btn => btn.textContent).join(orSpan);
             const weaponPart = `キャラ武器種:(${weaponsText})`;
             
             if (otherConditionsText) {
