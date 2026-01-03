@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>スタイル情報ビューア</title>
+    <title>★スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
@@ -1098,6 +1098,23 @@
             .extra-force-btn[data-ef-type="雷"].active { background-color: darkorange !important; border-color: darkorange !important; }
             .extra-force-btn[data-ef-type="陽"].active { background-color: orangered !important; border-color: orangered !important; }
             .extra-force-btn[data-ef-type="陰"].active { background-color: darkorchid !important; border-color: darkorchid !important; }
+            
+            /* --- 除外(excluded)状態のスタイル --- */
+            .tag-btn.excluded,
+            .extra-force-btn.excluded,
+            .extra-force-scope-btn.excluded {
+                background-color: #000 !important;
+                color: #fff !important;
+                border-color: #000 !important; /* 枠線も黒に変更 */
+                text-decoration: line-through;
+            }
+            [data-theme="dark"] .tag-btn.excluded,
+            [data-theme="dark"] .extra-force-btn.excluded,
+            [data-theme="dark"] .extra-force-scope-btn.excluded {
+                background-color: #000 !important;
+                border-color: #000 !important; /* 枠線も黒に変更 */
+                color: #ddd !important;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -2144,7 +2161,15 @@
                 btn.dataset[datasetKey] = item;
                 
                 btn.addEventListener('click', (e) => {
-                    e.currentTarget.classList.toggle('active');
+                    const b = e.currentTarget;
+                    if (b.classList.contains('active')) {
+                        b.classList.remove('active');
+                        b.classList.add('excluded');
+                    } else if (b.classList.contains('excluded')) {
+                        b.classList.remove('excluded');
+                    } else {
+                        b.classList.add('active');
+                    }
                     performTagSearch();
                 });
                 buttonsDiv.appendChild(btn);
@@ -2173,13 +2198,29 @@
             btn.textContent = scope;
             btn.dataset.scope = scope;
             btn.addEventListener('click', (e) => {
-                e.currentTarget.classList.toggle('active');
+                const b = e.currentTarget;
+                if (b.classList.contains('active')) {
+                    b.classList.remove('active');
+                    b.classList.add('excluded');
+                } else if (b.classList.contains('excluded')) {
+                    b.classList.remove('excluded');
+                } else {
+                    b.classList.add('active');
+                }
                 performTagSearch();
             });
             scopeButtonsDiv.appendChild(btn);
         });
         scopeDiv.appendChild(scopeButtonsDiv);
         container.appendChild(scopeDiv);
+
+        // --- 説明文の追加 ---
+        const descDiv = document.createElement('div');
+        descDiv.style.marginTop = '10px';
+        descDiv.style.fontSize = '1em';
+        descDiv.style.color = 'var(--main-text)';
+        descDiv.textContent = '※タグをクリックするごとに 未選択 → 選択(色付き) → 除外(黒色) で切り替わります。除外状態のタグが含まれる項目は検索結果から除外されます。';
+        container.appendChild(descDiv);
     }
     
     function generateSearchTags() {
@@ -2501,7 +2542,13 @@
         const activeExtraForceScopeBtns = [...document.querySelectorAll('#extraForceSearchContainer .extra-force-scope-btn.active')];
         const hasExtraForceFilter = activeExtraForceTypeBtns.length > 0 || activeExtraForceEffectBtns.length > 0 || activeExtraForceScopeBtns.length > 0;
 
+        // 除外フィルタ用
+        const excludedEfTypeBtns = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn[data-ef-type].excluded')];
+        const excludedEfEffectBtns = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn[data-ef-effect].excluded')];
+        const excludedEfScopeBtns = [...document.querySelectorAll('#extraForceSearchContainer .extra-force-scope-btn.excluded')];
+
         const hasActiveFilters = keywords.length > 0 || bpFilter !== null || activeSkillFilterBtns.length > 0 || activeTags.length > 0 || hasCharWeaponFilter || hasExtraForceFilter;
+        
         if (!hasActiveFilters) {
             document.getElementById('searchResults').innerHTML = '';
             document.getElementById('searchResults').style.display = 'none';
@@ -2620,6 +2667,15 @@
 
                             // 条件判定関数
                             const checkConditions = () => {
+                                // 除外チェック (一つでも除外条件に当てはまればマッチしない)
+                                if (excludedEfTypeBtns.some(b => type === b.dataset.efType)) return false;
+                                if (excludedEfEffectBtns.some(b => effect === b.dataset.efEffect)) return false;
+                                if (excludedEfScopeBtns.some(b => {
+                                    if (b.dataset.scope === '自身') return prefix === '自身に';
+                                    if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に');
+                                    return false;
+                                })) return false;
+
                                 let typeHit = !hasTypeFilter || activeExtraForceTypeBtns.some(b => type === b.dataset.efType);
                                 let effectHit = !hasEffectFilter || activeExtraForceEffectBtns.some(b => effect === b.dataset.efEffect);
                                 let scopeHit = !hasScopeFilter || activeExtraForceScopeBtns.some(b => {
