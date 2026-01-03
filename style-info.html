@@ -1837,28 +1837,55 @@
     }
 
     function prepareSearchData() {
+        // コンテキストに基づく除外パターンの定義（拡張用）
+        // regex: マッチさせる正規表現。「スキル名」の部分をキャプチャグループにする
+        const contextualExclusionPatterns = [
+            /「([^」]+)」の使用回数制限を回復/g
+        ];
+
         stylesWithDetails = db.styles.map(style => {
             const styleSkills = [style['スキル1'], style['スキル2'], style['スキル3']].filter(Boolean).map(name => db.skills[name]).filter(Boolean);
             const styleAbilities = [style['アビリティ1'], style['アビリティ2'], style['アビリティ3']].filter(Boolean).map(name => db.abilities[name]).filter(Boolean);
+            
+            // 除外チェック用のセット
+            const allInitialItems = new Set([...styleSkills.map(s => s['スキル名']), ...styleAbilities.map(a => a['アビリティ名'])]);
+            
             const linkedInfoItems = new Map();
-            const itemsToScan = [...styleSkills, ...styleAbilities];
-            const scannedKeywords = new Set([...styleSkills.map(s => s['スキル名']), ...styleAbilities.map(a => a['アビリティ名'])]);
+            let itemsToScan = [...styleSkills, ...styleAbilities];
+            
+            // 修正: 初期所持スキル・アビリティであっても、リンク参照されている場合は
+            // 検索用の追加情報（参照元付き）として登録したいため、初期化を空のSetにする。
+            const processedKeywords = new Set(); 
             
             while (itemsToScan.length > 0) {
                 const currentItem = itemsToScan.shift();
                 const detailText = currentItem['効果詳細'] || '';
+
+                // --- 新規追加: 文脈による除外キーワードの特定 ---
+                const excludedKeywordsInContext = new Set();
+                contextualExclusionPatterns.forEach(pattern => {
+                    const matches = [...detailText.matchAll(pattern)];
+                    matches.forEach(m => {
+                        if (m[1]) excludedKeywordsInContext.add(m[1]);
+                    });
+                });
+                // --------------------------------------------------
                 
                 const linkedKeywords = [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]);
                 
                 for (const keyword of linkedKeywords) {
+                    // 文脈除外に含まれるキーワードならスキップ
+                    if (excludedKeywordsInContext.has(keyword)) continue;
+
                     const parsedKeyword = parseName(keyword);
 
-                    if (scannedKeywords.has(parsedKeyword.fullName)) continue;
+                    if (processedKeywords.has(parsedKeyword.fullName)) continue;
+                    if (fixedExclusionList.has(parsedKeyword.fullName)) continue;
                     
                     const infoData = db.skills[parsedKeyword.baseName] || db.abilities[parsedKeyword.baseName] || db.addInfo[parsedKeyword.baseName];
                     
                     if (infoData) {
-                        scannedKeywords.add(parsedKeyword.fullName);
+                        processedKeywords.add(parsedKeyword.fullName);
                         
                         const instanceData = { ...infoData };
                         
@@ -2397,8 +2424,7 @@
         generateExtraForceTags();
 
         updateSearchUIState();
-        const isStarTitle = document.title.includes('★');
-        document.getElementById('autoTagCategory').innerHTML = `<div class="tag-category-title">タイミング (自動抽出)<label style="margin-left: 10px; font-size: 0.9em; font-weight: normal;"><input type="checkbox" id="autoTagToggle" ${isStarTitle ? 'checked' : ''}> 有効にする</label></div>`;
+        document.getElementById('autoTagCategory').innerHTML = `<div class="tag-category-title">タイミング (自動抽出)<label style="margin-left: 10px; font-size: 0.9em; font-weight: normal;"><input type="checkbox" id="autoTagToggle"> 有効にする</label></div>`;
         document.getElementById('autoTagToggle').addEventListener('change', () => {
           updateAutoExtractedTags();
           if(!document.getElementById('autoTagToggle').checked) {
@@ -2539,13 +2565,21 @@
                 
                 // スキルフィルタ
                 activeSkillFilterBtns.forEach(btn => {
-                    if (isSkill) allChecks.push(checkSkillBtn(item, btn));
+                    if (isSkill) {
+                        // 行動順・準備・再使用・制限フィルタの場合、かつAddInfoの場合は除外
+                        const excludedFieldsForAddInfo = ['行動順', '準備', '再使用', '制限'];
+                        if (item.type === 'addInfo' && excludedFieldsForAddInfo.includes(btn.dataset.field)) {
+                            allChecks.push(false);
+                            return;
+                        }
+                        allChecks.push(checkSkillBtn(item, btn));
+                    }
                     else allChecks.push(false);
                 });
                 
                 // BPフィルタ
                 if (bpFilter) {
-                    if (isSkill) {
+                    if (isSkill && item.type !== 'addInfo') {
                         const itemBp = parseInt(item['BP'], 10);
                         let bpResult = false;
                         if (!isNaN(itemBp)) {
@@ -2795,14 +2829,14 @@
         
         let summaryHtml = '';
         if (isSkillBased) {
-            summaryHtml = generateSkillDetailHtml(renderData, 'addInfo');
+            summaryHtml = generateSkillDetailHtml(renderData, itemType === 'skill' ? 'skill' : 'addInfo');
         }
         summaryHtml = summaryHtml.replace(/\n/g, '<br>');
         const highlightedSummary = highlightKeywords(summaryHtml, keywords);
         
         let referenceInfo = '';
         let parents = reverseIndex[itemName];
-        if (parents && contextCharacter && contextStyleName) {
+        if (parents && contextCharacter && contextStyleName && itemTypeFromSearch === 'addInfo') {
             const currentStyle = stylesWithDetails.find(s => s.character === contextCharacter && s.styleName === contextStyleName);
             if (currentStyle) {
                 const styleItemNames = new Set([...currentStyle.skills.map(s => s['スキル名']),...currentStyle.abilities.map(a => a['アビリティ名']),...currentStyle.linkedInfo.map(i => i['名称'] || i['スキル名'] || i['アビリティ名'])]);
@@ -2817,7 +2851,7 @@
                 return true;
             });
         }
-        if (parents && parents.length > 0) {
+        if (parents && parents.length > 0 && itemTypeFromSearch === 'addInfo') {
             const parentLinks = parents.map(parent => {
                 return `<span style="white-space: nowrap;">[${parent.type}] <a href="#" class="keyword-link show-parent-info-link" data-parent-name="${parent.name}">${parent.name}</a></span>`;
             }).join(' ／ ');
@@ -2946,7 +2980,13 @@
             
             // ハイライト済みテキストがある場合はそれを渡す
             const cardHtml = generateItemCardHTML(res.name, res.keywords, res.character, res.styleName, searchContext, res.type, res.isPreHighlighted ? res.detail : null);
-            return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${res.character}</h3><h4>${res.styleName}</h4><div class="card">${cardHtml}</div></div>`;
+            
+            // スタイル名からグレード部分（[SS] 等）を除去して検索クエリを作成
+            const styleNameOnly = res.styleName.replace(/^\[.+?\]\s*/, '');
+            const googleSearchQuery = `ロマサガRS ${res.character} ${styleNameOnly}`;
+            const googleSearchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(googleSearchQuery)}`;
+
+            return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${res.character}</h3><h4><a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" class="web-link" title="Google画像検索で開く">${res.styleName}</a></h4><div class="card">${cardHtml}</div></div>`;
         }).join('');
         
         searchResultsContainer.style.display = 'grid';
@@ -3009,18 +3049,40 @@
                 if (uniqueChars.length > 1) styleName = owners.map(o => `${o.character} ${o.styleName}`).join(' ／ ');
                 else styleName = owners.map(o => o.styleName).join(' ／ ');
             }
-            const parentType = db.skills[parentName] ? 'スキル' : (db.abilities[parentName] ? 'アビリティ' : '追加情報');
+            
+            // --- 修正箇所: ここで「実際にスタイルが所持しているか」を判定し、所持していなければ強制的にaddInfo扱いにする ---
+            let parentItemType = db.skills[parentName] ? 'skill' : (db.abilities[parentName] ? 'ability' : 'addInfo');
+            if (owners && owners.length === 1) {
+                const styleObj = db.styles.find(s => s['キャラ名'] === owners[0].character && `[${s['グレード']}] ${s['スタイル名']}` === owners[0].styleName);
+                if (styleObj) {
+                    const possessedSkills = [styleObj['スキル1'], styleObj['スキル2'], styleObj['スキル3']];
+                    const possessedAbilities = [styleObj['アビリティ1'], styleObj['アビリティ2'], styleObj['アビリティ3']];
+                    
+                    if (!possessedSkills.includes(parentName) && !possessedAbilities.includes(parentName)) {
+                        parentItemType = 'addInfo'; // 持っていないので追加情報扱い
+                    } else {
+                        // 持っている場合でも、元々のタイプがスキルならスキル、アビリティならアビリティ
+                        if (possessedSkills.includes(parentName)) parentItemType = 'skill';
+                        else if (possessedAbilities.includes(parentName)) parentItemType = 'ability';
+                    }
+                }
+            }
+            // --------------------------------------------------------------------------------------------------
+
             const panel = document.createElement('div');
             panel.classList.add('column', 'parent-info-panel');
-            if (parentType === 'スキル') panel.style.backgroundColor = 'var(--skill-col-bg)';
-            else if (parentType === 'アビリティ') panel.style.backgroundColor = 'var(--ability-col-bg)';
-            else panel.style.backgroundColor = 'var(--addinfo-col-bg)';
+            
+            // 背景色の設定も修正後のタイプに従う
+            if (parentItemType === 'skill') panel.style.backgroundColor = 'var(--skill-col-bg)';
+            else if (parentItemType === 'ability') panel.style.backgroundColor = 'var(--ability-col-bg)';
+            else panel.style.backgroundColor = 'var(--addinfo-col-bg)'; // addInfoならここに来る
+            
             const isSkillScope = document.querySelector('.search-scope-btn[data-scope="skill"]').classList.contains('active');
             const isAbilityScope = document.querySelector('.search-scope-btn[data-scope="ability"]').classList.contains('active');
             const isAddInfoScope = document.querySelector('.search-scope-btn[data-scope="addInfo"]').classList.contains('active');
             const searchContext = { isSkillScope, isAbilityScope, isAddInfoScope };
             let cardHtml;
-            const parentItemType = db.skills[parentName] ? 'skill' : (db.abilities[parentName] ? 'ability' : 'addInfo');
+            
             if (owners && owners.length === 1) cardHtml = generateItemCardHTML(parentName, [], owners[0].character, owners[0].styleName, searchContext, parentItemType);
             else cardHtml = generateItemCardHTML(parentName, [], null, null, searchContext, parentItemType);
             const contentHtml = `<div class="close-parent-info">閉じる</div><h3>${character}</h3><h4>${styleName}</h4><div class="card">${cardHtml}</div>`;
