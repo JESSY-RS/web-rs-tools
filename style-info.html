@@ -2915,19 +2915,47 @@
             referenceInfo = `<div class="summary-line">参照元: ${parentLinks}</div>`;
         }
         
-        // EF検索時は既にハイライト済みのテキストを使用、そうでなければ通常処理
-        let finalDetailHtml;
-        if (preHighlightedDetail) {
-            finalDetailHtml = applyGrayTextStyle(preHighlightedDetail).replace(/\n/g, '<br>');
-            // 追加のキーワードがあればさらにハイライト（ただしHTMLタグを壊さないよう注意が必要だが今回は簡易実装）
-            if (keywords.length > 0) {
-                finalDetailHtml = highlightKeywords(finalDetailHtml, keywords);
-            }
-        } else {
-            const styledDetail = applyGrayTextStyle(renderData['効果詳細'] || '').replace(/\n/g, '<br>');
-            finalDetailHtml = highlightKeywords(styledDetail, keywords);
-        }
+        // --- 修正部分: 効果詳細のリンク化処理 ---
         
+        // EF検索などにより既に一部ハイライトされている可能性があるテキスト、または通常の詳細テキスト
+        let rawDetail = preHighlightedDetail ? preHighlightedDetail : (renderData['効果詳細'] || '');
+        
+        // 「」内のキーワードをリンク化する関数
+        const linkifyKeywords = (text) => {
+            return text.replace(/「([^」]+)」/g, (match, content) => {
+                // contentにはHTMLタグが含まれている可能性がある（preHighlightedDetailの場合）
+                // タグを除去して純粋なテキストを取得してDBチェックを行う
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = content;
+                const cleanText = tempDiv.textContent || tempDiv.innerText || content;
+                
+                const parsedKw = parseName(cleanText);
+                const existsInDb = db.skills[parsedKw.baseName] || db.abilities[parsedKw.baseName] || db.addInfo[parsedKw.baseName];
+                
+                // 自分自身、除外リスト、DB非存在の場合はリンク化しない
+                if (!existsInDb || fixedExclusionList.has(parsedKw.fullName) || parsedKw.fullName === itemName || additionalExclusionList.includes(parsedKw.baseName)) {
+                    return match;
+                }
+                
+                // リンク化（show-parent-info-link クラスを付与）
+                // 表示テキスト(content)は元のまま（ハイライトタグ等を含んだまま）にする
+                return `「<a href="#" class="keyword-link show-parent-info-link" data-parent-name="${parsedKw.fullName}">${content}</a>」`;
+            });
+        };
+
+        let linkedDetail = linkifyKeywords(rawDetail);
+        
+        // グレーテキスト処理
+        linkedDetail = applyGrayTextStyle(linkedDetail);
+
+        // 改行コード置換
+        let finalDetailHtml = linkedDetail.replace(/\n/g, '<br>');
+        
+        // キーワードハイライト（リンク化・グレー化の後に行う）
+        if (keywords.length > 0) {
+            finalDetailHtml = highlightKeywords(finalDetailHtml, keywords);
+        }
+
         return `<h3>${itemName} ${typeSpan}</h3>${referenceInfo}${highlightedSummary}<div class="detail-line">${finalDetailHtml}</div>`;
     }
 
