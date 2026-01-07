@@ -2819,10 +2819,12 @@
         const itemType = itemTypeFromSearch; 
         const isSkillBased = (itemType === 'skill') || (itemType === 'addInfo' && !!db.skills[parsedName.baseName]);
 
+        // --- 回数制限等のテキスト加工ロジック (displayInfoと同じ挙動にする) ---
         if (parsedName.count) {
             let detail = renderData['効果詳細'] || '(効果詳細なし)';
             if (detail !== '(効果詳細なし)') {
                 if (!db.countExclusions.has(parsedName.baseName)) {
+                    // 追加情報扱い、または検索タイプがaddInfoの場合は詳細な整形を行う
                     if (itemType === 'addInfo' && !detail.includes('以下の効果が発動する')) {
                         const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
                         let lines = detail.split('\n');
@@ -2853,6 +2855,7 @@
                         }
                         renderData['効果詳細'] = processedLines.join('\n');
                     } else {
+                        // 通常のスキル・アビリティ表示の場合
                         const lines = detail.split('\n');
                         const addition = `(上限回数:${parsedName.count}回)`;
                         if (lines.length > 0) {
@@ -2892,7 +2895,12 @@
         const highlightedSummary = highlightKeywords(summaryHtml, keywords);
         
         let referenceInfo = '';
-        let parents = reverseIndex[itemName];
+        let parents = reverseIndex[itemName]; // 回数付き名称があればそれで見つかる可能性あり(addInfoとして登録されている場合)
+        if (!parents || parents.length === 0) {
+            // 見つからなければベース名でも検索
+            parents = reverseIndex[parsedName.baseName];
+        }
+
         if (parents && contextCharacter && contextStyleName && itemTypeFromSearch === 'addInfo') {
             const currentStyle = stylesWithDetails.find(s => s.character === contextCharacter && s.styleName === contextStyleName);
             if (currentStyle) {
@@ -2915,16 +2923,11 @@
             referenceInfo = `<div class="summary-line">参照元: ${parentLinks}</div>`;
         }
         
-        // --- 修正部分: 効果詳細のリンク化処理 ---
-        
-        // EF検索などにより既に一部ハイライトされている可能性があるテキスト、または通常の詳細テキスト
         let rawDetail = preHighlightedDetail ? preHighlightedDetail : (renderData['効果詳細'] || '');
         
         // 「」内のキーワードをリンク化する関数
         const linkifyKeywords = (text) => {
             return text.replace(/「([^」]+)」/g, (match, content) => {
-                // contentにはHTMLタグが含まれている可能性がある（preHighlightedDetailの場合）
-                // タグを除去して純粋なテキストを取得してDBチェックを行う
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = content;
                 const cleanText = tempDiv.textContent || tempDiv.innerText || content;
@@ -2932,26 +2935,19 @@
                 const parsedKw = parseName(cleanText);
                 const existsInDb = db.skills[parsedKw.baseName] || db.abilities[parsedKw.baseName] || db.addInfo[parsedKw.baseName];
                 
-                // 自分自身、除外リスト、DB非存在の場合はリンク化しない
                 if (!existsInDb || fixedExclusionList.has(parsedKw.fullName) || parsedKw.fullName === itemName || additionalExclusionList.includes(parsedKw.baseName)) {
                     return match;
                 }
                 
-                // リンク化（show-parent-info-link クラスを付与）
-                // 表示テキスト(content)は元のまま（ハイライトタグ等を含んだまま）にする
-                return `「<a href="#" class="keyword-link show-parent-info-link" data-parent-name="${parsedKw.fullName}">${content}</a>」`;
+                // リンク化（data-parent-nameには回数込みのcleanTextを入れる）
+                return `「<a href="#" class="keyword-link show-parent-info-link" data-parent-name="${cleanText}">${content}</a>」`;
             });
         };
 
         let linkedDetail = linkifyKeywords(rawDetail);
-        
-        // グレーテキスト処理
         linkedDetail = applyGrayTextStyle(linkedDetail);
-
-        // 改行コード置換
         let finalDetailHtml = linkedDetail.replace(/\n/g, '<br>');
         
-        // キーワードハイライト（リンク化・グレー化の後に行う）
         if (keywords.length > 0) {
             finalDetailHtml = highlightKeywords(finalDetailHtml, keywords);
         }
@@ -3097,82 +3093,159 @@
             closeBtn.closest('.parent-info-panel').remove();
             return;
         }
+
         if (showLink) {
             event.preventDefault();
+
+            const parentFullName = showLink.dataset.parentName;
+            const anchorElement = showLink.closest('.column');
+
+            // --- トグル機能（開閉） ---
+            if (anchorElement) {
+                const nextEl = anchorElement.nextElementSibling;
+                if (nextEl && nextEl.classList.contains('parent-info-panel')) {
+                    if (nextEl.dataset.openerName === parentFullName) {
+                        nextEl.remove();
+                        return; 
+                    }
+                }
+            }
+
+            // 他のパネルを閉じる
             const allPanels = document.querySelectorAll('.parent-info-panel');
             const clickedPanel = showLink.closest('.parent-info-panel');
             allPanels.forEach(p => {
                 if (p !== clickedPanel && !p.contains(showLink)) p.remove();
             });
-            const parentName = showLink.dataset.parentName;
-            const parentData = db.skills[parentName] || db.abilities[parentName] || db.addInfo[parentName];
+            
+            // データ取得
+            const parsedParent = parseName(parentFullName);
+            const baseName = parsedParent.baseName;
+
+            const parentData = db.skills[baseName] || db.abilities[baseName] || db.addInfo[baseName];
             if (!parentData) return;
-            const owners = itemToStyleMap[parentName];
-            let character, styleName;
-            if (!owners || owners.length === 0) {
+
+            const owners = itemToStyleMap[baseName];
+            
+            // 表示・リンク生成用に所有者リストを格納する配列
+            let validOwners = []; 
+            let ownersFound = false;
+
+            // 1. itemToStyleMap から検索
+            if (owners && owners.length > 0) {
+                validOwners = owners;
+                ownersFound = true;
+            } 
+            
+            // 2. db.styles を直接検索 (itemToStyleMapになかった場合)
+            if (!ownersFound) {
                 const allOwners = [];
                 for (const style of db.styles) {
-                    if ([style['スキル1'], style['スキル2'], style['スキル3'], style['アビリティ1'], style['アビリティ2'], style['アビリティ3']].includes(parentName)) {
+                    if ([style['スキル1'], style['スキル2'], style['スキル3'], style['アビリティ1'], style['アビリティ2'], style['アビリティ3']].includes(baseName)) {
                         allOwners.push({ character: style['キャラ名'], styleName: `[${style['グレード']}] ${style['スタイル名']}` });
                     }
                 }
-                if (allOwners.length === 0) {
-                     character = "参照元不明"; styleName = "";
-                } else if (allOwners.length === 1) {
-                    character = allOwners[0].character; styleName = allOwners[0].styleName;
-                } else {
-                    const uniqueChars = [...new Set(allOwners.map(o => o.character))];
-                    character = uniqueChars.join(' ／ ');
-                    if (uniqueChars.length > 1) styleName = allOwners.map(o => `${o.character} ${o.styleName}`).join(' ／ ');
-                    else styleName = allOwners.map(o => o.styleName).join(' ／ ');
+                if (allOwners.length > 0) {
+                    validOwners = allOwners;
+                    ownersFound = true;
                 }
-            } else if (owners.length === 1) {
-                character = owners[0].character; styleName = owners[0].styleName;
-            } else {
-                const uniqueChars = [...new Set(owners.map(o => o.character))];
-                character = uniqueChars.join(' ／ ');
-                if (uniqueChars.length > 1) styleName = owners.map(o => `${o.character} ${o.styleName}`).join(' ／ ');
-                else styleName = owners.map(o => o.styleName).join(' ／ ');
             }
-            
-            // --- 修正箇所: ここで「実際にスタイルが所持しているか」を判定し、所持していなければ強制的にaddInfo扱いにする ---
-            let parentItemType = db.skills[parentName] ? 'skill' : (db.abilities[parentName] ? 'ability' : 'addInfo');
-            if (owners && owners.length === 1) {
-                const styleObj = db.styles.find(s => s['キャラ名'] === owners[0].character && `[${s['グレード']}] ${s['スタイル名']}` === owners[0].styleName);
+
+            // 3. フォールバック処理 (データが見つからない場合、DOMから取得して単一要素として扱う)
+            if (!ownersFound) {
+                let fallbackChar = "参照元不明";
+                let fallbackStyle = "";
+                if (anchorElement) {
+                    const h3 = anchorElement.querySelector('h3');
+                    const h4 = anchorElement.querySelector('h4');
+                    if (h3) fallbackChar = h3.textContent.trim();
+                    if (h4) fallbackStyle = h4.textContent.trim();
+                }
+                validOwners = [{ character: fallbackChar, styleName: fallbackStyle }];
+            }
+
+            // --- 所持判定とアイテムタイプの決定 ---
+            // 判定用には、所有者が「厳密に1人」の場合のみそのキャラデータを使用する
+            // (複数が該当する場合は特定できないため、安全側に倒して addInfo 扱いとする)
+            let parentItemType = db.skills[baseName] ? 'skill' : (db.abilities[baseName] ? 'ability' : 'addInfo');
+            let checkCharacter = null;
+            let checkStyleName = null;
+
+            if (ownersFound && validOwners.length === 1) {
+                checkCharacter = validOwners[0].character;
+                checkStyleName = validOwners[0].styleName;
+            } else if (!ownersFound && validOwners[0].character !== "参照元不明") {
+                checkCharacter = validOwners[0].character;
+                checkStyleName = validOwners[0].styleName;
+            }
+
+            if (checkCharacter && checkStyleName) {
+                const styleObj = db.styles.find(s => s['キャラ名'] === checkCharacter && `[${s['グレード']}] ${s['スタイル名']}` === checkStyleName);
                 if (styleObj) {
                     const possessedSkills = [styleObj['スキル1'], styleObj['スキル2'], styleObj['スキル3']];
                     const possessedAbilities = [styleObj['アビリティ1'], styleObj['アビリティ2'], styleObj['アビリティ3']];
                     
-                    if (!possessedSkills.includes(parentName) && !possessedAbilities.includes(parentName)) {
-                        parentItemType = 'addInfo'; // 持っていないので追加情報扱い
+                    if (!possessedSkills.includes(baseName) && !possessedAbilities.includes(baseName)) {
+                        parentItemType = 'addInfo'; 
                     } else {
-                        // 持っている場合でも、元々のタイプがスキルならスキル、アビリティならアビリティ
-                        if (possessedSkills.includes(parentName)) parentItemType = 'skill';
-                        else if (possessedAbilities.includes(parentName)) parentItemType = 'ability';
+                        if (possessedSkills.includes(baseName)) parentItemType = 'skill';
+                        else if (possessedAbilities.includes(baseName)) parentItemType = 'ability';
                     }
+                } else {
+                    parentItemType = 'addInfo';
                 }
+            } else if (validOwners.length > 1) {
+                // 複数該当する場合は、追加情報(addInfo)として表示する
+                parentItemType = 'addInfo';
             }
-            // --------------------------------------------------------------------------------------------------
 
             const panel = document.createElement('div');
             panel.classList.add('column', 'parent-info-panel');
+            panel.dataset.openerName = parentFullName; 
             
-            // 背景色の設定も修正後のタイプに従う
             if (parentItemType === 'skill') panel.style.backgroundColor = 'var(--skill-col-bg)';
             else if (parentItemType === 'ability') panel.style.backgroundColor = 'var(--ability-col-bg)';
-            else panel.style.backgroundColor = 'var(--addinfo-col-bg)'; // addInfoならここに来る
+            else panel.style.backgroundColor = 'var(--addinfo-col-bg)';
             
             const isSkillScope = document.querySelector('.search-scope-btn[data-scope="skill"]').classList.contains('active');
             const isAbilityScope = document.querySelector('.search-scope-btn[data-scope="ability"]').classList.contains('active');
             const isAddInfoScope = document.querySelector('.search-scope-btn[data-scope="addInfo"]').classList.contains('active');
             const searchContext = { isSkillScope, isAbilityScope, isAddInfoScope };
-            let cardHtml;
             
-            if (owners && owners.length === 1) cardHtml = generateItemCardHTML(parentName, [], owners[0].character, owners[0].styleName, searchContext, parentItemType);
-            else cardHtml = generateItemCardHTML(parentName, [], null, null, searchContext, parentItemType);
-            const contentHtml = `<div class="close-parent-info">閉じる</div><h3>${character}</h3><h4>${styleName}</h4><div class="card">${cardHtml}</div>`;
+            const cardHtml = generateItemCardHTML(parentFullName, [], checkCharacter || null, checkStyleName || null, searchContext, parentItemType);
+
+            // --- ヘッダー情報の生成 (複数リンク対応) ---
+            
+            // 1. キャラクター表示 (重複排除して結合)
+            const uniqueChars = [...new Set(validOwners.map(o => o.character))];
+            const displayChar = uniqueChars.join(' ／ ');
+
+            // 2. スタイル名表示 (それぞれリンク化して結合)
+            const styleLinks = validOwners.map(owner => {
+                const charName = owner.character;
+                const styleName = owner.styleName;
+
+                if (!styleName || charName === "参照元不明") {
+                    return styleName || "";
+                }
+
+                // [SS] などのグレード表記を削除して検索クエリを作成
+                const styleNameForSearch = styleName.replace(/\[.+?\]\s*/g, ''); 
+                const googleSearchQuery = `ロマサガRS ${charName} ${styleNameForSearch}`;
+                const googleSearchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(googleSearchQuery)}`;
+                
+                return `<a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" class="web-link" title="Google画像検索で開く">${styleName}</a>`;
+            });
+
+            // スタイル名の重複を排除（もし全く同じスタイル名表記が複数あってもリンク先が異なる可能性を考慮し、単純結合するが、
+            // 全く同じキャラ・スタイルの重複データは除外した方が綺麗）
+            const uniqueStyleLinks = [...new Set(styleLinks)];
+            const displayStyle = uniqueStyleLinks.join(' ／ ');
+            // ------------------------------------------------
+
+            const contentHtml = `<div class="close-parent-info">閉じる</div><h3>${displayChar}</h3><h4>${displayStyle}</h4><div class="card">${cardHtml}</div>`;
             panel.innerHTML = contentHtml;
-            const anchorElement = showLink.closest('.column');
+            
             if(anchorElement) {
                 if (clickedPanel) clickedPanel.replaceWith(panel);
                 else anchorElement.insertAdjacentElement('afterend', panel);
