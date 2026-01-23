@@ -1355,25 +1355,48 @@
         }
         
         const searchTerm = hiraganaToKatakana(filter);
-        const stylesForCharacter = db.styles
-            .filter(style => style['キャラ名'] === characterName)
-            .filter(style => {
-                const displayName = `[${style['グレード']}] ${style['スタイル名']}`;
-                const kanaName = hiraganaToKatakana(displayName);
-                return kanaName.includes(searchTerm) || displayName.includes(searchTerm);
-            });
 
-        if (stylesForCharacter.length > 0) {
-            stylesForCharacter.forEach(style => {
-                const displayName = `[${style['グレード']}] ${style['スタイル名']}`;
+        // 1. キャラクターで抽出
+        let stylesForCharacter = db.styles.filter(style => style['キャラ名'] === characterName);
+
+        // 2. 実装時期で降順ソート (yyyy/mm/dd形式の文字列比較)
+        // 実装時期が空の場合はリストの後ろへ回すか、あるいは古いものとして扱う実装にしています
+        stylesForCharacter.sort((a, b) => {
+            const dateA = a['実装時期'] || '';
+            const dateB = b['実装時期'] || '';
+            if (dateA > dateB) return -1;
+            if (dateA < dateB) return 1;
+            return 0;
+        });
+
+        // 3. 検索フィルター適用 (表示名に日付が含まれるため、日付での検索も可能になります)
+        const filteredStyles = stylesForCharacter.filter(style => {
+            const baseDisplayName = `[${style['グレード']}] ${style['スタイル名']}`;
+            const listDisplayName = style['実装時期'] 
+                ? `${baseDisplayName} (${style['実装時期']})` 
+                : baseDisplayName;
+
+            const kanaName = hiraganaToKatakana(listDisplayName);
+            return kanaName.includes(searchTerm) || listDisplayName.includes(searchTerm);
+        });
+
+        if (filteredStyles.length > 0) {
+            filteredStyles.forEach(style => {
+                // ボタン表示用（日付なし）
+                const baseDisplayName = `[${style['グレード']}] ${style['スタイル名']}`;
+                // リスト表示用（日付あり）
+                const listDisplayName = style['実装時期'] 
+                    ? `${baseDisplayName} (${style['実装時期']})` 
+                    : baseDisplayName;
+
                 const optionDiv = document.createElement('div');
                 optionDiv.className = 'custom-select-option';
-                optionDiv.textContent = displayName;
+                optionDiv.textContent = listDisplayName; // ドロップダウン内は日付付き
                 optionDiv.dataset.value = style['スタイル名'];
 
                 optionDiv.addEventListener('click', (e) => {
                     const selectedStyleName = e.target.dataset.value;
-                    text.textContent = e.target.textContent;
+                    text.textContent = baseDisplayName; // 選択後の表示は日付なし
                     btn.dataset.value = selectedStyleName;
                     btn.classList.remove('is-placeholder');
                     document.getElementById('styleDropdown').style.display = 'none';
