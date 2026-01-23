@@ -7,9 +7,7 @@
   <link rel="shortcut icon" href="favicon-stella.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-stella.png">
   <link rel="icon" type="image/png" href="web-app-manifest-192x192-stella.png">
-  <title>ステライヤリング報告用</title> <!-- Created by じぇ -->
-
-  <style>
+  <title>ステライヤリング報告用</title> <style>
 
     body {
       margin: 20px;
@@ -253,10 +251,8 @@
 </head>
 <body>
 
-  <!-- サイドメニューオーバーレイ -->
   <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-  <!-- サイドメニュー -->
   <div class="side-menu" id="sideMenu">
     <div class="menu-title">チェッカー関連リンク</div>
     <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a><br>
@@ -277,7 +273,6 @@
     <a href="index.html" class="menu-item">インデックスページ</a><br>
   </div>
 
-  <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
     <h1><span class="hamburger" onclick="toggleMenu()">☰</span> ステライヤリング</h1>
   </div>
@@ -422,10 +417,22 @@
       pierceGroup.appendChild(div);
     });
 
+    // --- ここから最低個数カウントの切り替えロジック ---
+    
+    let minStarThreshold = 1; // 初期値
+
+    function toggleMinThreshold() {
+      minStarThreshold++;
+      if (minStarThreshold > 4) {
+        minStarThreshold = 1;
+      }
+      updateSummary();
+    }
+
     function updateSummary() {
       let completeCount = 0;
       let totalStars = 0;
-      let minOneCount = 0;
+      let minCount = 0; // 最低○個の該当数
     
       const totalAttrs = attributes.length;
       const maxTotalStars = totalAttrs * 5;
@@ -434,25 +441,31 @@
         const el = document.getElementById(`ステライヤリング_${attr.name}`);
         const starText = el.textContent;
     
-        if (starText.includes("★")) {
-          minOneCount++;
+        // 星(★)の数をカウント
+        const starNum = (starText.match(/★/g) || []).length;
+
+        // 現在のしきい値以上ならカウント
+        if (starNum >= minStarThreshold) {
+          minCount++;
         }
     
         if (starText === "★★★★★") {
           completeCount++;
         }
     
-        const starNum = (starText.match(/★/g) || []).length;
         totalStars += starNum;
       });
     
       const compRate = ((completeCount / totalAttrs) * 100).toFixed(1);
-      const minOneRate = ((minOneCount / totalAttrs) * 100).toFixed(1);
+      const minOneRate = ((minCount / totalAttrs) * 100).toFixed(1);
       const totalStarRate = ((totalStars / maxTotalStars) * 100).toFixed(1);
     
+      // クリック部分のスタイル：cursor: pointerのみ指定し、色は継承（白）、下線なし
       document.getElementById("summary").innerHTML = `
         <div>トータル: ${totalStars} / ${maxTotalStars}</div>
-        <div>最低１個: ${minOneCount} / ${totalAttrs}</div>
+        <div onclick="toggleMinThreshold()" style="cursor: pointer; display: inline-block; user-select: none;">
+          最低${minStarThreshold}個: ${minCount} / ${totalAttrs}
+        </div>
         <div>コンプ数: ${completeCount} / ${totalAttrs}</div>
       `;
     }
