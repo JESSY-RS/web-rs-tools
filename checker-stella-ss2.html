@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="favicon-stella.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-stella.png">
+  <link rel="icon" type="image/png" href="web-app-manifest-192x192-stella.png">
+  <title>ステライヤリングSS2チェッカー</title>
+
+  <style>
+
+    /* --- checker-stella.html の基本CSS --- */
+    body {
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+
+    /* 親グループ見出し */
+    .group-title {
+      font-size: 26px;
+      margin-top: 40px; /* 親の見出し上の余白 */
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      row-gap: 10px;
+      column-gap: 20px; /* 要素間の間隔 */
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .stars {
+      display: inline-block;
+      margin-left: 5px;
+    }
+
+    .star {
+      font-size: 36px;
+      margin: 0 2px;
+      cursor: pointer;
+      color: darkgray; /* ☆の色 */
+      user-select: none;
+    }
+
+    /* 黄色の★（所持済み） */
+    .star.on {
+      color: gold;
+    }
+
+    /* グレーの★（予約中） */
+    /* 余計なエフェクト無し。色は☆と同じだが形は★ */
+    .star.gray {
+      color: darkgray;
+    }
+
+    .line {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+    }
+
+    /* 名前エリア */
+    .line .name {
+      width: 100px;
+      text-align: right;
+      margin-right: 10px;
+    }
+
+    input[type="file"] {
+      font-size: 18px;
+    }
+
+    button {
+      padding: 5px 10px;
+      font-size: 18px;
+    }
+
+    .controls {
+      margin-bottom: -15px;
+    }
+
+    /* 種族ごとのフォント設定 */
+    .S01, .S02, .S03, .S04, .S05, .S06, .S07, .S08, .S09,
+    .S10, .S11, .S12, .S13, .S14, .S15, .S16, .S17, .S18, .S19,
+    .S20, .S21, .S22, .S23, .S24, .S25, .S26 {
+      font-size: 30px;
+    }
+
+    /* 色定義 */
+    .S01 { color: darkorange; } .S02 { color: darkorange; } .S03 { color: darkorange; }
+    .S04 { color: yellow; } .S05 { color: yellow; } .S06 { color: yellow; } .S07 { color: yellow; }
+    .S08 { color: lime; } .S09 { color: lime; } .S10 { color: lime; } .S11 { color: lime; } .S12 { color: lime; }
+    .S13 { color: deepskyblue; } .S14 { color: deepskyblue; } .S15 { color: deepskyblue; } .S16 { color: deepskyblue; }
+    .S17 { color: orangered; } .S18 { color: orangered; } .S19 { color: orangered; }
+    .S20 { color: darkgray; } .S21 { color: darkgray; } .S22 { color: darkgray; } .S23 { color: darkgray; }
+    .S24 { color: dodgerblue; } .S25 { color: dodgerblue; } .S26 { color: darkorchid; }
+
+    /* リンクスタイル */
+    a:link { color: #1D9BF0; text-decoration: underline; }
+    a:visited { color: #7755FF; text-decoration: underline; }
+    a:hover { color: #0CFF57; }
+    a:active { color: #FF0000; text-decoration: underline; }
+
+    .bottom { font-size: 16pt; margin-top: 20px; }
+    footer { border-top: 1px solid #eee; padding-top: 10px; font-size: 16pt; margin-top: 20px; }
+
+    /* 列切り替えボタン */
+    .column-buttons { display: flex; gap: 10px; flex-shrink: 0; margin-right: -5px; }
+    
+    .column-button {
+      background-color: #444; color: #fff; border: none; 
+      /* サイズ修正：小さいサイズに統一 */
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer; border-radius: 4px; white-space: nowrap;
+    }
+    .column-button:hover { background-color: #666; }
+    .column-button.active { background-color: #2A99E6; }
+
+    /* ２列表示 */
+    .attributes-container { display: flex; flex-direction: column; }
+    .attributes-container.two-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      row-gap: 0px; column-gap: 0px;
+      max-width: 650px;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(13, auto);
+    }
+    .attributes-container.two-columns .line:nth-child(n+14) { margin-left: 20px; }
+    .attributes-container.two-columns .line { margin-bottom: 8px; }
+
+    /* 拡大縮小ボタン */
+    .zoom-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+      flex-shrink: 0;
+      margin-right: -5px;
+    }
+    .zoom-buttons button {
+      color: #000; background-color: #eee; padding: 6px 12px;
+      font-size: 14px; height: 32px; cursor: pointer; border-radius: 4px; border: none; box-sizing: border-box;
+    }
+    .zoom-buttons button:hover { background-color: #ccc; }
+
+    /* ハンバーガーメニュー */
+    .hamburger { font-size: 28px; cursor: pointer; margin-right: 3px; user-select: none; color: #eee; display: inline-block; }
+    .hamburger:hover { color: #2A99E6; }
+    
+    .side-menu {
+      position: fixed; top: 0; left: -320px; width: 320px; min-height: 100vh; height: 100%;
+      text-align: left; background-color: #242424; border-right: 1px solid #555;
+      transition: left 0.3s ease; z-index: 1001; padding: 20px; box-sizing: border-box;
+      overflow-y: auto; overscroll-behavior: contain;
+    }
+    .side-menu.open { left: 0; }
+    
+    .menu-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; min-width: 100vw; min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5); z-index: 999; opacity: 0; visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    .menu-overlay.open { opacity: 1; visibility: visible; }
+    
+    .menu-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: #eee; user-select: none; }
+    .menu-title { font-size: 20px; font-weight: bold; text-align: left; margin-bottom: 10px; color: limegreen; }
+    .menu-item { font-size: 18px; text-align: left; display: inline-block; padding: 12px 0; color: #eee; text-decoration: none; }
+    .menu-item:hover { color: #0CFF57; }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-spacer { height: 30px; }
+
+    /* マーカー（◆） */
+    .marker { 
+        margin-right: -20px; 
+        cursor: pointer; 
+        transition: color 0.2s; 
+        position: relative; 
+        z-index: 10; 
+    }
+    .marker:hover { color: #eee; }
+
+    /* スクロールボタン */
+    .scroll-buttons {
+      position: fixed; top: 20px; right: 20px; z-index: 1000;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .scroll-button {
+      background-color: #444; color: #fff; border: none; padding: 8px 16px;
+      font-size: 20px; cursor: pointer; border-radius: 4px;
+    }
+    .scroll-button:hover { background-color: #666; }
+
+  </style>
+
+</head>
+<body>
+
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">チェッカー関連リンク</div>
+    <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a><br>
+    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a><br>
+    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a><br>
+    <div class="menu-spacer"></div>
+    <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a><br>
+    <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a><br>
+    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a><br>
+    <div class="menu-spacer"></div>
+    <div id="dynamic-links"></div>
+    <div class="menu-spacer"></div>
+    <a href="index.html" class="menu-item">インデックスページ</a><br>
+  </div>
+
+  <div class="header">
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> ステライヤリングSS2チェッカー</h1>
+  </div>
+
+  <div class="controls">
+    <input type="file" id="fileInput" accept=".json"><br>
+  </div>
+
+  <div id="statusContainer"></div>
+
+  <div class="bottom">
+    <br>
+    <a href="report-stella.html">報告用ページへ</a>
+    <br>
+  </div>
+
+  <footer>
+    ※使用は自己責任にて。<br>
+    ※画面左端から右にフリック、または◆クリックでメニューが開きます。<br>
+    <br>
+    <a href="index.html">INDEXへ戻る</a><br>
+  </footer>
+
+  <div class="scroll-buttons">
+    <button class="scroll-button" id="scrollUp">↑</button>
+    <button class="scroll-button" id="scrollDown">↓</button>
+  </div>
+
+  <script>
+    // --- データ定義 ---
+    const attributes = [
+      { name: "人間", class: "S01" }, { name: "男性", class: "S02" }, { name: "女性", class: "S03" },
+      { name: "巨人", class: "S04" }, { name: "メカ", class: "S05" }, { name: "岩石", class: "S06" },
+      { name: "獣人", class: "S07" }, { name: "獣", class: "S08" }, { name: "竜", class: "S09" },
+      { name: "爬虫類", class: "S10" }, { name: "植物", class: "S11" }, { name: "虫", class: "S12" },
+      { name: "水棲", class: "S13" }, { name: "魚", class: "S14" }, { name: "両棲類", class: "S15" },
+      { name: "カエル", class: "S16" }, { name: "不死", class: "S17" }, { name: "骨", class: "S18" },
+      { name: "悪魔", class: "S19" }, { name: "火精", class: "S20" }, { name: "水精", class: "S21" },
+      { name: "風精", class: "S22" }, { name: "土精", class: "S23" }, { name: "鳥", class: "S24" },
+      { name: "浮遊", class: "S25" }, { name: "妖魔", class: "S26" }
+    ];
+
+    // inventory: 純正(SSx3)の所持数を個数で管理 { "人間": 2, ... }
+    let inventory = {};
+    attributes.forEach(a => inventory[a.name] = 0);
+
+    // reservations: 混合の「目標合計数」 { "人間_男性": 3, ... }
+    // ※黄色が減ってもこの目標値は変わらないので、グレーが復活する
+    let reservations = {};
+
+    const PAGE_SETTING_KEY = 'PageSettings_StellaMix'; 
+    let pageSettings = { 'checker-stella_zoom': 1.0, 'checker-stella_column': 1 };
+
+    // --- ユーティリティ ---
+    function getPairKey(race1, race2) {
+      const sorted = [race1, race2].sort();
+      return `${sorted[0]}_${sorted[1]}`;
+    }
+
+    // --- 初期化 ---
+    function init() {
+      const container = document.getElementById('statusContainer');
+      const sideLinks = document.getElementById('dynamic-links');
+      container.innerHTML = '';
+      sideLinks.innerHTML = '';
+
+      attributes.forEach((parentRace, index) => {
+        const anchorId = `${parentRace.name}Anchor`;
+
+        // サイドリンク
+        const link = document.createElement('a');
+        link.href = `#${anchorId}`;
+        link.className = 'menu-item';
+        link.textContent = `◆${parentRace.name}`;
+        link.onclick = closeMenu;
+        sideLinks.appendChild(link);
+        sideLinks.appendChild(document.createElement('br'));
+
+        // 親グループ見出し
+        const groupTitle = document.createElement('div');
+        groupTitle.className = `group-title ${parentRace.class}`;
+        groupTitle.id = anchorId;
+
+        // ◆マーカー
+        const marker = document.createElement('span');
+        marker.className = 'marker';
+        marker.textContent = '◆';
+        marker.onclick = function(e) { e.stopPropagation(); toggleMenu(); };
+
+        const titleText = document.createTextNode(parentRace.name);
+
+        // ズームボタン
+        const zoomButtons = document.createElement('div');
+        zoomButtons.className = 'zoom-buttons';
+        zoomButtons.innerHTML = `
+          <button onclick="changeZoom(-0.1)">－</button>
+          <button onclick="changeZoom(0.1)">＋</button>
+        `;
+
+        groupTitle.appendChild(marker);
+        groupTitle.appendChild(titleText);
+        groupTitle.appendChild(zoomButtons);
+
+        // 列切り替えボタン（最初のグループのみ）
+        if (index === 0) {
+            const columnButtons = document.createElement('div');
+            columnButtons.className = 'column-buttons';
+            columnButtons.innerHTML = `
+              <button class="column-button ${pageSettings['checker-stella_column'] === 1 ? 'active' : ''}" onclick="setColumns(1)">１列</button>
+              <button class="column-button ${pageSettings['checker-stella_column'] === 2 ? 'active' : ''}" onclick="setColumns(2)">２列</button>
+            `;
+            groupTitle.appendChild(columnButtons);
+        }
+        container.appendChild(groupTitle);
+
+        // コンテナ
+        const attributesContainer = document.createElement('div');
+        attributesContainer.className = 'attributes-container';
+        if (pageSettings['checker-stella_column'] === 2) {
+            attributesContainer.classList.add('two-columns');
+        }
+
+        // 子ライン
+        attributes.forEach((childRace) => {
+          const line = document.createElement('div');
+          line.className = 'line';
+
+          const name = document.createElement('span');
+          name.textContent = childRace.name;
+          name.className = `${childRace.class} name`;
+
+          const stars = document.createElement('span');
+          stars.className = 'stars';
+          stars.dataset.parent = parentRace.name;
+          stars.dataset.child = childRace.name;
+
+          for (let i = 0; i < 5; i++) {
+            const star = document.createElement('span');
+            star.textContent = '☆';
+            star.className = 'star';
+            star.addEventListener('click', function () {
+              handleStarClick(parentRace.name, childRace.name, i, this);
+            });
+            stars.appendChild(star);
+          }
+
+          line.appendChild(name);
+          line.appendChild(stars);
+          attributesContainer.appendChild(line);
+        });
+
+        container.appendChild(attributesContainer);
+
+        // グループごとのエクスポートボタン
+        // ※どこを押してもグローバル変数inventory/reservationsを保存するため、全項目がエクスポートされます。
+        const exportBtn = document.createElement('button');
+        exportBtn.textContent = '状態をエクスポート';
+        exportBtn.style.marginTop = '15px';
+        exportBtn.addEventListener('click', exportState);
+        container.appendChild(exportBtn);
+      });
+
+      setupScrollButtons();
+      updateAllViews();
+    }
+
+    // --- ロジック ---
+
+    function handleStarClick(pName, cName, index, starElem) {
+      if (pName === cName) {
+        // 純正：トグル動作
+        if (starElem.classList.contains('on')) {
+            starElem.classList.remove('on');
+            starElem.textContent = '☆';
+        } else {
+            starElem.classList.add('on');
+            starElem.textContent = '★';
+        }
+
+        const parentDiv = starElem.parentElement;
+        const activeCount = parentDiv.querySelectorAll('.star.on').length;
+        inventory[pName] = activeCount;
+
+      } else {
+        // 混合：グレー★（予約）
+        // 黄色（所持済み）の部分は無視
+        const goldCount = inventory[pName] + inventory[cName];
+        if (index < goldCount) return; 
+
+        const key = getPairKey(pName, cName);
+        
+        // クリックした位置を「目標合計数」とする
+        // (例: 3番目をクリック -> 合計3つ確保したい)
+        const target = index + 1;
+        
+        // 既に同じ目標値ならキャンセル
+        if (reservations[key] === target) {
+             reservations[key] = 0; 
+        } else {
+             reservations[key] = target;
+        }
+      }
+      
+      updateAllViews();
+    }
+    
+    // 全体表示更新
+    function updateAllViews() {
+      const allStarsGroups = document.querySelectorAll('.stars');
+      
+      allStarsGroups.forEach(group => {
+        const pName = group.dataset.parent;
+        const cName = group.dataset.child;
+        const starElems = group.querySelectorAll('.star');
+
+        if (pName === cName) {
+            // 純正：inventoryの数だけ左から埋める
+            const count = inventory[pName];
+            starElems.forEach((s, idx) => {
+                s.classList.remove('gray');
+                if (idx < count) {
+                    s.textContent = '★';
+                    s.classList.add('on');
+                } else {
+                    s.textContent = '☆';
+                    s.classList.remove('on');
+                }
+            });
+        } else {
+            // 混合：
+            // gold = 実際の所持数
+            // target = 予約した目標数
+            
+            let gold = inventory[pName] + inventory[cName];
+            if (gold > 5) gold = 5;
+            
+            const key = getPairKey(pName, cName);
+            let target = reservations[key] || 0;
+            
+            starElems.forEach((s, idx) => {
+                s.classList.remove('on', 'gray');
+                
+                if (idx < gold) {
+                    // 黄色（優先）
+                    s.textContent = '★';
+                    s.classList.add('on');
+                } else if (idx < target) {
+                    // 目標値まではグレー（黄色で埋まってない部分のみ）
+                    s.textContent = '★';
+                    s.classList.add('gray');
+                } else {
+                    // それ以外
+                    s.textContent = '☆';
+                }
+            });
+        }
+      });
+    }
+
+    // --- UI/保存周り ---
+
+    function setupScrollButtons() {
+      const groupTitles = document.querySelectorAll('.group-title');
+      let currentGroupIndex = 0;
+
+      function scrollToGroup(index) {
+        if (index >= 0 && index < groupTitles.length) {
+          groupTitles[index].scrollIntoView({ behavior: 'instant', block: 'start' });
+          currentGroupIndex = index;
+        }
+      }
+
+      document.getElementById('scrollUp').addEventListener('click', () => {
+        if (currentGroupIndex > 0) scrollToGroup(currentGroupIndex - 1);
+      });
+
+      document.getElementById('scrollDown').addEventListener('click', () => {
+        if (currentGroupIndex < groupTitles.length - 1) scrollToGroup(currentGroupIndex + 1);
+      });
+    }
+
+    function exportState() {
+      // 全データをエクスポート
+      const data = {
+        version: 3,
+        inventory: inventory,
+        reservations: reservations
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "ステライヤリング配合状況.json";
+      link.click();
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        try {
+          const json = JSON.parse(event.target.result);
+          
+          if (json.inventory) {
+             // 新形式
+             inventory = json.inventory;
+             reservations = json.reservations || {};
+          } else {
+             // 旧形式互換読み込み
+             attributes.forEach(a => inventory[a.name] = 0);
+             reservations = {};
+             
+             for (const key in json) {
+                let raceName = key;
+                if (key.includes('_')) {
+                    const parts = key.split('_');
+                    raceName = parts[parts.length - 1];
+                }
+                const val = json[key];
+                let count = 0;
+                if (typeof val === 'string') {
+                  count = (val.match(/★/g) || []).length;
+                } else if (typeof val === 'number') {
+                  count = val;
+                }
+                if (inventory.hasOwnProperty(raceName)) {
+                  inventory[raceName] = count;
+                }
+             }
+          }
+          updateAllViews();
+        } catch (error) {
+          alert('ファイル読み込みエラー');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    function changeZoom(delta) {
+        let currentZoom = pageSettings['checker-stella_zoom'];
+        currentZoom += delta;
+        currentZoom = Math.round(currentZoom * 10) / 10;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        document.body.style.zoom = currentZoom;
+        pageSettings['checker-stella_zoom'] = currentZoom;
+        savePageSettings();
+    }
+
+    function setColumns(columns) {
+      const containers = document.querySelectorAll('.attributes-container');
+      const allBtns = document.querySelectorAll('.column-button');
+
+      containers.forEach(container => {
+        if (columns === 1) container.classList.remove('two-columns');
+        else container.classList.add('two-columns');
+      });
+      
+      allBtns.forEach(btn => {
+        const txt = btn.textContent;
+        if ((columns === 1 && txt === '１列') || (columns === 2 && txt === '２列')) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      pageSettings['checker-stella_column'] = columns;
+      savePageSettings();
+    }
+
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+        } catch (e) {}
+    }
+    
+    function savePageSettings() {
+        try { localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings)); } catch (e) {}
+    }
+
+    function toggleMenu() {
+        const sm = document.getElementById('sideMenu');
+        const ov = document.getElementById('menuOverlay');
+        if (sm.classList.contains('open')) closeMenu();
+        else { sm.classList.add('open'); ov.classList.add('open'); }
+    }
+    function closeMenu() {
+        document.getElementById('sideMenu').classList.remove('open');
+        document.getElementById('menuOverlay').classList.remove('open');
+    }
+
+    let startX = 0, startY = 0;
+    document.addEventListener('touchstart', e => { startX = e.changedTouches[0].screenX; startY = e.changedTouches[0].screenY; }, false);
+    document.addEventListener('touchend', e => {
+      let diffX = e.changedTouches[0].screenX - startX;
+      let diffY = e.changedTouches[0].screenY - startY;
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 50 && startX < 30) toggleMenu();
+        else if (diffX < -50) closeMenu();
+      }
+    }, false);
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['checker-stella_zoom'];
+        init();
+        setColumns(pageSettings['checker-stella_column']);
+    });
+  </script>
+
+</body>
+</html>
