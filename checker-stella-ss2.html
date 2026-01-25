@@ -11,7 +11,7 @@
 
   <style>
 
-    /* --- checker-stella.html の基本CSS --- */
+    /* --- 基本デザイン --- */
     body {
       margin: 20px;
       background-color: #2A2A2A;
@@ -26,12 +26,12 @@
     /* 親グループ見出し */
     .group-title {
       font-size: 26px;
-      margin-top: 40px; /* 親の見出し上の余白 */
+      margin-top: 40px;
       margin-bottom: 8px;
       display: flex;
       align-items: center;
       row-gap: 10px;
-      column-gap: 20px; /* 要素間の間隔 */
+      column-gap: 20px;
       flex-wrap: wrap;
       min-width: 0;
     }
@@ -55,7 +55,6 @@
     }
 
     /* グレーの★（予約中） */
-    /* 余計なエフェクト無し。色は☆と同じだが形は★ */
     .star.gray {
       color: darkgray;
     }
@@ -93,7 +92,7 @@
       font-size: 30px;
     }
 
-    /* 色定義 */
+    /* 色定義 (本文用) */
     .S01 { color: darkorange; } .S02 { color: darkorange; } .S03 { color: darkorange; }
     .S04 { color: yellow; } .S05 { color: yellow; } .S06 { color: yellow; } .S07 { color: yellow; }
     .S08 { color: lime; } .S09 { color: lime; } .S10 { color: lime; } .S11 { color: lime; } .S12 { color: lime; }
@@ -102,11 +101,51 @@
     .S20 { color: darkgray; } .S21 { color: darkgray; } .S22 { color: darkgray; } .S23 { color: darkgray; }
     .S24 { color: dodgerblue; } .S25 { color: dodgerblue; } .S26 { color: darkorchid; }
 
-    /* リンクスタイル */
+    /* リンクスタイル（デフォルト：関係ないリンク用） */
     a:link { color: #1D9BF0; text-decoration: underline; }
     a:visited { color: #7755FF; text-decoration: underline; }
     a:hover { color: #0CFF57; }
     a:active { color: #FF0000; text-decoration: underline; }
+
+    /* --- サイドバー種族リンク専用色設定 (未訪問・訪問済み強制統一) --- */
+    a.S01, a.S01:visited { color: darkorange; }
+    a.S02, a.S02:visited { color: darkorange; }
+    a.S03, a.S03:visited { color: darkorange; }
+    
+    a.S04, a.S04:visited { color: yellow; }
+    a.S05, a.S05:visited { color: yellow; }
+    a.S06, a.S06:visited { color: yellow; }
+    a.S07, a.S07:visited { color: yellow; }
+
+    a.S08, a.S08:visited { color: lime; }
+    a.S09, a.S09:visited { color: lime; }
+    a.S10, a.S10:visited { color: lime; }
+    a.S11, a.S11:visited { color: lime; }
+    a.S12, a.S12:visited { color: lime; }
+
+    a.S13, a.S13:visited { color: deepskyblue; }
+    a.S14, a.S14:visited { color: deepskyblue; }
+    a.S15, a.S15:visited { color: deepskyblue; }
+    a.S16, a.S16:visited { color: deepskyblue; }
+
+    a.S17, a.S17:visited { color: orangered; }
+    a.S18, a.S18:visited { color: orangered; }
+    a.S19, a.S19:visited { color: orangered; }
+
+    a.S20, a.S20:visited { color: darkgray; }
+    a.S21, a.S21:visited { color: darkgray; }
+    a.S22, a.S22:visited { color: darkgray; }
+    a.S23, a.S23:visited { color: darkgray; }
+
+    a.S24, a.S24:visited { color: dodgerblue; }
+    a.S25, a.S25:visited { color: dodgerblue; }
+    a.S26, a.S26:visited { color: darkorchid; }
+
+    /* 種族リンクのホバー時（◆と同じ白にする） */
+    a.race-link:hover {
+        color: #eee !important;
+        text-decoration: underline;
+    }
 
     .bottom { font-size: 16pt; margin-top: 20px; }
     footer { border-top: 1px solid #eee; padding-top: 10px; font-size: 16pt; margin-top: 20px; }
@@ -116,7 +155,6 @@
     
     .column-button {
       background-color: #444; color: #fff; border: none; 
-      /* サイズ修正：小さいサイズに統一 */
       padding: 6px 12px;
       font-size: 14px;
       cursor: pointer; border-radius: 4px; white-space: nowrap;
@@ -172,8 +210,16 @@
     
     .menu-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: #eee; user-select: none; }
     .menu-title { font-size: 20px; font-weight: bold; text-align: left; margin-bottom: 10px; color: limegreen; }
-    .menu-item { font-size: 18px; text-align: left; display: inline-block; padding: 12px 0; color: #eee; text-decoration: none; }
-    .menu-item:hover { color: #0CFF57; }
+    
+    .menu-item { 
+      font-size: 18px; 
+      text-align: left; 
+      display: inline-block; 
+      padding: 12px 0; 
+      text-decoration: none; 
+      /* 色は指定せず、aタグのデフォルト（またはS01等のクラス）に従う */
+    }
+    
     .menu-item:last-child { border-bottom: none; }
     .menu-spacer { height: 30px; }
 
@@ -237,7 +283,7 @@
 
   <footer>
     ※使用は自己責任にて。<br>
-    ※画面左端から右にフリック、または◆クリックでメニューが開きます。<br>
+    ※画面左端から右にフリック、または◆クリックでサイドメニューが開きます。<br>
     <br>
     <a href="index.html">INDEXへ戻る</a><br>
   </footer>
@@ -261,12 +307,11 @@
       { name: "浮遊", class: "S25" }, { name: "妖魔", class: "S26" }
     ];
 
-    // inventory: 純正(SSx3)の所持数を個数で管理 { "人間": 2, ... }
+    // inventory: 純正(SSx3)の所持数を個数で管理
     let inventory = {};
     attributes.forEach(a => inventory[a.name] = 0);
 
-    // reservations: 混合の「目標合計数」 { "人間_男性": 3, ... }
-    // ※黄色が減ってもこの目標値は変わらないので、グレーが復活する
+    // reservations: 混合の「目標合計数」
     let reservations = {};
 
     const PAGE_SETTING_KEY = 'PageSettings_StellaMix'; 
@@ -288,10 +333,11 @@
       attributes.forEach((parentRace, index) => {
         const anchorId = `${parentRace.name}Anchor`;
 
-        // サイドリンク
+        // サイドリンク生成
         const link = document.createElement('a');
         link.href = `#${anchorId}`;
-        link.className = 'menu-item';
+        // クラスに menu-item (基本), race-link (ホバー効果用), parentRace.class (色指定)
+        link.className = `menu-item race-link ${parentRace.class}`;
         link.textContent = `◆${parentRace.name}`;
         link.onclick = closeMenu;
         sideLinks.appendChild(link);
@@ -373,7 +419,6 @@
         container.appendChild(attributesContainer);
 
         // グループごとのエクスポートボタン
-        // ※どこを押してもグローバル変数inventory/reservationsを保存するため、全項目がエクスポートされます。
         const exportBtn = document.createElement('button');
         exportBtn.textContent = '状態をエクスポート';
         exportBtn.style.marginTop = '15px';
@@ -404,17 +449,13 @@
 
       } else {
         // 混合：グレー★（予約）
-        // 黄色（所持済み）の部分は無視
         const goldCount = inventory[pName] + inventory[cName];
         if (index < goldCount) return; 
 
         const key = getPairKey(pName, cName);
-        
-        // クリックした位置を「目標合計数」とする
-        // (例: 3番目をクリック -> 合計3つ確保したい)
         const target = index + 1;
         
-        // 既に同じ目標値ならキャンセル
+        // 同じ場所をクリックで予約キャンセル
         if (reservations[key] === target) {
              reservations[key] = 0; 
         } else {
@@ -425,7 +466,6 @@
       updateAllViews();
     }
     
-    // 全体表示更新
     function updateAllViews() {
       const allStarsGroups = document.querySelectorAll('.stars');
       
@@ -449,9 +489,6 @@
             });
         } else {
             // 混合：
-            // gold = 実際の所持数
-            // target = 予約した目標数
-            
             let gold = inventory[pName] + inventory[cName];
             if (gold > 5) gold = 5;
             
@@ -462,15 +499,12 @@
                 s.classList.remove('on', 'gray');
                 
                 if (idx < gold) {
-                    // 黄色（優先）
                     s.textContent = '★';
                     s.classList.add('on');
                 } else if (idx < target) {
-                    // 目標値まではグレー（黄色で埋まってない部分のみ）
                     s.textContent = '★';
                     s.classList.add('gray');
                 } else {
-                    // それ以外
                     s.textContent = '☆';
                 }
             });
