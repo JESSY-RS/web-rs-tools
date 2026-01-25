@@ -55,6 +55,7 @@
     }
 
     /* グレーの★（予約中） */
+    /* エフェクトなし、色は☆と同じ(darkgray)、形は★ */
     .star.gray {
       color: darkgray;
     }
@@ -101,47 +102,41 @@
     .S20 { color: darkgray; } .S21 { color: darkgray; } .S22 { color: darkgray; } .S23 { color: darkgray; }
     .S24 { color: dodgerblue; } .S25 { color: dodgerblue; } .S26 { color: darkorchid; }
 
-    /* リンクスタイル（デフォルト：関係ないリンク用） */
+    /* リンクスタイル（デフォルト） */
     a:link { color: #1D9BF0; text-decoration: underline; }
     a:visited { color: #7755FF; text-decoration: underline; }
     a:hover { color: #0CFF57; }
     a:active { color: #FF0000; text-decoration: underline; }
 
-    /* --- サイドバー種族リンク専用色設定 (未訪問・訪問済み強制統一) --- */
+    /* --- サイドバー種族リンク専用色設定 --- */
     a.S01, a.S01:visited { color: darkorange; }
     a.S02, a.S02:visited { color: darkorange; }
     a.S03, a.S03:visited { color: darkorange; }
-    
     a.S04, a.S04:visited { color: yellow; }
     a.S05, a.S05:visited { color: yellow; }
     a.S06, a.S06:visited { color: yellow; }
     a.S07, a.S07:visited { color: yellow; }
-
     a.S08, a.S08:visited { color: lime; }
     a.S09, a.S09:visited { color: lime; }
     a.S10, a.S10:visited { color: lime; }
     a.S11, a.S11:visited { color: lime; }
     a.S12, a.S12:visited { color: lime; }
-
     a.S13, a.S13:visited { color: deepskyblue; }
     a.S14, a.S14:visited { color: deepskyblue; }
     a.S15, a.S15:visited { color: deepskyblue; }
     a.S16, a.S16:visited { color: deepskyblue; }
-
     a.S17, a.S17:visited { color: orangered; }
     a.S18, a.S18:visited { color: orangered; }
     a.S19, a.S19:visited { color: orangered; }
-
     a.S20, a.S20:visited { color: darkgray; }
     a.S21, a.S21:visited { color: darkgray; }
     a.S22, a.S22:visited { color: darkgray; }
     a.S23, a.S23:visited { color: darkgray; }
-
     a.S24, a.S24:visited { color: dodgerblue; }
     a.S25, a.S25:visited { color: dodgerblue; }
     a.S26, a.S26:visited { color: darkorchid; }
 
-    /* 種族リンクのホバー時（◆と同じ白にする） */
+    /* 種族リンクのホバー時 */
     a.race-link:hover {
         color: #eee !important;
         text-decoration: underline;
@@ -155,6 +150,7 @@
     
     .column-button {
       background-color: #444; color: #fff; border: none; 
+      /* 高さ修正：checker-stella.htmlの小さいサイズに合わせる */
       padding: 6px 12px;
       font-size: 14px;
       cursor: pointer; border-radius: 4px; white-space: nowrap;
@@ -179,7 +175,7 @@
     .zoom-buttons {
       display: flex;
       flex-direction: row;
-      gap: 10px;
+      gap: 10px; /* 10px指定 */
       flex-shrink: 0;
       margin-right: -5px;
     }
@@ -217,7 +213,6 @@
       display: inline-block; 
       padding: 12px 0; 
       text-decoration: none; 
-      /* 色は指定せず、aタグのデフォルト（またはS01等のクラス）に従う */
     }
     
     .menu-item:last-child { border-bottom: none; }
@@ -283,7 +278,7 @@
 
   <footer>
     ※使用は自己責任にて。<br>
-    ※画面左端から右にフリック、または◆クリックでサイドメニューが開きます。<br>
+    ※画面左端から右にフリック、または◆クリックでメニューが開きます。<br>
     <br>
     <a href="index.html">INDEXへ戻る</a><br>
   </footer>
@@ -311,7 +306,8 @@
     let inventory = {};
     attributes.forEach(a => inventory[a.name] = 0);
 
-    // reservations: 混合の「目標合計数」
+    // reservations: 混合の「追加したい個数（相対値）」
+    // 0: なし, 1: +1個, 2: +2個 ...
     let reservations = {};
 
     const PAGE_SETTING_KEY = 'PageSettings_StellaMix'; 
@@ -336,7 +332,6 @@
         // サイドリンク生成
         const link = document.createElement('a');
         link.href = `#${anchorId}`;
-        // クラスに menu-item (基本), race-link (ホバー効果用), parentRace.class (色指定)
         link.className = `menu-item race-link ${parentRace.class}`;
         link.textContent = `◆${parentRace.name}`;
         link.onclick = closeMenu;
@@ -418,7 +413,7 @@
 
         container.appendChild(attributesContainer);
 
-        // グループごとのエクスポートボタン
+        // グループごとのエクスポートボタン（全データ保存）
         const exportBtn = document.createElement('button');
         exportBtn.textContent = '状態をエクスポート';
         exportBtn.style.marginTop = '15px';
@@ -449,18 +444,30 @@
 
       } else {
         // 混合：グレー★（予約）
-        const goldCount = inventory[pName] + inventory[cName];
-        if (index < goldCount) return; 
-
         const key = getPairKey(pName, cName);
-        const target = index + 1;
         
-        // 同じ場所をクリックで予約キャンセル
-        if (reservations[key] === target) {
-             reservations[key] = 0; 
+        // 既存の予約数を取得（未定義なら0）
+        let currentRes = reservations[key] || 0;
+
+        // 黄色の数を計算
+        const goldCount = inventory[pName] + inventory[cName];
+        
+        // クリックした星が「黄色エリア」なら何もしない
+        if (index < goldCount) return;
+
+        // クリックした星が「グレー」か「空」か判定
+        if (starElem.classList.contains('gray')) {
+            // グレーをクリック -> 予約数を減らす
+            currentRes--;
         } else {
-             reservations[key] = target;
+            // 空をクリック -> 予約数を増やす
+            currentRes++;
         }
+
+        // 負の数にならないように、また最大数を超えないように（便宜上）
+        if (currentRes < 0) currentRes = 0;
+        
+        reservations[key] = currentRes;
       }
       
       updateAllViews();
@@ -489,22 +496,35 @@
             });
         } else {
             // 混合：
+            // 黄色 = inventory[Parent] + inventory[Child]
+            // グレー = reservations[Key] (相対追加数)
+            
             let gold = inventory[pName] + inventory[cName];
             if (gold > 5) gold = 5;
             
             const key = getPairKey(pName, cName);
-            let target = reservations[key] || 0;
+            let gray = reservations[key] || 0;
+            
+            // 合計が5を超えないように調整（グレーをトリミング）
+            let visibleGray = gray;
+            if (gold + visibleGray > 5) {
+                visibleGray = 5 - gold;
+                if (visibleGray < 0) visibleGray = 0;
+            }
             
             starElems.forEach((s, idx) => {
                 s.classList.remove('on', 'gray');
                 
                 if (idx < gold) {
+                    // 黄色 (優先)
                     s.textContent = '★';
                     s.classList.add('on');
-                } else if (idx < target) {
+                } else if (idx < gold + visibleGray) {
+                    // グレー (黄色の後ろに追加)
                     s.textContent = '★';
                     s.classList.add('gray');
                 } else {
+                    // 空
                     s.textContent = '☆';
                 }
             });
@@ -535,9 +555,8 @@
     }
 
     function exportState() {
-      // 全データをエクスポート
       const data = {
-        version: 3,
+        version: 4, // バージョン更新
         inventory: inventory,
         reservations: reservations
       };
