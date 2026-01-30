@@ -1146,10 +1146,28 @@
             return;
         }
 
-        const characterName = selectedStyle['キャラ名'];
-        if (charaText.textContent !== characterName) {
-            charaText.textContent = characterName;
-            populateStyleSelect(characterName);
+        // style.csv上のキャラ名 (例: "ピンクタイガー", "モニカ(RS3)")
+        const dataCharName = selectedStyle['キャラ名'];
+
+        // 修正: style.csvのデータ名から、character.csv上の「表示名」を逆引きする
+        // 1. 完全一致を探す (モニカ(RS3)用)
+        // 2. dataName + '(' で始まるものを探す (ピンクタイガー用 -> ピンクタイガー(エミリア))
+        let displayCharName = dataCharName; // 見つからなければデータ名をそのまま使う
+        
+        // db.characterOrder (CSV順) から該当する表示名を探す
+        const matchRow = db.characterOrder.find(row => {
+            const rowName = row['キャラ名'];
+            return rowName === dataCharName || rowName.startsWith(dataCharName + '(');
+        });
+        
+        if (matchRow) {
+            displayCharName = matchRow['キャラ名'];
+        }
+
+        // プルダウンの表示更新
+        if (charaText.textContent !== displayCharName) {
+            charaText.textContent = displayCharName;
+            populateStyleSelect(displayCharName); // 表示名でリストを生成
         }
         
         const displayStyleName = `[${selectedStyle['グレード']}] ${selectedStyle['スタイル名']}`;
@@ -1162,8 +1180,10 @@
 
         const grade = selectedStyle['グレード'];
         const baseTitle = originalTitle.replace(/（統合版）/g, '').trim();
-        const newTitle = `${baseTitle} - ${characterName} [${grade}] ${styleName}`;
-        const hash = `${characterName}_${grade}_${styleName}`;
+        
+        // URLとタイトルには dataCharName (style.csvの名前) を使用する = 括弧なし(ピンクタイガー) or 括弧あり(モニカ(RS3))
+        const newTitle = `${baseTitle} - ${dataCharName} [${grade}] ${styleName}`;
+        const hash = `${dataCharName}_${grade}_${styleName}`;
         const newHash = '#' + encodeURIComponent(hash);
 
         if (!fromHistory && location.hash !== newHash) {
@@ -1356,11 +1376,23 @@
         
         const searchTerm = hiraganaToKatakana(filter);
 
-        // 1. キャラクターで抽出
-        let stylesForCharacter = db.styles.filter(style => style['キャラ名'] === characterName);
+        // 修正: 選択された「characterName (表示名)」に基づいてスタイルを抽出
+        let stylesForCharacter = db.styles.filter(style => {
+            const dataName = style['キャラ名'];
+            
+            // 1. 完全一致 (例: モニカ(RS3) === モニカ(RS3))
+            if (dataName === characterName) return true;
+            
+            // 2. データ名 + '(' が 表示名の先頭と一致するか 
+            // (例: style="ピンクタイガー", selected="ピンクタイガー(エミリア)" → OK)
+            // (例: style="モニカ", selected="モニカ(RS3)" → OK ※モニカ(RS3)がstyle.csvにあるなら1でヒットするが、無印モニカを表示させたくない場合は注意が必要。
+            //  ただし、ご提示の条件「style.csvもモニカ(RS3)」であれば、1でヒットするので問題なし)
+            if (characterName.startsWith(dataName + '(')) return true;
+            
+            return false;
+        });
 
-        // 2. 実装時期で降順ソート (yyyy/mm/dd形式の文字列比較)
-        // 実装時期が空の場合はリストの後ろへ回すか、あるいは古いものとして扱う実装にしています
+        // 実装時期で降順ソート
         stylesForCharacter.sort((a, b) => {
             const dateA = a['実装時期'] || '';
             const dateB = b['実装時期'] || '';
@@ -1369,7 +1401,7 @@
             return 0;
         });
 
-        // 3. 検索フィルター適用 (表示名に日付が含まれるため、日付での検索も可能になります)
+        // 検索フィルター適用
         const filteredStyles = stylesForCharacter.filter(style => {
             const baseDisplayName = `[${style['グレード']}] ${style['スタイル名']}`;
             const listDisplayName = style['実装時期'] 
@@ -1382,21 +1414,19 @@
 
         if (filteredStyles.length > 0) {
             filteredStyles.forEach(style => {
-                // ボタン表示用（日付なし）
                 const baseDisplayName = `[${style['グレード']}] ${style['スタイル名']}`;
-                // リスト表示用（日付あり）
                 const listDisplayName = style['実装時期'] 
                     ? `${baseDisplayName} (${style['実装時期']})` 
                     : baseDisplayName;
 
                 const optionDiv = document.createElement('div');
                 optionDiv.className = 'custom-select-option';
-                optionDiv.textContent = listDisplayName; // ドロップダウン内は日付付き
+                optionDiv.textContent = listDisplayName;
                 optionDiv.dataset.value = style['スタイル名'];
 
                 optionDiv.addEventListener('click', (e) => {
                     const selectedStyleName = e.target.dataset.value;
-                    text.textContent = baseDisplayName; // 選択後の表示は日付なし
+                    text.textContent = baseDisplayName;
                     btn.dataset.value = selectedStyleName;
                     btn.classList.remove('is-placeholder');
                     document.getElementById('styleDropdown').style.display = 'none';
@@ -1427,11 +1457,36 @@
         
         const allUniqueCharactersInStyles = new Set(db.styles.map(item => item['キャラ名']));
         
-        const sortedList = characterListWithFurigana.filter(char => allUniqueCharactersInStyles.has(char.name));
+        // 修正: style.csvのキャラ名が、character.csvのキャラ名と完全一致するか、
+        // または「表示名 = データ名 + (補足)」の形式（前方一致）である場合にリストに加える
+        const sortedList = characterListWithFurigana.filter(char => {
+            const dispName = char.name;
+            // 1. データ名と完全一致 (例: モニカ(RS3) === モニカ(RS3))
+            if (allUniqueCharactersInStyles.has(dispName)) return true;
+            
+            // 2. 括弧付きの拡張表現 (例: ピンクタイガー(エミリア) vs ピンクタイガー)
+            // データ内のいずれかの名前が、表示名の「(」の前までの部分と一致するか
+            for (const dataName of allUniqueCharactersInStyles) {
+                if (dispName.startsWith(dataName + '(')) {
+                    return true;
+                }
+            }
+            return false;
+        });
+
         const sortedSet = new Set(sortedList.map(char => char.name));
 
+        // 修正: すでにsortedListに含まれている（＝エイリアスでカバーされた）データ名は「その他」に表示しない
         const remainingCharacters = [...allUniqueCharactersInStyles]
-            .filter(name => !sortedSet.has(name))
+            .filter(dataName => {
+                // 完全一致ですでにあるか
+                if (sortedSet.has(dataName)) return false;
+                // エイリアス（括弧付き）としてすでに登録されているかチェック
+                for (const dispName of sortedSet) {
+                    if (dispName.startsWith(dataName + '(')) return false;
+                }
+                return true;
+            })
             .sort((a,b) => a.localeCompare(b, 'ja'))
             .map(name => ({ name: name, furigana: '' }));
 
@@ -1467,7 +1522,7 @@
                     styleText.textContent = '---';
                     styleBtn.dataset.value = '---';
                     styleBtn.classList.add('is-placeholder');
-                    populateStyleSelect(selectedCharacter);
+                    populateStyleSelect(selectedCharacter); // 表示名を渡す
                     clearDisplays();
                     document.querySelectorAll('.save-btn').forEach(btn => btn.disabled = true);
                 });
@@ -1480,7 +1535,7 @@
             dropdown.style.display = isOpen ? 'none' : 'flex';
             if (!isOpen) {
                 searchInput.value = '';
-                renderCharacterOptions();
+                renderOptions();
                 const currentCharacterName = selectedText.textContent;
                 
                 if (currentCharacterName && !currentCharacterName.startsWith('現在の登録数')) {
@@ -2113,6 +2168,9 @@
 
     function generateExtraForceTags() {
         const container = document.getElementById('extraForceSearchContainer');
+        
+        // コンテナの初期化（再生成時用）
+        container.innerHTML = '';
         container.style.borderTop = '1px solid var(--controls-border)';
         container.style.paddingTop = '10px';
         container.style.marginTop = '15px';
@@ -2124,46 +2182,46 @@
         header.style.marginBottom = '10px';
         container.appendChild(header);
 
-        // --- 存在チェック用セットの作成 ---
-        const existingTypes = new Set();
-        const existingEffects = new Set();
-        
-        Object.keys(db.addInfo).forEach(key => {
-            if (key.startsWith('エクストラフォース')) {
-                const match = key.match(/エクストラフォース\((.+?)\/(.+?)\)/); // 名称形式: エクストラフォース(タイプ/効果)
-                if (match) {
-                    existingTypes.add(match[1]);
-                    existingEffects.add(match[2]);
-                } else {
-                     // エクストラフォース(タイプ) のみのパターンも一応考慮
-                     const match2 = key.match(/エクストラフォース\((.+?)\)/);
-                     if(match2) existingTypes.add(match2[1]);
-                }
-            }
-        });
-        // -------------------------------
-
+        // --- 定義済みの武器種・属性リスト ---
         const typesWeapon = ['剣', '大剣', '斧', '棍棒', '体術', '銃', '槍', '小剣', '弓', '杖'];
         const typesAttr = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
-        // 修正: 全体・範囲を連携の前に
-        const typesOtherFixed = ['Critical', 'OD', 'Weak', '技', '術', '直接', '間接', '単体', '単体攻撃', '縦攻撃', '横攻撃', '全体攻撃', '全体', '範囲', '全体・範囲', '連携'];
         const effects = ['極小', '小', '中', '大', '特大', '極大', '超極大', '超極大+'];
 
-        const knownTypes = new Set([...typesWeapon, ...typesAttr, ...typesOtherFixed]);
-        const otherTypesSet = new Set();
-        Object.keys(db.addInfo).forEach(key => {
+        // 除外判定用セット（武器種と属性）
+        const excludedTypesSet = new Set([...typesWeapon, ...typesAttr]);
+
+        // --- 「その他」タイプの抽出ロジック（CSV順序維持） ---
+        const typesOtherOrdered = [];
+        const seenTypes = new Set();
+        
+        // addInfoOrderedKeys はCSV読み込み時に作成された順序保持配列
+        addInfoOrderedKeys.forEach(key => {
             if (key.startsWith('エクストラフォース')) {
-                const match = key.match(/エクストラフォース\((.+?)\/.+\)/) || key.match(/エクストラフォース\((.+?)\)/);
+                // エクストラフォース(タイプ/効果) または (タイプ) からタイプ部分を抽出
+                const match = key.match(/エクストラフォース\((.+?)(?:\/|\))/);
+                
                 if (match) {
                     const typeContent = match[1];
-                    if (!knownTypes.has(typeContent)) {
-                        otherTypesSet.add(typeContent);
+                    
+                    // 武器種・属性リストになく、かつ未登録の場合のみ追加
+                    if (!excludedTypesSet.has(typeContent) && !seenTypes.has(typeContent)) {
+                        typesOtherOrdered.push(typeContent);
+                        seenTypes.add(typeContent);
                     }
                 }
             }
         });
-        const typesOtherDynamic = [...otherTypesSet].sort();
+        
+        // --- 存在チェック用セット（効果のボタン表示制御用） ---
+        const existingEffects = new Set();
+        Object.keys(db.addInfo).forEach(key => {
+            if (key.startsWith('エクストラフォース')) {
+                const match = key.match(/エクストラフォース\((.+?)\/(.+?)\)/);
+                if (match) existingEffects.add(match[2]);
+            }
+        });
 
+        // --- セクション作成関数 ---
         const createSection = (title, items, datasetKey, btnClass = 'extra-force-btn') => {
             const div = document.createElement('div');
             div.className = 'tag-category single-line-layout';
@@ -2173,10 +2231,10 @@
             let hasButtons = false;
 
             items.forEach(item => {
-                // --- 変更点: 存在しない場合は作成せずスキップ ---
-                if (datasetKey === 'efType' && !existingTypes.has(item)) return;
+                // 効果の場合は存在するデータのみ表示
                 if (datasetKey === 'efEffect' && !existingEffects.has(item)) return;
-                // ---------------------------------------------
+                
+                // タイプの場合はCSVから抽出済みなのでそのまま表示
                 
                 hasButtons = true;
                 const btn = document.createElement('button');
@@ -2199,18 +2257,19 @@
                 buttonsDiv.appendChild(btn);
             });
             
-            // ボタンが存在する場合のみ表示
             if (hasButtons) {
                 div.appendChild(buttonsDiv);
                 container.appendChild(div);
             }
         };
 
+        // 各セクションの生成
         createSection('武器種', typesWeapon, 'efType');
         createSection('属性', typesAttr, 'efType');
-        createSection('その他', [...typesOtherFixed, ...typesOtherDynamic], 'efType');
+        createSection('その他', typesOtherOrdered, 'efType'); // ← ここがCSV順になります
         createSection('効果', effects, 'efEffect');
         
+        // 対象スコープのボタン
         const scopeDiv = document.createElement('div');
         scopeDiv.className = 'tag-category single-line-layout';
         scopeDiv.innerHTML = `<div class="tag-category-title">対象:</div>`;
@@ -2238,7 +2297,6 @@
         scopeDiv.appendChild(scopeButtonsDiv);
         container.appendChild(scopeDiv);
 
-        // --- 説明文の追加 ---
         const descDiv = document.createElement('div');
         descDiv.style.marginTop = '10px';
         descDiv.style.fontSize = '1em';
@@ -2623,21 +2681,17 @@
                 if (!item) return;
                 const isSkill = item.type === 'skill' || (item.type === 'addInfo' && !!item['スキル名']);
                 const itemName = item['スキル名'] || item['アビリティ名'] || item['名称'] || '';
-                // ハイライト処理を行うため、元のテキストを保持しつつ、加工用変数を分ける
                 let processedDetail = item['効果詳細'] || '';
                 const cleanedDetail = cleanText(processedDetail);
                 const allChecks = [];
                 
-                // 通常キーワード検索
                 if (keywords.length > 0) {
                     const keywordMatch = searchLogic === 'and' ? keywords.every(kw => itemName.includes(kw) || cleanedDetail.includes(kw)) : keywords.some(kw => itemName.includes(kw) || cleanedDetail.includes(kw));
                     allChecks.push(keywordMatch);
                 }
                 
-                // スキルフィルタ
                 activeSkillFilterBtns.forEach(btn => {
                     if (isSkill) {
-                        // 行動順・準備・再使用・制限フィルタの場合、かつAddInfoの場合は除外
                         const excludedFieldsForAddInfo = ['行動順', '準備', '再使用', '制限'];
                         if (item.type === 'addInfo' && excludedFieldsForAddInfo.includes(btn.dataset.field)) {
                             allChecks.push(false);
@@ -2648,7 +2702,6 @@
                     else allChecks.push(false);
                 });
                 
-                // BPフィルタ
                 if (bpFilter) {
                     if (isSkill && item.type !== 'addInfo') {
                         const itemBp = parseInt(item['BP'], 10);
@@ -2664,56 +2717,50 @@
                     }
                 }
                 
-                // 共通タグフィルタ
                 activeTags.forEach(tag => {
                     allChecks.push(tag.keywords.some(kw => cleanedDetail.includes(kw)));
                 });
 
-                // --- エクストラフォース検索ロジック (ハイライト適用版) ---
                 if (hasExtraForceFilter) {
                     if (item.type === 'addInfo' && itemName.startsWith('エクストラフォース')) {
                         allChecks.push(false);
                     } else {
-                        // Regex: 文脈(Context) / 接頭辞(Prefix) / 名称(Name) / 種類(Type) / 効果(Effect)
-                        const efRegex = /(?<context>味方生存者|敵生存者)?(?<prefix>自身に|全体に|対象と自身に)「(?<efName>エクストラフォース)\((?<type>[^/]+)\/(?<effect>[^)]+)\)」/g;
+                        // 修正: Regexに「対象に」を追加
+                        const efRegex = /(?<context>味方生存者|敵生存者)?(?<prefix>自身に|全体に|対象と自身に|対象に)「(?<efName>エクストラフォース)\((?<type>[^/]+)\/(?<effect>[^)]+)\)」/g;
                         
                         let isEfMatch = false;
                         
-                        // マッチ処理と同時にハイライト置換を行う
-                        // マッチが見つかれば isEfMatch を true にする
                         const replacedDetail = processedDetail.replace(efRegex, (match, context, prefix, efName, type, effect) => {
-                            // undefined対策
                             context = context || "";
                             
                             const hasTypeFilter = activeExtraForceTypeBtns.length > 0;
                             const hasEffectFilter = activeExtraForceEffectBtns.length > 0;
                             const hasScopeFilter = activeExtraForceScopeBtns.length > 0;
 
-                            // 条件判定関数
                             const checkConditions = () => {
-                                // 除外チェック (一つでも除外条件に当てはまればマッチしない)
                                 if (excludedEfTypeBtns.some(b => type === b.dataset.efType)) return false;
                                 if (excludedEfEffectBtns.some(b => effect === b.dataset.efEffect)) return false;
+                                
+                                // 修正: 除外判定で「対象に」を考慮
                                 if (excludedEfScopeBtns.some(b => {
                                     if (b.dataset.scope === '自身') return prefix === '自身に';
-                                    if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に');
+                                    if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に' || prefix === '対象に');
                                     return false;
                                 })) return false;
 
                                 let typeHit = !hasTypeFilter || activeExtraForceTypeBtns.some(b => type === b.dataset.efType);
                                 let effectHit = !hasEffectFilter || activeExtraForceEffectBtns.some(b => effect === b.dataset.efEffect);
+                                
+                                // 修正: ヒット判定で「対象に」を考慮
                                 let scopeHit = !hasScopeFilter || activeExtraForceScopeBtns.some(b => {
                                     if (b.dataset.scope === '自身') return prefix === '自身に';
-                                    if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に');
+                                    if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に' || prefix === '対象に');
                                     return false;
                                 });
 
                                 if (searchLogic === 'and') {
-                                    // AND: 全カテゴリ条件を満たす必要がある
                                     return typeHit && effectHit && scopeHit;
                                 } else {
-                                    // OR: いずれかのカテゴリ条件を満たせば良い (ただし無選択カテゴリは無視)
-                                    // hasFilterがあるカテゴリについてのみヒット判定を行う
                                     if (hasTypeFilter && typeHit) return true;
                                     if (hasEffectFilter && effectHit) return true;
                                     if (hasScopeFilter && scopeHit) return true;
@@ -2722,33 +2769,30 @@
                             };
 
                             if (checkConditions()) {
-                                isEfMatch = true; // 検索ヒットフラグON
+                                isEfMatch = true; 
 
-                                // ハイライト構成
-                                // "エクストラフォース"は必ずハイライト
                                 let resName = `<span class="highlight">${efName}</span>`;
                                 
-                                // 他の部分はタグが選択されている場合のみハイライト
                                 let resType = (hasTypeFilter && activeExtraForceTypeBtns.some(b => type === b.dataset.efType)) 
                                     ? `<span class="highlight">${type}</span>` : type;
                                 
                                 let resEffect = (hasEffectFilter && activeExtraForceEffectBtns.some(b => effect === b.dataset.efEffect))
                                     ? `<span class="highlight">${effect}</span>` : effect;
                                 
-                                // Scope部分はContextも含めてハイライト判定
                                 let resPrefix = prefix;
                                 let resContext = context;
                                 
                                 if (hasScopeFilter) {
+                                    // 修正: ハイライト判定で「対象に」を考慮
                                     const scopeMatched = activeExtraForceScopeBtns.some(b => {
                                         if (b.dataset.scope === '自身') return prefix === '自身に';
-                                        if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に');
+                                        if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に' || prefix === '対象に');
                                         return false;
                                     });
                                     if (scopeMatched) {
                                         resPrefix = `<span class="highlight">${prefix}</span>`;
-                                        // 味方判定でかつ文脈がある場合のみハイライト
-                                        if (context && (prefix === '全体に' || prefix === '対象と自身に')) {
+                                        // 修正: コンテキストハイライトも同様に
+                                        if (context && (prefix === '全体に' || prefix === '対象と自身に' || prefix === '対象に')) {
                                             resContext = `<span class="highlight">${context}</span>`;
                                         }
                                     }
@@ -2756,13 +2800,12 @@
 
                                 return `${resContext}${resPrefix}「${resName}(${resType}/${resEffect})」`;
                             } else {
-                                // 条件不一致なら元の文字列のまま
                                 return match;
                             }
                         });
 
                         if (isEfMatch) {
-                            processedDetail = replacedDetail; // ハイライト適用済みテキストで更新
+                            processedDetail = replacedDetail;
                         }
                         allChecks.push(isEfMatch);
                     }
@@ -2785,7 +2828,6 @@
                     if (shouldBeIncluded) {
                         let matchingKeywordsForHighlight = [];
                         
-                        // EF以外のハイライト処理（汎用）
                         if (!hasExtraForceFilter) {
                             matchingKeywordsForHighlight = activeTags.flatMap(tag => tag.keywords).filter(kw => cleanedDetail.includes(kw));
                             if (keywords.length > 0) matchingKeywordsForHighlight.push(...keywords);
@@ -2795,17 +2837,15 @@
                                 });
                             }
                         } else {
-                            // EF検索時は、EF以外のキーワード（通常のタグなど）もハイライト対象にするならここに追加
-                            // ただしEF部分は既に processedDetail 内で <span> 化されている
                             if (keywords.length > 0) matchingKeywordsForHighlight.push(...keywords);
                         }
 
                         foundItems.push({ 
                             name: itemName, 
-                            detail: processedDetail, // ハイライト済みテキストを渡す
+                            detail: processedDetail, 
                             keywords: [...new Set(matchingKeywordsForHighlight)], 
                             type: item.type,
-                            isPreHighlighted: hasExtraForceFilter // フラグ
+                            isPreHighlighted: hasExtraForceFilter 
                         });
                     }
                 }
@@ -3015,25 +3055,21 @@
         if (searchLogic === 'and') {
              const groups = [];
              
-             // 1. エクストラフォース：タイプ (内部OR)
              if (activeEfTypeBtns.length > 0) {
                  const text = activeEfTypeBtns.map(b => b.textContent).join(orSpan);
                  groups.push(activeEfTypeBtns.length > 1 ? `(${text})` : text);
              }
              
-             // 2. エクストラフォース：効果 (内部OR)
              if (activeEfEffectBtns.length > 0) {
                  const text = activeEfEffectBtns.map(b => b.textContent).join(orSpan);
                  groups.push(activeEfEffectBtns.length > 1 ? `(${text})` : text);
              }
              
-             // 3. エクストラフォース：対象 (内部OR)
              if (activeEfScopeBtns.length > 0) {
                  const text = activeEfScopeBtns.map(b => b.textContent).join(orSpan);
                  groups.push(activeEfScopeBtns.length > 1 ? `(${text})` : text);
              }
              
-             // 4. その他のタグ (内部AND) ※通常のタグクラウドの挙動に準拠
              const activeOtherTags = [...activeSkillFilters, ...activeCsvTags];
              if (activeOtherTags.length > 0) {
                  const text = activeOtherTags.map(b => b.textContent).join(andSpan);
@@ -3043,7 +3079,6 @@
              tagsDisplayText = groups.join(andSpan);
 
         } else {
-             // OR検索時：すべてORで結合
              const allActiveTags = [...activeSkillFilters, ...activeCsvTags, ...activeEfTypeBtns, ...activeEfEffectBtns, ...activeEfScopeBtns];
              if (allActiveTags.length > 0) {
                  tagsDisplayText = allActiveTags.map(btn => btn.textContent).join(orSpan);
@@ -3082,15 +3117,25 @@
             else if (res.type === 'ability') panelBgColor = 'var(--ability-col-bg)';
             else panelBgColor = 'var(--addinfo-col-bg)';
             
-            // ハイライト済みテキストがある場合はそれを渡す
             const cardHtml = generateItemCardHTML(res.name, res.keywords, res.character, res.styleName, searchContext, res.type, res.isPreHighlighted ? res.detail : null);
             
-            // スタイル名からグレード部分（[SS] 等）を除去して検索クエリを作成
             const styleNameOnly = res.styleName.replace(/^\[.+?\]\s*/, '');
             const googleSearchQuery = `ロマサガRS ${res.character} ${styleNameOnly}`;
             const googleSearchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(googleSearchQuery)}`;
 
-            return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${res.character}</h3><h4><a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" class="web-link" title="Google画像検索で開く">${res.styleName}</a></h4><div class="card">${cardHtml}</div></div>`;
+            // --- 修正: キャラ名をcharacter.csvの表示名に変換 ---
+            let displayCharName = res.character;
+            const matchRow = db.characterOrder.find(row => {
+                const rowName = row['キャラ名'];
+                // 完全一致 または 前方一致(括弧付き)
+                return rowName === res.character || rowName.startsWith(res.character + '(');
+            });
+            if (matchRow) {
+                displayCharName = matchRow['キャラ名'];
+            }
+            // ----------------------------------------------
+
+            return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${displayCharName}</h3><h4><a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" class="web-link" title="Google画像検索で開く">${res.styleName}</a></h4><div class="card">${cardHtml}</div></div>`;
         }).join('');
         
         searchResultsContainer.style.display = 'grid';
