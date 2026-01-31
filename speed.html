@@ -482,7 +482,7 @@
                 },
                 complete: (results) => {
                     const data = results.data;
-                    if (data.length === 0 || data[0]['種別'] === undefined) {
+                    if (data.length === 0 || data[0]['系統'] === undefined) {
                         if (!encoding) {
                             loadCsvData('Shift-JIS');
                             return;
@@ -580,7 +580,7 @@
                     }
                 }
                 
-                if (activeTypes.length > 0 && row['種別'] && !activeTypes.includes(row['種別'])) return false;
+                if (activeTypes.length > 0 && row['系統'] && !activeTypes.includes(row['系統'])) return false;
                 
                 if (activeAttrs.length > 0) {
                     const a1 = row['属性1'] || '';
@@ -643,11 +643,17 @@
                     `;
                 }
 
-                // 種別表示加工 (術を追加)
-                let typeDisplay = row['種別'] || '-';
-                const magicTypes = ['火', '水', '風', '土', '光', '闇'];
-                if (magicTypes.includes(typeDisplay)) {
-                    typeDisplay += '術';
+                // 種別表示加工
+                let typeDisplay = row['系統'] || '-';
+                
+                // データがある場合のみ加工を行う
+                if (typeDisplay !== '-') {
+                    const magicTypes = ['火', '水', '風', '土', '光', '闇'];
+                    if (magicTypes.includes(typeDisplay)) {
+                        typeDisplay += '術';
+                    } else {
+                        typeDisplay += '技';
+                    }
                 }
 
                 let attrDisplay = (row['属性1'] || '') + (row['属性2'] || '');
