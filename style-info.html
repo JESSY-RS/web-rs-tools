@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>スタイル情報ビューア</title>
+    <title>★スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
@@ -1703,7 +1703,7 @@
                 bpLpPart += ` / <strong>LP:</strong> ${data['LP']}`;
             }
         }
-        html += `<div class="summary-line"><strong>種別:</strong> ${data['属性'] || ''}${data['技術'] || ''} / <strong>威力:</strong> ${data['威力'] || ''}${bpLpPart}</div>`;
+        html += `<div class="summary-line"><strong>種別:</strong> ${data['系統'] || ''}${data['技術'] || ''} / <strong>威力:</strong> ${data['威力'] || ''}${bpLpPart}</div>`;
 
         if(summaryLine) html += `<div class="summary-line">${summaryLine}</div>`;
         return html;
@@ -2650,7 +2650,7 @@
             if (field === 'combinedType') {
                 const type = value.slice(-1); 
                 const attr = value.slice(0, -1);
-                return item['属性'] === attr && item['技術'] === type;
+                return item['系統'] === attr && item['技術'] === type;
             }
             if (field === 'detailAttr') return item['属性1'] === value || item['属性2'] === value;
             if (value === 'exists') return item[field] && item[field].trim() !== '';
