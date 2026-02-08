@@ -122,54 +122,29 @@
             border-radius: 0.5rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             z-index: 20;
+            top: 100%;
         }
-        #theme-options .flex-col {
+        #theme-options div {
             display: flex;
             flex-direction: column;
         }
-        #theme-options .space-y-2 > :not([hidden]) ~ :not([hidden]) {
-            margin-top: 0.5rem;
-            margin-bottom: 0;
-        }
-        #theme-options .inline-flex {
-            display: inline-flex;
-        }
-        #theme-options .items-center {
+        #theme-options label {
+            display: flex;
             align-items: center;
-        }
-        #theme-options .form-radio {
-            -webkit-appearance: none;
-            appearance: none;
-            background-color: var(--select-bg);
-            margin-top: 0;
-            font-family: inherit;
-            color: currentColor;
-            width: 1.15em;
-            height: 1.15em;
-            border: 0.15em solid currentColor;
-            border-radius: 50%;
-            transform: translateY(-0.075em);
-            display: grid;
-            place-content: center;
-        }
-        #theme-options .form-radio::before {
-            content: "";
-            width: 0.65em;
-            height: 0.65em;
-            border-radius: 50%;
-            transform: scale(0);
-            transition: 120ms transform ease-in-out;
-            box-shadow: inset 1em 1em #2563eb;
-        }
-        #theme-options .form-radio:checked::before {
-            transform: scale(1);
-        }
-        #theme-options .text-xl {
-            font-size: 1.25rem;
             margin-top: 0.5rem;
         }
-        #theme-options .ml-2 {
+        #theme-options label:first-child {
+            margin-top: 0;
+        }
+        #theme-options span {
             margin-left: 0.5rem;
+            font-size: 1rem;
+        }
+        #theme-options label input[type="radio"] {
+            margin: 0;
+        }
+        #theme-options label:first-child {
+            margin-top: 0;
         }
         .zoom-buttons {
             position: absolute;
@@ -786,22 +761,13 @@
 <h1 class="main-title">
         <span id="theme-toggle-button" style="cursor: pointer; color: #f5c542; margin-right: -8px;">★</span>
         スタイル情報ビューア
-        <div id="theme-options">
-            <div class="flex-col space-y-2">
-                <label class="inline-flex items-center">
-                    <input type="radio" name="theme" value="system" class="form-radio">
-                    <span class="text-xl ml-2">端末の設定を使う</span>
-                </label>
-                <label class="inline-flex items-center">
-                    <input type="radio" name="theme" value="light" class="form-radio">
-                    <span class="text-xl ml-2">ライトモード</span>
-                </label>
-                <label class="inline-flex items-center">
-                    <input type="radio" name="theme" value="dark" class="form-radio">
-                    <span class="text-xl ml-2">ダークモード</span>
-                </label>
+            <div id="theme-options">
+                <div>
+                    <label><input type="radio" name="theme" value="system"><span>端末の設定を使う</span></label>
+                    <label><input type="radio" name="theme" value="light"><span>ライトモード</span></label>
+                    <label><input type="radio" name="theme" value="dark"><span>ダークモード</span></label>
+                </div>
             </div>
-        </div>
     </h1>
 
     <div class="zoom-buttons">
