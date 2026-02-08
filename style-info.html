@@ -127,7 +127,7 @@
             display: flex;
             flex-direction: column;
         }
-        #theme-options .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+        #theme-options .space-y-1 > :not([hidden]) ~ :not([hidden]) {
             margin-top: 0.5rem;
             margin-bottom: 0;
         }
@@ -166,6 +166,7 @@
         }
         #theme-options .text-xl {
             font-size: 1.25rem;
+            margin-top: 0.3rem;
         }
         #theme-options .ml-2 {
             margin-left: 0.5rem;
@@ -792,12 +793,12 @@
                     <span class="text-xl ml-2">端末の設定を使う</span>
                 </label>
                 <label class="inline-flex items-center">
-                    <input type="radio" name="theme" value="dark" class="form-radio">
-                    <span class="text-xl ml-2">ダークモード ON</span>
+                    <input type="radio" name="theme" value="light" class="form-radio">
+                    <span class="text-xl ml-2">ライトモード</span>
                 </label>
                 <label class="inline-flex items-center">
-                    <input type="radio" name="theme" value="light" class="form-radio">
-                    <span class="text-xl ml-2">ダークモード OFF</span>
+                    <input type="radio" name="theme" value="dark" class="form-radio">
+                    <span class="text-xl ml-2">ダークモード</span>
                 </label>
             </div>
         </div>

@@ -1490,23 +1490,23 @@ return (
                                     <input
                                       type="radio"
                                       name="theme"
-                                      value="dark"
-                                      checked={theme === 'dark'}
-                                      onChange={() => handleThemeChange('dark')}
-                                      className="form-radio text-blue-600"
-                                    />
-                                    <span className={`text-xl ml-2 ${currentThemeColors.wholeTxt}`}>ダークモード ON</span>
-                                  </label>
-                                  <label className="inline-flex items-center">
-                                    <input
-                                      type="radio"
-                                      name="theme"
                                       value="light"
                                       checked={theme === 'light'}
                                       onChange={() => handleThemeChange('light')}
                                       className="form-radio text-blue-600"
                                     />
-                                    <span className={`text-xl ml-2 ${currentThemeColors.wholeTxt}`}>ダークモード OFF</span>
+                                    <span className={`text-xl ml-2 ${currentThemeColors.wholeTxt}`}>ライトモード</span>
+                                  </label>
+                                  <label className="inline-flex items-center">
+                                    <input
+                                      type="radio"
+                                      name="theme"
+                                      value="dark"
+                                      checked={theme === 'dark'}
+                                      onChange={() => handleThemeChange('dark')}
+                                      className="form-radio text-blue-600"
+                                    />
+                                    <span className={`text-xl ml-2 ${currentThemeColors.wholeTxt}`}>ダークモード</span>
                                   </label>
                                 </div>
                               </div>
