@@ -153,9 +153,15 @@ function simulateTeamDamage(team) {
             const skillDirect = (sData && (sData['区分'] || sData['方法']) ? (sData['区分']||sData['方法']).trim() : '');
 
             let myPoints = [];
-            const soulPt = parseFloat(attacker.soul); if (soulPt > 0) myPoints.push({ type: '魂', pt: soulPt, srcIdx: attacker.idx });
-            const dressPt = parseFloat(attacker.dress); if (dressPt > 0) myPoints.push({ type: 'ドレス', pt: dressPt, srcIdx: attacker.idx });
-            if (attacker.weaponEx) myPoints.push({ type: '専用武器', pt: 0.75, srcIdx: attacker.idx });
+            // 修正: ラベル(valLabel)を保存するように変更
+            const soulPt = parseFloat(attacker.soul); 
+            if (soulPt > 0) {
+                const label = soulPt === 0.12 ? 'EXF1' : (soulPt === 0.25 ? 'EXF2' : '魂');
+                myPoints.push({ type: '魂', pt: soulPt, srcIdx: attacker.idx, valLabel: label });
+            }
+            const dressPt = parseFloat(attacker.dress); 
+            if (dressPt > 0) myPoints.push({ type: 'ドレス', pt: dressPt, srcIdx: attacker.idx, valLabel: 'あり' });
+            if (attacker.weaponEx) myPoints.push({ type: '専用武器', pt: 0.75, srcIdx: attacker.idx, valLabel: '専用' });
 
             const visitedEffects = new Set();
             team.forEach(member => {
@@ -216,7 +222,12 @@ function simulateTeamDamage(team) {
                         else if (cond === '直接' || cond === '間接') { if (skillDirect.includes(cond)) match = true; }
                         else if (ATTRIBUTE_TYPES.includes(cond)) { if (myAttributes.includes(cond)) match = true; }
                         else if (SYSTEM_TYPES.includes(cond)) { if (mySystem === cond || myAttributes.includes(cond)) match = true; }
-                        if (match) { const pt = EXF_POINTS[valStr] || 1.0; myPoints.push({ type: cond, pt, srcIdx: sourceOwner.idx }); }
+                        
+                        // 修正: valLabelとしてvalStr('小'など)を保存
+                        if (match) { 
+                            const pt = EXF_POINTS[valStr] || 1.0; 
+                            myPoints.push({ type: cond, pt, srcIdx: sourceOwner.idx, valLabel: valStr }); 
+                        }
                     }
                     const sm = text.matchAll(/「([^」]+)」/g);
                     for (const m of sm) {
@@ -233,7 +244,12 @@ function simulateTeamDamage(team) {
 
             const maxMap = new Map(); myPoints.forEach(p => { const curr = maxMap.get(p.type); if (!curr || p.pt > curr.pt) maxMap.set(p.type, p); });
             let totalPt = 0; 
-            maxMap.forEach((v, k) => { totalPt += v.pt; if (!contributingExfTypes.has(v.srcIdx)) contributingExfTypes.set(v.srcIdx, new Set()); contributingExfTypes.get(v.srcIdx).add(k); });
+            maxMap.forEach((v, k) => { 
+                totalPt += v.pt; 
+                if (!contributingExfTypes.has(v.srcIdx)) contributingExfTypes.set(v.srcIdx, new Set()); 
+                // 修正: 結果表示用に 'Type/Label' の形式で保存
+                contributingExfTypes.get(v.srcIdx).add(`${k}/${v.valLabel}`); 
+            });
             totalExfPtForDiff += totalPt;
             const dmgBonus = Math.floor(totalPt);
 
@@ -271,13 +287,8 @@ self.onmessage = async function(e) {
         
         // 1. サポート候補の分析
         const supportCandidates = db.chars.filter(c => c.isSupport);
-        // Worker内ではDB再構築済みなので、fixedTeam内のdataも参照可能だが
-        // メインスレッドから渡されたオブジェクトのプロトタイプチェーン等は切れているので注意
-        // simulateTeamDamage内で db.skills[] を参照するのでOK
-
         const baseRes = simulateTeamDamage(fixedTeam);
         const flatCandidates = [];
-        let processedCount = 0;
         const chunkSize = 50; // チャンクサイズ
 
         // 非同期ループ処理
@@ -289,48 +300,58 @@ self.onmessage = async function(e) {
 
             const cand = supportCandidates[i];
 
-            // Pattern 1: Ability Only
-            let isPurePassive = true;
-            ['アビリティ1', 'アビリティ2', 'アビリティ3'].forEach(k => {
-                const aName = cand.fullStyle[k];
-                if(!aName || !db.abilities[aName]) return;
-                const desc = db.abilities[aName]['効果詳細'];
-                const matches = [...desc.matchAll(/エクストラフォース/g)];
-                for(const m of matches) {
-                    const pre = desc.substring(0, m.index);
-                    if(pre.match(/発動後|攻撃((命中)?時)|命じ(た|ている)場合|攻撃(する)?たび/)) isPurePassive = false; 
-                }
-            });
+            // 1. まず「行動なし（アビリティのみ）」の場合のスコアを計算
+            let passiveRes = simulateTeamDamage([...fixedTeam, { idx: 99, data: cand, type: 'sup', weaponEx: false, dress: '0', soul: '0', skill: '' }]);
+            let passiveDelta = passiveRes.totalExfPt - baseRes.totalExfPt;
+            
+            // 2. 最適なスキルの探索（アタッカーがファストでない場合のみ）
+            let bestSkillOpt = null;
+            let bestSkillDelta = -1;
 
-            if (isPurePassive) {
-                let resAbility = simulateTeamDamage([...fixedTeam, { idx: 99, data: cand, type: 'sup', weaponEx: false, dress: '0', soul: '0', skill: '' }]);
-                if (resAbility.totalExfPt > baseRes.totalExfPt + 0.01) {
-                    flatCandidates.push({ char: cand, skill: '', diff: resAbility.totalExfPt - baseRes.totalExfPt, isAbility: true, exfLabel: Array.from(resAbility.contributors.get(99) || []).join(', ') });
-                }
-            }
-
-            // Pattern 2: Skill (Fast + NoPrep)
             if (!attackerIsFast) {
                 const sOpts = ['スキル1', 'スキル2', 'スキル3'].map(k => cand.fullStyle[k]).filter(s=>s && !EXCLUDED_SKILLS.includes(s));
-                let bestSkill = { name: '', diff: -1, exfLabel: '' };
+                
                 for (const sName of sOpts) {
                     const sData = db.skills[sName];
                     if (!sData) continue;
+                    // ファスト、かつ準備なし、かつ攻撃でない
                     if (!(sData['行動順']||'').includes('ファスト')) continue;
                     if ((sData['準備']||'') !== '') continue;
                     if ((sData['タイプ']||'').includes('攻撃') || parseAttackCount(sData['効果詳細']) > 0) continue;
 
-                    let res = simulateTeamDamage([...fixedTeam, { idx: 99, data: cand, type: 'sup', weaponEx: false, dress: '0', soul: '0', skill: sName }]);
-                    const d = res.totalExfPt - baseRes.totalExfPt;
-                    if (d > bestSkill.diff) bestSkill = { name: sName, diff: d, exfLabel: Array.from(res.contributors.get(99) || []).join(', ') };
+                    let skillRes = simulateTeamDamage([...fixedTeam, { idx: 99, data: cand, type: 'sup', weaponEx: false, dress: '0', soul: '0', skill: sName }]);
+                    let diff = skillRes.totalExfPt - baseRes.totalExfPt;
+
+                    // ★重要修正: スキル使用時のスコアが、行動なし時のスコアを「明確に上回る」場合のみ採用
+                    // 浮動小数点誤差を考慮して少し余裕を持たせる
+                    if (diff > bestSkillDelta && diff > (passiveDelta + 0.001)) {
+                        bestSkillDelta = diff;
+                        bestSkillOpt = { 
+                            name: sName, 
+                            diff: diff, 
+                            exfLabel: Array.from(skillRes.contributors.get(99) || []).join(', ') 
+                        };
+                    }
                 }
-                if (bestSkill.name && bestSkill.diff > 0.01) flatCandidates.push({ char: cand, skill: bestSkill.name, diff: bestSkill.diff, isAbility: false, exfLabel: bestSkill.exfLabel });
+            }
+
+            // 3. 候補への追加判断
+            // スキルに行動する価値があるならスキル版を追加
+            if (bestSkillOpt) {
+                flatCandidates.push({ char: cand, skill: bestSkillOpt.name, diff: bestSkillOpt.diff, exfLabel: bestSkillOpt.exfLabel });
+            } 
+            // そうでなく、アビリティのみで貢献があるなら行動なし版を追加
+            else if (passiveDelta > 0.01) {
+                flatCandidates.push({ 
+                    char: cand, 
+                    skill: '', 
+                    diff: passiveDelta, 
+                    exfLabel: Array.from(passiveRes.contributors.get(99) || []).join(', ') 
+                });
             }
         }
 
-        const abilityOnlyCandidates = flatCandidates.filter(c => c.isAbility);
-        const skillCandidates = flatCandidates.filter(c => !c.isAbility).sort((a, b) => b.diff - a.diff).slice(0, 15);
-        const topCandidates = [...abilityOnlyCandidates, ...skillCandidates];
+        const topCandidates = flatCandidates.sort((a, b) => b.diff - a.diff).slice(0, 15);
 
         if (topCandidates.length === 0) {
             self.postMessage({ type: 'done', results: [] });
@@ -366,9 +387,6 @@ self.onmessage = async function(e) {
             }
         }
         
-        // 再帰処理は重いが、topCandidatesを絞っているので同期処理でいける可能性が高い
-        // もしここでスタックするなら再帰をループ+awaitに変える必要があるが、
-        // 候補数(max 15+alpha) * needed(max 4) なら数千通り程度なので一瞬
         combine([], 0);
 
         results.sort((a, b) => {
