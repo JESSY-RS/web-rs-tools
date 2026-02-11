@@ -153,7 +153,6 @@ function simulateTeamDamage(team) {
             const skillDirect = (sData && (sData['区分'] || sData['方法']) ? (sData['区分']||sData['方法']).trim() : '');
 
             let myPoints = [];
-            // 修正: ラベル(valLabel)を保存するように変更
             const soulPt = parseFloat(attacker.soul); 
             if (soulPt > 0) {
                 const label = soulPt === 0.12 ? 'EXF1' : (soulPt === 0.25 ? 'EXF2' : '魂');
@@ -213,6 +212,33 @@ function simulateTeamDamage(team) {
                     for (const m of matches) {
                         const ctx = getAnalysisContext(m.index);
                         if (!ctx || !isTargetValid(ctx.line)) continue;
+
+                        // ★追加修正: 技名チェックロジックの強化
+                        // タイミング指定がある場合（[～発動後]など）
+                        if (ctx.timing) {
+                            let requiredSkill = null;
+                            
+                            // パターン1: カギ括弧で囲まれている場合 (標準的) [「技名」を発動後]
+                            const quotedMatch = ctx.timing.match(/[「『]([^」』]+)[」』](?:.|[\r\n])*?(?:発動|命中|使用)/);
+                            if (quotedMatch) {
+                                requiredSkill = quotedMatch[1];
+                            } else {
+                                // パターン2: カギ括弧がない場合 (キャンディ等のケース) [技名を発動後]
+                                // 文頭から「発動」「命中」「使用」の直前までを取得する
+                                const unquotedMatch = ctx.timing.match(/^(.+?)(?:を?発動|を?命中|を?使用)/);
+                                if (unquotedMatch) {
+                                    requiredSkill = unquotedMatch[1].trim();
+                                }
+                            }
+
+                            if (requiredSkill) {
+                                // 条件不一致ならスキップ
+                                if (sourceOwner.idx !== attacker.idx || attacker.skill !== requiredSkill) {
+                                    continue;
+                                }
+                            }
+                        }
+
                         const cond = m[1].trim(); const valStr = m[2].trim();
                         let match = false;
                         const ATTRIBUTE_TYPES = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
@@ -223,7 +249,6 @@ function simulateTeamDamage(team) {
                         else if (ATTRIBUTE_TYPES.includes(cond)) { if (myAttributes.includes(cond)) match = true; }
                         else if (SYSTEM_TYPES.includes(cond)) { if (mySystem === cond || myAttributes.includes(cond)) match = true; }
                         
-                        // 修正: valLabelとしてvalStr('小'など)を保存
                         if (match) { 
                             const pt = EXF_POINTS[valStr] || 1.0; 
                             myPoints.push({ type: cond, pt, srcIdx: sourceOwner.idx, valLabel: valStr }); 
@@ -247,7 +272,6 @@ function simulateTeamDamage(team) {
             maxMap.forEach((v, k) => { 
                 totalPt += v.pt; 
                 if (!contributingExfTypes.has(v.srcIdx)) contributingExfTypes.set(v.srcIdx, new Set()); 
-                // 修正: 結果表示用に 'Type/Label' の形式で保存
                 contributingExfTypes.get(v.srcIdx).add(`${k}/${v.valLabel}`); 
             });
             totalExfPtForDiff += totalPt;
@@ -289,22 +313,23 @@ self.onmessage = async function(e) {
         const supportCandidates = db.chars.filter(c => c.isSupport);
         const baseRes = simulateTeamDamage(fixedTeam);
         const flatCandidates = [];
-        const chunkSize = 50; // チャンクサイズ
+        const chunkSize = 50; 
 
         // 非同期ループ処理
         for (let i = 0; i < supportCandidates.length; i++) {
             if (i % chunkSize === 0) {
                 self.postMessage({ type: 'progress', message: `分析中... ${Math.floor((i / supportCandidates.length) * 100)}%` });
-                await new Promise(r => setTimeout(r, 0)); // イベントループを回す
+                await new Promise(r => setTimeout(r, 0)); // イベントループ
             }
 
             const cand = supportCandidates[i];
 
-            // 1. まず「行動なし（アビリティのみ）」の場合のスコアを計算
+            // 1. 行動なし（アビリティのみ）のスコア計算
+            // 注意: 「[フレンズコールを発動後]」のような条件はここでは満たされないため、加点されない(正)
             let passiveRes = simulateTeamDamage([...fixedTeam, { idx: 99, data: cand, type: 'sup', weaponEx: false, dress: '0', soul: '0', skill: '' }]);
             let passiveDelta = passiveRes.totalExfPt - baseRes.totalExfPt;
             
-            // 2. 最適なスキルの探索（アタッカーがファストでない場合のみ）
+            // 2. 最適なスキルの探索
             let bestSkillOpt = null;
             let bestSkillDelta = -1;
 
@@ -314,7 +339,6 @@ self.onmessage = async function(e) {
                 for (const sName of sOpts) {
                     const sData = db.skills[sName];
                     if (!sData) continue;
-                    // ファスト、かつ準備なし、かつ攻撃でない
                     if (!(sData['行動順']||'').includes('ファスト')) continue;
                     if ((sData['準備']||'') !== '') continue;
                     if ((sData['タイプ']||'').includes('攻撃') || parseAttackCount(sData['効果詳細']) > 0) continue;
@@ -322,8 +346,7 @@ self.onmessage = async function(e) {
                     let skillRes = simulateTeamDamage([...fixedTeam, { idx: 99, data: cand, type: 'sup', weaponEx: false, dress: '0', soul: '0', skill: sName }]);
                     let diff = skillRes.totalExfPt - baseRes.totalExfPt;
 
-                    // ★重要修正: スキル使用時のスコアが、行動なし時のスコアを「明確に上回る」場合のみ採用
-                    // 浮動小数点誤差を考慮して少し余裕を持たせる
+                    // スキル使用時のスコアが、行動なし時のスコアを明確に上回る場合のみ採用
                     if (diff > bestSkillDelta && diff > (passiveDelta + 0.001)) {
                         bestSkillDelta = diff;
                         bestSkillOpt = { 
@@ -335,12 +358,9 @@ self.onmessage = async function(e) {
                 }
             }
 
-            // 3. 候補への追加判断
-            // スキルに行動する価値があるならスキル版を追加
             if (bestSkillOpt) {
                 flatCandidates.push({ char: cand, skill: bestSkillOpt.name, diff: bestSkillOpt.diff, exfLabel: bestSkillOpt.exfLabel });
             } 
-            // そうでなく、アビリティのみで貢献があるなら行動なし版を追加
             else if (passiveDelta > 0.01) {
                 flatCandidates.push({ 
                     char: cand, 
