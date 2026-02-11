@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="favicon.ico">
+    <title>関門ブッチャー エクフォシミュ</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        :root {
+            --main-bg: #fff;
+            --main-text: #000;
+            --border-color: #ddd;
+            --panel-bg: #fdf9f9;
+            --highlight: #e7f3ff;
+            --accent: #007bff;
+            --select-bg: #fff;
+            --select-text: #000;
+            --select-hover: #e6f7ff;
+            --popup-bg: #fff;
+            --popup-border: #a0aec0;
+            --web-link-text: dodgerblue;
+            --web-link-visited: blueviolet;
+            --web-link-hover: lime;
+            --web-link-active: orangered;
+            --success-color: #28a745;
+        }
+
+        [data-theme="dark"] {
+            --main-bg: #2A2A2A;
+            --main-text: #f2f2f2;
+            --border-color: #555;
+            --panel-bg: #3a3a3a;
+            --highlight: #1e293b;
+            --accent: #1D9BF0;
+            --select-bg: #4a4a4a;
+            --select-text: #f2f2f2;
+            --select-hover: #555;
+            --popup-bg: #4a4a4a;
+            --popup-border: #666;
+            --web-link-text: #1D9BF0;
+            --web-link-visited: #7755FF;
+            --web-link-hover: #0CFF57;
+            --web-link-active: #FF0000;
+            --success-color: #4ade80;
+        }
+
+        body {
+            font-family: 'Segoe UI', Meiryo, sans-serif;
+            background-color: var(--main-bg);
+            color: var(--main-text);
+            padding: 20px;
+            transition: 0.3s;
+        }
+
+        h1 {
+            margin-top: -10px;
+            margin-bottom: 20px;
+            color: var(--main-text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header-title-group {
+            display: block; 
+            flex: 1; 
+            min-width: 200px;
+            position: relative; 
+            top: -3px; 
+        }
+        
+        #theme-toggle-button {
+            cursor: pointer;
+            color: #f5c542;
+            margin-right: -8px;
+            user-select: none;
+            display: inline;
+            font-size: 0.9em;
+            line-height: 1.0; 
+            vertical-align: middle;
+        }
+
+        .header-title-text {
+            font-size: 0.9em;
+            display: inline;
+            margin-left: 0px;
+            font-weight: bold;
+            line-height: 1.2;
+            vertical-align: middle;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .header-actions {
+                width: 100%;
+                justify-content: flex-end;
+                margin-top: 5px;
+            }
+        }
+
+        .action-btn {
+            font-size: 20px;
+            padding: 5px 15px;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .action-btn:hover { opacity: 0.9; }
+        .btn-import { background-color: #ff69b4; }
+        .btn-export { background-color: #ffc107; }
+
+        .container {
+            display: block;
+            max-width: 100%;
+        }
+
+        .controls, .auto-search-panel, .log-panel {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .auto-search-panel h3, .log-panel h3 {
+            margin-top: 0;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 30px 120px 1.5fr 85px 85px 85px 1.0fr;
+            gap: 5px;
+            margin-bottom: 10px;
+            align-items: center;
+            background: var(--main-bg);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+        }
+
+        .row-idx { font-weight: bold; text-align: center; }
+
+        .field-group { display: flex; flex-direction: column; gap: 5px; }
+        .field-label { font-weight: bold; font-size: 0.9em; color: var(--main-text); }
+
+        select, button, input {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--select-bg);
+            color: var(--select-text);
+            font-size: 1em;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: rgba(128, 128, 128, 0.2);
+        }
+
+        button.calc-btn, button.search-btn {
+            background-color: var(--accent);
+            color: white;
+            font-weight: bold;
+            padding: 15px 20px;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            font-size: 1.4em;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+        button.search-btn {
+            background-color: #28a745; /* Green for automation */
+            margin-top: 10px;
+        }
+        
+        button.search-btn:disabled {
+            background-color: #1e7e34;
+            opacity: 0.8;
+            cursor: wait;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        .result-area {
+            margin-top: 20px;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 2px dashed var(--border-color);
+        }
+
+        .total-damage {
+            font-size: 3em;
+            color: #d63384;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .log-area {
+            font-family: monospace;
+            white-space: pre-wrap;
+            background: var(--main-bg);
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            min-height: 150px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        /* Auto Search Results Table */
+        .search-results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 1em;
+        }
+        .search-results-table th, .search-results-table td {
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            text-align: left;
+        }
+        .search-results-table th {
+            background-color: var(--highlight);
+        }
+        .score-high {
+            color: #d63384;
+            font-weight: bold;
+        }
+        .skill-count-low {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        .exf-info {
+            font-size: 1.0em;
+            color: #666;
+            margin-left: 5px;
+        }
+        [data-theme="dark"] .exf-info {
+            color: #aaa;
+        }
+
+        /* 各列の幅を指 */
+        .search-results-table th:nth-child(1) { width: 10%; } /* 順位 */
+        .search-results-table th:nth-child(2) { width: 10%; } /* 行動数 */
+        .search-results-table th:nth-child(3) { width: 10%; } /* ダメ */
+        .search-results-table th:nth-child(4) { width: 60%; } /* 構成（ここを広く取る） */
+        .search-results-table th:nth-child(5) { width: 10%; } /* 反映ボタン */
+
+        /* Custom Select Styles */
+        .custom-select-container { position: relative; width: 100%; }
+        .custom-select-button {
+            width: 100%; text-align: left; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .custom-select-dropdown {
+            position: absolute; top: 100%; left: 0; right: 0;
+            border: 1px solid var(--border-color);
+            background: var(--select-bg); color: var(--select-text);
+            z-index: 1000; max-height: 300px; overflow-y: auto;
+            display: none; flex-direction: column;
+            width: auto; min-width: 100%; max-width: 400px; white-space: nowrap;
+        }
+        .custom-select-search { margin: 5px; width: calc(100% - 12px); }
+        .custom-select-option { padding: 8px 10px; cursor: pointer; border-bottom: none; }
+        .custom-select-option:hover { background-color: var(--select-hover); }
+
+        #theme-options {
+            display: none;
+            position: absolute;
+            left: 0;
+            margin-top: 8px;
+            padding: 1rem;
+            background-color: var(--popup-bg);
+            border: 1px solid var(--popup-border);
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 20;
+            top: 100%;
+        }
+        #theme-options div {
+            display: flex;
+            flex-direction: column;
+        }
+        #theme-options label {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        #theme-options label:first-child {
+            margin-top: 0;
+        }
+        #theme-options span {
+            margin-left: 0.5rem;
+            font-size: 1rem;
+        }
+        #theme-options label input[type="radio"] {
+            margin: 0;
+            width: auto;
+            height: auto;
+            padding: 0;
+            box-shadow: none;
+        }
+        #theme-options label:first-child {
+            margin-top: 0;
+        }
+
+        footer {
+            width: 100%; border-top: 1px solid #eee; padding-top: 10px;
+            font-size: 14pt; margin-top: 40px;
+        }
+
+        .web-link:link {
+            color: var(--web-link-text);
+            text-decoration: underline;
+        }
+        .web-link:visited {
+            color: var(--web-link-visited);
+            text-decoration: underline;
+        }
+        .web-link:hover {
+            color: var(--web-link-hover);
+        }
+        .web-link:active {
+            color: var(--web-link-active);
+            text-decoration: underline;
+        }
+
+        /* --- モバイル・狭い画面用のレイアウト調整 --- */
+        @media (max-width: 600px) {
+            .row {
+                display: flex !important;
+                flex-wrap: wrap;
+                gap: 5px;
+                align-items: center !important; 
+            }
+
+            .row > div:nth-child(1) {
+                width: 30px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 0 !important; 
+                padding-bottom: 3px !important;
+                height: 100%;
+            }
+
+            .row > div:nth-child(2) {
+                width: calc(100% - 35px);
+                display: flex;
+                flex-direction: row !important;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 0 !important;
+            }
+
+            .row > div:nth-child(2) label {
+                white-space: nowrap;
+                margin-bottom: 0;
+                min-width: fit-content;
+            }
+            
+            .row > div:nth-child(2) select {
+                flex: 1;
+            }
+
+            .row > div:nth-child(3) {
+                width: 100%;
+                margin-top: 5px;
+            }
+
+            .row > div:nth-child(4) {
+                width: calc(33.33% - 4px);
+            }
+            .row > div:nth-child(5) {
+                width: calc(33.33% - 4px);
+            }
+            .row > div:nth-child(6) {
+                width: calc(33.33% - 4px);
+            }
+
+            .row > div:nth-child(7) {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>
+    <div class="header-title-group">
+        <span id="theme-toggle-button">★</span>
+        <span class="header-title-text">関門ブッチャー　エクフォシミュ　お試し版</span>
+             <div id="theme-options">
+                <div>
+                    <label><input type="radio" name="theme" value="system"><span>端末の設定を使う</span></label>
+                    <label><input type="radio" name="theme" value="light"><span>ライトモード</span></label>
+                    <label><input type="radio" name="theme" value="dark"><span>ダークモード</span></label>
+                </div>
+            </div>
+    </div>
+    
+    <div class="header-actions">
+        <input type="file" id="import-file" style="display: none" accept=".json">
+        <button class="action-btn btn-import" onclick="document.getElementById('import-file').click()">インポート</button>
+        <button class="action-btn btn-export" onclick="exportData()">エクスポート</button>
+    </div>
+</h1>
+
+    <div class="container">
+        <div class="controls">
+            <div id="loading">データを読み込み中...</div>
+            <div id="charRows"></div>
+            <button class="calc-btn" onclick="calculateUI()">計算実行</button>
+
+            <div class="result-area">
+                <h2>総ダメージ</h2>
+                <div class="total-damage" id="totalDamage">0/100</div>
+            </div>
+        </div>
+
+        <div class="log-panel" style="display: none;">
+            <h3>計算ログ</h3>
+            <div class="log-area" id="calcLog">計算ボタンを押してください</div>
+        </div>
+
+        <div class="auto-search-panel">
+            <h3>自動編成ツール</h3>
+            <p style="font-size:0.9em; margin-bottom:10px;">
+                現在選択されている「アタッカー」に対して、最適なサポートキャラの組み合わせを自動検索します。<br>
+                <b>優先順位:</b> ①総行動数(最小) ＞ ②総ダメージ(最大) ＞ ③編成人数(最小)<br>
+                <b>除外条件:</b> スタンバイターン技、ファスト以外の補助技、アタッカーがファスト技使用時の補助技、特定除外リスト(エクストラ餅つき等)<br>
+                ※行動数にはアタッカーの行動回数(追撃含む)も反映されます。
+            </p>
+            <button class="search-btn" id="btn-search" onclick="autoSearch()">サポートを自動検索</button>
+            <div id="search-status" style="margin-top:10px; font-weight:bold;"></div>
+            <div id="search-results-container"></div>
+        </div>
+    </div>
+
+    <footer>
+        ※使用は自己責任にて。<br>
+        ※本ツールはお試し版であり、データベースから条件に合う候補を選出するのが困難であるため、期待する結果が出ない場合もあります。<br>
+        ※エクストラフォースの倍率については<a href="https://romasagatool.com/blog/archives/16756" class="web-link">https://romasagatool.com/blog/archives/16756</a>を参考にさせていただいております。<br>
+    </footer>
+
+    <script>
+        const csvFiles = ['style.csv', 'skill.csv', 'ability.csv', 'add_info.csv', 'character.csv'];
+        const db = { styles: [], skills: {}, abilities: {}, addInfo: {}, chars: [], charDataRaw: [] };
+        
+        const EXCLUDED_SKILLS = ['エクストラ餅つき'];
+
+        const EXF_POINTS = {
+            '極小': 0.12, 'EXF1': 0.12,
+            '小': 0.25, 'EXF2': 0.25,
+            '中': 0.50,
+            '大': 0.75, '専用': 0.75,
+            '特大': 1.00
+        };
+
+        const DEDICATED_WEAPON_CHARS = ['アレツ', 'シムメシュ', 'シャムマベル', 'ノーア'];
+        let furiganaMap = {};
+        let worker = null;
+        let searchDotsInterval = null; // ドットアニメーション用タイマー
+
+        // --- Init ---
+        window.onload = async () => {
+            initTheme();
+            await loadAllData();
+            initUI();
+            initWorker();
+        };
+
+        // --- Theme Logic ---
+        function initTheme() {
+            const btn = document.getElementById('theme-toggle-button');
+            const opts = document.getElementById('theme-options');
+            const radios = document.querySelectorAll('input[name="theme"]');
+            btn.onclick = (e) => { e.stopPropagation(); opts.style.display = opts.style.display === 'block' ? 'none' : 'block'; };
+            radios.forEach(r => r.onchange = () => { localStorage.setItem('theme', r.value); applyTheme(r.value); });
+            document.addEventListener('click', (e) => { if (!opts.contains(e.target) && e.target !== btn) opts.style.display = 'none'; });
+            const saved = localStorage.getItem('theme') || 'system';
+            const targetRadio = document.querySelector(`input[name="theme"][value="${saved}"]`);
+            if (targetRadio) targetRadio.checked = true;
+            applyTheme(saved);
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (localStorage.getItem('theme') === 'system') applyTheme('system');
+            });
+        }
+        function applyTheme(theme) {
+            if (theme === 'system') {
+                const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        }
+
+        // --- Data Loading ---
+        function toKatakana(str) {
+            return str.replace(/[\u3041-\u3096]/g, m => String.fromCharCode(m.charCodeAt(0) + 0x60));
+        }
+
+        async function loadAllData() {
+            for (const file of csvFiles) {
+                const path = `data/${file}`;
+                try {
+                    const text = await fetch(path).then(res => res.text());
+                    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
+                    if (file === 'style.csv') db.styles = parsed.data;
+                    else if (file === 'skill.csv') parsed.data.forEach(r => db.skills[r['スキル名']] = r);
+                    else if (file === 'ability.csv') parsed.data.forEach(r => db.abilities[r['アビリティ名']] = r);
+                    else if (file === 'add_info.csv') parsed.data.forEach(r => db.addInfo[r['名称']] = r);
+                    else if (file === 'character.csv') db.charDataRaw = parsed.data;
+                } catch (e) {
+                    console.error(e);
+                    document.getElementById('loading').innerText = `エラー: ${file}の読み込み失敗`;
+                }
+            }
+            processCharacters();
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function processCharacters() {
+            furiganaMap = {};
+            db.charDataRaw.forEach(r => {
+                const name = r['キャラ名'];
+                const kana = r['フリガナ'];
+                if (name && kana) {
+                    furiganaMap[name] = kana;
+                    const pIdx = name.indexOf('(');
+                    if (pIdx > 0) {
+                        const sName = name.substring(0, pIdx).trim();
+                        if (!furiganaMap[sName]) furiganaMap[sName] = kana;
+                    }
+                }
+            });
+
+            const candidates = new Map();
+            db.styles.forEach(style => {
+                const charName = style['キャラ名'];
+                const styleName = style['スタイル名'];
+                let isSupportEXF = false;
+
+                const checkDetail = (rawName, visited = new Set()) => {
+                    if (!rawName) return;
+                    let data = db.skills[rawName] || db.abilities[rawName];
+                    let realName = rawName;
+                    if (!data) {
+                        const clean = rawName.replace(/[\(（]\d+回[\)）]$/, '');
+                        data = db.skills[clean] || db.abilities[clean];
+                        if (data) realName = clean;
+                    }
+                    if (!data) return;
+                    if (visited.has(realName)) return;
+                    visited.add(realName);
+
+                    const detail = data['効果詳細'] || '';
+                    const regex = /[「『]([^」』]+)[」』]/g;
+                    const matches = [...detail.matchAll(regex)];
+                    for (const m of matches) checkDetail(m[1], visited);
+
+                    if (detail.includes('エクストラフォース')) {
+                        if (detail.includes('味方') || detail.includes('対象') || detail.includes('自身以外の')) {
+                            isSupportEXF = true;
+                        }
+                    }
+                };
+
+                [style['スキル1'], style['スキル2'], style['スキル3'], style['アビリティ1'], style['アビリティ2'], style['アビリティ3']]
+                    .forEach(item => checkDetail(item));
+
+                const val = `${charName} [${styleName}]`;
+                candidates.set(val, {
+                    displayName: val,
+                    charName: charName,
+                    styleName: styleName,
+                    fullStyle: style,
+                    date: style['実装時期'] || '',
+                    weapon: style['武器種'],
+                    isSupport: isSupportEXF
+                });
+            });
+
+            db.chars = Array.from(candidates.values()).sort((a, b) => {
+                const fA = furiganaMap[a.charName] || a.charName;
+                const fB = furiganaMap[b.charName] || b.charName;
+                if (fA < fB) return -1;
+                if (fA > fB) return 1;
+                return a.date > b.date ? -1 : 1;
+            });
+        }
+
+        function initWorker() {
+            if (window.Worker) {
+                worker = new Worker('worker-simulator.js');
+                worker.postMessage({ type: 'init', payload: db });
+                worker.onmessage = (e) => {
+                    if (e.data.type === 'ready') {
+                        console.log("Worker initialized");
+                    }
+                };
+            }
+        }
+
+        // --- UI Construction ---
+        function initUI() {
+            const container = document.getElementById('charRows');
+            for (let i = 1; i <= 5; i++) {
+                const row = document.createElement('div');
+                row.className = 'row';
+                row.id = `row-${i}`;
+
+                const idxDiv = document.createElement('div');
+                idxDiv.className = 'row-idx';
+                idxDiv.innerText = i;
+                row.appendChild(idxDiv);
+
+                const typeSel = document.createElement('select');
+                typeSel.id = `type-${i}`;
+                typeSel.innerHTML = i === 1 ? 
+                    `<option value="sup">サポート</option><option value="atk" selected>アタッカー</option>` :
+                    `<option value="sup" selected>サポート</option><option value="atk">アタッカー</option>`;
+                typeSel.onchange = () => {
+                    updateSkillList(i);
+                    const si = document.querySelector(`#row-${i} .custom-select-search`);
+                    if (si && si.offsetParent !== null) renderCharOptions(si.nextElementSibling, si.value, i);
+                };
+                row.appendChild(createFieldGroup(`タイプ`, typeSel));
+
+                row.appendChild(createFieldGroup(`キャラ`, createCustomCharSelect(i)));
+
+                const wpnSel = document.createElement('select');
+                wpnSel.id = `weapon-${i}`;
+                wpnSel.innerHTML = `<option value="none" selected>なし</option><option value="dedicated">専用</option>`;
+                wpnSel.disabled = true;
+                row.appendChild(createFieldGroup(`武器`, wpnSel));
+
+                const dressSel = document.createElement('select');
+                dressSel.id = `dress-${i}`;
+                dressSel.innerHTML = `<option value="0">なし</option><option value="0.12">あり</option>`;
+                row.appendChild(createFieldGroup(`ドレス`, dressSel));
+
+                const soulSel = document.getElementById('soul-' + i) || document.createElement('select');
+                soulSel.id = `soul-${i}`;
+                soulSel.innerHTML = `<option value="0">なし</option><option value="0.12">EXF1</option><option value="0.25">EXF2</option>`;
+                row.appendChild(createFieldGroup(`魂アビ`, soulSel));
+
+                const skillSel = document.createElement('select');
+                skillSel.id = `skill-${i}`;
+                row.appendChild(createFieldGroup(`スキル`, skillSel));
+                
+                container.appendChild(row);
+            }
+        }
+
+        function createFieldGroup(lbl, el) {
+            const div = document.createElement('div');
+            div.className = 'field-group';
+            const l = document.createElement('label');
+            l.className = 'field-label';
+            l.innerText = lbl;
+            div.appendChild(l);
+            div.appendChild(el);
+            return div;
+        }
+
+        function createCustomCharSelect(idx) {
+            const con = document.createElement('div');
+            con.className = 'custom-select-container';
+            const btn = document.createElement('button');
+            btn.className = 'custom-select-button';
+            btn.innerHTML = `<span id="char-text-${idx}">(未選択)</span><span>▼</span>`;
+            btn.dataset.value = "";
+            const dd = document.createElement('div');
+            dd.className = 'custom-select-dropdown';
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.className = 'custom-select-search';
+            inp.placeholder = '検索...';
+            const list = document.createElement('div');
+            renderCharOptions(list, "", idx);
+
+            inp.addEventListener('input', (e) => renderCharOptions(list, e.target.value, idx));
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.custom-select-dropdown').forEach(d => { if(d!==dd) d.style.display='none'; });
+                dd.style.display = dd.style.display==='flex'?'none':'flex';
+                if(dd.style.display==='flex') { inp.value=''; renderCharOptions(list, "", idx); inp.focus(); }
+            };
+            dd.onclick = (e) => e.stopPropagation();
+            dd.appendChild(inp);
+            dd.appendChild(list);
+            con.appendChild(btn);
+            con.appendChild(dd);
+            return con;
+        }
+
+        function renderCharOptions(container, filter, idx) {
+            container.innerHTML = '';
+            
+            const unselectDiv = document.createElement('div');
+            unselectDiv.className = 'custom-select-option';
+            unselectDiv.innerText = '(未選択)';
+            unselectDiv.style.color = '#888';
+            unselectDiv.onclick = () => {
+                 const btn = document.getElementById(`char-text-${idx}`).parentElement;
+                 document.getElementById(`char-text-${idx}`).innerText = '(未選択)';
+                 btn.dataset.value = "";
+                 document.querySelector(`#row-${idx} .custom-select-dropdown`).style.display = 'none';
+                 updateRow(idx);
+            };
+            container.appendChild(unselectDiv);
+
+            const rawTerm = filter.toLowerCase();
+            const termKana = toKatakana(rawTerm);
+            const typeEl = document.getElementById(`type-${idx}`);
+            const currentType = typeEl ? typeEl.value : 'atk';
+
+            const matches = db.chars.filter(c => {
+                if (currentType === 'sup' && !c.isSupport) return false;
+                if (!rawTerm) return true;
+                const fRaw = furiganaMap[c.charName] || '';
+                return c.charName.toLowerCase().includes(rawTerm) || fRaw.includes(termKana) || c.charName.includes(termKana);
+            });
+
+            if (matches.length === 0) {
+                const div = document.createElement('div');
+                div.className = 'custom-select-option'; div.style.color='#999'; div.innerText='該当なし';
+                container.appendChild(div); return;
+            }
+
+            matches.forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'custom-select-option';
+                div.innerText = `${c.displayName} ${c.date ? '('+c.date+')':''}`;
+                div.onclick = () => {
+                    const btn = document.getElementById(`char-text-${idx}`).parentElement;
+                    document.getElementById(`char-text-${idx}`).innerText = c.displayName;
+                    btn.dataset.value = db.chars.indexOf(c);
+                    document.querySelector(`#row-${idx} .custom-select-dropdown`).style.display = 'none';
+                    updateRow(idx);
+                };
+                container.appendChild(div);
+            });
+        }
+
+        document.addEventListener('click', () => document.querySelectorAll('.custom-select-dropdown').forEach(d=>d.style.display='none'));
+
+        function updateRow(idx) {
+            const btn = document.querySelector(`#row-${idx} .custom-select-button`);
+            const val = btn.dataset.value;
+            const wpnSel = document.getElementById(`weapon-${idx}`);
+            if (!val) { wpnSel.value = 'none'; wpnSel.disabled = true; updateSkillList(idx); return; }
+
+            const charData = db.chars[parseInt(val)];
+            const isDed = DEDICATED_WEAPON_CHARS.some(n => charData.charName.includes(n));
+            wpnSel.disabled = !isDed;
+            wpnSel.value = isDed ? 'dedicated' : 'none';
+            updateSkillList(idx);
+        }
+
+        function updateSkillList(idx) {
+            const btn = document.querySelector(`#row-${idx} .custom-select-button`);
+            const val = btn.dataset.value;
+            const typeVal = document.getElementById(`type-${idx}`).value;
+            const skillSel = document.getElementById(`skill-${idx}`);
+            skillSel.innerHTML = `<option value="">(選択なし)</option>`;
+            if (!val) return;
+
+            const style = db.chars[parseInt(val)].fullStyle;
+            const opts = ['スキル1','スキル2','スキル3'].map(k=>({name:style[k]})).filter(o=>o.name);
+            const filtered = opts.filter(o => {
+                if (typeVal === 'atk') return true;
+                const s = db.skills[o.name];
+                return s && (s['効果詳細']||'').includes('エクストラフォース');
+            });
+            filtered.forEach(o => {
+                const op = document.createElement('option');
+                op.value = o.name; op.innerText = o.name;
+                skillSel.appendChild(op);
+            });
+        }
+
+        // --- Core Calculation Logic (Optimized Actions with Sequence) ---
+        // メインスレッド用計算ロジック（手動計算ボタン用）
+        function simulateTeamDamage(team) {
+            let totalDamage = 0;
+            let logs = [];
+            let totalExfPtForDiff = 0;
+            let totalActionCount = 0;
+            let contributingExfTypes = new Map();
+
+            if (team.length === 0) return { totalDamage: 0, logs: ["No Team"], totalExfPt: 0, contributors: new Map(), actionCount: 0 };
+
+            try {
+                const attackers = team.filter(m => m.type === 'atk');
+                const isMultiAttacker = attackers.length > 1;
+
+                attackers.forEach((attacker, index) => {
+                    const enableCap = (!isMultiAttacker) || (isMultiAttacker && index > 0);
+
+                    if (enableCap && totalDamage >= 100) {
+                        logs.push(`■ キャラ${attacker.idx} (${attacker.data.charName})`);
+                        logs.push(`  - 既に総ダメージ100に到達済みのため、行動をスキップしました`);
+                        return;
+                    }
+
+                    let attackerLogs = [];
+                    attackerLogs.push(`■ キャラ${attacker.idx} (${attacker.data.charName}) 攻撃`);
+
+                    if (!attacker.skill) {
+                        attackerLogs.push(`  - スキルなし (0ダメ)`);
+                        logs.push(...attackerLogs);
+                        return;
+                    }
+
+                    const sData = db.skills[attacker.skill];
+                    const mySystem = (sData && sData['系統'] ? sData['系統'].trim() : '');
+                    const myAttributes = (sData && sData['属性1'] ? [sData['属性1'].trim()] : []).concat(sData && sData['属性2'] ? [sData['属性2'].trim()] : []);
+                    const skillTech = (sData && sData['技術'] ? sData['技術'].trim() : '');
+                    const skillDirect = (sData && (sData['区分'] || sData['方法']) ? (sData['区分']||sData['方法']).trim() : '');
+
+                    let myPoints = [];
+                    const soulPt = parseFloat(attacker.soul); if (soulPt > 0) myPoints.push({ type: '魂', pt: soulPt, srcIdx: attacker.idx });
+                    const dressPt = parseFloat(attacker.dress); if (dressPt > 0) myPoints.push({ type: 'ドレス', pt: dressPt, srcIdx: attacker.idx });
+                    if (attacker.weaponEx) myPoints.push({ type: '専用武器', pt: 0.75, srcIdx: attacker.idx });
+
+                    const visitedEffects = new Set();
+                    team.forEach(member => {
+                        const resolveSkillInfo = (name) => {
+                             const clean = name.replace(/[\(（][^\)）]+[\)）]/, '').trim();
+                             let inner = null;
+                             const paren = name.match(/[\(（]([^\)）]+)[\)）]/);
+                             if (paren) inner = paren[1].trim();
+                             let info = db.skills[name] || db.abilities[name];
+                             let rName = name;
+                             if (!info && inner) { info = db.skills[inner] || db.abilities[inner]; if(info) rName = inner; }
+                             if (!info && clean) { info = db.skills[clean] || db.abilities[clean]; if(info) rName = clean; }
+                             return { info, name: rName };
+                        };
+                        const countRecursiveHits = (txt, visited = new Set()) => {
+                            if (!txt || visited.has(txt)) return 0;
+                            visited.add(txt);
+                            let count = 0;
+                            const match = txt.match(/攻撃する[\(（]([0-9]+)/);
+                            if (match) count += parseInt(match[1]);
+                            const refs = txt.matchAll(/「([^」]+)」/g);
+                            for (const r of refs) { const { info } = resolveSkillInfo(r[1]); if (info) count += countRecursiveHits(info['効果詳細'], visited); }
+                            return count;
+                        };
+                        const checkEffects = (sourceName, text, sourceOwner, parentMultiplier = 1) => {
+                            if (!text) return;
+                            const sig = sourceName + ":" + text.length + ":" + parentMultiplier;
+                            if (visitedEffects.has(sig)) return;
+                            visitedEffects.add(sig);
+                            let localHitCount = countRecursiveHits(text) || 1;
+                            const getAnalysisContext = (idx) => {
+                                const pre = text.substring(0, idx);
+                                const lastBr = pre.lastIndexOf('[');
+                                let timing = null;
+                                if (lastBr !== -1) { const cl = pre.indexOf(']', lastBr); if (cl !== -1) timing = pre.substring(lastBr + 1, cl); }
+                                if (timing && ['終了時', '気絶時', '敗北時', '受ける', '被弾'].some(kw => timing.includes(kw))) return null;
+                                let ls = text.lastIndexOf('\n', idx); ls = ls === -1 ? 0 : ls + 1;
+                                let le = text.indexOf('\n', idx); le = le === -1 ? text.length : le;
+                                return { line: text.substring(ls, le), timing };
+                            };
+                            const isTargetValid = (line) => {
+                                if (line.includes('全体') || line.includes('敵')) return true;
+                                const hasSelf = line.includes('自身');
+                                const isMe = (sourceOwner.idx === attacker.idx);
+                                if (!isMe && hasSelf && !line.includes('味方') && !line.includes('対象')) return false;
+                                return true;
+                            };
+                            const matches = text.matchAll(/エクストラフォース\(([^/]+)\/([^)]+)\)/g);
+                            for (const m of matches) {
+                                const ctx = getAnalysisContext(m.index);
+                                if (!ctx || !isTargetValid(ctx.line)) continue;
+                                const cond = m[1].trim(); const valStr = m[2].trim();
+                                let match = false;
+                                const ATTRIBUTE_TYPES = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
+                                const SYSTEM_TYPES = ['剣', '大剣', '斧', '棍棒', '体術', '銃', '槍', '小剣', '弓', '杖', '火', '水', '風', '土', '光', '闇'];
+                                if (cond === 'Critical' || cond === 'Weak') match = true;
+                                else if (cond === '技' || cond === '術') { if (skillTech === cond) match = true; }
+                                else if (cond === '直接' || cond === '間接') { if (skillDirect.includes(cond)) match = true; }
+                                else if (ATTRIBUTE_TYPES.includes(cond)) { if (myAttributes.includes(cond)) match = true; }
+                                else if (SYSTEM_TYPES.includes(cond)) { if (mySystem === cond || myAttributes.includes(cond)) match = true; }
+                                if (match) { const pt = EXF_POINTS[valStr] || 1.0; myPoints.push({ type: cond, pt, srcIdx: sourceOwner.idx }); }
+                            }
+                            const sm = text.matchAll(/「([^」]+)」/g);
+                            for (const m of sm) {
+                                const { info, name: tName } = resolveSkillInfo(m[1]);
+                                if (info && info['効果詳細']) {
+                                    const ctx = getAnalysisContext(m.index);
+                                    if (ctx && isTargetValid(ctx.line)) { const mult = parentMultiplier * localHitCount; checkEffects(`${sourceName}->${tName}`, info['効果詳細'], sourceOwner, mult); }
+                                }
+                            }
+                        };
+                        ['アビリティ1', 'アビリティ2', 'アビリティ3'].forEach(k => { const an = member.data.fullStyle[k]; if (an && db.abilities[an]) checkEffects(an, db.abilities[an]['効果詳細'], member); });
+                        if (member.skill && db.skills[member.skill]) { checkEffects(member.skill, db.skills[member.skill]['効果詳細'], member); }
+                    });
+
+                    const maxMap = new Map(); myPoints.forEach(p => { const curr = maxMap.get(p.type); if (!curr || p.pt > curr.pt) maxMap.set(p.type, p); });
+                    let totalPt = 0; let breakdown = [];
+                    maxMap.forEach((v, k) => { totalPt += v.pt; breakdown.push(`${k}:${v.pt.toFixed(2)}`); if (!contributingExfTypes.has(v.srcIdx)) contributingExfTypes.set(v.srcIdx, new Set()); contributingExfTypes.get(v.srcIdx).add(k); });
+                    totalExfPtForDiff += totalPt;
+                    const dmgBonus = Math.floor(totalPt);
+
+                    const sequence = getSkillSequence(sData, attacker);
+                    
+                    let executedDamage = 0;
+                    let executedHits = 0;
+                    let executedBreakdown = [];
+                    let executedActions = 0;
+                    let stoppedByCap = false;
+
+                    if (sequence.length > 0) executedActions++;
+
+                    for (const act of sequence) {
+                        if (enableCap && totalDamage >= 100) {
+                            stoppedByCap = true;
+                            break; 
+                        }
+
+                        const dmg = act.hits * (1 + dmgBonus);
+                        
+                        executedDamage += dmg;
+                        executedHits += act.hits;
+                        executedBreakdown.push(act.label);
+                        totalDamage += dmg;
+
+                        if (act.isAction) executedActions++;
+                    }
+
+                    totalActionCount += executedActions;
+
+                    attackerLogs.push(`  - EXF: ${totalPt.toFixed(2)} (${breakdown.join(', ')})`);
+                    if (stoppedByCap) {
+                        attackerLogs.push(`  - [Overkill] ダメージ100到達のため、以降の追撃をカット`);
+                    }
+                    const hitDetails = executedBreakdown.length > 1 ? ` (${executedBreakdown.join('+')})` : '';
+                    attackerLogs.push(`  - Hit: ${executedHits}${hitDetails}, Bonus: +${dmgBonus}`);
+                    attackerLogs.push(`  - Dmg: ${executedDamage} (累積: ${totalDamage})`);
+                    
+                    logs.push(...attackerLogs);
+                });
+
+                team.filter(m => m.type === 'sup' && m.skill).forEach(() => { totalActionCount += 1; });
+
+            } catch (e) {
+                console.error("Simulation Error", e);
+                logs.push(`[エラー] ${e.message}`);
+                totalDamage = 0;
+            }
+
+            return { totalDamage, logs, totalExfPt: totalExfPtForDiff, contributors: contributingExfTypes, actionCount: totalActionCount };
+        }
+
+        function parseAttackCount(text) {
+            if (!text) return 0;
+            let m = text.match(/攻撃する(?:\s*[\(（](\d+)[-〜](\d+)回[\)）])/);
+            if (m) return parseInt(m[2], 10);
+            m = text.match(/攻撃する(?:\s*[\(（](\d+)回[\)）])/);
+            if (m) return parseInt(m[1], 10);
+            if (text.match(/(?:攻撃する|全体攻撃する|範囲攻撃する|ランダムな敵に攻撃する)/)) return 1;
+            return 0;
+        }
+
+        function findLinkedSkills(text) {
+            const links = [];
+            if (!text) return links;
+            const regex = /[「『]([^」』]+)[」』]/g;
+            const matches = [...text.matchAll(regex)];
+            for (const m of matches) {
+                const name = m[1];
+                const idx = m.index + m[0].length;
+                const ctx = text.substring(idx, idx + 20);
+                let count = 1;
+                if (ctx.includes('発動')) {
+                    const cm = ctx.match(/(\d+)回/);
+                    if (cm) count = parseInt(cm[1], 10);
+                    links.push({ name, count });
+                }
+            }
+            return links;
+        }
+
+        function findGrantedAbilities(text) {
+            const granted = [];
+            if (!text) return granted;
+            const regex = /[「『]([^」』]+)[」』](?:.*?)を付与する/g;
+            for (const m of [...text.matchAll(regex)]) {
+                if (db.abilities[m[1]]) granted.push(m[1]);
+            }
+            return granted;
+        }
+
+        function getSkillSequence(activeSkill, attackerContext, visited = new Set(), depth = 0, sourceLabel = '') {
+            if (depth > 10) return [];
+            let sequence = [];
+
+            if (activeSkill) {
+                const desc = activeSkill['効果詳細'] || '';
+                const selfHits = parseAttackCount(desc);
+                
+                if (selfHits > 0) {
+                    const label = sourceLabel ? `${sourceLabel}→${activeSkill['スキル名']}` : activeSkill['スキル名'];
+                    sequence.push({
+                        name: activeSkill['スキル名'],
+                        hits: selfHits,
+                        isAction: false,
+                        label: `${label}(${selfHits})`
+                    });
+                }
+
+                const links = findLinkedSkills(desc);
+                links.forEach(link => {
+                    if (visited.has(link.name)) return;
+                    const ls = db.skills[link.name];
+                    if (ls) {
+                        const newVisited = new Set(visited); newVisited.add(activeSkill['スキル名']);
+                        for (let i = 0; i < link.count; i++) {
+                            sequence.push(...getSkillSequence(ls, attackerContext, newVisited, depth + 1, sourceLabel));
+                        }
+                    }
+                });
+            }
+
+            if (depth === 0 && attackerContext && attackerContext.data) {
+                const style = attackerContext.data.fullStyle;
+                let abilities = [];
+                ['アビリティ1', 'アビリティ2', 'アビリティ3'].forEach(k => {
+                    if (style[k] && db.abilities[style[k]]) abilities.push({ name: style[k], data: db.abilities[style[k]], src: 'ability' });
+                });
+
+                let i = 0;
+                while(i < abilities.length){
+                    const gr = findGrantedAbilities(abilities[i].data['効果詳細']);
+                    gr.forEach(g => {
+                        if(!abilities.some(a=>a.name===g)) abilities.push({ name: g, data: db.abilities[g], src: 'granted' });
+                    });
+                    i++;
+                }
+
+                abilities.forEach(item => {
+                    const desc = item.data['効果詳細'] || '';
+                    if (desc.match(/攻撃((命中)?時)|タイプが「攻撃」|技・術を命中させた時/)) {
+                        const links = findLinkedSkills(desc);
+                        links.forEach(link => {
+                            const ls = db.skills[link.name];
+                            if (ls) {
+                                const newVisited = new Set(visited); newVisited.add(item.name);
+                                const prefix = item.src === 'granted' ? `[状態:${item.name}]` : `[${item.name}]`;
+                                for(let k=0; k<link.count; k++) {
+                                    const childSeq = getSkillSequence(ls, attackerContext, newVisited, depth + 1, prefix);
+                                    if(childSeq.length > 0) {
+                                        childSeq[0].isAction = true; 
+                                        sequence.push(...childSeq);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            return sequence;
+        }
+
+        // --- Manual Calc Button ---
+        function calculateUI() {
+            document.querySelector('.log-panel').style.display = 'block';
+
+            const team = [];
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.querySelector(`#row-${i} .custom-select-button`);
+                const val = btn.dataset.value;
+                if (!val) continue;
+                team.push({
+                    idx: i,
+                    data: db.chars[parseInt(val)],
+                    type: document.getElementById(`type-${i}`).value,
+                    weaponEx: document.getElementById(`weapon-${i}`).value === 'dedicated',
+                    dress: document.getElementById(`dress-${i}`).value,
+                    soul: document.getElementById(`soul-${i}`).value,
+                    skill: document.getElementById(`skill-${i}`).value
+                });
+            }
+            const res = simulateTeamDamage(team);
+            document.getElementById('totalDamage').innerText = `${res.totalDamage}/100`;
+            document.getElementById('calcLog').innerText = res.logs.join('\n');
+        }
+
+        // --- Helper for Status Animation ---
+        function updateStatusWithDots(text) {
+            const statusDiv = document.getElementById('search-status');
+            clearInterval(searchDotsInterval);
+            statusDiv.innerText = text;
+
+            // テキストに「...」や「中」が含まれる場合のみアニメーション
+            if (text.includes('中') || text.includes('...')) {
+                // 末尾の「...」を削除してベーステキストを作成
+                let baseText = text;
+                if (baseText.endsWith('...')) baseText = baseText.substring(0, baseText.length - 3);
+
+                let dots = 0;
+                // 初回描画
+                statusDiv.innerText = baseText;
+                
+                searchDotsInterval = setInterval(() => {
+                    dots = (dots % 3) + 1; // 1, 2, 3 のループ
+                    let dotStr = '';
+                    for(let i=0; i<dots; i++) dotStr += '.';
+                    statusDiv.innerText = baseText + dotStr;
+                }, 500);
+            }
+        }
+
+        // --- Auto Search Logic (Worker Wrapper) ---
+        let isSearching = false;
+
+        async function autoSearch() {
+            if (isSearching) return;
+            if (!worker) { alert("Workerが初期化されていません"); return; }
+            
+            isSearching = true;
+
+            const btn = document.getElementById('btn-search');
+            const resDiv = document.getElementById('search-results-container');
+            
+            btn.disabled = true; // ボタン無効化のみ
+            resDiv.innerHTML = '';
+            updateStatusWithDots('準備中...');
+
+            // Workerハンドラの一時的な上書き
+            worker.onmessage = (e) => {
+                const { type, results, message } = e.data;
+                if (type === 'progress') {
+                    updateStatusWithDots(message);
+                } else if (type === 'done') {
+                    clearInterval(searchDotsInterval); // アニメーション停止
+                    document.getElementById('search-status').innerText = `検索完了: ${results.length}通りの組み合わせが見つかりました`;
+                    renderResults(results, resDiv, emptySlots);
+                    
+                    isSearching = false;
+                    btn.disabled = false;
+                }
+            };
+
+            const fixedTeam = [];
+            const emptySlots = [];
+            let attackerExists = false;
+            let attackerHasSkill = false;
+            let attackerIsFast = false;
+
+            for (let i = 1; i <= 5; i++) {
+                const btnIdx = document.querySelector(`#row-${i} .custom-select-button`).dataset.value;
+                const type = document.getElementById(`type-${i}`).value;
+                if (btnIdx) {
+                    const skillVal = document.getElementById(`skill-${i}`).value;
+                    fixedTeam.push({
+                        idx: i, data: db.chars[parseInt(btnIdx)], type: type,
+                        weaponEx: document.getElementById(`weapon-${i}`).value === 'dedicated',
+                        dress: document.getElementById(`dress-${i}`).value,
+                        soul: document.getElementById(`soul-${i}`).value,
+                        skill: skillVal
+                    });
+                    if (type === 'atk') {
+                        attackerExists = true;
+                        if (skillVal) {
+                            attackerHasSkill = true;
+                            const sData = db.skills[skillVal];
+                            if (sData && (sData['行動順']||'').includes('ファスト')) attackerIsFast = true;
+                        }
+                    }
+                } else { emptySlots.push(i); }
+            }
+
+            if (!attackerExists || !attackerHasSkill) {
+                clearInterval(searchDotsInterval);
+                document.getElementById('search-status').innerText = 'エラー: アタッカーとスキルを選択してください。';
+                isSearching = false; 
+                btn.disabled = false; 
+                return;
+            }
+
+            // Workerへ処理開始を依頼
+            worker.postMessage({
+                type: 'startSearch',
+                payload: { fixedTeam, emptySlots, attackerIsFast }
+            });
+        }
+
+        function renderResults(results, resDiv, emptySlots) {
+             if (results.length === 0) { resDiv.innerHTML = '<p>条件を満たすファスト編成が見つかりませんでした。</p>'; } 
+                else {
+                    const table = document.createElement('table');
+                    table.className = 'search-results-table';
+                    table.innerHTML = `<thead><tr><th>順位</th><th>行動数</th><th>ダメ</th><th>構成 (有効EXF)</th><th>反映</th></tr></thead><tbody></tbody>`;
+                    const tbody = table.querySelector('tbody');
+                    results.slice(0, 50).forEach((res, rank) => {
+                        const tr = document.createElement('tr');
+                        const mStr = res.members.map(m => `[${m.char.charName}] ${m.skill ? '<span style="color:red">'+m.skill+'</span>' : '<span style="color:deepskyblue">行動なし</span>'}${m.exfLabel ? ' <span class="exf-info">('+m.exfLabel+')</span>' : ''}`).join('<br>');
+                        
+                        const actionLabel = `<strong>${res.actionCount}手</strong>`;
+                        const damageLabel = `<span class="score-high">${Math.floor(res.damage)}</span>`;
+
+                        tr.innerHTML = `<td style="text-align:center">${rank+1}</td><td style="text-align:center">${actionLabel}</td><td style="text-align:center">${damageLabel}</td><td>${mStr}</td><td><button class="action-btn apply-btn">反映</button></td>`;
+                        tr.querySelector('.apply-btn').onclick = () => {
+                            res.members.forEach((m, i) => {
+                                const sIdx = emptySlots[i];
+                                const row = document.getElementById(`row-${sIdx}`);
+                                row.querySelector(`.custom-select-button`).dataset.value = db.chars.indexOf(m.char); 
+                                const foundIdx = db.chars.findIndex(c => c.charName === m.char.charName && c.styleName === m.char.styleName);
+                                if (foundIdx !== -1) {
+                                     row.querySelector(`.custom-select-button`).dataset.value = foundIdx;
+                                     document.getElementById(`char-text-${sIdx}`).innerText = db.chars[foundIdx].displayName;
+                                     updateRow(sIdx);
+                                     document.getElementById(`skill-${sIdx}`).value = m.skill;
+                                }
+                            });
+                            calculateUI(); window.scrollTo({ top: 0, behavior: 'smooth' });
+                        };
+                        tbody.appendChild(tr);
+                    });
+                    resDiv.appendChild(table);
+                }
+        }
+
+        // --- Import/Export ---
+        function exportData() {
+            const team = [];
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.querySelector(`#row-${i} .custom-select-button`);
+                const val = btn.dataset.value;
+                if (!val) { team.push({idx:i, isEmpty:true}); continue; }
+                const c = db.chars[parseInt(val)];
+                team.push({ idx: i, charName: c.charName, styleName: c.styleName, type: document.getElementById(`type-${i}`).value, weapon: document.getElementById(`weapon-${i}`).value, dress: document.getElementById(`dress-${i}`).value, soul: document.getElementById(`soul-${i}`).value === '0.12' ? 'EXF1' : (document.getElementById(`soul-${i}`).value === '0.25' ? 'EXF2' : 'none'), skill: document.getElementById(`skill-${i}`).value });
+            }
+            const blob = new Blob([JSON.stringify(team, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'simulation_data.json'; a.click();
+        }
+
+        document.getElementById('import-file').addEventListener('change', (e) => {
+            const f = e.target.files[0]; if(!f)return;
+            const r = new FileReader();
+            r.onload = (e) => {
+                try {
+                    const team = JSON.parse(e.target.result);
+                    team.forEach(d => {
+                        const i = d.idx;
+                        const btn = document.querySelector(`#row-${i} .custom-select-button`);
+                        if(d.isEmpty) { btn.dataset.value=""; document.getElementById(`char-text-${i}`).innerText="(未選択)"; updateRow(i); return; }
+                        const idx = db.chars.findIndex(c=>c.charName===d.charName && c.styleName===d.styleName);
+                        if(idx!==-1) {
+                            btn.dataset.value=idx; document.getElementById(`char-text-${i}`).innerText=db.chars[idx].displayName; updateRow(i);
+                            document.getElementById(`type-${i}`).value=d.type; updateSkillList(i);
+                            document.getElementById(`weapon-${i}`).value=d.weapon||'none'; document.getElementById(`dress-${i}`).value=d.dress||'0';
+                            document.getElementById(`soul-${i}`).value=d.soul==='EXF1'?'0.12':(d.soul==='EXF2'?'0.25':'0');
+                            if(d.skill) document.getElementById(`skill-${i}`).value=d.skill;
+                        }
+                    });
+                } catch(x){ alert("Import Error"); }
+            };
+            r.readAsText(f); e.target.value='';
+        });
+    </script>
+</body>
+</html>
