@@ -1216,7 +1216,7 @@
                     const tbody = table.querySelector('tbody');
                     results.slice(0, 50).forEach((res, rank) => {
                         const tr = document.createElement('tr');
-                        const mStr = res.members.map(m => `[${m.char.charName}] ${m.skill ? '<span style="color:red">'+m.skill+'</span>' : '<span style="color:deepskyblue">行動なし</span>'}${m.exfLabel ? ' <span class="exf-info">('+m.exfLabel+')</span>' : ''}`).join('<br>');
+                        const mStr = res.members.map(m => `[${m.char.charName}] ${m.skill ? '<span style="color:red">'+m.skill+'</span>' : '<span style="color:dodgerblue">行動なし</span>'}${m.exfLabel ? ' <span class="exf-info">('+m.exfLabel+')</span>' : ''}`).join('<br>');
                         
                         const actionLabel = `<strong>${res.actionCount}手</strong>`;
                         const damageLabel = `<span class="score-high">${Math.floor(res.damage)}</span>`;
