@@ -955,7 +955,7 @@
                     if (stoppedByCap) {
                         attackerLogs.push(`  - [Overkill] ダメージ100到達のため、以降の追撃をカット`);
                     }
-                    const hitDetails = executedBreakdown.length > 1 ? ` (${executedBreakdown.join('+')})` : '';
+                    const hitDetails = executedBreakdown.length > 0 ? ` (${executedBreakdown.join('+')})` : '';
                     attackerLogs.push(`  - Hit: ${executedHits}${hitDetails}, Bonus: +${dmgBonus}`);
                     attackerLogs.push(`  - Dmg: ${executedDamage} (累積: ${totalDamage})`);
                     
