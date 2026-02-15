@@ -5,7 +5,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>装備候補検索ツール</title> <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <title>装備候補検索ツール</title> 
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
@@ -44,7 +45,9 @@
         const additionalAttributes = ['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
         const totalAttributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰', '毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
 
-        const { useState, useEffect, useLayoutEffect, useRef, useCallback } = React;
+        // ▼▼▼ 修正: useMemoを追加 ▼▼▼
+        const { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } = React;
+        // ▲▲▲ 修正ここまで ▲▲▲
 
         const hiraganaToKatakana = (str) => {
           if (!str) return '';
@@ -54,29 +57,24 @@
           });
         };
 
-        // ▼▼▼ 修正: データ加工関数（記号と名称を結合） ▼▼▼
         const processDataWithSymbols = (data) => {
             if (!data) return [];
             return data.map(item => {
                 const symbol = item['記号'] ? String(item['記号']) : '';
                 const name = item['名称'] ? String(item['名称']) : '';
-                // 記号と名称を結合して新しい名称とする
                 const combinedName = symbol + name;
                 return { ...item, '名称': combinedName };
             });
         };
-        // ▲▲▲ 修正ここまで ▲▲▲
 
         const ArmorCombinationAnalyzer = () => {
-          // ===== ここから拡大縮小機能の修正 =====
           const [zoomLevel, setZoomLevel] = useState(1.0);
           const PAGE_SETTING_KEY = 'PageSettings';
           const zoomKey = 'armor_zoom';
           
-          const heightAdjustmentContainerRef = useRef(null); // 親コンテナの参照
-          const scaledContentRef = useRef(null); // スケールされるコンテンツの参照
+          const heightAdjustmentContainerRef = useRef(null); 
+          const scaledContentRef = useRef(null);
 
-          // 初期ズームレベルをlocalStorageから読み込む
           useEffect(() => {
               try {
                   const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
@@ -91,7 +89,6 @@
               }
           }, []);
 
-          // ズームレベルが変更されるたびにlocalStorageに保存
           useEffect(() => {
               try {
                   const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
@@ -103,14 +100,13 @@
               }
           }, [zoomLevel]);
 
-          // ズームレベルまたはコンテンツ（検索結果）が変更されたときに高さを再計算して適用
           useEffect(() => {
               if (scaledContentRef.current && heightAdjustmentContainerRef.current) {
                   const contentHeight = scaledContentRef.current.offsetHeight;
                   const newContainerHeight = contentHeight * zoomLevel;
                   heightAdjustmentContainerRef.current.style.height = `${newContainerHeight}px`;
               }
-          }, [zoomLevel, combinations]); // ズームレベルと検索結果(combinations)の変更を監視
+          }, [zoomLevel, combinations]); 
 
           const changeZoom = (delta) => {
               setZoomLevel(currentZoom => {
@@ -127,7 +123,6 @@
               transformOrigin: 'top left',
               width: `${100 / zoomLevel}%`
           };
-          // ===== ここまで拡大縮小機能の修正 =====
 
           const [excludeProfileExists, setExcludeProfileExists] = useState({ main: false, sub: false, deco: false });
           const [mainArmor, setMainArmor] = useState([]);
@@ -414,7 +409,6 @@
             }
           };
 
-          // Effect to apply theme classes to body
           useEffect(() => {
             document.body.classList.remove(themes.light.wholeBak, themes.dark.wholeBak);
             let currentThemeClass;
@@ -428,7 +422,6 @@
             document.body.classList.add(currentThemeClass);
           }, [theme, themes]);
 
-          // Effect to listen for system theme changes if 'system' is selected
           useEffect(() => {
             if (theme === 'system') {
               const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -449,7 +442,6 @@
             characterResistances: './data/favorite.csv'
           };
 
-          // Determine active theme colors based on the theme state
           const currentThemeColors = theme === 'dark' ? themes.dark : theme === 'light' ? themes.light : window.matchMedia('(prefers-color-scheme: dark)').matches ? themes.dark : themes.light;
 
           const characterNames = ['キャラ１', 'キャラ２', 'キャラ３', 'キャラ４', 'キャラ５', '５人１組'];
@@ -543,6 +535,26 @@
           const [characterSearch, setCharacterSearch] = useState('');
           const characterDropdownRef = useRef(null);
 
+          // ▼▼▼ 修正: 除外リストのフィルタリングロジックと全選択状態の判定 ▼▼▼
+          const getFilteredList = (list, searchText) => {
+              if (!list) return [];
+              const term = hiraganaToKatakana(searchText).toLowerCase();
+              return list.filter(item => {
+                  if (!item['名称']) return false;
+                  return hiraganaToKatakana(item['名称']).toLowerCase().includes(term);
+              });
+          };
+
+          // 表示用のフィルタ済みリスト
+          const filteredMainList = useMemo(() => getFilteredList(mainArmor, excludeSearch.main), [mainArmor, excludeSearch.main]);
+          const filteredSubList = useMemo(() => getFilteredList(subArmor, excludeSearch.sub), [subArmor, excludeSearch.sub]);
+          const filteredDecoList = useMemo(() => getFilteredList(decorations, excludeSearch.deco), [decorations, excludeSearch.deco]);
+
+          // 全選択状態かどうか
+          const isAllMainSelected = filteredMainList.length > 0 && filteredMainList.every(item => excludeSettings.main.includes(item['名称']));
+          const isAllSubSelected = filteredSubList.length > 0 && filteredSubList.every(item => excludeSettings.sub.includes(item['名称']));
+          const isAllDecoSelected = filteredDecoList.length > 0 && filteredDecoList.every(item => excludeSettings.deco.includes(item['名称']));
+          // ▲▲▲ 修正ここまで ▲▲▲
 
 const saveExcludeProfile = (type) => {
   let key = '';
@@ -555,7 +567,7 @@ const saveExcludeProfile = (type) => {
   setExcludeSaving(prev => ({ ...prev, [category]: true }));
   try {
     localStorage.setItem(key, JSON.stringify(data));
-    setExcludeProfileExists(prev => ({ ...prev, [category]: true })); // この行を追加
+    setExcludeProfileExists(prev => ({ ...prev, [category]: true })); 
   }
   catch (e) { console.error(`${type}除外設定の保存に失敗しました`, e); }
   finally { setTimeout(() => { setExcludeSaving(prev => ({ ...prev, [category]: false })); }, 800); }
@@ -572,7 +584,7 @@ const deleteExcludeProfile = (type) => {
   setExcludeSettings(prev => ({ ...prev, [category]: [] }));
   try {
     localStorage.removeItem(key);
-    setExcludeProfileExists(prev => ({ ...prev, [category]: false })); // この行を追加
+    setExcludeProfileExists(prev => ({ ...prev, [category]: false }));
   }
   catch (e) { console.error(`${type}除外設定の削除に失敗`, e); }
   finally { setTimeout(() => { setExcludeDeleting(prev => ({ ...prev, [category]: false })); }, 800); }
@@ -583,7 +595,6 @@ const deleteExcludeProfile = (type) => {
 
           const handleSaveProfile = () => {
             if (!profileName.trim()) return;
-            // Save targetValues and statusAilmentSettings for 'キャラ１'
             const newProfile = {
               ...targetValues,
               statusAilment: statusAilmentSettings['キャラ１']
@@ -610,11 +621,10 @@ const deleteExcludeProfile = (type) => {
           const handlePresetSelect = (presetName) => {
             if (presetName === "All Resist") {
               setTargetValues({ 斬: '35', 打: '35', 突: '35', 熱: '35', 冷: '35', 雷: '35', 陽: '35',陰: '35' });
-              // Set status ailment settings to (未指定) and value to 20 for all characters
               const newStatusAilmentSettings = { ...statusAilmentSettings };
               characterNames.filter(name => name !== '５人１組').forEach(charName => {
                 newStatusAilmentSettings[charName] = {
-                  selectedTypes: [], // (未指定)
+                  selectedTypes: [], 
                   value: '20',
                   showDropdown: false
                 };
@@ -630,7 +640,7 @@ const deleteExcludeProfile = (type) => {
                   newStatusAilmentSettings[charName] = {
                     selectedTypes: loadedProfile.statusAilment.selectedTypes || [],
                     value: loadedProfile.statusAilment.value || '20',
-                    showDropdown: false // Ensure dropdown is closed on load
+                    showDropdown: false 
                   };
                 });
                 setStatusAilmentSettings(newStatusAilmentSettings);
@@ -693,9 +703,7 @@ const deleteExcludeProfile = (type) => {
 
           const [itemQuantities, setItemQuantities] = useState({});
 
-          // Web Workerの初期化とメッセージハンドリング
           useEffect(() => {
-            // 初期ロード時のみWorkerを生成し、イベントハンドラを設定
             if (window.Worker && !workerRef.current) {
               workerRef.current = new Worker('./worker.js');
 
@@ -708,7 +716,7 @@ const deleteExcludeProfile = (type) => {
                     if (mainThreadDataLoaded) {
                         setLoading(false);
                     }
-                    setError(''); // ファイルロードエラーをクリア
+                    setError(''); 
                 } else if (type === 'results') {
                   setCombinations(prev => ({ ...prev, ['５人１組']: payload }));
                   setSearching(prev => ({ ...prev, ['５人１組']: false }));
@@ -718,12 +726,11 @@ const deleteExcludeProfile = (type) => {
                   if (payload.length === 0) {
                       setFivePersonSearchResultMessage('条件を満たす組み合わせは見つかりませんでした。条件を緩和するか、除外設定を調整してください。');
                   } else {
-                      setFivePersonSearchResultMessage(''); // 候補が見つかったらメッセージをクリア
+                      setFivePersonSearchResultMessage(''); 
                   }
-                  setError(''); // 検索関連のエラーをクリア
+                  setError(''); 
                   console.log("Worker: Search completed and results received.");
                 } else if (type === 'error') {
-                  // 検索エラーはsearchResultMessageで表示
                   setFivePersonSearchResultMessage(`検索エラー: ${payload || '不明なエラーが発生しました。'}`);
                   setSearching(prev => ({ ...prev, ['５人１組']: false }));
                   clearInterval(countdownIntervalRef.current);
@@ -760,7 +767,6 @@ const deleteExcludeProfile = (type) => {
               setLoading(false);
             }
 
-            // コンポーネントアンマウント時のクリーンアップ
             return () => {
               if (workerRef.current) {
                 workerRef.current.terminate();
@@ -771,14 +777,12 @@ const deleteExcludeProfile = (type) => {
                   countdownIntervalRef.current = null;
               }
             };
-          }, []); // 依存配列を空にして、コンポーネントマウント時に一度だけ実行するように戻す
+          }, []);
 
-          // ▼▼▼ 修正: データ読み込み・LocalStorage読み込み・マイグレーションを一括処理 ▼▼▼
           useEffect(() => {
             const loadDataForMainThread = async () => {
                 setError('');
                 try {
-                    // 1. CSVデータの読み込み
                     const [mainArmorData, subArmorData, decorationData, characterData] = await Promise.all([
                         loadCSVFile(dataFiles.mainArmor),
                         loadCSVFile(dataFiles.subArmor),
@@ -786,7 +790,6 @@ const deleteExcludeProfile = (type) => {
                         loadCharacterResistances()
                     ]);
 
-                    // 2. 記号と名称を結合
                     const processedMainArmor = processDataWithSymbols(mainArmorData);
                     const processedSubArmor = processDataWithSymbols(subArmorData);
                     const processedDecorations = processDataWithSymbols(decorationData);
@@ -796,7 +799,6 @@ const deleteExcludeProfile = (type) => {
                     setDecorations(processedDecorations);
                     setCharacterResistances(characterData);
 
-                    // 3. 所持数フィルタリングなど
                     setAvailableBulkMainArmor(processedMainArmor.filter(item => (item['所持数'] || 0) >= 5));
                     setAvailableBulkSubArmor(processedSubArmor.filter(item => (item['所持数'] || 0) >= 5));
                     setAvailableBulkDecorations(processedDecorations.filter(item => (item['所持数'] || 0) >= 5));
@@ -807,30 +809,17 @@ const deleteExcludeProfile = (type) => {
                     processedDecorations.forEach(item => initialQuantities[`deco_${item['名称']}`] = item['所持数'] || Infinity);
                     setItemQuantities(initialQuantities);
 
-                    // 4. 設定のマイグレーション関数（内部定義）
                     const migrateList = (jsonString, masterData) => {
                         try {
                             const list = JSON.parse(jsonString || '[]');
                             if (!Array.isArray(list)) return [];
                             return list.map(savedName => {
-                                // 1. 完全一致（すでに新しい名前の場合）
                                 if (masterData.some(d => d['名称'] === savedName)) return savedName;
-
-                                // 2. 記号変更への対応（1文字の記号が変わった場合）
-                                // 保存名の「2文字目以降（記号を除いた名前）」が、新しいデータの末尾と一致するか判定
                                 const found = masterData.find(d => {
-                                    // 文字数が短すぎる場合は無視
                                     if (savedName.length < 2) return false;
-
-                                    // 保存名の先頭1文字（古い記号）をカット
-                                    // 例: "☆黒紅の術衣" → "黒紅の術衣"
                                     const namePart = savedName.substring(1);
-
-                                    // 新しい名称が、その名前部分で終わっているか確認
-                                    // 例: "●黒紅の術衣" は "黒紅の術衣" で終わる → true
                                     return d['名称'].endsWith(namePart);
                                 });
-
                                 return found ? found['名称'] : savedName;
                             });
                         } catch (e) {
@@ -838,7 +827,6 @@ const deleteExcludeProfile = (type) => {
                         }
                     };
 
-                    // 5. LocalStorageから読み込み & 即座にマイグレーション適用
                     const rawMain = localStorage.getItem('exclude_main');
                     const rawSub = localStorage.getItem('exclude_sub');
                     const rawDeco = localStorage.getItem('exclude_deco');
@@ -847,7 +835,6 @@ const deleteExcludeProfile = (type) => {
                     const migratedSub = migrateList(rawSub, processedSubArmor);
                     const migratedDeco = migrateList(rawDeco, processedDecorations);
 
-                    // 6. 状態の更新
                     setExcludeSettings({
                         main: migratedMain,
                         sub: migratedSub,
@@ -877,7 +864,6 @@ const deleteExcludeProfile = (type) => {
             };
             loadDataForMainThread();
           }, [workerDataLoaded]);
-          // ▲▲▲ 修正ここまで ▲▲▲
 
           useEffect(() => {
             const storedProfiles = localStorage.getItem('profiles');
@@ -886,26 +872,21 @@ const deleteExcludeProfile = (type) => {
             }
           }, []);
           
-          // プルダウンが開かれたときに選択項目へスクロールしフォーカスする
-          // useEffectをuseLayoutEffectに変更し、setTimeoutを削除
           useLayoutEffect(() => {
             const scrollAndFocus = (type, selectedValue) => {
                 if (!selectedValue) {
-                    setFocusedItem(null); // 選択がない場合はフォーカスをクリア
+                    setFocusedItem(null); 
                     return;
                 }
 
-                // 新しいプルダウンが開かれるたびにフォーカスを設定
                 setFocusedItem({ type, name: selectedValue });
                 const selectedItemRef = itemRefs.current[type]?.[selectedValue];
 
                 if (selectedItemRef) {
-                    // タイムラグなしでスクロールを実行
                     selectedItemRef.scrollIntoView({ block: 'nearest' });
                 }
             };
 
-            // 各プルダウンの表示状態を監視し、対応する処理を呼び出す
             if (showCharacterDropdown) scrollAndFocus('character', selectedCharacters[activeTab]);
             if (showFixedDropdown.main) scrollAndFocus('mainFixed', fixedEquipments[activeTab].main);
             if (showFixedDropdown.sub) scrollAndFocus('subFixed', fixedEquipments[activeTab].sub);
@@ -916,7 +897,6 @@ const deleteExcludeProfile = (type) => {
 
           }, [showCharacterDropdown, showFixedDropdown, showBulkDropdown, selectedCharacters, fixedEquipments, bulkMainArmorSelect, bulkSubArmorSelect, bulkDecorationSelect, activeTab]);
 
-          // すべての関連プルダウンが閉じたときにフォーカス状態をリセットするuseEffect
           useEffect(() => {
             const anyDropdownOpen = showCharacterDropdown || 
                                   showFixedDropdown.main || showFixedDropdown.sub || showFixedDropdown.deco ||
@@ -928,39 +908,33 @@ const deleteExcludeProfile = (type) => {
 
           useEffect(() => {
             const handleClickOutside = (event) => {
-              // テーマ選択
               if (showThemeOptions && themeOptionsRef.current && !themeOptionsRef.current.contains(event.target) && !event.target.closest('#title-star')) {
                 setShowThemeOptions(false);
               }
-              // 状態異常のプルダウン
               characterNames.filter(name => name !== '５人１組').forEach(charNameInLoop => {
                 if (statusAilmentSettings[charNameInLoop]?.showDropdown && dropdownRefs.current[charNameInLoop] && !dropdownRefs.current[charNameInLoop].contains(event.target)) {
                   setStatusAilmentSettings(prev => ({ ...prev, [charNameInLoop]: { ...prev[charNameInLoop], showDropdown: false } }));
                 }
               });
 
-              // 除外設定のプルダウン
               ['main', 'sub', 'deco'].forEach(type => {
                   if (excludeSettings[`show${type.charAt(0).toUpperCase() + type.slice(1)}`] && excludeDropdownRefs.current[type] && !excludeDropdownRefs.current[type].contains(event.target) && !event.target.closest(`button[data-exclude-type="${type}"]`)) {
                     setExcludeSettings(prev => ({ ...prev, [`show${type.charAt(0).toUpperCase() + type.slice(1)}`]: false }));
                   }
               });
 
-              // 装備指定のプルダウン
               ['main', 'sub', 'deco'].forEach(type => {
                 if (showFixedDropdown[type] && fixedDropdownRefs.current[type] && !fixedDropdownRefs.current[type].contains(event.target) && !event.target.closest(`button[data-fixed-type="${type}"]`)) {
                     setShowFixedDropdown(prev => ({ ...prev, [type]: false }));
                 }
               });
               
-              // 一括指定のプルダウン
               ['main', 'sub', 'deco'].forEach(type => {
                   if (showBulkDropdown[type] && bulkDropdownRefs.current[type] && !bulkDropdownRefs.current[type].contains(event.target) && !event.target.closest(`button[data-bulk-type="${type}"]`)) {
                       setShowBulkDropdown(prev => ({ ...prev, [type]: false }));
                   }
               });
 
-              // キャラクター選択のプルダウン
               if (showCharacterDropdown && characterDropdownRef.current && !characterDropdownRef.current.contains(event.target) && !event.target.closest('button[data-char-select]')) {
                   setShowCharacterDropdown(false);
               }
@@ -1257,14 +1231,13 @@ const deleteExcludeProfile = (type) => {
           const handleLabelDoubleClick = useCallback((attr) => {
             setTargetValues(prev => {
               const currentValue = parseInt(prev[attr], 10);
-              let nextValue = '35'; // デフォルトの次の値
+              let nextValue = '35'; 
 
               if (currentValue === 35) {
                 nextValue = '-999';
               } else if (currentValue === -999) {
                 nextValue = '0';
               }
-              // 現在値が0またはその他の場合は、デフォルトの'35'が使用される
 
               return { ...prev, [attr]: nextValue };
             });
@@ -1324,11 +1297,11 @@ const deleteExcludeProfile = (type) => {
             setStatusAilmentSettings(prev => ({ ...prev, [characterName]: { ...prev[characterName], value: value } }));
           }, []);
 
-          const toggleStatusAilmentDropdown = useCallback((charNameFromParam) => { // パラメータ名を変更
+          const toggleStatusAilmentDropdown = useCallback((charNameFromParam) => { 
             setStatusAilmentSettings(prev => {
                 const newState = {};
-                for (const char of characterNames) { // characterNames をループ
-                    if (char === charNameFromParam) { // パラメータ名を使用
+                for (const char of characterNames) { 
+                    if (char === charNameFromParam) { 
                         newState[char] = { ...prev[char], showDropdown: !prev[char].showDropdown };
                     } else if (prev[char]) {
                         newState[char] = { ...prev[char], showDropdown: false };
@@ -1336,7 +1309,7 @@ const deleteExcludeProfile = (type) => {
                 }
                 return newState;
             });
-          }, [characterNames]); // characterNamesを依存配列に追加
+          }, [characterNames]); 
 
           const handleStatusAilmentTypeChange = useCallback((characterName, type, checked) => {
             setStatusAilmentSettings(prev => {
@@ -1389,7 +1362,7 @@ const deleteExcludeProfile = (type) => {
             const newCharacterValues = { ...characterValues };
             ['キャラ１', 'キャラ２', 'キャラ３', 'キャラ４', 'キャラ５'].forEach(charName => {
               newCharacterValues[charName] = {};
-              attributes.forEach(attr => { newCharacterValues[charName][attr] = String(baseData[attr] || '0'); }); // Corrected line
+              attributes.forEach(attr => { newCharacterValues[charName][attr] = String(baseData[attr] || '0'); }); 
             });
             setCharacterValues(newCharacterValues);
 
@@ -1446,17 +1419,11 @@ const deleteExcludeProfile = (type) => {
             }
           }, [currentThemeColors]);
 
-        // ▼▼▼ ここから修正 ▼▼▼
-        // 各プルダウンメニューの親要素に適用する共通スタイル
-        //const contextAnchorStyle = { transform: 'translateZ(0)' };
         const contextAnchorStyle = {};
-        // ▲▲▲ ここまで修正 ▲▲▲
 
 return (
             <div ref={heightAdjustmentContainerRef}>
-                {/* ▼▼▼ 修正箇所 ▼▼▼ className="relative" を追加 */}
                 <div ref={scaledContentRef} style={scaledContentStyle} className="relative">
-                {/* ▲▲▲ 修正箇所 ▲▲▲ */}
                     <div className={`max-w-8xl mx-auto p-0`}>
                         <div className="zoom-buttons">
                             <button onClick={() => changeZoom(-0.1)}>－</button>
@@ -1557,7 +1524,6 @@ return (
                                     setError(`Workerでのデータ読み込みエラー: ${payload || '不明なエラー'}`);
                                     setWorkerDataLoaded(false); setLoading(false);
                                 }
-                                // ... other message handlers
                               };
                               newWorkerForRetry.onerror = (error) => {
                                   setError(`Workerからの予期せぬエラー: ${error.message || '不明なWorkerエラー'}`);
@@ -1727,28 +1693,32 @@ return (
                                   />
                                 </div>
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa} flex gap-2`}>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setExcludeSettings(prev => ({
-                                        ...prev,
-                                        main: []
-                                      }));
-                                    }}
-                                    className={`${currentThemeColors.pullNone} hover:underline`}
-                                  >
-                                    すべて選択解除
-                                  </button>
+                                  <label className="flex items-center gap-2 cursor-pointer w-full hover:bg-opacity-10 hover:bg-gray-500 rounded px-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={isAllMainSelected}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setExcludeSettings(prev => {
+                                            let newSelected = [...prev.main];
+                                            if (checked) {
+                                                filteredMainList.forEach(item => {
+                                                    if (!newSelected.includes(item['名称'])) newSelected.push(item['名称']);
+                                                });
+                                            } else {
+                                                const removingNames = filteredMainList.map(i => i['名称']);
+                                                newSelected = newSelected.filter(name => !removingNames.includes(name));
+                                            }
+                                            return { ...prev, main: newSelected };
+                                        });
+                                      }}
+                                      className="cursor-pointer"
+                                    />
+                                    <span className={`${currentThemeColors.pullNone}`}>すべて選択/解除</span>
+                                  </label>
                                 </div>
                                 <div className="overflow-y-auto">
-                                  {mainArmor
-                                    .filter(item => {
-                                      if (!item['名称']) return false;
-                                      const searchTerm = hiraganaToKatakana(excludeSearch.main).toLowerCase();
-                                      const itemName = hiraganaToKatakana(item['名称']).toLowerCase();
-                                      return itemName.includes(searchTerm);
-                                    })
-                                    .map((item, idx) => (
+                                  {filteredMainList.map((item, idx) => (
                                       <div key={idx} className={`p-2 ${currentThemeColors.pullmHov}`}>
                                         <label key={idx} className="flex items-center gap-2 cursor-pointer">
                                           <input
@@ -1814,28 +1784,32 @@ return (
                                   />
                                 </div>
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa} flex gap-2`}>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setExcludeSettings(prev => ({
-                                        ...prev,
-                                        sub: []
-                                      }));
-                                    }}
-                                    className={`${currentThemeColors.pullNone} hover:underline`}
-                                  >
-                                    すべて選択解除
-                                  </button>
+                                  <label className="flex items-center gap-2 cursor-pointer w-full hover:bg-opacity-10 hover:bg-gray-500 rounded px-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={isAllSubSelected}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setExcludeSettings(prev => {
+                                            let newSelected = [...prev.sub];
+                                            if (checked) {
+                                                filteredSubList.forEach(item => {
+                                                    if (!newSelected.includes(item['名称'])) newSelected.push(item['名称']);
+                                                });
+                                            } else {
+                                                const removingNames = filteredSubList.map(i => i['名称']);
+                                                newSelected = newSelected.filter(name => !removingNames.includes(name));
+                                            }
+                                            return { ...prev, sub: newSelected };
+                                        });
+                                      }}
+                                      className="cursor-pointer"
+                                    />
+                                    <span className={`${currentThemeColors.pullNone}`}>すべて選択/解除</span>
+                                  </label>
                                 </div>
                                 <div className="overflow-y-auto">
-                                  {subArmor
-                                    .filter(item => {
-                                      if (!item['名称']) return false;
-                                      const searchTerm = hiraganaToKatakana(excludeSearch.sub).toLowerCase();
-                                      const itemName = hiraganaToKatakana(item['名称']).toLowerCase();
-                                      return itemName.includes(searchTerm);
-                                    })
-                                    .map((item, idx) => (
+                                  {filteredSubList.map((item, idx) => (
                                       <div key={idx} className={`p-2 ${currentThemeColors.pullmHov}`}>
                                         <label key={idx} className="flex items-center gap-2 cursor-pointer">
                                           <input
@@ -1901,28 +1875,32 @@ return (
                                   />
                                 </div>
                                 <div className={`p-2 border-b ${currentThemeColors.pullSepa} flex gap-2`}>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setExcludeSettings(prev => ({
-                                        ...prev,
-                                        deco: []
-                                      }));
-                                    }}
-                                    className={`${currentThemeColors.pullNone} hover:underline`}
-                                  >
-                                    すべて選択解除
-                                  </button>
+                                  <label className="flex items-center gap-2 cursor-pointer w-full hover:bg-opacity-10 hover:bg-gray-500 rounded px-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={isAllDecoSelected}
+                                      onChange={(e) => {
+                                        const checked = e.target.checked;
+                                        setExcludeSettings(prev => {
+                                            let newSelected = [...prev.deco];
+                                            if (checked) {
+                                                filteredDecoList.forEach(item => {
+                                                    if (!newSelected.includes(item['名称'])) newSelected.push(item['名称']);
+                                                });
+                                            } else {
+                                                const removingNames = filteredDecoList.map(i => i['名称']);
+                                                newSelected = newSelected.filter(name => !removingNames.includes(name));
+                                            }
+                                            return { ...prev, deco: newSelected };
+                                        });
+                                      }}
+                                      className="cursor-pointer"
+                                    />
+                                    <span className={`${currentThemeColors.pullNone}`}>すべて選択/解除</span>
+                                  </label>
                                 </div>
                                 <div className="overflow-y-auto">
-                                  {decorations
-                                    .filter(item => {
-                                      if (!item['名称']) return false;
-                                      const searchTerm = hiraganaToKatakana(excludeSearch.deco).toLowerCase();
-                                      const itemName = hiraganaToKatakana(item['名称']).toLowerCase();
-                                      return itemName.includes(searchTerm);
-                                    })
-                                    .map((item, idx) => (
+                                  {filteredDecoList.map((item, idx) => (
                                       <div key={idx} className={`p-2 ${currentThemeColors.pullmHov}`}>
                                         <label key={idx} className="flex items-center gap-2 cursor-pointer">
                                           <input
@@ -2029,7 +2007,6 @@ return (
                     </div>
                   )}
 
-                  {/* Main section for tabs */}
                   {!loading && !error && (
                     <div className="mb-6">
                       <div className={`flex border-b ${currentThemeColors.indexBdr} mb-4`}>
@@ -2399,7 +2376,6 @@ return (
                           </div>
                         </div>
 
-                        {/* Bulk Equipment Selection Section */}
                         <div className="mb-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="relative" style={contextAnchorStyle}>
@@ -2494,7 +2470,6 @@ return (
                                 </div>
                             </div>
                         </div>
-                        {/* End Bulk Equipment Selection Section */}
 
                         <div className="grid mb-6"></div>
 
