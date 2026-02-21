@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>スタイル情報ビューア</title>
+    <title>★スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
@@ -1838,6 +1838,13 @@
         document.querySelectorAll('#searchLogicCategory .logic-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector('#searchLogicCategory .logic-btn[data-logic="and"]').classList.add('active');
         
+        // ソート順のリセット
+        const sortBtns = document.querySelectorAll('#searchSortCategory .sort-btn');
+        if (sortBtns.length > 0) {
+            sortBtns.forEach(btn => btn.classList.remove('active'));
+            document.querySelector('#searchSortCategory .sort-btn[data-sort="date-desc"]').classList.add('active');
+        }
+
         document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active').forEach(btn => btn.classList.remove('active'));
 
         document.querySelectorAll('#extraForceSearchContainer .tag-btn.active').forEach(btn => btn.classList.remove('active'));
@@ -2154,11 +2161,14 @@
         const typesAttr = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
         const effects = ['極小', '小', '中', '大', '特大', '極大', '超極大', '超極大+'];
 
-        // 除外判定用セット（武器種と属性）
+        // 除外判定用セット（武器種と属性単体）
         const excludedTypesSet = new Set([...typesWeapon, ...typesAttr]);
 
-        // --- 「その他」タイプの抽出ロジック（CSV順序維持） ---
-        const typesOtherOrdered = [];
+        // --- 各カテゴリごとの抽出用配列（CSV順序維持） ---
+        const typesMultiAttr = [];    // 複属性用 (属性のみの組み合わせ)
+        const typesWeakComb = [];     // Weak兼用の (Weak・〜)
+        const typesComplex = [];      // 複合用 (武器種などが混ざった組み合わせ)
+        const typesOtherOrdered = []; // その他用
         const seenTypes = new Set();
         
         // addInfoOrderedKeys はCSV読み込み時に作成された順序保持配列
@@ -2170,10 +2180,26 @@
                 if (match) {
                     const typeContent = match[1];
                     
-                    // 武器種・属性リストになく、かつ未登録の場合のみ追加
+                    // 武器種単体・属性単体になく、かつ未登録の場合のみ追加
                     if (!excludedTypesSet.has(typeContent) && !seenTypes.has(typeContent)) {
-                        typesOtherOrdered.push(typeContent);
                         seenTypes.add(typeContent);
+                        
+                        // 文字列の条件に応じて各配列へ振り分け
+                        if (typeContent.startsWith('Weak・')) {
+                            typesWeakComb.push(typeContent);
+                        } else if (typeContent.includes('・')) {
+                            // 「・」で分割し、すべてが基本属性かチェックする
+                            const parts = typeContent.split('・');
+                            const isAllAttr = parts.every(part => typesAttr.includes(part));
+                            
+                            if (isAllAttr) {
+                                typesMultiAttr.push(typeContent); // すべて属性なら複属性へ
+                            } else {
+                                typesComplex.push(typeContent);   // 属性以外が混ざっていれば複合へ
+                            }
+                        } else {
+                            typesOtherOrdered.push(typeContent);
+                        }
                     }
                 }
             }
@@ -2190,6 +2216,8 @@
 
         // --- セクション作成関数 ---
         const createSection = (title, items, datasetKey, btnClass = 'extra-force-btn') => {
+            if (!items || items.length === 0) return; // 空の場合は表示しない
+
             const div = document.createElement('div');
             div.className = 'tag-category single-line-layout';
             div.innerHTML = `<div class="tag-category-title">${title}:</div>`;
@@ -2200,8 +2228,6 @@
             items.forEach(item => {
                 // 効果の場合は存在するデータのみ表示
                 if (datasetKey === 'efEffect' && !existingEffects.has(item)) return;
-                
-                // タイプの場合はCSVから抽出済みなのでそのまま表示
                 
                 hasButtons = true;
                 const btn = document.createElement('button');
@@ -2233,7 +2259,10 @@
         // 各セクションの生成
         createSection('武器種', typesWeapon, 'efType');
         createSection('属性', typesAttr, 'efType');
-        createSection('その他', typesOtherOrdered, 'efType'); // ← ここがCSV順になります
+        createSection('複属性', typesMultiAttr, 'efType'); // 属性のみの組み合わせ
+        createSection('Weak兼', typesWeakComb, 'efType');  // Weak・〜
+        createSection('複合', typesComplex, 'efType');     // それ以外の・を含む組み合わせ
+        createSection('その他', typesOtherOrdered, 'efType'); // CSV順
         createSection('効果', effects, 'efEffect');
         
         // 対象スコープのボタン
@@ -2384,6 +2413,23 @@
         container.querySelectorAll('.logic-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 container.querySelectorAll('.logic-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                performTagSearch();
+            });
+        });
+
+        // --- ソートカテゴリの生成 ---
+        const sortCategory = document.createElement('div');
+        sortCategory.className = 'tag-category single-line-layout';
+        sortCategory.id = 'searchSortCategory';
+        sortCategory.style.paddingTop = '0px';
+        sortCategory.style.marginTop = '15px';
+        sortCategory.innerHTML = `<div class="tag-category-title">結果順:</div><div class="tag-buttons"><button class="tag-btn sort-btn" data-sort="kana-asc">50音昇順</button><button class="tag-btn sort-btn" data-sort="kana-desc">50音降順</button><button class="tag-btn sort-btn" data-sort="date-asc">実装昇順</button><button class="tag-btn sort-btn active" data-sort="date-desc">実装降順</button></div>`;
+        searchScopeCategory.after(sortCategory);
+        
+        sortCategory.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                sortCategory.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 performTagSearch();
             });
@@ -2585,13 +2631,11 @@
         const activeCharWeaponBtns = [...document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active')];
         const hasCharWeaponFilter = activeCharWeaponBtns.length > 0;
         
-        // --- エクストラフォース用フィルタの取得 ---
         const activeExtraForceTypeBtns = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn[data-ef-type].active')];
         const activeExtraForceEffectBtns = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn[data-ef-effect].active')];
         const activeExtraForceScopeBtns = [...document.querySelectorAll('#extraForceSearchContainer .extra-force-scope-btn.active')];
         const hasExtraForceFilter = activeExtraForceTypeBtns.length > 0 || activeExtraForceEffectBtns.length > 0 || activeExtraForceScopeBtns.length > 0;
 
-        // 除外フィルタ用
         const excludedEfTypeBtns = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn[data-ef-type].excluded')];
         const excludedEfEffectBtns = [...document.querySelectorAll('#extraForceSearchContainer .tag-btn[data-ef-effect].excluded')];
         const excludedEfScopeBtns = [...document.querySelectorAll('#extraForceSearchContainer .extra-force-scope-btn.excluded')];
@@ -2692,7 +2736,6 @@
                     if (item.type === 'addInfo' && itemName.startsWith('エクストラフォース')) {
                         allChecks.push(false);
                     } else {
-                        // 修正: Regexに「対象に」を追加
                         const efRegex = /(?<context>味方生存者|敵生存者)?(?<prefix>自身に|全体に|対象と自身に|対象に)「(?<efName>エクストラフォース)\((?<type>[^/]+)\/(?<effect>[^)]+)\)」/g;
                         
                         let isEfMatch = false;
@@ -2708,7 +2751,6 @@
                                 if (excludedEfTypeBtns.some(b => type === b.dataset.efType)) return false;
                                 if (excludedEfEffectBtns.some(b => effect === b.dataset.efEffect)) return false;
                                 
-                                // 修正: 除外判定で「対象に」を考慮
                                 if (excludedEfScopeBtns.some(b => {
                                     if (b.dataset.scope === '自身') return prefix === '自身に';
                                     if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に' || prefix === '対象に');
@@ -2718,7 +2760,6 @@
                                 let typeHit = !hasTypeFilter || activeExtraForceTypeBtns.some(b => type === b.dataset.efType);
                                 let effectHit = !hasEffectFilter || activeExtraForceEffectBtns.some(b => effect === b.dataset.efEffect);
                                 
-                                // 修正: ヒット判定で「対象に」を考慮
                                 let scopeHit = !hasScopeFilter || activeExtraForceScopeBtns.some(b => {
                                     if (b.dataset.scope === '自身') return prefix === '自身に';
                                     if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に' || prefix === '対象に');
@@ -2750,7 +2791,6 @@
                                 let resContext = context;
                                 
                                 if (hasScopeFilter) {
-                                    // 修正: ハイライト判定で「対象に」を考慮
                                     const scopeMatched = activeExtraForceScopeBtns.some(b => {
                                         if (b.dataset.scope === '自身') return prefix === '自身に';
                                         if (b.dataset.scope === '味方') return (prefix === '全体に' || prefix === '対象と自身に' || prefix === '対象に');
@@ -2758,7 +2798,6 @@
                                     });
                                     if (scopeMatched) {
                                         resPrefix = `<span class="highlight">${prefix}</span>`;
-                                        // 修正: コンテキストハイライトも同様に
                                         if (context && (prefix === '全体に' || prefix === '対象と自身に' || prefix === '対象に')) {
                                             resContext = `<span class="highlight">${context}</span>`;
                                         }
@@ -2819,6 +2858,48 @@
             });
             return foundItems.length > 0 ? { character: styleData.character, styleName: styleData.styleName, items: foundItems } : null;
         }).filter(Boolean);
+
+        // --- ソート処理の適用 ---
+        const activeSortBtn = document.querySelector('#searchSortCategory .sort-btn.active');
+        const sortType = activeSortBtn ? activeSortBtn.dataset.sort : 'date-desc';
+
+        const getKana = (charName) => {
+            const matchRow = db.characterOrder.find(row => row['キャラ名'] === charName || row['キャラ名'].startsWith(charName + '('));
+            return matchRow && matchRow['フリガナ'] ? matchRow['フリガナ'] : charName;
+        };
+
+        const getDate = (charName, styleNameFull) => {
+            const match = db.styles.find(s => s['キャラ名'] === charName && `[${s['グレード']}] ${s['スタイル名']}` === styleNameFull);
+            return match && match['実装時期'] ? match['実装時期'] : '';
+        };
+
+        results.sort((a, b) => {
+            if (sortType.startsWith('kana')) {
+                const kanaA = getKana(a.character);
+                const kanaB = getKana(b.character);
+                if (kanaA !== kanaB) {
+                    return sortType === 'kana-asc' ? kanaA.localeCompare(kanaB, 'ja') : kanaB.localeCompare(kanaA, 'ja');
+                }
+                // フリガナが同じ場合は実装時期で降順ソート
+                const dateA = getDate(a.character, a.styleName);
+                const dateB = getDate(b.character, b.styleName);
+                if (dateA !== dateB) return dateB.localeCompare(dateA);
+            } else if (sortType.startsWith('date')) {
+                const dateA = getDate(a.character, a.styleName);
+                const dateB = getDate(b.character, b.styleName);
+                if (dateA !== dateB) {
+                    return sortType === 'date-asc' ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA);
+                }
+                // 実装時期が同じ場合はフリガナで昇順ソート
+                const kanaA = getKana(a.character);
+                const kanaB = getKana(b.character);
+                if (kanaA !== kanaB) return kanaA.localeCompare(kanaB, 'ja');
+            }
+            // 完全に一致する場合はスタイル名でソート
+            return a.styleName.localeCompare(b.styleName, 'ja');
+        });
+        // ------------------------
+
         displaySearchResults(results, { isSkillScope, isAbilityScope, isAddInfoScope });
     }
 
@@ -3101,8 +3182,14 @@
                 displayCharName = matchRow['キャラ名'];
             }
             // ----------------------------------------------
+            
+            // --- 修正: 実装時期を取得してスタイル名に付与 ---
+            const styleInfo = db.styles.find(s => s['キャラ名'] === res.character && `[${s['グレード']}] ${s['スタイル名']}` === res.styleName);
+            const releaseDate = styleInfo && styleInfo['実装時期'] ? ` (${styleInfo['実装時期']})` : '';
+            const displayStyleName = `${res.styleName}${releaseDate}`;
+            // ----------------------------------------------
 
-            return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${displayCharName}</h3><h4><a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" class="web-link" title="Google画像検索で開く">${res.styleName}</a></h4><div class="card">${cardHtml}</div></div>`;
+            return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${displayCharName}</h3><h4><a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" class="web-link" title="Google画像検索で開く">${displayStyleName}</a></h4><div class="card">${cardHtml}</div></div>`;
         }).join('');
         
         searchResultsContainer.style.display = 'grid';
