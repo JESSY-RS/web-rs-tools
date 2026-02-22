@@ -749,6 +749,9 @@
              border-color: #d63384 !important;
              color: white !important;
         }
+        #extraForceSearchContainer .tag-btn:hover {
+             border-color: #d63384;
+        }
         /* --- ここまで --- */
         #toggleVisibilityBtn.active {
             background-color: #6c757d !important;
@@ -778,7 +781,7 @@
     <div class="controls-wrapper">
         <div id="viewModeControls">
             <div class="control-group">
-                <label for="characterBtn">キャラ名:</label>
+                <label>キャラ名:</label>
                 <div class="custom-select-container" id="characterContainer">
                     <button class="custom-select-button" id="characterBtn" disabled>
                         <span id="characterText">---</span>
@@ -791,7 +794,7 @@
                 </div>
             </div>
             <div class="control-group">
-                <label for="styleBtn">スタイル名:</label>
+                <label>スタイル名:</label>
                 <div class="custom-select-container" id="styleContainer">
                     <button class="custom-select-button" id="styleBtn" disabled>
                         <span id="styleText">---</span>
@@ -805,7 +808,7 @@
             </div>
             
             <div class="control-group control-group-separator">
-                <label for="additionalExclusionSelect">追加除外:</label>
+                <label>追加除外:</label>
                 <div class="custom-select-container" id="additionalExclusionContainer">
                     <button class="custom-select-button" id="additionalExclusionBtn">
                         <span id="additionalExclusionText">(未指定)</span>
@@ -1405,6 +1408,9 @@
              optionsContainer.innerHTML = '<div class="custom-select-option" style="color: #999;">該当なし</div>';
         }
         
+        // ★追加: リストを再描画した際に、スクロール位置を一番上に戻す
+        optionsContainer.scrollTop = 0;
+        
         btn.disabled = false;
     }
 
@@ -1495,6 +1501,9 @@
                 });
                 optionsContainer.appendChild(optionDiv);
             });
+
+            // ★追加: リストを再描画した際に、スクロール位置を一番上に戻す
+            optionsContainer.scrollTop = 0;
         };
 
         btn.addEventListener('click', () => {
@@ -1502,7 +1511,7 @@
             dropdown.style.display = isOpen ? 'none' : 'flex';
             if (!isOpen) {
                 searchInput.value = '';
-                renderOptions();
+                renderCharacterOptions();
                 const currentCharacterName = selectedText.textContent;
                 
                 if (currentCharacterName && !currentCharacterName.startsWith('現在の登録数')) {
