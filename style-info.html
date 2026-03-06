@@ -1660,10 +1660,12 @@
             }
         }
         summaryParts.push(slashStr + attrStr);
-        if (data['準備']) summaryParts.push(`[スタンバイターン:${data['準備']}]`);
-        if (data['再使用']) summaryParts.push(`[リキャストターン:${data['再使用']}]`);
-        if (data['制限'] && !(type === 'addInfo' && data['制限'] === '1')) {
-            summaryParts.push(`[使用回数制限:バトル中${data['制限']}回]`);
+        
+        // 追加情報以外の場合のみスタンバイ、リキャスト、使用回数制限を表示するよう条件を追加
+        if (type !== 'addInfo') {
+            if (data['準備']) summaryParts.push(`[スタンバイターン:${data['準備']}]`);
+            if (data['再使用']) summaryParts.push(`[リキャストターン:${data['再使用']}]`);
+            if (data['制限']) summaryParts.push(`[使用回数制限:バトル中${data['制限']}回]`);
         }
         
         if (data['特殊'] && data['特殊'].trim() !== '') {
