@@ -4,10 +4,10 @@
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="shortcut icon" href="favicon-niji.ico">
-  <link rel="apple-touch-icon" href="apple-touch-icon-niji.png">
-  <link rel="icon" type="image/png" href="web-app-manifest-192x192-niji.png">
-  <title>虹瑠璃の腕輪チェッカー</title> <!-- Created by じぇ -->
+  <link rel="shortcut icon" href="favicon-relic.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-relic.png">
+  <link rel="icon" type="image/png" href="web-app-manifest-192x192-relic.png">
+  <title>(仮)ファンタズムレリックチェッカー</title>
 
   <style>
 
@@ -31,7 +31,7 @@
       row-gap: 10px;
       column-gap: 20px;
       flex-wrap: wrap;
-      min-width: 0; /* flex-shrinkを有効にするため */
+      min-width: 0;
     }
 
     .stars {
@@ -68,13 +68,11 @@
       margin-bottom: -15px;
     }
 
-    /* 大分類ごとの色指定 */
-    .M01 { color: hotpink; }
+    .M01 { color: fuchsia; }
     .M02 { color: red; }
     .M03 { color: gray; }
     .M04 { color: royalblue; }
 
-    /* 小分類ごとの色指定 */
     .S01 { color: darkorchid; }
     .S02 { color: dodgerblue; }
     .S03 { color: dodgerblue; }
@@ -87,17 +85,7 @@
     .S10 { color: yellow; }
     .S11 { color: orangered; }
 
-    .S01, 
-    .S02, 
-    .S03, 
-    .S04, 
-    .S05, 
-    .S06, 
-    .S07, 
-    .S08, 
-    .S09,
-    .S10,
-    .S11 {
+    .S01, .S02, .S03, .S04, .S05, .S06, .S07, .S08, .S09, .S10, .S11 {
       font-size: 30px;
     }
 
@@ -112,32 +100,16 @@
       margin-right: 10px;
     }
 
-    /* リンクのスタイル */
-    a:link {
-      color: #1D9BF0;
-      text-decoration: underline;
-    }
-
-    a:visited {
-      color: #7755FF;
-      text-decoration: underline;
-    }
-
-    a:hover {
-      color: #0CFF57;
-    }
-
-    a:active {
-      color: #FF0000;
-      text-decoration: underline;
-    }
+    a:link { color: #1D9BF0; text-decoration: underline; }
+    a:visited { color: #7755FF; text-decoration: underline; }
+    a:hover { color: #0CFF57; }
+    a:active { color: #FF0000; text-decoration: underline; }
 
     .bottom {
       font-size: 16pt;
       margin-top: 20px;
     }
 
-    /* フッターのスタイル */
     footer {
       border-top: 1px solid #eee;
       padding-top: 10px;
@@ -145,7 +117,6 @@
       margin-top: 20px;
     }
 
-    /* スクロールボタンのスタイル */
     .scroll-buttons {
       position: fixed;
       top: 20px;
@@ -166,11 +137,8 @@
       border-radius: 4px;
     }
 
-    .scroll-button:hover {
-      background-color: #666;
-    }
+    .scroll-button:hover { background-color: #666; }
 
-    /* 拡大縮小ボタンのスタイル */
     .zoom-buttons {
       display: flex;
       flex-direction: row;
@@ -191,20 +159,10 @@
       box-sizing: border-box;
     }
 
-    .zoom-buttons button:hover {
-      background-color: #ccc;
-    }
+    .zoom-buttons button:hover { background-color: #ccc; }
+    .zoom-controls { display: none; }
+    .zoom-controls.show { display: flex; gap: 8px; }
 
-    .zoom-controls {
-      display: none;
-    }
-
-    .zoom-controls.show {
-      display: flex;
-      gap: 8px;
-    }
-
-    /* ハンバーガーメニューのスタイル */
     .hamburger {
       font-size: 28px;
       cursor: pointer;
@@ -213,10 +171,7 @@
       color: #eee;
       display: inline-block;
     }
-    
-    .hamburger:hover {
-      color: #2A99E6;
-    }
+    .hamburger:hover { color: #2A99E6; }
 
     .side-menu {
       position: fixed;
@@ -236,9 +191,7 @@
       overscroll-behavior: contain;
     }
 
-    .side-menu.open {
-      left: 0;
-    }
+    .side-menu.open { left: 0; }
 
     .menu-overlay {
       position: fixed;
@@ -255,10 +208,7 @@
       transition: opacity 0.3s, visibility 0.3s;
     }
 
-    .menu-overlay.open {
-      opacity: 1;
-      visibility: visible;
-    }
+    .menu-overlay.open { opacity: 1; visibility: visible; }
 
     .menu-close {
       position: absolute;
@@ -270,9 +220,7 @@
       user-select: none;
     }
 
-    .menu-close:hover {
-      color: #ff6b6b;
-    }
+    .menu-close:hover { color: #ff6b6b; }
 
     .menu-title {
       font-size: 20px;
@@ -290,28 +238,16 @@
       color: #eee;
       text-decoration: none;
     }
-
-    .menu-item:hover {
-      color: #0CFF57;
-    }
-
-    .menu-item:last-child {
-      border-bottom: none;
-    }
-
-    .menu-spacer {
-      height: 30px;
-    }
+    .menu-item:hover { color: #0CFF57; }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-spacer { height: 30px; }
 
   </style>
-
 </head>
 <body>
 
-  <!-- サイドメニューオーバーレイ -->
   <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 
-  <!-- サイドメニュー -->
   <div class="side-menu" id="sideMenu">
     <div class="menu-title">チェッカー関連リンク</div>
     <a href="checker-relic.html" class="menu-item">ファンタズムレリックチェッカー</a><br>
@@ -334,9 +270,8 @@
     <a href="index.html" class="menu-item">インデックスページ</a><br>
   </div>
 
-  <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> 虹瑠璃の腕輪チェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> (仮)ファンタズムレリックチェッカー</h1>
   </div>
 
   <div class="controls">
@@ -347,7 +282,7 @@
 
   <div class="bottom">
     <br>
-    <a href="report-niji.html">報告用ページへ</a>
+    <a href="report-relic.html">報告用ページへ</a>
     <br>
   </div>
 
@@ -359,36 +294,25 @@
   </footer>
 
   <script>
-
-    // サイドメニューの特定項目の表示設定
-    // キー：表示/非表示を切り替えたい要素のID
-    // 値：その要素を表示したいページの<title>の配列
     const sideMenuVisibilityConfig = {
       'variable-links-4gen': ['四元像ピアスチェッカー']
     };
 
-    // ハンバーガーメニューの関数
     function toggleMenu() {
-        // 現在のページのタイトルを取得
         const currentPageTitle = document.title;
-
-        // 設定に基づいてメニュー項目の表示/非表示を切り替え
         for (const elementId in sideMenuVisibilityConfig) {
           const targetElement = document.getElementById(elementId);
           if (targetElement) {
             const visiblePages = sideMenuVisibilityConfig[elementId];
-            // 表示対象ページの配列に現在のページタイトルが含まれているかチェック
             if (visiblePages.includes(currentPageTitle)) {
-              targetElement.style.display = 'block'; // 表示
+              targetElement.style.display = 'block'; 
             } else {
-              targetElement.style.display = 'none';  // 非表示
+              targetElement.style.display = 'none';  
             }
           }
         }
-
         const sideMenu = document.getElementById('sideMenu');
         const menuOverlay = document.getElementById('menuOverlay');
-
         if (sideMenu.classList.contains('open')) {
             closeMenu();
         } else {
@@ -400,74 +324,45 @@
     function closeMenu() {
         const sideMenu = document.getElementById('sideMenu');
         const menuOverlay = document.getElementById('menuOverlay');
-        const menuClose = document.getElementById('menuClose');
-
         sideMenu.classList.remove('open');
         menuOverlay.classList.remove('open');
-        menuClose.style.color = '#eee';
     }
 
-    // フリックでメニュー開閉（スクロール誤作動対策版）
-    let startX = 0, startY = 0;
-    let endX = 0, endY = 0;
-
+    let startX = 0, startY = 0, endX = 0, endY = 0;
     document.addEventListener('touchstart', function (e) {
-      // タッチ開始時のX座標とY座標を記録
       startX = e.changedTouches[0].screenX;
       startY = e.changedTouches[0].screenY;
     }, false);
-
     document.addEventListener('touchend', function (e) {
-      // タッチ終了時のX座標とY座標を記録
       endX = e.changedTouches[0].screenX;
       endY = e.changedTouches[0].screenY;
-      handleGesture(); // ジェスチャーを判定する関数を呼び出し
+      handleGesture(); 
     }, false);
 
     function handleGesture() {
-      const diffX = endX - startX; // 水平方向の移動量
-      const diffY = endY - startY; // 垂直方向の移動量
-
-      // 条件1: 水平方向の移動量が、垂直方向の移動量よりも大きい場合のみ処理（スワイプかスクロールかを判定）
+      const diffX = endX - startX; 
+      const diffY = endY - startY; 
       if (Math.abs(diffX) > Math.abs(diffY)) {
-
-        // 条件2-1: 右へのスワイプ（50px以上移動し、かつ画面の左端30px以内から開始）
         if (diffX > 50 && startX < 30) {
-          // 右にフリックしてメニューを開く
           toggleMenu();
-        } 
-        // 条件2-2: 左へのスワイプ（50px以上移動）
-        else if (diffX < -50) {
-          // 左にフリックしてメニューを閉じる
+        } else if (diffX < -50) {
           closeMenu();
         }
       }
-      // 垂直方向の移動量が大きい場合は、何もしない（ブラウザの標準スクロールに任せる）
     }
 
-    // 拡大縮小の関数
     const PAGE_SETTING_KEY = 'PageSettings'; 
-    
-    let pageSettings = { 'checker-niji_zoom': 1.0 };
+    let pageSettings = { 'checker-relic_zoom': 1.0 };
     
     function changeZoom(delta) {
-        const zoomKey = 'checker-niji_zoom';
+        const zoomKey = 'checker-relic_zoom';
         let currentZoom = pageSettings[zoomKey];
-    
         currentZoom += delta;
-
         currentZoom = Math.round(currentZoom * 10) / 10;
-
         if (currentZoom < 0.5) currentZoom = 0.5;
         if (currentZoom > 2.0) currentZoom = 2.0;
-        
-        // 画面の表示に反映
         document.body.style.zoom = currentZoom;
-        
-        // 設定オブジェクトの値を更新
         pageSettings[zoomKey] = currentZoom;
-        
-        // localStorageに保存
         savePageSettings();
     }
     
@@ -475,7 +370,6 @@
         try {
             const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
             if (savedSettings) {
-                // 保存済みの設定があれば、デフォルト値と結合して上書きします。
                 pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
             }
         } catch (error) {
@@ -492,13 +386,10 @@
     }
 
     let zoomControlsVisible = false;
-
     function toggleZoomControls() {
       const zoomControls = document.getElementById('zoomControls');
       const zoomToggle = document.getElementById('zoomToggle');
-      
       zoomControlsVisible = !zoomControlsVisible;
-      
       if (zoomControlsVisible) {
         zoomControls.classList.add('show');
         zoomToggle.style.display = 'none';
@@ -508,47 +399,46 @@
       }
     }
 
-    // --- 管理者モード・自動保存機能 ---
-    const ADMIN_KEY = 'checker-niji_mode';
-    const DATA_KEY = 'checker-niji_admin_data';
+    const ADMIN_KEY = 'checker-relic_mode';
+    const DATA_KEY = 'checker-relic_admin_data';
     let isAdminMode = false;
 
     function checkMode() {
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode');
-
-        // URLパラメータによるモード切り替え
         if (modeParam === 'secret_admin_on') {
             localStorage.setItem(ADMIN_KEY, 'admin');
         } else if (modeParam === 'secret_debug_on') {
             localStorage.setItem(ADMIN_KEY, 'debug');
         }
-
-        // 保存されたモード設定を読み込み
         const savedMode = localStorage.getItem(ADMIN_KEY);
         isAdminMode = (savedMode === 'admin');
     }
 
     function saveAdminData() {
-        if (!isAdminMode) return; // 管理者モードでなければ保存しない
-        
+        if (!isAdminMode) return; 
         const result = {};
         const allStars = document.querySelectorAll('.stars');
         allStars.forEach(stars => {
             const key = stars.dataset.key;
             const starElems = stars.querySelectorAll('.star');
             let starString = '';
-            starElems.forEach(s => starString += s.textContent);
+            starElems.forEach(s => {
+                if (s.classList.contains('on')) {
+                    starString += '★'; // 黄色
+                } else if (s.textContent === '★') {
+                    starString += '◆'; // ダークグレー（保存用記号）
+                } else {
+                    starString += '☆'; // 空
+                }
+            });
             result[key] = starString;
         });
-        
-        // ローカルストレージに保存
         localStorage.setItem(DATA_KEY, JSON.stringify(result));
     }
 
     function loadAdminData() {
-        if (!isAdminMode) return; // 管理者モードでなければ読み込まない
-
+        if (!isAdminMode) return;
         try {
             const savedData = localStorage.getItem(DATA_KEY);
             if (savedData) {
@@ -566,41 +456,45 @@
             if (stars) {
                 const starElems = stars.querySelectorAll('.star');
                 for (let i = 0; i < 5; i++) {
-                    starElems[i].textContent = data[key][i] || '☆';
-                    if (data[key][i] === '★') {
+                    const val = data[key][i] || '☆';
+                    if (val === '★') {
+                        // 黄色の★
+                        starElems[i].textContent = '★';
                         starElems[i].classList.add('on');
+                    } else if (val === '◆') {
+                        // ダークグレーの★
+                        starElems[i].textContent = '★';
+                        starElems[i].classList.remove('on');
                     } else {
+                        // 空の☆
+                        starElems[i].textContent = '☆';
                         starElems[i].classList.remove('on');
                     }
                 }
             }
         }
     }
-    // ----------------------------------
 
-    const groups = [
-      { title: "虹瑠璃の腕輪", color: "M01" },
-    ];
+    const groups = [{ title: "ファンタズムレリック", color: "M01" }];
 
     const attributes = [
-      { name: "GBSaGa", class: "S01" },
-      { name: "RS1", class: "S02" },
-      { name: "RS2", class: "S03" },
-      { name: "RS3", class: "S04" },
-      { name: "SF1", class: "S05" },
-      { name: "SF2", class: "S06" },
-      { name: "US", class: "S07" },
-      { name: "ES&IS", class: "S08" },
-      { name: "SSG", class: "S09" },
-      { name: "SaGaEB", class: "S10" },
-      { name: "SaGaRS", class: "S11" }
+      { name: "剣", class: "S02" },
+      { name: "大剣", class: "S03" },
+      { name: "斧", class: "S04" },
+      { name: "棍棒", class: "S05" },
+      { name: "体術", class: "S06" },
+      { name: "銃", class: "S07" },
+      { name: "小剣", class: "S08" },
+      { name: "槍", class: "S09" },
+      { name: "弓", class: "S10" },
+      { name: "杖", class: "S11" },
+      { name: "詩人", class: "S01" }
     ];
 
     function init() {
       const container = document.getElementById('statusContainer');
       container.innerHTML = '';
 
-      // 管理者モードの場合、タイトルに (Admin) を追加
       if (isAdminMode) {
           const h1 = document.querySelector('h1');
           if (h1 && !h1.innerHTML.includes('[Admin Mode: Auto-Save ON]')) {
@@ -610,7 +504,6 @@
 
       groups.forEach(group => {
         const groupTitle = document.createElement('div');
-        //groupTitle.textContent = group.title;
         groupTitle.className = `group-title ${group.color}`;
         groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
 
@@ -648,15 +541,21 @@
             star.textContent = '☆';
             star.className = 'star';
             star.dataset.index = i;
+            
+            // 3段階クリックの処理
             star.addEventListener('click', function () {
               if (this.textContent === '☆') {
+                // 1回目：ダークグレーの★
                 this.textContent = '★';
+                this.classList.remove('on');
+              } else if (this.textContent === '★' && !this.classList.contains('on')) {
+                // 2回目：黄色の★
                 this.classList.add('on');
               } else {
+                // 3回目：空の☆
                 this.textContent = '☆';
                 this.classList.remove('on');
               }
-              // 管理者モードの場合、変更を即座に保存
               saveAdminData();
             });
             stars.appendChild(star);
@@ -667,43 +566,12 @@
           container.appendChild(line);
         });
 
-        // グループごとのエクスポートボタン
         const exportBtn = document.createElement('button');
         exportBtn.textContent = '状態をエクスポート';
         exportBtn.style.marginTop = '15px';
         exportBtn.addEventListener('click', exportState);
         container.appendChild(exportBtn);
       });
-    }
-
-    function setupScrollButtons() {
-      const groupTitles = document.querySelectorAll('.group-title');
-      let currentGroupIndex = 0;
-
-      function scrollToGroup(index) {
-        if (index >= 0 && index < groupTitles.length) {
-          groupTitles[index].scrollIntoView({ behavior: 'instant', block: 'start' });
-          currentGroupIndex = index;
-        }
-      }
-
-      const downBtn = document.getElementById('scrollDown');
-      if (downBtn) {
-          downBtn.addEventListener('click', () => {
-            if (currentGroupIndex < groupTitles.length - 1) {
-              scrollToGroup(currentGroupIndex + 1);
-            }
-          });
-      }
-
-      const upBtn = document.getElementById('scrollUp');
-      if (upBtn) {
-          upBtn.addEventListener('click', () => {
-            if (currentGroupIndex > 0) {
-              scrollToGroup(currentGroupIndex - 1);
-            }
-          });
-      }
     }
 
     function exportState() {
@@ -713,14 +581,22 @@
         const key = stars.dataset.key;
         const starElems = stars.querySelectorAll('.star');
         let starString = '';
-        starElems.forEach(s => starString += s.textContent);
+        starElems.forEach(s => {
+            if (s.classList.contains('on')) {
+                starString += '★'; // 黄色
+            } else if (s.textContent === '★') {
+                starString += '◆'; // ダークグレー（保存用記号）
+            } else {
+                starString += '☆'; // 空
+            }
+        });
         result[key] = starString;
       });
 
       const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "虹瑠璃の腕輪獲得状況.json";
+      link.download = "ファンタズムレリック獲得状況.json";
       link.click();
     }
 
@@ -732,7 +608,6 @@
         try {
           const data = JSON.parse(event.target.result);
           applyData(data);
-          // 管理者モードの場合、インポートした内容も即保存
           saveAdminData();
         } catch (error) {
           alert('ファイルの内容が不正です。');
@@ -741,15 +616,13 @@
       reader.readAsText(file);
     });
 
-    // 初期化
     document.addEventListener('DOMContentLoaded', () => {
-        checkMode(); // モードチェック
+        checkMode(); 
         loadPageSettings();
-        document.body.style.zoom = pageSettings['checker-niji_zoom'];
+        document.body.style.zoom = pageSettings['checker-relic_zoom'];
         
-        init(); // 画面構築
-
-        loadAdminData(); // 管理者モードならデータを復元
+        init(); 
+        loadAdminData(); 
     });
 
   </script>
