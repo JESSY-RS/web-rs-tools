@@ -7,7 +7,7 @@
   <link rel="shortcut icon" href="favicon-relic.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-relic.png">
   <link rel="icon" type="image/png" href="web-app-manifest-192x192-relic.png">
-  <title>(仮)ファンタズムレリック報告用</title> <style>
+  <title>ファンタズムレリック報告用</title> <style>
 
     body {
       margin: 20px;
@@ -242,7 +242,7 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> (仮)ファンタズムレリック</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> ファンタズムレリック</h1>
   </div>
 
   <div class="zoom-buttons">
@@ -343,8 +343,9 @@
     attributes.forEach(attr => {
       const div = document.createElement("div");
       div.className = "attribute";
-      const id = `ファンタズムレリック_${attr.name}`;
-      const initialStars = "☆☆☆☆☆";
+      // IDをチェッカーの「武装共鳴or詩人刻印のみ」に合わせる
+      const id = `武装共鳴or詩人刻印のみ_${attr.name}`;
+      const initialStars = "・・・・・";
       // data-raw 属性に元の文字列を保持させることで集計を正確に行う
       div.innerHTML = `<span class="${attr.className}">${attr.name}</span>&nbsp;<span class="stars" id="${id}" data-raw="${initialStars}">${decorateStars(initialStars)}</span>`;
       pierceGroup.appendChild(div);
@@ -356,11 +357,11 @@
       let totalStars = 0;
       const totalAttrs = attributes.length;
       attributes.forEach(attr => {
-        const el = document.getElementById(`ファンタズムレリック_${attr.name}`);
+        const el = document.getElementById(`武装共鳴or詩人刻印のみ_${attr.name}`);
         if (!el) return;
         
         // 画面の表示(textContent)ではなく、data-rawに保存された元の文字列で黄色の★だけをカウントする
-        const rawString = el.dataset.raw || "☆☆☆☆☆";
+        const rawString = el.dataset.raw || "・・・・・";
         const starCount = (rawString.match(/★/g) || []).length;
         
         totalStars += starCount;
@@ -374,13 +375,14 @@
       `;
     }
 
-    // 星装飾 (◆はダークグレーの★として表示)
+    // 星装飾 (◆や✦はダークグレーの★、・はグレーの・として表示)
     function decorateStars(text){
       let result = "";
       for (let char of text) {
         result += char === "★" ? `<span style="color:gold;">★</span>` :
-                  char === "◆" ? `<span style="color:darkgray;">★</span>` :
-                  char === "☆" ? `<span style="color:gray;">☆</span>` : char;
+                  (char === "◆" || char === "✦") ? `<span style="color:darkgray;">★</span>` :
+                  char === "☆" ? `<span style="color:gray;">☆</span>` : 
+                  char === "・" ? `<span style="color:gray;">・</span>` : char;
       }
       return result;
     }
@@ -392,12 +394,26 @@
       const reader = new FileReader();
       reader.onload = e => {
         const data = JSON.parse(e.target.result);
+
+        // 旧ファイル判定
+        const isOldFile = Object.keys(data).some(k => k.startsWith('ファンタズムレリック_'));
+
         for (let key in data) {
-          const el = document.getElementById(key);
+          if (key === "_version") continue;
+
+          let targetKey = key;
+          let rawData = data[key];
+
+          // 旧ファイルの場合はキー名を置き換え、☆を・に変換
+          if (isOldFile && key.startsWith('ファンタズムレリック_')) {
+            targetKey = key.replace('ファンタズムレリック_', '武装共鳴or詩人刻印のみ_');
+            rawData = rawData.replace(/☆/g, '・');
+          }
+
+          const el = document.getElementById(targetKey);
           if (el) {
-            // 元の文字列（◆を含む）を data-raw に保存してから装飾を行う
-            el.dataset.raw = data[key];
-            el.innerHTML = decorateStars(data[key]);
+            el.dataset.raw = rawData;
+            el.innerHTML = decorateStars(rawData);
           }
         }
         updateSummary();

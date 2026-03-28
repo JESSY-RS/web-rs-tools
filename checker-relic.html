@@ -7,7 +7,7 @@
   <link rel="shortcut icon" href="favicon-relic.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-relic.png">
   <link rel="icon" type="image/png" href="web-app-manifest-192x192-relic.png">
-  <title>(仮)ファンタズムレリックチェッカー</title>
+  <title>ファンタズムレリックチェッカー</title>
 
   <style>
 
@@ -32,6 +32,14 @@
       column-gap: 20px;
       flex-wrap: wrap;
       min-width: 0;
+    }
+
+    /* 文字部分のみをクリック領域にするためのクラス */
+    .clickable-title {
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.2s;
+      display: inline; /* 文字幅のみに制限 */
     }
 
     .stars {
@@ -69,7 +77,7 @@
     }
 
     .M01 { color: fuchsia; }
-    .M02 { color: red; }
+    .M02 { color: hotpink; }
     .M03 { color: gray; }
     .M04 { color: royalblue; }
 
@@ -139,15 +147,17 @@
 
     .scroll-button:hover { background-color: #666; }
 
-    .zoom-buttons {
+    .zoom-buttons, .column-buttons {
       display: flex;
       flex-direction: row;
-      gap: 20px;
+      gap: 10px;
       flex-shrink: 0;
       margin-right: -5px;
     }
+    
+    .zoom-buttons { gap: 20px; }
 
-    .zoom-buttons button {
+    .zoom-buttons button, .column-button {
       color: #000;
       background-color: #eee;
       padding: 6px 12px;
@@ -157,11 +167,38 @@
       border-radius: 4px;
       border: none;
       box-sizing: border-box;
+      white-space: nowrap;
     }
 
-    .zoom-buttons button:hover { background-color: #ccc; }
+    .zoom-buttons button:hover, .column-button:hover { background-color: #ccc; }
     .zoom-controls { display: none; }
     .zoom-controls.show { display: flex; gap: 8px; }
+
+    .column-button {
+      background-color: #444;
+      color: #fff;
+    }
+    .column-button:hover { background-color: #666; }
+    .column-button.active { background-color: #2A99E6; }
+
+    #statusContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #statusContainer.two-columns {
+      flex-direction: row;
+      flex-wrap: wrap;
+      column-gap: 60px;
+      row-gap: 20px;
+      align-items: flex-start;
+    }
+
+    .group-block {
+      display: flex;
+      flex-direction: column;
+    }
 
     .hamburger {
       font-size: 28px;
@@ -271,7 +308,7 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> (仮)ファンタズムレリックチェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> ファンタズムレリックチェッカー</h1>
   </div>
 
   <div class="controls">
@@ -289,6 +326,7 @@
   <footer>
     ※使用は自己責任にて。<br>
     ※画面左端から右にフリックでサイドメニューが開きます。<br>
+    ※見出しをダブルクリックで<span style="color: gold;">★</span>→<span style="color: darkgray;">★</span>→☆→・に並び替える事ができます。大分類ですべて、小分類で項目ごと。<br>
     <br>
     <a href="index.html">INDEXへ戻る</a><br>
   </footer>
@@ -352,7 +390,7 @@
     }
 
     const PAGE_SETTING_KEY = 'PageSettings'; 
-    let pageSettings = { 'checker-relic_zoom': 1.0 };
+    let pageSettings = { 'checker-relic_zoom': 1.0, 'checker-relic_column': 1 };
     
     function changeZoom(delta) {
         const zoomKey = 'checker-relic_zoom';
@@ -418,6 +456,7 @@
     function saveAdminData() {
         if (!isAdminMode) return; 
         const result = {};
+
         const allStars = document.querySelectorAll('.stars');
         allStars.forEach(stars => {
             const key = stars.dataset.key;
@@ -425,11 +464,13 @@
             let starString = '';
             starElems.forEach(s => {
                 if (s.classList.contains('on')) {
-                    starString += '★'; // 黄色
+                    starString += '★'; 
                 } else if (s.textContent === '★') {
-                    starString += '◆'; // ダークグレー（保存用記号）
+                    starString += '◆'; 
+                } else if (s.textContent === '☆') {
+                    starString += '☆'; 
                 } else {
-                    starString += '☆'; // 空
+                    starString += '・'; 
                 }
             });
             result[key] = starString;
@@ -451,23 +492,37 @@
     }
 
     function applyData(data) {
+        const isOldFile = Object.keys(data).some(key => key.startsWith('ファンタズムレリック_'));
+
         for (const key in data) {
-            const stars = document.querySelector(`.stars[data-key="${key}"]`);
+            if (key === "_version") continue; 
+
+            let targetKey = key;
+            if (isOldFile && key.startsWith('ファンタズムレリック_')) {
+                targetKey = key.replace('ファンタズムレリック_', '武装共鳴or詩人刻印のみ_');
+            }
+
+            const stars = document.querySelector(`.stars[data-key="${targetKey}"]`);
             if (stars) {
                 const starElems = stars.querySelectorAll('.star');
                 for (let i = 0; i < 5; i++) {
-                    const val = data[key][i] || '☆';
+                    let val = data[key][i] || '・';
+                    
+                    if (isOldFile && val === '☆') {
+                        val = '・';
+                    }
+
                     if (val === '★') {
-                        // 黄色の★
                         starElems[i].textContent = '★';
                         starElems[i].classList.add('on');
-                    } else if (val === '◆') {
-                        // ダークグレーの★
+                    } else if (val === '◆' || val === '✦') {
                         starElems[i].textContent = '★';
                         starElems[i].classList.remove('on');
-                    } else {
-                        // 空の☆
+                    } else if (val === '☆') {
                         starElems[i].textContent = '☆';
+                        starElems[i].classList.remove('on');
+                    } else {
+                        starElems[i].textContent = '・';
                         starElems[i].classList.remove('on');
                     }
                 }
@@ -475,7 +530,51 @@
         }
     }
 
-    const groups = [{ title: "ファンタズムレリック", color: "M01" }];
+    function sortStars(starsContainer) {
+        const starElems = Array.from(starsContainer.querySelectorAll('.star'));
+        const states = starElems.map(s => {
+            if (s.classList.contains('on')) return { text: '★', isOn: true, score: 4 };
+            if (s.textContent === '★') return { text: '★', isOn: false, score: 3 };
+            if (s.textContent === '☆') return { text: '☆', isOn: false, score: 2 };
+            return { text: '・', isOn: false, score: 1 };
+        });
+
+        states.sort((a, b) => b.score - a.score);
+
+        starElems.forEach((s, i) => {
+            s.textContent = states[i].text;
+            if (states[i].isOn) {
+                s.classList.add('on');
+            } else {
+                s.classList.remove('on');
+            }
+        });
+    }
+
+    function applyColumns(cols) {
+        const container = document.getElementById('statusContainer');
+        const oneBtn = document.getElementById('oneColumnBtn');
+        const twoBtn = document.getElementById('twoColumnsBtn');
+        
+        if (!container) return;
+
+        if (cols === 2) {
+            container.classList.add('two-columns');
+            if(oneBtn) oneBtn.classList.remove('active');
+            if(twoBtn) twoBtn.classList.add('active');
+        } else {
+            container.classList.remove('two-columns');
+            if(oneBtn) oneBtn.classList.add('active');
+            if(twoBtn) twoBtn.classList.remove('active');
+        }
+        pageSettings['checker-relic_column'] = cols;
+        savePageSettings();
+    }
+
+    const groups = [
+      { title: "武装共鳴or詩人刻印のみ", color: "M01" },
+      { title: "共鳴と詩人の混同", color: "M02" }
+    ];
 
     const attributes = [
       { name: "剣", class: "S02" },
@@ -503,12 +602,27 @@
       }
 
       groups.forEach(group => {
+        const groupBlock = document.createElement('div');
+        groupBlock.className = 'group-block';
+
         const groupTitle = document.createElement('div');
         groupTitle.className = `group-title ${group.color}`;
         groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
 
+        // 大分類のタイトルをさらにspanで囲み、文字領域だけにする
+        const titleWrapper = document.createElement('span');
+        
         const titleText = document.createElement('span');
         titleText.textContent = group.title;
+        titleText.className = 'clickable-title';
+        
+        titleText.addEventListener('dblclick', () => {
+            const groupStarsContainers = groupBlock.querySelectorAll(`.stars[data-group="${group.title}"]`);
+            groupStarsContainers.forEach(stars => sortStars(stars));
+            saveAdminData();
+        });
+
+        titleWrapper.appendChild(titleText);
 
         const zoomButtons = document.createElement('div');
         zoomButtons.className = 'zoom-buttons';
@@ -520,62 +634,127 @@
           </div>
         `;
 
-        groupTitle.appendChild(titleText);
+        groupTitle.appendChild(titleWrapper);
         groupTitle.appendChild(zoomButtons);
-        container.appendChild(groupTitle);
+
+        if (group.title === "武装共鳴or詩人刻印のみ") {
+            const columnButtons = document.createElement('div');
+            columnButtons.className = 'column-buttons';
+            columnButtons.innerHTML = `
+              <button class="column-button active" id="oneColumnBtn" onclick="applyColumns(1)">１列</button>
+              <button class="column-button" id="twoColumnsBtn" onclick="applyColumns(2)">２列</button>
+            `;
+            groupTitle.appendChild(columnButtons);
+        }
+
+        groupBlock.appendChild(groupTitle);
 
         attributes.forEach(attr => {
+          const isHiddenPoet = (group.title === "共鳴と詩人の混同" && attr.name === "詩人");
+
           const line = document.createElement('div');
           line.className = 'line';
+          if (isHiddenPoet) {
+             line.style.pointerEvents = 'none'; 
+          }
 
-          const name = document.createElement('span');
-          name.textContent = attr.name;
-          name.className = `${attr.class} name`;
+          // 小分類の項目名（幅固定と文字要素を分ける）
+          const nameContainer = document.createElement('span');
+          nameContainer.className = `${attr.class} name`;
+          
+          const nameText = document.createElement('span');
+          nameText.textContent = attr.name;
+
+          if (!isHiddenPoet) {
+              nameText.classList.add('clickable-title');
+              nameText.addEventListener('dblclick', () => {
+                  // stars要素は後で定義されるが参照可能
+                  sortStars(line.querySelector('.stars'));
+                  saveAdminData();
+              });
+          } else {
+              nameText.style.color = '#2A2A2A'; 
+          }
+          
+          nameContainer.appendChild(nameText);
 
           const stars = document.createElement('span');
           stars.className = 'stars';
           stars.dataset.key = `${group.title}_${attr.name}`;
+          stars.dataset.group = group.title;
 
           for (let i = 0; i < 5; i++) {
             const star = document.createElement('span');
-            star.textContent = '☆';
+            star.textContent = '・'; 
             star.className = 'star';
             star.dataset.index = i;
             
-            // 3段階クリックの処理
-            star.addEventListener('click', function () {
-              if (this.textContent === '☆') {
-                // 1回目：ダークグレーの★
-                this.textContent = '★';
-                this.classList.remove('on');
-              } else if (this.textContent === '★' && !this.classList.contains('on')) {
-                // 2回目：黄色の★
-                this.classList.add('on');
-              } else {
-                // 3回目：空の☆
-                this.textContent = '☆';
-                this.classList.remove('on');
-              }
-              saveAdminData();
-            });
+            if (isHiddenPoet) {
+                star.style.color = '#2A2A2A'; 
+            } else {
+                star.addEventListener('click', function () {
+                  if (this.textContent === '・') {
+                    this.textContent = '☆';
+                    this.classList.remove('on');
+                  } else if (this.textContent === '☆') {
+                    this.textContent = '★';
+                    this.classList.remove('on');
+                  } else if (this.textContent === '★' && !this.classList.contains('on')) {
+                    this.classList.add('on');
+                  } else {
+                    this.textContent = '・';
+                    this.classList.remove('on');
+                  }
+                  saveAdminData();
+                });
+            }
             stars.appendChild(star);
           }
 
-          line.appendChild(name);
+          line.appendChild(nameContainer);
           line.appendChild(stars);
-          container.appendChild(line);
+          groupBlock.appendChild(line);
         });
+
+        const legendDiv = document.createElement('div');
+        legendDiv.style.fontSize = '18px';
+        legendDiv.style.marginTop = '15px';
+        legendDiv.style.marginBottom = '20px';
+        legendDiv.style.marginLeft = '0px';
+        legendDiv.style.lineHeight = '1.6';
+        legendDiv.style.letterSpacing = '1px';
+        legendDiv.style.fontWeight = 'normal';
+
+        if (group.title === "武装共鳴or詩人刻印のみ") {
+            legendDiv.innerHTML = `
+                <div><span style="color: red;">※参考①</span>　<span style="color: #eee;">☆</span><span style="color: cyan;">共鳴14%</span>　<span style="color: darkgray;">★</span><span style="color: cyan;">共鳴17%</span>　<span style="color: gold;">★</span><span style="color: cyan;">共鳴21%</span></div>
+                <div><span style="color: red;">※参考②</span>　<span style="color: #eee;">☆</span><span style="color: fuchsia;">詩人SS1</span>　<span style="color: darkgray;">★</span><span style="color: fuchsia;">詩人SS2</span>　<span style="color: gold;">★</span><span style="color: fuchsia;">詩人SS3</span></div>
+            `;
+        } else if (group.title === "共鳴と詩人の混同") {
+            legendDiv.innerHTML = `
+                <div><span style="color: red;">※参考③</span>　<span style="color: #eee;">☆</span><span style="color: cyan;">共3</span><span style="color: fuchsia;">詩50</span>　<span style="color: darkgray;">★</span><span style="color: cyan;">共7</span><span style="color: fuchsia;">詩50</span>　<span style="color: gold;">★</span><span style="color: cyan;">共14</span><span style="color: fuchsia;">詩25</span></div>
+                <div style="color: #2A2A2A; user-select: none;">※参考④　背景と同化するダミーテキスト</div>
+            `;
+        }
+        groupBlock.appendChild(legendDiv);
 
         const exportBtn = document.createElement('button');
         exportBtn.textContent = '状態をエクスポート';
-        exportBtn.style.marginTop = '15px';
+        exportBtn.style.marginTop = '5px';
+        exportBtn.style.alignSelf = 'flex-start'; 
         exportBtn.addEventListener('click', exportState);
-        container.appendChild(exportBtn);
+        groupBlock.appendChild(exportBtn);
+
+        container.appendChild(groupBlock);
       });
+
+      const savedCols = pageSettings['checker-relic_column'] || 1;
+      applyColumns(savedCols);
     }
 
     function exportState() {
       const result = {};
+
       const allStars = document.querySelectorAll('.stars');
       allStars.forEach(stars => {
         const key = stars.dataset.key;
@@ -583,11 +762,13 @@
         let starString = '';
         starElems.forEach(s => {
             if (s.classList.contains('on')) {
-                starString += '★'; // 黄色
+                starString += '★'; 
             } else if (s.textContent === '★') {
-                starString += '◆'; // ダークグレー（保存用記号）
+                starString += '◆'; 
+            } else if (s.textContent === '☆') {
+                starString += '☆'; 
             } else {
-                starString += '☆'; // 空
+                starString += '・'; 
             }
         });
         result[key] = starString;
