@@ -423,17 +423,17 @@
         }
     }
 
-    let zoomControlsVisible = false;
-    function toggleZoomControls() {
-      const zoomControls = document.getElementById('zoomControls');
-      const zoomToggle = document.getElementById('zoomToggle');
-      zoomControlsVisible = !zoomControlsVisible;
-      if (zoomControlsVisible) {
-        zoomControls.classList.add('show');
-        zoomToggle.style.display = 'none';
-      } else {
+    // ★修正箇所：引数 index を追加し、固有のIDを操作するように変更
+    function toggleZoomControls(index) {
+      const zoomControls = document.getElementById('zoomControls-' + index);
+      const zoomToggle = document.getElementById('zoomToggle-' + index);
+      
+      if (zoomControls.classList.contains('show')) {
         zoomControls.classList.remove('show');
         zoomToggle.style.display = 'block';
+      } else {
+        zoomControls.classList.add('show');
+        zoomToggle.style.display = 'none';
       }
     }
 
@@ -515,7 +515,7 @@
                     if (val === '★') {
                         starElems[i].textContent = '★';
                         starElems[i].classList.add('on');
-                    } else if (val === '◆' || val === '✦') {
+                    } else if (val === '◆') {
                         starElems[i].textContent = '★';
                         starElems[i].classList.remove('on');
                     } else if (val === '☆') {
@@ -601,7 +601,8 @@
           }
       }
 
-      groups.forEach(group => {
+      // ★修正箇所：forEachに index を追加
+      groups.forEach((group, index) => {
         const groupBlock = document.createElement('div');
         groupBlock.className = 'group-block';
 
@@ -626,9 +627,10 @@
 
         const zoomButtons = document.createElement('div');
         zoomButtons.className = 'zoom-buttons';
+        // ★修正箇所：ボタンのIDと関数呼び出しに index を付与
         zoomButtons.innerHTML = `
-          <button id="zoomToggle" onclick="toggleZoomControls()">±</button>
-          <div id="zoomControls" class="zoom-controls">
+          <button id="zoomToggle-${index}" onclick="toggleZoomControls(${index})">±</button>
+          <div id="zoomControls-${index}" class="zoom-controls">
             <button onclick="changeZoom(-0.1)">－</button>
             <button onclick="changeZoom(0.1)">＋</button>
           </div>
@@ -674,6 +676,8 @@
               });
           } else {
               nameText.style.color = '#2A2A2A'; 
+              // ★修正箇所：非表示の詩人見出しを選択不可にする
+              nameText.style.userSelect = 'none';
           }
           
           nameContainer.appendChild(nameText);
