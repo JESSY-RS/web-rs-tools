@@ -2223,7 +2223,12 @@
                             if (isAllAttr) {
                                 typesMultiAttr.push(typeContent); 
                             } else {
-                                typesComplex.push(typeContent);   
+                                // ▼変更点: スキル名に完全一致する場合は「その他」へ分類する
+                                if (db.skills[typeContent]) {
+                                    typesOtherOrdered.push(typeContent);
+                                } else {
+                                    typesComplex.push(typeContent);   
+                                }
                             }
                         } else {
                             typesOtherOrdered.push(typeContent);
