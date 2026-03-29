@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>スタイル情報ビューア</title>
+    <title>★スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
@@ -1085,6 +1085,22 @@
                 border-color: #000 !important; /* 枠線も黒に変更 */
                 color: #ddd !important;
             }
+            
+            /* --- +スキルの展開パネル用スタイル --- */
+            .plus-skill-link {
+                text-decoration: none !important;
+                color: var(--card-title-text) !important;
+            }
+            .plus-skill-link:hover {
+                text-decoration: none !important;
+                color: var(--card-title-text) !important;
+            }
+            .plus-skill-panel {
+                margin-top: 5px !important;
+                margin-bottom: 11px !important;
+                border: 1px dashed var(--card-border) !important;
+                background-color: var(--card-bg) !important;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -1116,15 +1132,10 @@
             return;
         }
 
-        // style.csv上のキャラ名 (例: "ピンクタイガー", "モニカ(RS3)")
         const dataCharName = selectedStyle['キャラ名'];
 
-        // 修正: style.csvのデータ名から、character.csv上の「表示名」を逆引きする
-        // 1. 完全一致を探す (モニカ(RS3)用)
-        // 2. dataName + '(' で始まるものを探す (ピンクタイガー用 -> ピンクタイガー(エミリア))
-        let displayCharName = dataCharName; // 見つからなければデータ名をそのまま使う
+        let displayCharName = dataCharName; 
         
-        // db.characterOrder (CSV順) から該当する表示名を探す
         const matchRow = db.characterOrder.find(row => {
             const rowName = row['キャラ名'];
             return rowName === dataCharName || rowName.startsWith(dataCharName + '(');
@@ -1134,10 +1145,9 @@
             displayCharName = matchRow['キャラ名'];
         }
 
-        // プルダウンの表示更新
         if (charaText.textContent !== displayCharName) {
             charaText.textContent = displayCharName;
-            populateStyleSelect(displayCharName); // 表示名でリストを生成
+            populateStyleSelect(displayCharName); 
         }
         
         const displayStyleName = `[${selectedStyle['グレード']}] ${selectedStyle['スタイル名']}`;
@@ -1151,7 +1161,6 @@
         const grade = selectedStyle['グレード'];
         const baseTitle = originalTitle.replace(/（統合版）/g, '').trim();
         
-        // URLとタイトルには dataCharName (style.csvの名前) を使用する = 括弧なし(ピンクタイガー) or 括弧あり(モニカ(RS3))
         const newTitle = `${baseTitle} - ${dataCharName} [${grade}] ${styleName}`;
         const hash = `${dataCharName}_${grade}_${styleName}`;
         const newHash = '#' + encodeURIComponent(hash);
@@ -1269,6 +1278,36 @@
         }
     }
 
+    // --- +スキル展開用の共通関数 ---
+    function togglePlusSkillPanel(plusLink, parentCard) {
+        if (!parentCard) return;
+        const baseName = plusLink.dataset.baseName;
+        const existingPanel = parentCard.nextElementSibling;
+
+        if (existingPanel && existingPanel.classList.contains('plus-skill-panel')) {
+            const isSame = existingPanel.dataset.openerName === baseName;
+            existingPanel.remove();
+            if (isSame) return; 
+        }
+
+        const panel = document.createElement('div');
+        panel.className = 'card plus-skill-panel';
+        panel.dataset.openerName = baseName;
+
+        const data = db.skills[baseName] || db.abilities[baseName] || db.addInfo[baseName];
+        const closeLinkHtml = `<a href="#" class="close-plus-panel keyword-link" style="font-size: 0.85em; text-decoration:none; font-weight: normal;">✖ 閉じる</a>`;
+
+        if (data) {
+            let itemType = db.skills[baseName] ? 'skill' : (db.abilities[baseName] ? 'ability' : 'addInfo');
+            const searchContext = { isSkillScope: true, isAbilityScope: true, isAddInfoScope: true };
+            const cardInnerHtml = generateItemCardHTML(baseName, [], null, null, searchContext, itemType, null, true, closeLinkHtml);
+            panel.innerHTML = cardInnerHtml;
+        } else {
+            panel.innerHTML = `<h3><span>${baseName}</span>${closeLinkHtml}</h3><div class="summary-line" style="color: red; font-weight: bold; margin-top: 10px;">データなし</div>`;
+        }
+        parentCard.insertAdjacentElement('afterend', panel);
+    }
+
     // --- 補助関数 ---
     function parseName(name) {
         const variableMatch = name.match(/(.+)(\((\d+)回\))$/);
@@ -1346,23 +1385,13 @@
         
         const searchTerm = hiraganaToKatakana(filter);
 
-        // 修正: 選択された「characterName (表示名)」に基づいてスタイルを抽出
         let stylesForCharacter = db.styles.filter(style => {
             const dataName = style['キャラ名'];
-            
-            // 1. 完全一致 (例: モニカ(RS3) === モニカ(RS3))
             if (dataName === characterName) return true;
-            
-            // 2. データ名 + '(' が 表示名の先頭と一致するか 
-            // (例: style="ピンクタイガー", selected="ピンクタイガー(エミリア)" → OK)
-            // (例: style="モニカ", selected="モニカ(RS3)" → OK ※モニカ(RS3)がstyle.csvにあるなら1でヒットするが、無印モニカを表示させたくない場合は注意が必要。
-            //  ただし、ご提示の条件「style.csvもモニカ(RS3)」であれば、1でヒットするので問題なし)
             if (characterName.startsWith(dataName + '(')) return true;
-            
             return false;
         });
 
-        // 実装時期で降順ソート
         stylesForCharacter.sort((a, b) => {
             const dateA = a['実装時期'] || '';
             const dateB = b['実装時期'] || '';
@@ -1371,7 +1400,6 @@
             return 0;
         });
 
-        // 検索フィルター適用
         const filteredStyles = stylesForCharacter.filter(style => {
             const baseDisplayName = `[${style['グレード']}] ${style['スタイル名']}`;
             const listDisplayName = style['実装時期'] 
@@ -1408,9 +1436,7 @@
              optionsContainer.innerHTML = '<div class="custom-select-option" style="color: #999;">該当なし</div>';
         }
         
-        // ★追加: リストを再描画した際に、スクロール位置を一番上に戻す
         optionsContainer.scrollTop = 0;
-        
         btn.disabled = false;
     }
 
@@ -1430,15 +1456,9 @@
         
         const allUniqueCharactersInStyles = new Set(db.styles.map(item => item['キャラ名']));
         
-        // 修正: style.csvのキャラ名が、character.csvのキャラ名と完全一致するか、
-        // または「表示名 = データ名 + (補足)」の形式（前方一致）である場合にリストに加える
         const sortedList = characterListWithFurigana.filter(char => {
             const dispName = char.name;
-            // 1. データ名と完全一致 (例: モニカ(RS3) === モニカ(RS3))
             if (allUniqueCharactersInStyles.has(dispName)) return true;
-            
-            // 2. 括弧付きの拡張表現 (例: ピンクタイガー(エミリア) vs ピンクタイガー)
-            // データ内のいずれかの名前が、表示名の「(」の前までの部分と一致するか
             for (const dataName of allUniqueCharactersInStyles) {
                 if (dispName.startsWith(dataName + '(')) {
                     return true;
@@ -1449,12 +1469,9 @@
 
         const sortedSet = new Set(sortedList.map(char => char.name));
 
-        // 修正: すでにsortedListに含まれている（＝エイリアスでカバーされた）データ名は「その他」に表示しない
         const remainingCharacters = [...allUniqueCharactersInStyles]
             .filter(dataName => {
-                // 完全一致ですでにあるか
                 if (sortedSet.has(dataName)) return false;
-                // エイリアス（括弧付き）としてすでに登録されているかチェック
                 for (const dispName of sortedSet) {
                     if (dispName.startsWith(dataName + '(')) return false;
                 }
@@ -1495,14 +1512,13 @@
                     styleText.textContent = '---';
                     styleBtn.dataset.value = '---';
                     styleBtn.classList.add('is-placeholder');
-                    populateStyleSelect(selectedCharacter); // 表示名を渡す
+                    populateStyleSelect(selectedCharacter); 
                     clearDisplays();
                     document.querySelectorAll('.save-btn').forEach(btn => btn.disabled = true);
                 });
                 optionsContainer.appendChild(optionDiv);
             });
 
-            // ★追加: リストを再描画した際に、スクロール位置を一番上に戻す
             optionsContainer.scrollTop = 0;
         };
 
@@ -1661,7 +1677,6 @@
         }
         summaryParts.push(slashStr + attrStr);
         
-        // 追加情報以外の場合のみスタンバイ、リキャスト、使用回数制限を表示するよう条件を追加
         if (type !== 'addInfo') {
             if (data['準備']) summaryParts.push(`[スタンバイターン:${data['準備']}]`);
             if (data['再使用']) summaryParts.push(`[リキャストターン:${data['再使用']}]`);
@@ -1730,7 +1745,14 @@
         card.className = 'card';
         card.id = `card-${parsedName.fullName.replace(/[ ()]/g, "_")}`;
 
-        let content = `<h3>${parsedName.fullName}</h3>`;
+        let titleText = parsedName.fullName;
+        let titleHtml = titleText;
+        if (isSkill && /[+＋]$/.test(titleText) && type !== 'addInfo') {
+            const baseSkillName = titleText.replace(/[+＋]$/, '');
+            titleHtml = `<a href="#" class="keyword-link plus-skill-link" data-base-name="${baseSkillName}">${titleText}</a>`;
+        }
+
+        let content = `<h3>${titleHtml}</h3>`;
 
         if (isSkill) {
             content += generateSkillDetailHtml(cardData, type);
@@ -1809,7 +1831,21 @@
     }
     
     document.getElementById('mainContainer').addEventListener('click', function(event) {
-        const keywordLink = event.target.closest('.keyword-link');
+        const plusLink = event.target.closest('.plus-skill-link');
+        if (plusLink) {
+            event.preventDefault();
+            togglePlusSkillPanel(plusLink, plusLink.closest('.card'));
+            return;
+        }
+        
+        const closePlusBtn = event.target.closest('.close-plus-panel');
+        if (closePlusBtn) {
+            event.preventDefault();
+            closePlusBtn.closest('.plus-skill-panel').remove();
+            return;
+        }
+
+        const keywordLink = event.target.closest('.keyword-link:not(.plus-skill-link):not(.close-plus-panel)');
         const backLink = event.target.closest('.back-link');
         if (keywordLink) {
             event.preventDefault(); 
@@ -1849,7 +1885,6 @@
         document.querySelectorAll('#searchLogicCategory .logic-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector('#searchLogicCategory .logic-btn[data-logic="and"]').classList.add('active');
         
-        // ソート順のリセット
         const sortBtns = document.querySelectorAll('#searchSortCategory .sort-btn');
         if (sortBtns.length > 0) {
             sortBtns.forEach(btn => btn.classList.remove('active'));
@@ -1917,8 +1952,6 @@
     }
 
     function prepareSearchData() {
-        // コンテキストに基づく除外パターンの定義（拡張用）
-        // regex: マッチさせる正規表現。「スキル名」の部分をキャプチャグループにする
         const contextualExclusionPatterns = [
             /「([^」]+)」の使用回数制限を回復/g
         ];
@@ -1927,21 +1960,17 @@
             const styleSkills = [style['スキル1'], style['スキル2'], style['スキル3']].filter(Boolean).map(name => db.skills[name]).filter(Boolean);
             const styleAbilities = [style['アビリティ1'], style['アビリティ2'], style['アビリティ3']].filter(Boolean).map(name => db.abilities[name]).filter(Boolean);
             
-            // 除外チェック用のセット
             const allInitialItems = new Set([...styleSkills.map(s => s['スキル名']), ...styleAbilities.map(a => a['アビリティ名'])]);
             
             const linkedInfoItems = new Map();
             let itemsToScan = [...styleSkills, ...styleAbilities];
             
-            // 修正: 初期所持スキル・アビリティであっても、リンク参照されている場合は
-            // 検索用の追加情報（参照元付き）として登録したいため、初期化を空のSetにする。
             const processedKeywords = new Set(); 
             
             while (itemsToScan.length > 0) {
                 const currentItem = itemsToScan.shift();
                 const detailText = currentItem['効果詳細'] || '';
 
-                // --- 新規追加: 文脈による除外キーワードの特定 ---
                 const excludedKeywordsInContext = new Set();
                 contextualExclusionPatterns.forEach(pattern => {
                     const matches = [...detailText.matchAll(pattern)];
@@ -1949,12 +1978,10 @@
                         if (m[1]) excludedKeywordsInContext.add(m[1]);
                     });
                 });
-                // --------------------------------------------------
                 
                 const linkedKeywords = [...detailText.matchAll(/「([^」]+)」/g)].map(m => m[1]);
                 
                 for (const keyword of linkedKeywords) {
-                    // 文脈除外に含まれるキーワードならスキップ
                     if (excludedKeywordsInContext.has(keyword)) continue;
 
                     const parsedKeyword = parseName(keyword);
@@ -2098,7 +2125,6 @@
                 const matches = item['効果詳細'].match(regex);
                 if (matches) {
                     matches.forEach(match => {
-                        // 修正: [特効:○○] を除外
                         if (!match.startsWith('[特効:')) {
                             timingKeywords.add(match);
                         }
@@ -2154,7 +2180,6 @@
     function generateExtraForceTags() {
         const container = document.getElementById('extraForceSearchContainer');
         
-        // コンテナの初期化（再生成時用）
         container.innerHTML = '';
         container.style.borderTop = '1px solid var(--controls-border)';
         container.style.paddingTop = '10px';
@@ -2167,46 +2192,38 @@
         header.style.marginBottom = '10px';
         container.appendChild(header);
 
-        // --- 定義済みの武器種・属性リスト ---
         const typesWeapon = ['剣', '大剣', '斧', '棍棒', '体術', '銃', '槍', '小剣', '弓', '杖'];
         const typesAttr = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
         const effects = ['極小', '小', '中', '大', '特大', '極大', '超極大', '超極大+'];
 
-        // 除外判定用セット（武器種と属性単体）
         const excludedTypesSet = new Set([...typesWeapon, ...typesAttr]);
 
-        // --- 各カテゴリごとの抽出用配列（CSV順序維持） ---
-        const typesMultiAttr = [];    // 複属性用 (属性のみの組み合わせ)
-        const typesWeakComb = [];     // Weak兼用の (Weak・〜)
-        const typesComplex = [];      // 複合用 (武器種などが混ざった組み合わせ)
-        const typesOtherOrdered = []; // その他用
+        const typesMultiAttr = [];    
+        const typesWeakComb = [];     
+        const typesComplex = [];      
+        const typesOtherOrdered = []; 
         const seenTypes = new Set();
         
-        // addInfoOrderedKeys はCSV読み込み時に作成された順序保持配列
         addInfoOrderedKeys.forEach(key => {
             if (key.startsWith('エクストラフォース')) {
-                // エクストラフォース(タイプ/効果) または (タイプ) からタイプ部分を抽出
                 const match = key.match(/エクストラフォース\((.+?)(?:\/|\))/);
                 
                 if (match) {
                     const typeContent = match[1];
                     
-                    // 武器種単体・属性単体になく、かつ未登録の場合のみ追加
                     if (!excludedTypesSet.has(typeContent) && !seenTypes.has(typeContent)) {
                         seenTypes.add(typeContent);
                         
-                        // 文字列の条件に応じて各配列へ振り分け
                         if (typeContent.startsWith('Weak・')) {
                             typesWeakComb.push(typeContent);
                         } else if (typeContent.includes('・')) {
-                            // 「・」で分割し、すべてが基本属性かチェックする
                             const parts = typeContent.split('・');
                             const isAllAttr = parts.every(part => typesAttr.includes(part));
                             
                             if (isAllAttr) {
-                                typesMultiAttr.push(typeContent); // すべて属性なら複属性へ
+                                typesMultiAttr.push(typeContent); 
                             } else {
-                                typesComplex.push(typeContent);   // 属性以外が混ざっていれば複合へ
+                                typesComplex.push(typeContent);   
                             }
                         } else {
                             typesOtherOrdered.push(typeContent);
@@ -2216,7 +2233,6 @@
             }
         });
         
-        // --- 存在チェック用セット（効果のボタン表示制御用） ---
         const existingEffects = new Set();
         Object.keys(db.addInfo).forEach(key => {
             if (key.startsWith('エクストラフォース')) {
@@ -2225,9 +2241,8 @@
             }
         });
 
-        // --- セクション作成関数 ---
         const createSection = (title, items, datasetKey, btnClass = 'extra-force-btn') => {
-            if (!items || items.length === 0) return; // 空の場合は表示しない
+            if (!items || items.length === 0) return; 
 
             const div = document.createElement('div');
             div.className = 'tag-category single-line-layout';
@@ -2237,7 +2252,6 @@
             let hasButtons = false;
 
             items.forEach(item => {
-                // 効果の場合は存在するデータのみ表示
                 if (datasetKey === 'efEffect' && !existingEffects.has(item)) return;
                 
                 hasButtons = true;
@@ -2267,16 +2281,14 @@
             }
         };
 
-        // 各セクションの生成
         createSection('武器種', typesWeapon, 'efType');
         createSection('属性', typesAttr, 'efType');
-        createSection('複属性', typesMultiAttr, 'efType'); // 属性のみの組み合わせ
-        createSection('Weak兼', typesWeakComb, 'efType');  // Weak・〜
-        createSection('複合', typesComplex, 'efType');     // それ以外の・を含む組み合わせ
-        createSection('その他', typesOtherOrdered, 'efType'); // CSV順
+        createSection('複属性', typesMultiAttr, 'efType'); 
+        createSection('Weak兼', typesWeakComb, 'efType');  
+        createSection('複合', typesComplex, 'efType');     
+        createSection('その他', typesOtherOrdered, 'efType'); 
         createSection('効果', effects, 'efEffect');
         
-        // 対象スコープのボタン
         const scopeDiv = document.createElement('div');
         scopeDiv.className = 'tag-category single-line-layout';
         scopeDiv.innerHTML = `<div class="tag-category-title">対象:</div>`;
@@ -2429,7 +2441,6 @@
             });
         });
 
-        // --- ソートカテゴリの生成 ---
         const sortCategory = document.createElement('div');
         sortCategory.className = 'tag-category single-line-layout';
         sortCategory.id = 'searchSortCategory';
@@ -2870,7 +2881,6 @@
             return foundItems.length > 0 ? { character: styleData.character, styleName: styleData.styleName, items: foundItems } : null;
         }).filter(Boolean);
 
-        // --- ソート処理の適用 ---
         const activeSortBtn = document.querySelector('#searchSortCategory .sort-btn.active');
         const sortType = activeSortBtn ? activeSortBtn.dataset.sort : 'date-desc';
 
@@ -2891,7 +2901,6 @@
                 if (kanaA !== kanaB) {
                     return sortType === 'kana-asc' ? kanaA.localeCompare(kanaB, 'ja') : kanaB.localeCompare(kanaA, 'ja');
                 }
-                // フリガナが同じ場合は実装時期で降順ソート
                 const dateA = getDate(a.character, a.styleName);
                 const dateB = getDate(b.character, b.styleName);
                 if (dateA !== dateB) return dateB.localeCompare(dateA);
@@ -2901,15 +2910,12 @@
                 if (dateA !== dateB) {
                     return sortType === 'date-asc' ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA);
                 }
-                // 実装時期が同じ場合はフリガナで昇順ソート
                 const kanaA = getKana(a.character);
                 const kanaB = getKana(b.character);
                 if (kanaA !== kanaB) return kanaA.localeCompare(kanaB, 'ja');
             }
-            // 完全に一致する場合はスタイル名でソート
             return a.styleName.localeCompare(b.styleName, 'ja');
         });
-        // ------------------------
 
         displaySearchResults(results, { isSkillScope, isAbilityScope, isAddInfoScope });
     }
@@ -2921,16 +2927,13 @@
         sortedKeywords.forEach(keyword => {
             if (keyword === '') return;
             const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            // 既存のHTMLタグを壊さないようにLookbehind等を利用するか、単純置換
-            // 既にハイライト済みの span class="highlight" 内を避けるのは難しいが、
-            // キーワードがタグそのものでなければ概ね動作する
             const regex = new RegExp(`(?<!<[^>]*)${escapedKeyword}(?![^<]*>)`, 'gi');
             highlightedText = highlightedText.replace(regex, `<span class="highlight">$&</span>`);
         });
         return highlightedText;
     }
 
-    function generateItemCardHTML(itemName, keywords = [], contextCharacter, contextStyleName, searchContext, itemTypeFromSearch, preHighlightedDetail = null) {
+    function generateItemCardHTML(itemName, keywords = [], contextCharacter, contextStyleName, searchContext, itemTypeFromSearch, preHighlightedDetail = null, hideType = false, extraTitleHtml = '') {
         const parsedName = parseName(itemName);
         const itemData = db.skills[parsedName.baseName] || db.abilities[parsedName.baseName] || db.addInfo[parsedName.baseName];
 
@@ -2941,12 +2944,10 @@
         const itemType = itemTypeFromSearch; 
         const isSkillBased = (itemType === 'skill') || (itemType === 'addInfo' && !!db.skills[parsedName.baseName]);
 
-        // --- 回数制限等のテキスト加工ロジック (displayInfoと同じ挙動にする) ---
         if (parsedName.count) {
             let detail = renderData['効果詳細'] || '(効果詳細なし)';
             if (detail !== '(効果詳細なし)') {
                 if (!db.countExclusions.has(parsedName.baseName)) {
-                    // 追加情報扱い、または検索タイプがaddInfoの場合は詳細な整形を行う
                     if (itemType === 'addInfo' && !detail.includes('以下の効果が発動する')) {
                         const additionText = `以下の効果が発動する(上限回数:バトル中${parsedName.count}回)`;
                         let lines = detail.split('\n');
@@ -2977,7 +2978,6 @@
                         }
                         renderData['効果詳細'] = processedLines.join('\n');
                     } else {
-                        // 通常のスキル・アビリティ表示の場合
                         const lines = detail.split('\n');
                         const addition = `(上限回数:${parsedName.count}回)`;
                         if (lines.length > 0) {
@@ -3007,8 +3007,15 @@
         else if (itemType === 'ability') typeTextClass = 'search-result-ability-type';
         else typeTextColorStyle = `color: var(--addinfo-col-text); font-size: 0.8em; font-weight: normal;`;
         
-        const typeSpan = typeTextClass ? `<span class="${typeTextClass}">(${typeText})</span>` : `<span style="${typeTextColorStyle}">(${typeText})</span>`;
+        const typeSpan = hideType ? '' : (typeTextClass ? `<span class="${typeTextClass}">(${typeText})</span>` : `<span style="${typeTextColorStyle}">(${typeText})</span>`);
         
+        let titleText = itemName;
+        let titleHtml = titleText;
+        if (isSkillBased && /[+＋]$/.test(titleText) && !hideType && itemType !== 'addInfo') {
+            const baseSkillName = titleText.replace(/[+＋]$/, '');
+            titleHtml = `<a href="#" class="keyword-link plus-skill-link" data-base-name="${baseSkillName}">${titleText}</a>`;
+        }
+
         let summaryHtml = '';
         if (isSkillBased) {
             summaryHtml = generateSkillDetailHtml(renderData, itemType === 'skill' ? 'skill' : 'addInfo');
@@ -3017,9 +3024,8 @@
         const highlightedSummary = highlightKeywords(summaryHtml, keywords);
         
         let referenceInfo = '';
-        let parents = reverseIndex[itemName]; // 回数付き名称があればそれで見つかる可能性あり(addInfoとして登録されている場合)
+        let parents = reverseIndex[itemName]; 
         if (!parents || parents.length === 0) {
-            // 見つからなければベース名でも検索
             parents = reverseIndex[parsedName.baseName];
         }
 
@@ -3047,7 +3053,6 @@
         
         let rawDetail = preHighlightedDetail ? preHighlightedDetail : (renderData['効果詳細'] || '');
         
-        // 「」内のキーワードをリンク化する関数
         const linkifyKeywords = (text) => {
             return text.replace(/「([^」]+)」/g, (match, content) => {
                 const tempDiv = document.createElement('div');
@@ -3061,7 +3066,6 @@
                     return match;
                 }
                 
-                // リンク化（data-parent-nameには回数込みのcleanTextを入れる）
                 return `「<a href="#" class="keyword-link show-parent-info-link" data-parent-name="${cleanText}">${content}</a>」`;
             });
         };
@@ -3074,7 +3078,7 @@
             finalDetailHtml = highlightKeywords(finalDetailHtml, keywords);
         }
 
-        return `<h3>${itemName} ${typeSpan}</h3>${referenceInfo}${highlightedSummary}<div class="detail-line">${finalDetailHtml}</div>`;
+        return `<h3><span>${titleHtml} ${typeSpan}</span>${extraTitleHtml}</h3>${referenceInfo}${highlightedSummary}<div class="detail-line">${finalDetailHtml}</div>`;
     }
 
     function displaySearchResults(results, searchContext) {
@@ -3182,23 +3186,18 @@
             const googleSearchQuery = `ロマサガRS ${res.character} ${styleNameOnly}`;
             const googleSearchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(googleSearchQuery)}`;
 
-            // --- 修正: キャラ名をcharacter.csvの表示名に変換 ---
             let displayCharName = res.character;
             const matchRow = db.characterOrder.find(row => {
                 const rowName = row['キャラ名'];
-                // 完全一致 または 前方一致(括弧付き)
                 return rowName === res.character || rowName.startsWith(res.character + '(');
             });
             if (matchRow) {
                 displayCharName = matchRow['キャラ名'];
             }
-            // ----------------------------------------------
             
-            // --- 修正: 実装時期を取得してスタイル名に付与 ---
             const styleInfo = db.styles.find(s => s['キャラ名'] === res.character && `[${s['グレード']}] ${s['スタイル名']}` === res.styleName);
             const releaseDate = styleInfo && styleInfo['実装時期'] ? ` (${styleInfo['実装時期']})` : '';
             const displayStyleName = `${res.styleName}${releaseDate}`;
-            // ----------------------------------------------
 
             return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${displayCharName}</h3><h4><a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" class="web-link" title="Google画像検索で開く">${displayStyleName}</a></h4><div class="card">${cardHtml}</div></div>`;
         }).join('');
@@ -3211,6 +3210,8 @@
         const jumpLink = event.target.closest('.search-jump-link');
         const showLink = event.target.closest('.show-parent-info-link');
         const closeBtn = event.target.closest('.close-parent-info');
+        const plusLink = event.target.closest('.plus-skill-link');
+        const closePlusBtn = event.target.closest('.close-plus-panel');
         
         if (jumpLink) {
             event.preventDefault();
@@ -3227,13 +3228,24 @@
             return;
         }
 
+        if (plusLink) {
+            event.preventDefault();
+            togglePlusSkillPanel(plusLink, plusLink.closest('.card'));
+            return;
+        }
+
+        if (closePlusBtn) {
+            event.preventDefault();
+            closePlusBtn.closest('.plus-skill-panel').remove();
+            return;
+        }
+
         if (showLink) {
             event.preventDefault();
 
             const parentFullName = showLink.dataset.parentName;
             const anchorElement = showLink.closest('.column');
 
-            // --- トグル機能（開閉） ---
             if (anchorElement) {
                 const nextEl = anchorElement.nextElementSibling;
                 if (nextEl && nextEl.classList.contains('parent-info-panel')) {
@@ -3244,14 +3256,12 @@
                 }
             }
 
-            // 他のパネルを閉じる
             const allPanels = document.querySelectorAll('.parent-info-panel');
             const clickedPanel = showLink.closest('.parent-info-panel');
             allPanels.forEach(p => {
                 if (p !== clickedPanel && !p.contains(showLink)) p.remove();
             });
             
-            // データ取得
             const parsedParent = parseName(parentFullName);
             const baseName = parsedParent.baseName;
 
@@ -3260,17 +3270,14 @@
 
             const owners = itemToStyleMap[baseName];
             
-            // 表示・リンク生成用に所有者リストを格納する配列
             let validOwners = []; 
             let ownersFound = false;
 
-            // 1. itemToStyleMap から検索
             if (owners && owners.length > 0) {
                 validOwners = owners;
                 ownersFound = true;
             } 
             
-            // 2. db.styles を直接検索 (itemToStyleMapになかった場合)
             if (!ownersFound) {
                 const allOwners = [];
                 for (const style of db.styles) {
@@ -3284,7 +3291,6 @@
                 }
             }
 
-            // 3. フォールバック処理 (データが見つからない場合、DOMから取得して単一要素として扱う)
             if (!ownersFound) {
                 let fallbackChar = "参照元不明";
                 let fallbackStyle = "";
@@ -3297,9 +3303,6 @@
                 validOwners = [{ character: fallbackChar, styleName: fallbackStyle }];
             }
 
-            // --- 所持判定とアイテムタイプの決定 ---
-            // 判定用には、所有者が「厳密に1人」の場合のみそのキャラデータを使用する
-            // (複数が該当する場合は特定できないため、安全側に倒して addInfo 扱いとする)
             let parentItemType = db.skills[baseName] ? 'skill' : (db.abilities[baseName] ? 'ability' : 'addInfo');
             let checkCharacter = null;
             let checkStyleName = null;
@@ -3328,7 +3331,6 @@
                     parentItemType = 'addInfo';
                 }
             } else if (validOwners.length > 1) {
-                // 複数該当する場合は、追加情報(addInfo)として表示する
                 parentItemType = 'addInfo';
             }
 
@@ -3347,13 +3349,9 @@
             
             const cardHtml = generateItemCardHTML(parentFullName, [], checkCharacter || null, checkStyleName || null, searchContext, parentItemType);
 
-            // --- ヘッダー情報の生成 (複数リンク対応) ---
-            
-            // 1. キャラクター表示 (重複排除して結合)
             const uniqueChars = [...new Set(validOwners.map(o => o.character))];
             const displayChar = uniqueChars.join(' ／ ');
 
-            // 2. スタイル名表示 (それぞれリンク化して結合)
             const styleLinks = validOwners.map(owner => {
                 const charName = owner.character;
                 const styleName = owner.styleName;
@@ -3362,7 +3360,6 @@
                     return styleName || "";
                 }
 
-                // [SS] などのグレード表記を削除して検索クエリを作成
                 const styleNameForSearch = styleName.replace(/\[.+?\]\s*/g, ''); 
                 const googleSearchQuery = `ロマサガRS ${charName} ${styleNameForSearch}`;
                 const googleSearchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(googleSearchQuery)}`;
@@ -3370,11 +3367,8 @@
                 return `<a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" class="web-link" title="Google画像検索で開く">${styleName}</a>`;
             });
 
-            // スタイル名の重複を排除（もし全く同じスタイル名表記が複数あってもリンク先が異なる可能性を考慮し、単純結合するが、
-            // 全く同じキャラ・スタイルの重複データは除外した方が綺麗）
             const uniqueStyleLinks = [...new Set(styleLinks)];
             const displayStyle = uniqueStyleLinks.join(' ／ ');
-            // ------------------------------------------------
 
             const contentHtml = `<div class="close-parent-info">閉じる</div><h3>${displayChar}</h3><h4>${displayStyle}</h4><div class="card">${cardHtml}</div>`;
             panel.innerHTML = contentHtml;
