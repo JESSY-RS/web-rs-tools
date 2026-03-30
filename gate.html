@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="favicon.ico">
+    <title>限定公開動画</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+    <style>
+        /* --- デザイン（CSS）の設定 --- */
+        body {
+            background-color: #2A2A2A; 
+            color: #FFFFFF;            
+            margin: 0;
+            height: 100vh;             
+            display: flex;             
+            justify-content: center;   
+            align-items: center;       
+            font-family: sans-serif;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        input[type="text"] {
+            font-size: 18px;           
+            padding: 12px 15px;        
+            width: 250px;              
+            border: 1px solid #555;
+            border-radius: 5px;        
+            margin-bottom: 20px;
+            background-color: #F8F8F8;
+        }
+
+        button {
+            font-size: 18px;
+            padding: 12px 25px;
+            background-color: limegreen; 
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    
+        a:link {
+          font-size: 18px;
+          color: #1D9BF0;
+          text-decoration: underline;
+        }
+    
+        a:visited {
+          color: #7755FF;
+          text-decoration: underline;
+        }
+    
+        a:hover {
+          color: #0CFF57;
+        }
+    
+        a:active {
+          color: #FF0000;
+          text-decoration: underline;
+        }
+
+        #errorMessage {
+            color: #2A2A2A;
+            margin-top: 15px;
+            user-select: none;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loginArea">
+            <h2 style="font-weight: normal; margin-bottom: 30px;">パスワードを入力してください</h2>
+            <input type="text" id="passwordInput" placeholder="Password" autocomplete="off"><br>
+            <button onclick="checkPassword()">解除する</button>
+            <p id="errorMessage">パスワードが間違っています。</p>
+        </div>
+
+        <div id="contentArea" style="display: none;">
+            <h2 style="font-weight: normal;">パスワードの解除に成功しました！</h2>
+            <p><a id="videoLink" href="#" target="_blank">ここをクリックしてYouTube動画を見る</a></p>
+        </div>
+    </div>
+
+    <script>
+        // ★★★さすがにソース見てもパスワードもURLも分からない様に暗号化してます！★★★
+        const encryptedUrl = "U2FsdGVkX18OMsWIXNsbJMyWYpOsOoFFxHUQ7benZRd29n3dwd7fKJOsHFwyYqdplZMwwvCp/XrDSNTfSchRXw==";
+
+        const passwordInput = document.getElementById("passwordInput");
+
+        // 追加1：ページ読み込み時に入力欄を確実に空にする
+        window.onload = function() {
+            passwordInput.value = "";
+        };
+
+        // 追加2：入力欄がフォーカス（選択）された時にテキストを全選択する
+        passwordInput.addEventListener("focus", function() {
+            this.select();
+        });
+
+        // Enterキーが押されたときの処理
+        passwordInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                checkPassword();
+            }
+        });
+
+        function checkPassword() {
+            const pass = passwordInput.value;
+            const errorMsgElement = document.getElementById("errorMessage");
+
+            errorMsgElement.style.color = "#2A2A2A";
+
+            try {
+                const decrypted = CryptoJS.AES.decrypt(encryptedUrl, pass);
+                const originalUrl = decrypted.toString(CryptoJS.enc.Utf8);
+
+                if (originalUrl.startsWith("http")) {
+                    document.getElementById("loginArea").style.display = "none";
+                    document.getElementById("contentArea").style.display = "block";
+                    document.getElementById("videoLink").href = originalUrl;
+                } else {
+                    errorMsgElement.style.color = "#FF0000";
+                }
+            } catch (e) {
+                errorMsgElement.style.color = "#FF0000";
+            }
+        }
+    </script>
+</body>
+</html>
