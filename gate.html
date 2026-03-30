@@ -120,6 +120,7 @@
             const pass = passwordInput.value;
             const errorMsgElement = document.getElementById("errorMessage");
 
+            // まず確実に背景色と同化させて見えなくする
             errorMsgElement.style.color = "#2A2A2A";
 
             try {
@@ -131,10 +132,16 @@
                     document.getElementById("contentArea").style.display = "block";
                     document.getElementById("videoLink").href = originalUrl;
                 } else {
-                    errorMsgElement.style.color = "#FF0000";
+                    // 失敗時：0.1秒（100ミリ秒）後に赤色にする
+                    setTimeout(function() {
+                        errorMsgElement.style.color = "#FF0000";
+                    }, 100);
                 }
             } catch (e) {
-                errorMsgElement.style.color = "#FF0000";
+                // 失敗時：0.1秒（100ミリ秒）後に赤色にする
+                setTimeout(function() {
+                    errorMsgElement.style.color = "#FF0000";
+                }, 100);
             }
         }
     </script>
