@@ -378,12 +378,12 @@
       `;
     }
 
-    // 星装飾 (◆や✦はダークグレーの★、・はグレーの・として表示)
+    // 星装飾 (◆はダークグレーの★、・はグレーの・として表示)
     function decorateStars(text){
       let result = "";
       for (let char of text) {
         result += char === "★" ? `<span style="color:gold;">★</span>` :
-                  (char === "◆" || char === "✦") ? `<span style="color:darkgray;">★</span>` :
+                  char === "◆" ? `<span style="color:darkgray;">★</span>` :
                   char === "☆" ? `<span style="color:gray;">☆</span>` : 
                   char === "・" ? `<span style="color:gray;">・</span>` : char;
       }
