@@ -4,10 +4,10 @@
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="shortcut icon" href="favicon-relic.ico">
-  <link rel="apple-touch-icon" href="apple-touch-icon-relic.png">
-  <link rel="icon" type="image/png" href="web-app-manifest-192x192-relic.png">
-  <title>ファンタズムレリックチェッカー</title>
+  <link rel="shortcut icon" href="favicon-chaos.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-chaos.png">
+  <link rel="icon" type="image/png" href="web-app-manifest-192x192-chaos.png">
+  <title>カオスレリックチェッカー</title>
 
   <style>
 
@@ -103,7 +103,7 @@
     }
 
     .line .name {
-      width: 100px;
+      width: 130px;
       text-align: right;
       margin-right: 10px;
     }
@@ -310,7 +310,7 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> ファンタズムレリックチェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> カオスレリックチェッカー</h1>
   </div>
 
   <div class="controls">
@@ -321,7 +321,7 @@
 
   <div class="bottom">
     <br>
-    <a href="report-relic.html">報告用ページへ</a>
+    <a href="report-chaos.html">報告用ページへ</a>
     <br>
   </div>
 
@@ -392,10 +392,10 @@
     }
 
     const PAGE_SETTING_KEY = 'PageSettings'; 
-    let pageSettings = { 'checker-relic_zoom': 1.0, 'checker-relic_column': 1 };
+    let pageSettings = { 'checker-chaos_zoom': 1.0, 'checker-chaos_column': 1 };
     
     function changeZoom(delta) {
-        const zoomKey = 'checker-relic_zoom';
+        const zoomKey = 'checker-chaos_zoom';
         let currentZoom = pageSettings[zoomKey];
         currentZoom += delta;
         currentZoom = Math.round(currentZoom * 10) / 10;
@@ -439,8 +439,8 @@
       }
     }
 
-    const ADMIN_KEY = 'checker-relic_mode';
-    const DATA_KEY = 'checker-relic_admin_data';
+    const ADMIN_KEY = 'checker-chaos_mode';
+    const DATA_KEY = 'checker-chaos_admin_data';
     let isAdminMode = false;
 
     function checkMode() {
@@ -494,14 +494,14 @@
     }
 
     function applyData(data) {
-        const isOldFile = Object.keys(data).some(key => key.startsWith('ファンタズムレリック_'));
+        const isOldFile = Object.keys(data).some(key => key.startsWith('カオスレリック_'));
 
         for (const key in data) {
             if (key === "_version") continue; 
 
             let targetKey = key;
-            if (isOldFile && key.startsWith('ファンタズムレリック_')) {
-                targetKey = key.replace('ファンタズムレリック_', '武装共鳴or詩人刻印のみ_');
+            if (isOldFile && key.startsWith('カオスレリック_')) {
+                targetKey = key.replace('カオスレリック_', '団結の証or詩人刻印のみ_');
             }
 
             const stars = document.querySelector(`.stars[data-key="${targetKey}"]`);
@@ -569,27 +569,29 @@
             if(oneBtn) oneBtn.classList.add('active');
             if(twoBtn) twoBtn.classList.remove('active');
         }
-        pageSettings['checker-relic_column'] = cols;
+        pageSettings['checker-chaos_column'] = cols;
         savePageSettings();
     }
 
     const groups = [
-      { title: "武装共鳴or詩人刻印のみ", color: "M01" },
-      { title: "共鳴と詩人の混同", color: "M02" }
+      { title: "団結の証or詩人刻印のみ", color: "M01" },
+      { title: "団結と詩人の混同", color: "M02" }
     ];
 
     const attributes = [
-      { name: "剣", class: "S02" },
-      { name: "大剣", class: "S03" },
-      { name: "斧", class: "S04" },
-      { name: "棍棒", class: "S05" },
-      { name: "体術", class: "S06" },
-      { name: "銃", class: "S07" },
-      { name: "小剣", class: "S08" },
-      { name: "槍", class: "S09" },
-      { name: "弓", class: "S10" },
-      { name: "杖", class: "S11" },
+      { name: "GBSaGa", class: "S01" },
+      { name: "RS1", class: "S02" },
+      { name: "RS2", class: "S03" },
+      { name: "RS3", class: "S04" },
+      { name: "SF1", class: "S05" },
+      { name: "SF2", class: "S06" },
+      { name: "US", class: "S07" },
+      { name: "ES&IS", class: "S08" },
+      { name: "SSG", class: "S09" },
+      { name: "SaGaEB", class: "S10" },
+      { name: "SaGaRS", class: "S11" },
       { name: "詩人", class: "S01" }
+
     ];
 
     function init() {
@@ -641,7 +643,7 @@
         groupTitle.appendChild(titleWrapper);
         groupTitle.appendChild(zoomButtons);
 
-        if (group.title === "武装共鳴or詩人刻印のみ") {
+        if (group.title === "団結の証or詩人刻印のみ") {
             const columnButtons = document.createElement('div');
             columnButtons.className = 'column-buttons';
             columnButtons.innerHTML = `
@@ -654,7 +656,7 @@
         groupBlock.appendChild(groupTitle);
 
         attributes.forEach(attr => {
-          const isHiddenPoet = (group.title === "共鳴と詩人の混同" && attr.name === "詩人");
+          const isHiddenPoet = (group.title === "団結と詩人の混同" && attr.name === "詩人");
 
           const line = document.createElement('div');
           line.className = 'line';
@@ -731,14 +733,14 @@
         legendDiv.style.letterSpacing = '1px';
         legendDiv.style.fontWeight = 'normal';
 
-        if (group.title === "武装共鳴or詩人刻印のみ") {
+        if (group.title === "団結の証or詩人刻印のみ") {
             legendDiv.innerHTML = `
-                <div><span style="color: red;">※参考①</span>　<span style="color: #eee;">☆</span><span style="color: cyan;">共鳴14%</span>　<span style="color: darkgray;">★</span><span style="color: cyan;">共鳴17%</span>　<span style="color: gold;">★</span><span style="color: cyan;">共鳴21%</span></div>
+                <div><span style="color: red;">※参考①</span>　<span style="color: #eee;">☆</span><span style="color: cyan;">団結14%</span>　<span style="color: darkgray;">★</span><span style="color: cyan;">団結17%</span>　<span style="color: gold;">★</span><span style="color: cyan;">団結21%</span></div>
                 <div><span style="color: red;">※参考②</span>　<span style="color: #eee;">☆</span><span style="color: fuchsia;">詩人SS1</span>　<span style="color: darkgray;">★</span><span style="color: fuchsia;">詩人SS2</span>　<span style="color: gold;">★</span><span style="color: fuchsia;">詩人SS3</span></div>
             `;
-        } else if (group.title === "共鳴と詩人の混同") {
+        } else if (group.title === "団結と詩人の混同") {
             legendDiv.innerHTML = `
-                <div><span style="color: red;">※参考③</span>　<span style="color: #eee;">☆</span><span style="color: cyan;">共3</span><span style="color: fuchsia;">詩50</span>　<span style="color: darkgray;">★</span><span style="color: cyan;">共7</span><span style="color: fuchsia;">詩50</span>　<span style="color: gold;">★</span><span style="color: cyan;">共14</span><span style="color: fuchsia;">詩25</span></div>
+                <div><span style="color: red;">※参考③</span>　<span style="color: #eee;">☆</span><span style="color: cyan;">団3</span><span style="color: fuchsia;">詩50</span>　<span style="color: darkgray;">★</span><span style="color: cyan;">団7</span><span style="color: fuchsia;">詩50</span>　<span style="color: gold;">★</span><span style="color: cyan;">団14</span><span style="color: fuchsia;">詩25</span></div>
                 <div style="color: #2A2A2A; user-select: none;">※参考④　背景と同化するダミーテキスト</div>
             `;
         }
@@ -754,7 +756,7 @@
         container.appendChild(groupBlock);
       });
 
-      const savedCols = pageSettings['checker-relic_column'] || 1;
+      const savedCols = pageSettings['checker-chaos_column'] || 1;
       applyColumns(savedCols);
     }
 
@@ -783,7 +785,7 @@
       const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "ファンタズムレリック獲得状況.json";
+      link.download = "カオスレリック獲得状況.json";
       link.click();
     }
 
@@ -806,7 +808,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         checkMode(); 
         loadPageSettings();
-        document.body.style.zoom = pageSettings['checker-relic_zoom'];
+        document.body.style.zoom = pageSettings['checker-chaos_zoom'];
         
         init(); 
         loadAdminData(); 
