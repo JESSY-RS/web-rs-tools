@@ -1749,7 +1749,8 @@
         let titleHtml = titleText;
         if (isSkill && /[+＋]$/.test(titleText) && type !== 'addInfo') {
             const baseSkillName = titleText.replace(/[+＋]$/, '');
-            titleHtml = `<a href="#" class="keyword-link plus-skill-link" data-base-name="${baseSkillName}">${titleText}</a>`;
+            // ▼変更箇所: style属性を追加して文字色継承と下線なしを強制
+            titleHtml = `<a href="#" class="keyword-link plus-skill-link" data-base-name="${baseSkillName}" style="color: inherit; text-decoration: none;">${titleText}</a>`;
         }
 
         let content = `<h3>${titleHtml}</h3>`;
@@ -3018,7 +3019,8 @@
         let titleHtml = titleText;
         if (isSkillBased && /[+＋]$/.test(titleText) && !hideType && itemType !== 'addInfo') {
             const baseSkillName = titleText.replace(/[+＋]$/, '');
-            titleHtml = `<a href="#" class="keyword-link plus-skill-link" data-base-name="${baseSkillName}">${titleText}</a>`;
+            // ▼変更箇所: style属性を追加して文字色継承と下線なしを強制
+            titleHtml = `<a href="#" class="keyword-link plus-skill-link" data-base-name="${baseSkillName}" style="color: inherit; text-decoration: none;">${titleText}</a>`;
         }
 
         let summaryHtml = '';
