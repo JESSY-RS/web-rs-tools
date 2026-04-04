@@ -296,7 +296,7 @@
     </style>
 </head>
 <body>
-    <h1 class="main-title">
+    <h1 class="main-title no-select">
         <span id="theme-toggle-button" style="cursor: pointer; color: #f5c542; margin-right: -8px;">★</span>
         スタイル実装ランキング
         <div id="theme-options">
@@ -354,7 +354,6 @@
     <div class="bottom">
         <a href="index.html" class="web-link">INDEXへ戻る</a>　<a href="style-info.html" class="web-link">ビューアへ戻る</a>
     </div>
-
 <script>
     // --- 拡大縮小の関数 ---
     const PAGE_SETTING_KEY = 'PageSettings'; 
@@ -639,7 +638,7 @@
             if (b.count !== a.count) {
                 return b.count - a.count;
             } else {
-                return a.furigana.localeCompare(b.furigana, 'ja');
+                return a.charName === b.charName ? 0 : (a.charName < b.charName ? -1 : 1);
             }
         });
 
