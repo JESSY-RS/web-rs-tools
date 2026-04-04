@@ -231,6 +231,25 @@
         #resetFilterBtn:hover {
             background-color: #5a6268;
         }
+        
+        /* スマホ等で画面幅が小さい時の縦並び設定 */
+        @media (max-width: 600px) {
+            .control-group {
+                flex-direction: column;
+                align-items: stretch; 
+                gap: 10px;
+            }
+            .control-group label {
+                text-align: left;
+            }
+            .custom-select-container {
+                max-width: 100%;
+            }
+            #resetFilterBtn {
+                width: 100%;
+            }
+        }
+
         /* --- テーブル用CSS --- */
         .table-container {
             max-width: none;
@@ -455,7 +474,7 @@
     // --- ユーティリティ関数 ---
     const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
 
-    // ★間隔の文字列フォーマット（0ヵ月時の省略、0日対応、前ゼロ解除）
+    // ★間隔の文字列フォーマット（0ヵ月時の省略、0日対応、前ゼロ解除、Xヵ月時の0日省略）
     function getFormattedIntervalString(dNew, dOld) {
         let m = (dNew.getFullYear() - dOld.getFullYear()) * 12 + (dNew.getMonth() - dOld.getMonth());
         let tempDate = new Date(dOld);
@@ -473,7 +492,11 @@
         if (m === 0) {
             return `${diffDays}日`;
         } else {
-            return `${m}ヵ月${diffDays}日`;
+            if (diffDays === 0) {
+                return `${m}ヵ月`;
+            } else {
+                return `${m}ヵ月${diffDays}日`;
+            }
         }
     }
 
