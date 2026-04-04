@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="favicon.ico">
+    <title>★スタイル実装ランキング</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+    <style>
+        :root {
+            --main-bg: #fff;
+            --main-text: #000;
+            --title-text: #000;
+            --controls-bg: #f0f0f0;
+            --controls-border: #ddd;
+            --skill-col-bg: #e7f3ff;
+            --skill-col-text: #0056b3;
+            --col-border: #ddd;
+            --card-bg: #fff;
+            --card-border: #e8e8e8;
+            --card-title-text: #000;
+            --card-text: #333;
+            --popup-bg: #fff;
+            --popup-border: #a0aec0;
+            --web-link-text: dodgerblue;
+            --web-link-visited: blueviolet;
+            --web-link-hover: lime;
+            --web-link-active: orangered;
+            --hover-bg: #f0f0f0;
+        }
+        [data-theme="dark"] {
+            --main-bg: #2A2A2A;
+            --main-text: #f2f2f2;
+            --title-text: #f2f2f2;
+            --controls-bg: #3a3a3a;
+            --controls-border: #555;
+            --skill-col-bg: #1e293b;
+            --skill-col-text: #93c5fd;
+            --col-border: #555;
+            --card-bg: #3a3a3a;
+            --card-border: #555;
+            --card-title-text: #f2f2f2;
+            --card-text: #ccc;
+            --popup-bg: #4a4a4a;
+            --popup-border: #666;
+            --web-link-text: #1D9BF0;
+            --web-link-visited: #7755FF;
+            --web-link-hover: #0CFF57;
+            --web-link-active: #FF0000;
+            --hover-bg: #4a4a4a;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Segoe UI', Meiryo, sans-serif;
+            margin: 0 3px;
+            padding: 15px;
+            background-color: var(--main-bg);
+            color: var(--main-text);
+            font-size: calc(16px + 1pt);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        h1 {
+            margin: 0;
+            padding: 0;
+        }
+        .main-title {
+            text-align: left;
+            margin-bottom: 15px;
+            color: var(--title-text);
+            position: relative;
+            font-size: 1.8em;
+        }
+        #theme-options {
+            display: none;
+            position: absolute;
+            left: 0;
+            margin-top: 8px;
+            padding: 1rem;
+            background-color: var(--popup-bg);
+            border: 1px solid var(--popup-border);
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 20;
+            top: 100%;
+        }
+        #theme-options div {
+            display: flex;
+            flex-direction: column;
+        }
+        #theme-options label {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        #theme-options label:first-child {
+            margin-top: 0;
+        }
+        #theme-options span {
+            margin-left: 0.5rem;
+            font-size: 1rem;
+            color: var(--main-text);
+        }
+        #theme-options label input[type="radio"] {
+            margin: 0;
+        }
+        .zoom-buttons {
+            position: absolute;
+            top: 17px;
+            right: 18px;
+            display: flex;
+            flex-direction: row;
+            gap: 5px;
+            z-index: 1000;
+        }
+        .zoom-buttons button {
+            color: #000;
+            background-color: #eee;
+            padding: 5px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 1px solid var(--col-border);
+        }
+        /* --- 絞り込みコントロール用CSS --- */
+        .controls-wrapper {
+            max-width: none;
+            margin: 0 auto 20px auto;
+            padding: 15px;
+            background: var(--controls-bg);
+            border: 1px solid var(--controls-border);
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .control-group label {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .custom-select-container {
+            position: relative;
+            flex-grow: 1;
+            max-width: 400px;
+        }
+        .custom-select-button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--col-border);
+            background-color: var(--card-bg);
+            color: var(--main-text);
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 45px;
+            box-sizing: border-box;
+            font-size: 1.1em;
+        }
+        .custom-select-button:disabled {
+            background-color: var(--controls-bg);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .custom-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            border: 1px solid var(--col-border);
+            background: var(--card-bg);
+            color: var(--main-text);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .custom-select-search {
+            margin: 8px;
+            padding: 8px;
+            width: calc(100% - 16px);
+            box-sizing: border-box;
+            border: 1px solid var(--col-border);
+            background-color: var(--main-bg);
+            color: var(--main-text);
+            font-size: 1.1em;
+        }
+        .custom-select-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--main-text);
+        }
+        .custom-select-option:hover, .custom-select-option.focused {
+            background-color: #007bff;
+            color: #fff;
+        }
+        [data-theme="dark"] .custom-select-option:hover, [data-theme="dark"] .custom-select-option.focused {
+            background-color: #1D9BF0;
+            color: #fff;
+        }
+        #characterOptions {
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        #resetFilterBtn {
+            flex-shrink: 0;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 1em;
+            height: 45px;
+            transition: background-color 0.2s;
+        }
+        #resetFilterBtn:hover {
+            background-color: #5a6268;
+        }
+        /* --- テーブル用CSS --- */
+        .table-container {
+            max-width: none;
+            margin: 0 auto 20px auto;
+            overflow-x: auto;
+            border: 1px solid var(--col-border);
+            background-color: var(--card-bg);
+        }
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: calc(0.95em + 1pt);
+            color: var(--card-text);
+        }
+        .ranking-table th, .ranking-table td {
+            border: 1px solid var(--col-border);
+            padding: 10px 15px;
+            white-space: nowrap;
+        }
+        .ranking-table th {
+            background-color: var(--skill-col-bg);
+            color: var(--skill-col-text);
+            font-weight: bold;
+            text-align: center;
+            position: sticky;
+            top: 0;
+        }
+        .ranking-table td:first-child {
+            color: var(--card-title-text);
+            font-weight: bold;
+        }
+        .ranking-table tbody tr:hover {
+            background-color: var(--hover-bg);
+        }
+        .align-right {
+            text-align: right;
+        }
+        .align-center {
+            text-align: center;
+        }
+        footer {
+            width: 100%;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            font-size: 14pt;
+            margin-top: 40px;
+        }
+        .bottom {
+            margin-top: 20px;
+            font-size: 16pt;
+            line-height: 2;
+        }
+        .web-link:link, .web-link:visited {
+            color: var(--web-link-text);
+            text-decoration: underline;
+        }
+        .web-link:hover {
+            color: var(--web-link-hover);
+        }
+        .web-link:active {
+            color: var(--web-link-active);
+        }
+    </style>
+</head>
+<body>
+    <h1 class="main-title">
+        <span id="theme-toggle-button" style="cursor: pointer; color: #f5c542; margin-right: -8px;">★</span>
+        スタイル実装ランキング
+        <div id="theme-options">
+            <div>
+                <label><input type="radio" name="theme" value="system"><span>端末の設定を使う</span></label>
+                <label><input type="radio" name="theme" value="light"><span>ライトモード</span></label>
+                <label><input type="radio" name="theme" value="dark"><span>ダークモード</span></label>
+            </div>
+        </div>
+    </h1>
+
+    <div class="zoom-buttons">
+        <button onclick="changeZoom(-0.1)">－</button>
+        <button onclick="changeZoom(0.1)">＋</button>
+    </div>
+
+    <div class="controls-wrapper">
+        <div class="control-group">
+            <label>キャラ絞り込み:</label>
+            <div class="custom-select-container" id="characterContainer">
+                <button class="custom-select-button" id="characterBtn" disabled>
+                    <span id="characterText">読み込み中...</span>
+                    <span>▼</span>
+                </button>
+                <div class="custom-select-dropdown" id="characterDropdown" style="display: none;">
+                    <input type="text" class="custom-select-search" id="characterSearch" placeholder="検索...">
+                    <div id="characterOptions"></div>
+                </div>
+            </div>
+            <button id="resetFilterBtn">絞り込み解除</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="ranking-table" id="rankingTable">
+            <thead>
+                <tr id="tableHeaderRow">
+                    <th>キャラ名</th>
+                    <th>スタイル数</th>
+                    </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="2" style="text-align: center;">データを読み込んでいます...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        ※使用は自己責任にて。<br>
+        ※対象スタイルは６周年以降のキャラになっています。<br>
+        ※ロマパスや視聴メダルのキャラなど登録が遅れる場合があり、反映されていない可能性もあります。<br>
+        ※記載の情報が間違っている可能性もあります。気付かれた方は<a href="https://x.com/jessy_romasaga" class="web-link">@jessy_romasaga</a>までご一報いただけると助かります。<br>
+    </footer>
+
+    <div class="bottom">
+        <a href="index.html" class="web-link">INDEXへ戻る</a>　<a href="style-info.html" class="web-link">ビューアへ戻る</a>
+    </div>
+
+<script>
+    // --- 拡大縮小の関数 ---
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    let pageSettings = { 'style-rank_zoom': 1.0 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'style-rank_zoom';
+        let currentZoom = pageSettings[zoomKey];
+        if (currentZoom === undefined) currentZoom = 1.0;
+    
+        currentZoom += delta;
+        currentZoom = Math.round(currentZoom * 10) / 10;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        document.body.style.zoom = currentZoom;
+        pageSettings[zoomKey] = currentZoom;
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+
+    // --- テーマ設定ロジックと初期化 ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // ズーム設定の復元
+        loadPageSettings();
+        if (pageSettings['style-rank_zoom'] !== undefined) {
+            document.body.style.zoom = pageSettings['style-rank_zoom'];
+        } else {
+            pageSettings['style-rank_zoom'] = 1.0;
+        }
+
+        const themeToggleButton = document.getElementById('theme-toggle-button');
+        const themeOptions = document.getElementById('theme-options');
+        const themeRadios = document.querySelectorAll('input[name="theme"]');
+        
+        const applyTheme = (theme) => {
+            if (theme === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+        };
+
+        const handleThemeChange = () => {
+            const selectedTheme = localStorage.getItem('theme') || 'light';
+            applyTheme(selectedTheme);
+            for (const radio of themeRadios) {
+                if (radio.value === selectedTheme) radio.checked = true;
+            }
+        };
+
+        themeToggleButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            themeOptions.style.display = themeOptions.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!themeOptions.contains(e.target) && e.target !== themeToggleButton) {
+                themeOptions.style.display = 'none';
+            }
+        });
+
+        themeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const newTheme = e.target.value;
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+        });
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            const selectedTheme = localStorage.getItem('theme') || 'light';
+            if (selectedTheme === 'system') applyTheme('system');
+        });
+
+        handleThemeChange();
+        loadDataAndRender();
+    });
+
+    // --- ユーティリティ関数 ---
+    const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
+
+    // ★間隔の文字列フォーマット（0ヵ月時の省略、0日対応、前ゼロ解除）
+    function getFormattedIntervalString(dNew, dOld) {
+        let m = (dNew.getFullYear() - dOld.getFullYear()) * 12 + (dNew.getMonth() - dOld.getMonth());
+        let tempDate = new Date(dOld);
+        tempDate.setMonth(tempDate.getMonth() + m);
+        
+        if (tempDate > dNew) {
+            m--;
+            tempDate = new Date(dOld);
+            tempDate.setMonth(tempDate.getMonth() + m);
+        }
+        
+        const diffTime = Math.abs(dNew - tempDate);
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (m === 0) {
+            return `${diffDays}日`;
+        } else {
+            return `${m}ヵ月${diffDays}日`;
+        }
+    }
+
+    // --- 統一名称（クラス）かどうかの判別ロジック ---
+    const isIgnoreList = (inside) => {
+        const exactIgnores = ['男', '女', 'RS1/MS', 'US', 'RS3', 'SF1', 'SSG', 'RS2', 'SF2', 'GB', 'SEB', 'IS', 'ISEC', 'ES'];
+        if (exactIgnores.includes(inside)) return true;
+        if (/^[A-Za-z0-9\/]+$/.test(inside)) return true;
+        return false;
+    };
+
+    function parseCharName(rawName) {
+        let firstParen = rawName.indexOf('(');
+        if (firstParen === -1) firstParen = rawName.indexOf('（');
+        let lastParen = rawName.lastIndexOf(')');
+        if (lastParen === -1) lastParen = rawName.lastIndexOf('）');
+
+        if (firstParen !== -1 && lastParen !== -1 && lastParen > firstParen) {
+            const base = rawName.substring(0, firstParen).trim();
+            const inside = rawName.substring(firstParen + 1, lastParen).trim();
+            
+            if (!isIgnoreList(inside)) {
+                return { isClass: true, base: base, class: inside };
+            }
+        }
+        return { isClass: false, base: rawName, class: rawName };
+    }
+
+    // --- グローバル変数 ---
+    let allResults = []; 
+    let maxIntervalsGlobal = 0; 
+    let dropdownCharList = []; 
+
+    // --- データ読み込みと集計 ---
+    async function loadDataAndRender() {
+        try {
+            const [charResponse, styleResponse] = await Promise.all([
+                fetch('data/character.csv'),
+                fetch('data/style.csv')
+            ]);
+
+            if (!charResponse.ok || !styleResponse.ok) {
+                throw new Error('CSVファイルの読み込みに失敗しました。');
+            }
+
+            const charCsv = await charResponse.text();
+            const styleCsv = await styleResponse.text();
+
+            const charData = Papa.parse(charCsv, { header: true, skipEmptyLines: true }).data;
+            const styleData = Papa.parse(styleCsv, { header: true, skipEmptyLines: true }).data;
+
+            processData(charData, styleData);
+            initializeCharacterSelect(); 
+            renderTable(allResults);     
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="2" style="color: red; text-align: center;">${error.message}</td></tr>`;
+        }
+    }
+
+    function processData(charData, styleData) {
+        let charMap = {};      
+        let isClassMap = {};   
+        let originalChars = [];
+
+        charData.forEach(row => {
+            const rawName = row['キャラ名'];
+            const furigana = row['フリガナ'] || '';
+            if (!rawName) return;
+
+            const parsed = parseCharName(rawName);
+
+            if (parsed.isClass) {
+                charMap[rawName] = parsed.class;
+                charMap[parsed.base] = parsed.class; 
+                isClassMap[parsed.base] = true;      
+            } else {
+                if (!isClassMap[rawName]) {
+                    charMap[rawName] = rawName;
+                }
+            }
+
+            originalChars.push({ rawName: rawName, furigana: furigana });
+        });
+
+        const uniqueRawNames = new Set();
+        originalChars.forEach(char => {
+            if (uniqueRawNames.has(char.rawName)) return;
+            uniqueRawNames.add(char.rawName);
+
+            const resolvedName = charMap[char.rawName];
+
+            dropdownCharList.push({
+                rawName: char.rawName,        
+                displayName: resolvedName,    
+                furigana: char.furigana
+            });
+        });
+
+        let styleGroups = {};
+        styleData.forEach(row => {
+            const rawCharName = row['キャラ名'];
+            const rawDate = row['実装時期'];
+
+            if (rawCharName && rawDate) {
+                let finalName = charMap[rawCharName];
+                if (!finalName) {
+                    const parsed = parseCharName(rawCharName);
+                    finalName = parsed.isClass ? parsed.class : rawCharName;
+                    charMap[rawCharName] = finalName;
+                    
+                    dropdownCharList.push({
+                        rawName: rawCharName,
+                        displayName: finalName,
+                        furigana: rawCharName
+                    });
+                    uniqueRawNames.add(rawCharName);
+                }
+
+                const dt = new Date(rawDate.replace(/\//g, '-'));
+                if (!isNaN(dt.getTime())) {
+                    if (!styleGroups[finalName]) {
+                        styleGroups[finalName] = { dates: [] };
+                    }
+                    styleGroups[finalName].dates.push(dt);
+                }
+            }
+        });
+
+        allResults = [];
+        maxIntervalsGlobal = 0;
+
+        for (const [charName, data] of Object.entries(styleGroups)) {
+            const dates = data.dates;
+            dates.sort((a, b) => b - a);
+            
+            let intervals = [];
+            for (let i = 0; i < dates.length - 1; i++) {
+                intervals.push(getFormattedIntervalString(dates[i], dates[i + 1]));
+            }
+            
+            if (intervals.length > maxIntervalsGlobal) {
+                maxIntervalsGlobal = intervals.length;
+            }
+            
+            let furigana = '';
+            let matches = dropdownCharList.filter(c => c.displayName === charName);
+            if (matches.length > 0) {
+                furigana = matches[0].furigana;
+            }
+
+            allResults.push({
+                charName: charName, 
+                furigana: furigana,
+                count: dates.length,
+                intervals: intervals
+            });
+        }
+
+        allResults.sort((a, b) => {
+            if (b.count !== a.count) {
+                return b.count - a.count;
+            } else {
+                return a.furigana.localeCompare(b.furigana, 'ja');
+            }
+        });
+
+        const headerRow = document.getElementById('tableHeaderRow');
+        for (let i = 1; i <= maxIntervalsGlobal; i++) {
+            const th = document.createElement('th');
+            th.textContent = `間隔${i}`;
+            headerRow.appendChild(th);
+        }
+
+        dropdownCharList = dropdownCharList.filter(char => allResults.some(r => r.charName === char.displayName));
+        dropdownCharList.sort((a, b) => a.furigana.localeCompare(b.furigana, 'ja'));
+    }
+
+    function renderTable(resultsToRender) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        if (resultsToRender.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${2 + maxIntervalsGlobal}" style="text-align: center;">該当するキャラクターがいません</td></tr>`;
+            return;
+        }
+
+        resultsToRender.forEach(res => {
+            const tr = document.createElement('tr');
+            
+            let html = `<td>${res.charName}</td><td class="align-right">${res.count}</td>`;
+            
+            for (let i = 0; i < maxIntervalsGlobal; i++) {
+                const intervalStr = res.intervals[i] || '';
+                html += `<td class="align-right">${intervalStr}</td>`;
+            }
+            
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function initializeCharacterSelect() {
+        const btn = document.getElementById('characterBtn');
+        const dropdown = document.getElementById('characterDropdown');
+        const searchInput = document.getElementById('characterSearch');
+        const optionsContainer = document.getElementById('characterOptions');
+        const selectedText = document.getElementById('characterText');
+        const resetBtn = document.getElementById('resetFilterBtn');
+
+        const charList = dropdownCharList;
+
+        const renderOptions = (filter = '') => {
+            optionsContainer.innerHTML = '';
+            const searchTerm = hiraganaToKatakana(filter);
+            
+            const filteredList = charList.filter(char => {
+                const furiganaMatch = char.furigana && char.furigana.includes(searchTerm);
+                const nameMatch = char.rawName.includes(searchTerm);
+                return furiganaMatch || nameMatch;
+            });
+
+            filteredList.forEach(char => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'custom-select-option';
+                optionDiv.textContent = char.rawName; 
+                optionDiv.dataset.value = char.displayName; 
+
+                optionDiv.addEventListener('click', (e) => {
+                    const selectedDisplayName = e.target.dataset.value;
+                    const selectedRawName = e.target.textContent;
+                    selectedText.textContent = selectedRawName; 
+                    dropdown.style.display = 'none';
+                    
+                    const filteredResults = allResults.filter(r => r.charName === selectedDisplayName);
+                    renderTable(filteredResults);
+                });
+                optionsContainer.appendChild(optionDiv);
+            });
+        };
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = dropdown.style.display === 'flex';
+            dropdown.style.display = isOpen ? 'none' : 'flex';
+            if (!isOpen) {
+                searchInput.value = '';
+                renderOptions();
+            }
+        });
+
+        searchInput.addEventListener('input', () => renderOptions(searchInput.value));
+
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('characterContainer').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            selectedText.textContent = '--- (全件表示)';
+            renderTable(allResults);
+        });
+
+        selectedText.textContent = '--- (全件表示)';
+        btn.disabled = false;
+    }
+</script>
+</body>
+</html>
