@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="favicon-astral.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-astral.png">
+  <link rel="icon" type="image/png" href="web-app-manifest-192x192-astral.png">
+  <title>アストラルレリック報告用</title> <style>
+
+    body {
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    .pierce-group {
+      margin-top: 10px;
+    }
+
+    /* 小分類と星の横並び中央寄せ */
+    .attribute {
+      font-size: 22px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 5px 10;
+    }
+
+    /* 小分類（左側）は右揃え、幅固定 */
+    .attribute span:first-child {
+      width: 50px;
+      text-align: right;
+      margin-right: 0px;
+    }
+    
+    /* 星（右側）は左揃え */
+    .attribute .stars {
+      text-align: left;
+    }
+
+    .stars {
+      font-size: 26px;
+    }
+
+    input[type="file"] {
+      margin: 10px 0;
+      font-size: 12px;
+    }
+
+    /* 小分類ごとの色指定 */
+    .S01 { color: darkorchid; }
+    .S02 { color: dodgerblue; }
+    .S03 { color: dodgerblue; }
+    .S04 { color: dodgerblue; }
+    .S05 { color: lime; }
+    .S06 { color: lime; }
+    .S07 { color: lime; }
+    .S08 { color: yellow; }
+    .S09 { color: yellow; }
+    .S10 { color: yellow; }
+    .S11 { color: orangered; }
+
+    .斬 { color: lightgray; }
+    .打 { color: lightgray; }
+    .突 { color: lightgray; }
+    .熱 { color: orangered; }
+    .冷 { color: dodgerblue; }
+    .雷 { color: yellow; }
+    .陽 { color: darkorange; }
+    .陰 { color: darkorchid; }
+    .詩 { color: darkgray; }
+
+    /* 集計部分のスタイル */
+    #summary {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    /* 拡大縮小ボタンのスタイル */
+    .zoom-buttons {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      font-size: 24px;
+      cursor: pointer;
+      margin-left: -5px;
+      margin-right: 3px;
+      user-select: none;
+      color: #eee;
+      display: inline-block;
+    }
+    
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 320px;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1001;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: limegreen;
+    }
+
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: inline-block;
+      padding: 12px 0;
+      color: #eee;
+      text-decoration: none;
+    }
+
+    .menu-item:hover {
+      color: #0CFF57;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
+  </style>
+
+</head>
+<body>
+
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">チェッカー関連リンク</div>
+    <a href="checker-astral.html" class="menu-item">アストラルレリックチェッカー</a><br>
+    <a href="checker-chaos.html" class="menu-item">カオスレリックチェッカー</a><br>
+    <a href="checker-relic.html" class="menu-item">ファンタズムレリックチェッカー</a><br>
+    <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a><br>
+    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a><br>
+    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a><br>
+    <div class="menu-spacer"></div>
+    <a href="report-astral.html" class="menu-item">アストラルレリック報告用</a><br>
+    <a href="report-chaos.html" class="menu-item">カオスレリック報告用</a><br>
+    <a href="report-relic.html" class="menu-item">ファンタズムレリック報告用</a><br>
+    <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a><br>
+    <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a><br>
+    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a><br>
+    <div class="menu-spacer"></div>
+    <div id="variable-links-4gen">
+      <a href="#緋Anchor" class="menu-item" onclick="closeMenu()">◆緋のピアス</a><br>
+      <a href="#憲法Anchor" class="menu-item" onclick="closeMenu()">◆憲法のピアス</a><br>
+      <a href="#濡羽Anchor" class="menu-item" onclick="closeMenu()">◆濡羽のピアス</a><br>
+      <a href="#瑠璃紺Anchor" class="menu-item" onclick="closeMenu()">◆瑠璃紺のピアス</a><br>
+      <div class="menu-spacer"></div>
+    </div>
+    <a href="index.html" class="menu-item">インデックスページ</a><br>
+  </div>
+
+  <div class="header">
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> アストラルレリック</h1>
+  </div>
+
+  <div class="zoom-buttons">
+    <button onclick="changeZoom(0.1)">＋</button>
+    <button onclick="changeZoom(-0.1)">－</button>
+  </div>
+
+  <input type="file" id="importJson" accept=".json">
+
+  <div class="pierce-group" id="pierceGroup"></div>
+
+  <div id="summary"></div>
+
+  <br><a href="checker-astral.html">チェッカーへ戻る</a><br>
+
+  <script>
+
+    const sideMenuVisibilityConfig = {
+      'variable-links-4gen': ['四元像ピアスチェッカー']
+    };
+
+    function toggleMenu() {
+        const currentPageTitle = document.title;
+        for (const elementId in sideMenuVisibilityConfig) {
+          const targetElement = document.getElementById(elementId);
+          if (targetElement) {
+            const visiblePages = sideMenuVisibilityConfig[elementId];
+            if (visiblePages.includes(currentPageTitle)) {
+              targetElement.style.display = 'block'; 
+            } else {
+              targetElement.style.display = 'none';  
+            }
+          }
+        }
+
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        }
+    }
+
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+    }
+
+    let startX = 0, startY = 0;
+    let endX = 0, endY = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      endX = e.changedTouches[0].screenX;
+      endY = e.changedTouches[0].screenY;
+      handleGesture(); 
+    }, false);
+
+    function handleGesture() {
+      const diffX = endX - startX; 
+      const diffY = endY - startY; 
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 50 && startX < 30) {
+          toggleMenu();
+        } 
+        else if (diffX < -50) {
+          closeMenu();
+        }
+      }
+    }
+
+    const pierceGroup = document.getElementById("pierceGroup");
+    
+    const attributes = [
+      { name: "斬", className: "斬" },
+      { name: "打", className: "打" },
+      { name: "突", className: "突" },
+      { name: "熱", className: "熱" },
+      { name: "冷", className: "冷" },
+      { name: "雷", className: "雷" },
+      { name: "陽", className: "陽" },
+      { name: "陰", className: "陰" },
+      { name: "詩人", className: "詩" }
+    ];
+
+    // 初期表示
+    attributes.forEach(attr => {
+      const div = document.createElement("div");
+      div.className = "attribute";
+      // IDをチェッカーの「アストラルレリック」に合わせる
+      const id = `アストラルレリック_${attr.name}`;
+      const initialStars = "・・・・・";
+      // data-raw 属性に元の文字列を保持させることで集計を正確に行う
+      div.innerHTML = `<span class="${attr.className}">${attr.name}</span>&nbsp;<span class="stars" id="${id}" data-raw="${initialStars}">${decorateStars(initialStars)}</span>`;
+      pierceGroup.appendChild(div);
+    });
+    
+    // 集計
+    function updateSummary(){
+      let completeCount = 0;
+      let totalStars = 0;
+      const totalAttrs = attributes.length;
+      attributes.forEach(attr => {
+        const el = document.getElementById(`アストラルレリック_${attr.name}`);
+        if (!el) return;
+        
+        // 画面の表示(textContent)ではなく、data-rawに保存された元の文字列で黄色の★だけをカウントする
+        const rawString = el.dataset.raw || "・・・・・";
+        const starCount = (rawString.match(/★/g) || []).length;
+        
+        totalStars += starCount;
+        if (starCount === 5) completeCount++;
+      });
+    
+      const totalPossibleStars = totalAttrs * 5;
+      document.getElementById("summary").innerHTML = `
+        トータル：${totalStars} / ${totalPossibleStars}<br>
+        コンプ数：${completeCount} / ${totalAttrs}<br>
+      `;
+    }
+
+    // 星装飾 (◆はダークグレーの★、・はグレーの・として表示)
+    function decorateStars(text){
+      let result = "";
+      for (let char of text) {
+        result += char === "★" ? `<span style="color:gold;">★</span>` :
+                  char === "◆" ? `<span style="color:darkgray;">★</span>` :
+                  char === "☆" ? `<span style="color:gray;">☆</span>` : 
+                  char === "・" ? `<span style="color:gray;">・</span>` : char;
+      }
+      return result;
+    }
+    
+    // JSON読込
+    document.getElementById("importJson").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const data = JSON.parse(e.target.result);
+
+        // 旧ファイル判定
+        const isOldFile = Object.keys(data).some(k => k.startsWith('旧アストラルレリック_'));
+
+        for (let key in data) {
+          if (key === "_version") continue;
+
+          let targetKey = key;
+          let rawData = data[key];
+
+          // 旧ファイルの場合はキー名を置き換え、☆を・に変換
+          if (isOldFile && key.startsWith('旧アストラルレリック_')) {
+            targetKey = key.replace('旧アストラルレリック_', 'アストラルレリック_');
+            rawData = rawData.replace(/☆/g, '・');
+          }
+
+          const el = document.getElementById(targetKey);
+          if (el) {
+            el.dataset.raw = rawData;
+            el.innerHTML = decorateStars(rawData);
+          }
+        }
+        updateSummary();
+      };
+      reader.readAsText(file);
+    });
+
+    // 初期表示の時点でも集計実行
+    updateSummary();
+
+    // 拡大縮小の関数
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    
+    let pageSettings = { 'report-astral_zoom': 1.0 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'report-astral_zoom';
+        let currentZoom = pageSettings[zoomKey];
+    
+        currentZoom += delta;
+        currentZoom = Math.round(currentZoom * 10) / 10;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        document.body.style.zoom = currentZoom;
+        pageSettings[zoomKey] = currentZoom;
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['report-astral_zoom'];
+    });
+
+    window.onload = function () {
+        if(typeof loadSideMenu === 'function') loadSideMenu();
+    }
+
+  </script>
+
+</body>
+</html>
