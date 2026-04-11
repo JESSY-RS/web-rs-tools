@@ -7,7 +7,7 @@
   <link rel="shortcut icon" href="favicon-stella.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-stella.png">
   <link rel="icon" type="image/png" href="web-app-manifest-192x192-stella.png">
-  <title>ステライヤリングSS2チェッカー</title>
+  <title>ステラSS2チェッカー</title>
 
   <style>
 
@@ -267,7 +267,7 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> ステライヤリングSS2チェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()">☰</span> ステラSS2チェッカー</h1>
   </div>
 
   <div class="controls">
@@ -278,7 +278,7 @@
 
   <div class="bottom">
     <br>
-    <a href="report-stella.html">報告用ページへ</a>
+    <a href="report-stella.html">報告用ページへ</a>　<a href="checker-stella.html">単体チェッカーへ</a>
     <br>
   </div>
 
@@ -317,7 +317,7 @@
     let reservations = {};
 
     const PAGE_SETTING_KEY = 'PageSettings_StellaMix'; 
-    let pageSettings = { 'checker-stella_zoom': 1.0, 'checker-stella_column': 1 };
+    let pageSettings = { 'checker-stella-ss2_zoom': 1.0, 'checker-stella-ss2_column': 1 };
 
     // --- ユーティリティ ---
     function getPairKey(race1, race2) {
@@ -374,8 +374,8 @@
             const columnButtons = document.createElement('div');
             columnButtons.className = 'column-buttons';
             columnButtons.innerHTML = `
-              <button class="column-button ${pageSettings['checker-stella_column'] === 1 ? 'active' : ''}" onclick="setColumns(1)">１列</button>
-              <button class="column-button ${pageSettings['checker-stella_column'] === 2 ? 'active' : ''}" onclick="setColumns(2)">２列</button>
+              <button class="column-button ${pageSettings['checker-stella-ss2_column'] === 1 ? 'active' : ''}" onclick="setColumns(1)">１列</button>
+              <button class="column-button ${pageSettings['checker-stella-ss2_column'] === 2 ? 'active' : ''}" onclick="setColumns(2)">２列</button>
             `;
             groupTitle.appendChild(columnButtons);
         }
@@ -384,7 +384,7 @@
         // コンテナ
         const attributesContainer = document.createElement('div');
         attributesContainer.className = 'attributes-container';
-        if (pageSettings['checker-stella_column'] === 2) {
+        if (pageSettings['checker-stella-ss2_column'] === 2) {
             attributesContainer.classList.add('two-columns');
         }
 
@@ -570,7 +570,7 @@
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = "ステライヤリング配合状況.json";
+      link.download = "ステラSS2獲得状況.json";
       link.click();
     }
 
@@ -618,14 +618,14 @@
     });
 
     function changeZoom(delta) {
-        let currentZoom = pageSettings['checker-stella_zoom'];
+        let currentZoom = pageSettings['checker-stella-ss2_zoom'];
         currentZoom += delta;
         currentZoom = Math.round(currentZoom * 10) / 10;
         if (currentZoom < 0.5) currentZoom = 0.5;
         if (currentZoom > 2.0) currentZoom = 2.0;
         
         document.body.style.zoom = currentZoom;
-        pageSettings['checker-stella_zoom'] = currentZoom;
+        pageSettings['checker-stella-ss2_zoom'] = currentZoom;
         savePageSettings();
     }
 
@@ -647,7 +647,7 @@
         }
       });
 
-      pageSettings['checker-stella_column'] = columns;
+      pageSettings['checker-stella-ss2_column'] = columns;
       savePageSettings();
     }
 
@@ -686,9 +686,9 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadPageSettings();
-        document.body.style.zoom = pageSettings['checker-stella_zoom'];
+        document.body.style.zoom = pageSettings['checker-stella-ss2_zoom'];
         init();
-        setColumns(pageSettings['checker-stella_column']);
+        setColumns(pageSettings['checker-stella-ss2_column']);
     });
   </script>
 
