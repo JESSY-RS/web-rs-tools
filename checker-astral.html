@@ -736,31 +736,9 @@
           groupBlock.appendChild(line);
         });
 
-        const legendDiv = document.createElement('div');
-        legendDiv.style.fontSize = '18px';
-        legendDiv.style.marginTop = '15px';
-        legendDiv.style.marginBottom = '20px';
-        legendDiv.style.marginLeft = '0px';
-        legendDiv.style.lineHeight = '1.6';
-        legendDiv.style.letterSpacing = '1px';
-        legendDiv.style.fontWeight = 'normal';
-
-        if (group.title === "団結の証or詩人刻印のみ") {
-            legendDiv.innerHTML = `
-                <div><span style="color: red;">※参考①</span>　<span style="color: #eee;">☆</span><span style="color: cyan;">団結14%</span>　<span style="color: darkgray;">★</span><span style="color: cyan;">団結17%</span>　<span style="color: gold;">★</span><span style="color: cyan;">団結21%</span></div>
-                <div><span style="color: red;">※参考②</span>　<span style="color: #eee;">☆</span><span style="color: fuchsia;">詩人SS1</span>　<span style="color: darkgray;">★</span><span style="color: fuchsia;">詩人SS2</span>　<span style="color: gold;">★</span><span style="color: fuchsia;">詩人SS3</span></div>
-            `;
-        } else if (group.title === "団結と詩人の混同") {
-            legendDiv.innerHTML = `
-                <div><span style="color: red;">※参考③</span>　<span style="color: #eee;">☆</span><span style="color: cyan;">団3</span><span style="color: fuchsia;">詩50</span>　<span style="color: darkgray;">★</span><span style="color: cyan;">団7</span><span style="color: fuchsia;">詩50</span>　<span style="color: gold;">★</span><span style="color: cyan;">団14</span><span style="color: fuchsia;">詩25</span></div>
-                <div style="color: #2A2A2A; user-select: none;">※参考④　背景と同化するダミーテキスト</div>
-            `;
-        }
-        groupBlock.appendChild(legendDiv);
-
         const exportBtn = document.createElement('button');
         exportBtn.textContent = '状態をエクスポート';
-        exportBtn.style.marginTop = '5px';
+        exportBtn.style.marginTop = '15px';
         exportBtn.style.alignSelf = 'flex-start'; 
         exportBtn.addEventListener('click', exportState);
         groupBlock.appendChild(exportBtn);
