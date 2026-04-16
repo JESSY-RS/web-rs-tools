@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="favicon-astral.ico">
+  <link rel="apple-touch-icon" href="apple-touch-icon-astral.png">
+  <link rel="icon" type="image/png" href="web-app-manifest-192x192-astral.png">
+  <title>アストラルレリック練成シミュレーター</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --panel-bg: #1e1e1e;
+      --text-main: #e0e0e0;
+      --accent: #FF00FF;
+      --border-color: #333;
+      --star-filled: #FFD700;
+      --star-empty: #666666;
+      --match-log: #FFD700;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Segoe UI', Meiryo, system-ui, sans-serif;
+      padding: 10px 20px 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      color: var(--accent);
+      text-shadow: 0 0 5px rgba(255, 0, 255, 0.3);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .control-panel {
+      background: var(--panel-bg);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .input-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .input-actions label {
+      white-space: nowrap;
+    }
+
+    input[type="number"] {
+      background: var(--bg-color);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      width: 100%;
+      max-width: 100px;
+      min-width: 50px; 
+      flex: 1; 
+      border-radius: 4px;
+      font-size: 1.1em;
+      letter-spacing: 1px;
+      text-align: right;
+    }
+
+    button {
+      background-color: transparent;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-run {
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-run:hover {
+      background-color: rgba(255, 0, 255, 0.2);
+      box-shadow: 0 0 12px rgba(255, 0, 255, 0.8);
+    }
+
+    .btn-reset {
+      color: #aaa;
+      border: 1px solid #666;
+    }
+
+    .btn-reset:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+      color: #fff;
+    }
+
+    .stats-area {
+      margin-left: auto;
+      display: flex;
+      gap: 25px;
+      font-size: 1.1em;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .N01 { color: lightgray; }
+    .N02 { color: lightgray; }
+    .N03 { color: lightgray; }
+    .N04 { color: orangered; }
+    .N05 { color: dodgerblue; }
+    .N06 { color: yellow; }
+    .N07 { color: darkorange; }
+    .N08 { color: darkorchid; }
+    .N09 { color: darkgray; }
+
+    .main-layout {
+      display: flex;
+      gap: 30px;
+      align-items: stretch;
+    }
+
+    .status-column {
+      display: grid;
+      grid-template-columns: max-content max-content; 
+      row-gap: 12px;
+      column-gap: 10px; 
+      background: var(--panel-bg);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      align-content: start;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .item-name-cell {
+      text-align: right;
+      font-size: 1.2em;
+      font-weight: bold;
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .item-name-cell.complete {
+      text-shadow: 0 0 8px currentColor;
+    }
+
+    .stars-cell {
+      text-align: left;
+      font-size: 1.5em;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+    }
+
+    .star-filled {
+      color: var(--star-filled);
+    }
+
+    .star-empty {
+      color: var(--star-empty);
+    }
+
+    .log-wrapper {
+      flex-grow: 1;
+      position: relative;
+      min-width: 0;
+    }
+
+    .log-column {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 15px;
+      overflow-y: auto;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 1em;
+      line-height: 1.5;
+    }
+
+    .log-entry {
+      margin-bottom: 4px;
+      border-bottom: 1px dashed #333;
+      padding-bottom: 2px;
+      white-space: nowrap;
+    }
+    
+    @media (max-width: 600px) {
+      .main-layout {
+        flex-direction: column; 
+      }
+      .log-wrapper {
+        min-height: 300px; 
+      }
+      .log-column {
+        position: relative;
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>アストラルレリック練成シミュレーター</h2>
+    
+    <div class="control-panel">
+      <div class="input-actions">
+        <label for="pullCount">1回の実行回数: </label>
+        <input type="number" id="pullCount" value="2000" min="1" onfocus="this.select()">
+        <button class="btn-run" onclick="runSimulation()">一括実行</button>
+        <button class="btn-reset" onclick="resetSimulation()">リセット</button>
+      </div>
+      
+      <div class="stats-area">
+        <div>総試行回数: <strong id="totalPullsDisplay" style="color: var(--accent);">0</strong> 回</div>
+        <div>
+          総獲得数: 
+          <strong>
+            <span id="currentStars" class="star-filled">0</span> 
+            <span style="color: #ffffff; margin: 0 4px;">/</span> 
+            <span id="maxStars" class="star-filled">0</span>
+          </strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-layout">
+      <div id="statusBoard" class="status-column">
+        </div>
+
+      <div class="log-wrapper">
+        <div id="logArea" class="log-column">
+          <div class="log-entry">待機中...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // ⚙️ 設定エリア
+    // ==========================================
+    const TARGET_ITEMS = 
+    [
+    '斬', 
+    '打', 
+    '突', 
+    '熱', 
+    '冷', 
+    '雷', 
+    '陽', 
+    '陰', 
+    '詩人'
+    ]; 
+    const GOAL_COUNT = 5; 
+
+    // 最大獲得可能数の計算（自動追従）
+    const MAX_STARS = TARGET_ITEMS.length * GOAL_COUNT;
+
+    // ==========================================
+    // 🎲 プールの自動生成
+    // ==========================================
+    let pool1And2 = [];
+    let pool3 = [];
+
+    TARGET_ITEMS.forEach(item => {
+        pool1And2.push('SS' + item);
+        pool1And2.push('S' + item);
+        pool3.push('SS' + item);
+    });
+
+    // ==========================================
+    // 🎮 内部ステートとロジック
+    // ==========================================
+    let totalPulls = 0;
+    let matchedCounts = {};
+    let isFinished = false;
+
+    // 初期化処理
+    function init() {
+        TARGET_ITEMS.forEach(item => {
+            matchedCounts[item] = 0;
+        });
+        
+        // 起動時に分母（最大数）を画面にセット
+        document.getElementById('maxStars').innerText = MAX_STARS;
+        renderBoard();
+    }
+
+    // 画面のステータスボードを描画・更新
+    function renderBoard() {
+        const board = document.getElementById('statusBoard');
+        board.innerHTML = '';
+        
+        let totalStars = 0; 
+
+        TARGET_ITEMS.forEach((item, index) => {
+            const count = matchedCounts[item];
+            const displayCount = Math.min(count, GOAL_COUNT);
+            totalStars += displayCount; 
+            
+            let starsHtml = '';
+            for (let i = 0; i < GOAL_COUNT; i++) {
+                if (i < displayCount) {
+                    starsHtml += '<span class="star-filled">★</span>';
+                } else {
+                    starsHtml += '<span class="star-empty">☆</span>';
+                }
+            }
+            
+            const isComplete = count >= GOAL_COUNT;
+            const completeClass = isComplete ? 'complete' : '';
+            
+            const classNumber = String(index + 1).padStart(2, '0');
+            const colorClass = `N${classNumber}`; 
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.className = `item-name-cell ${completeClass} ${colorClass}`;
+            nameDiv.innerText = item;
+            
+            const starsDiv = document.createElement('div');
+            starsDiv.className = 'stars-cell';
+            starsDiv.innerHTML = starsHtml;
+            
+            board.appendChild(nameDiv);
+            board.appendChild(starsDiv);
+        });
+        
+        // 試行回数と現在の獲得★数を画面に反映
+        document.getElementById('totalPullsDisplay').innerText = totalPulls;
+        document.getElementById('currentStars').innerText = totalStars;
+    }
+
+    // ガチャ実行ロジック
+    function runSimulation() {
+        if (isFinished) {
+            alert("すでにすべてのアイテムが目標数に達しています。リセットしてください。");
+            return;
+        }
+
+        let pulls = parseInt(document.getElementById('pullCount').value, 10) || 1;
+        
+        if (pulls > 10000) {
+            alert("動作が重くなるため、1回の実行回数を10,000回に制限しました。");
+            pulls = 10000;
+        }
+
+        const logArea = document.getElementById('logArea');
+        const fragment = document.createDocumentFragment();
+
+        if (totalPulls === 0) logArea.innerHTML = '';
+
+        for (let i = 0; i < pulls; i++) {
+            totalPulls++;
+            
+            const r1 = pool1And2[Math.floor(Math.random() * pool1And2.length)];
+            const r2 = pool1And2[Math.floor(Math.random() * pool1And2.length)];
+            const r3 = pool3[Math.floor(Math.random() * pool3.length)];
+
+            const isMatch = (r1 === r2 && r2 === r3 && r1.startsWith('SS'));
+            
+            const row = document.createElement('div');
+            row.className = 'log-entry';
+            
+            let comboText = `${String(totalPulls).padStart(5, ' ')}回目: [ ${r1.padEnd(3, ' ')} | ${r2.padEnd(3, ' ')} | ${r3.padEnd(3, ' ')} ]`;
+
+            if (isMatch) {
+                const itemName = r1.replace('SS', ''); 
+                if (matchedCounts[itemName] < GOAL_COUNT) {
+                    matchedCounts[itemName]++;
+                }
+                comboText += `  🌟`; 
+                row.style.color = 'var(--match-log)';
+                row.style.fontWeight = 'bold';
+            }
+
+            row.innerText = comboText;
+            fragment.appendChild(row);
+
+            const allComplete = TARGET_ITEMS.every(item => matchedCounts[item] >= GOAL_COUNT);
+            if (allComplete) {
+                isFinished = true;
+                const finishRow = document.createElement('div');
+                finishRow.className = 'log-entry';
+                finishRow.style.color = 'var(--match-log)';
+                finishRow.style.fontWeight = 'bold';
+                finishRow.style.marginTop = '10px';
+                finishRow.innerText = `✨ 【達成】${totalPulls}回目で全項目が揃いました！ ✨`;
+                fragment.appendChild(finishRow);
+                break;
+            }
+        }
+        
+        logArea.appendChild(fragment);
+        logArea.scrollTop = logArea.scrollHeight;
+        
+        renderBoard();
+    }
+
+    // リセット処理
+    function resetSimulation() {
+        totalPulls = 0;
+        isFinished = false;
+        document.getElementById('logArea').innerHTML = '<div class="log-entry">待機中...</div>';
+        init();
+    }
+
+    // 起動時に初期化
+    window.onload = init;
+  </script>
+</body>
+</html>
