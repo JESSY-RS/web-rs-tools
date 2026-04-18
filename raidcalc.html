@@ -500,10 +500,10 @@
       <div class="input-wrapper" id="itemSelect1">
         <span class="input-label-area"><label>アイテム選択：</label></span>
         <div class="radio-group">
-          <label><input type="radio" name="itemType1" value="shinka" onchange="changeItemType(1)">剣練磨石</label>
-          <label><input type="radio" name="itemType1" value="renma" onchange="changeItemType(1)">鎧練磨石</label>
-          <label><input type="radio" name="itemType1" value="unkai" onchange="changeItemType(1)">モナン印</label>
-          <label><input type="radio" name="itemType1" value="raima" onchange="changeItemType(1)" checked>たから箱</label>
+          <label><input type="radio" name="itemType1" value="item1" onchange="changeItemType(1)">剣練磨石</label>
+          <label><input type="radio" name="itemType1" value="item2" onchange="changeItemType(1)">鎧練磨石</label>
+          <label><input type="radio" name="itemType1" value="item3" onchange="changeItemType(1)">モナン印</label>
+          <label><input type="radio" name="itemType1" value="item4" onchange="changeItemType(1)" checked>たから箱</label>
         </div>
       </div>
 
@@ -553,10 +553,10 @@
       <div class="input-wrapper" id="itemSelect2">
         <span class="input-label-area"><label>アイテム選択：</label></span>
         <div class="radio-group">
-          <label><input type="radio" name="itemType2" value="shinka" onchange="changeItemType(2)">剣練磨石</label>
-          <label><input type="radio" name="itemType2" value="renma" onchange="changeItemType(2)">鎧練磨石</label>
-          <label><input type="radio" name="itemType2" value="unkai" onchange="changeItemType(2)">モナン印</label>
-          <label><input type="radio" name="itemType2" value="raima" onchange="changeItemType(2)" checked>たから箱</label>
+          <label><input type="radio" name="itemType2" value="item1" onchange="changeItemType(2)">剣練磨石</label>
+          <label><input type="radio" name="itemType2" value="item2" onchange="changeItemType(2)">鎧練磨石</label>
+          <label><input type="radio" name="itemType2" value="item3" onchange="changeItemType(2)">モナン印</label>
+          <label><input type="radio" name="itemType2" value="item4" onchange="changeItemType(2)" checked>たから箱</label>
         </div>
       </div>
 
@@ -928,19 +928,19 @@
         // 新データ (指定日時以降、またはデバッグ時)
         itemData = {
           // 剣練磨石
-          shinka: {
+          item1: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
           // 鎧練磨石
-          renma: {
+          item2: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // モナン印 (旧データのraimaの値をunkaiにセット。表示はスクリプトで変更)
-          unkai: {
+          // モナン印
+          item3: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
           // たから箱 (新規データ。表示はスクリプトで変更)
-          raima: {
+          item4: {
             0: 1, 6: 1, 7: 1, 8: 2, 9: 4, 10: 10
           }
         };
@@ -948,19 +948,19 @@
         // 旧データ (デフォルト)
         itemData = {
           // 剣練磨石
-          shinka: {
+          item1: {
             0: null, 6: null, 7: 92.5, 8: null, 9: 107.5, 10: 115.3
           },
           // 鎧練磨石
-          renma: {
+          item2: {
             0: null, 6: null, 7: 77.4, 8: null, 9: 101.1, 10: 111.9
           },
           // モナン印
-          unkai: {
+          item3: {
             0: null, 6: null, 7: 3243.0, 8: null, 9: 5047.0, 10: 6068.3
           },
           // たから箱（既存データ）
-          raima: {
+          item4: {
             0: null, 6: null, 7: 276.6, 8: null, 9: 458.6, 10: 559.3
           }
         };
@@ -973,45 +973,6 @@
     // ページロード時の処理
     window.onload = function () {
       
-      // ▼▼▼ 新モード時の表示書き換え処理 ▼▼▼
-      if (isNewDataMode) {
-          // 1. テーブルの書き換え (Gr.10 成長判定回数)
-          const tableBody = document.querySelector('.grade-table tbody');
-          if (tableBody) {
-              const rows = tableBody.querySelectorAll('tr');
-              if (rows.length >= 6) {
-                  const cells = rows[5].querySelectorAll('td');
-                  if (cells.length >= 4) {
-                      cells[3].textContent = '40回';
-                  }
-              }
-          }
-
-          // 2. ラジオボタンのラベル書き換え
-          // unkai → 雷魔の石, raima → たからばこ
-          const radioMap = {
-              'unkai': 'モナン印',
-              'raima': 'たから箱' 
-          };
-
-          for (const [key, labelText] of Object.entries(radioMap)) {
-              // input[value="..."] を持つすべての要素を探す
-              const inputs = document.querySelectorAll(`input[value="${key}"]`);
-              inputs.forEach(input => {
-                  const parentLabel = input.parentElement;
-                  if (parentLabel) {
-                      // テキストノードを探して書き換える
-                      parentLabel.childNodes.forEach(node => {
-                          if (node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== '') {
-                              node.textContent = labelText;
-                          }
-                      });
-                  }
-              });
-          }
-      }
-      // ★★★ 表示書き換えここまで ★★★
-
       // ユーザーデータの読み込み
       loadUserData();
 
@@ -1178,7 +1139,7 @@
 
     function getCurrentItemType() {
       const radio = document.querySelector('input[name="itemType1"]:checked');
-      return radio ? radio.value : 'raima';
+      return radio ? radio.value : 'item4';
     }
 
     function updateItemValue(number) {
