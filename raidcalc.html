@@ -111,8 +111,6 @@
       border: 1px solid #444;
     }
 
-    /* ▼▼▼ レイアウト調整用CSS ▼▼▼ */
-
     /* 入力エリア共通のFlex設定 */
     .input-wrapper, 
     .time-input {
@@ -195,7 +193,6 @@
       margin-bottom: 20px;
     }
 
-    /* ▼修正：逆算パネル（ID指定）の下マージンを詰める */
     #reverseBlock {
       margin-bottom: 10px;
     }
@@ -364,7 +361,6 @@
       color: #0CFF57;
     }
 
-    /* ▼▼▼ フッター・レイアウトボタン関連 ▼▼▼ */
     #footerArea {
       margin-bottom: 10px;
       border-top: none;
@@ -781,8 +777,6 @@
       }
     }
 
-    // ▼▼▼ レイアウト操作ロジック ▼▼▼
-
     // 親ボタンを押したときのメニュー開閉
     function toggleLayoutMenu() {
         const menu = document.getElementById('subLayoutButtons');
@@ -795,7 +789,6 @@
         } else {
             menu.classList.add('show');
             msgDiv.textContent = "※比較パネル自体の縦並び(固定)と横並び(自動)はタイトル部分をクリックする事で可能です。(モニター幅が十分にない場合は切り替わりません。)";
-            // ▼修正：色を赤に変更
             msgDiv.style.color = "red";
         }
     }
@@ -965,7 +958,7 @@
           }
         };
     }
-    // ◆◆◆ 自動切り替えロジックここまで ◆◆◆
+    // ▲▲▲ 自動切り替えロジックここまで ▲▲▲
 
     // ユーザー登録データ
     let userItemData = {};
@@ -985,14 +978,14 @@
       document.getElementById('countInput1').value = initialValues.countInput;
       document.getElementById('countInput2').value = initialValues.countInput;
 
-      // ▼▼▼ デフォルトグレードの切り替え ▼▼▼
+      // ▼▼▼ デフォルトグレード切り替え ▼▼▼
       if (isNewDataMode) {
           document.getElementById('gradeSelect1').value = "9"; // 新モード時は9
       } else {
           document.getElementById('gradeSelect1').value = "7"; // 旧モード時は7
       }
       document.getElementById('gradeSelect2').value = "10";
-      // ★★★ グレード初期値ここまで ★★★
+      // ▲▲▲ デフォルトグレードここまで ▲▲▲
       
       document.getElementById('targetItemCount').value = "";
 
@@ -1017,7 +1010,7 @@
       });
     }
 
-    // ▼▼▼ ユーザーデータの管理 ▼▼▼
+    // ユーザーデータの管理
     function loadUserData() {
       const stored = localStorage.getItem('raidcalc_user_item_data');
       if (stored) {
@@ -1064,7 +1057,7 @@
       // メッセージなし
     }
     
-    // ▼▼▼ ボタンの活性/非活性を制御する関数 ▼▼▼
+    // ボタンの活性/非活性を制御する関数
     function checkRegisterButtonState(number) {
       const grade = document.getElementById(`gradeSelect${number}`).value;
       const currentType = getCurrentItemType();
@@ -1110,7 +1103,7 @@
       msgDiv.style.color = "red"; 
     }
 
-    // ▼▼▼ ラジオボタンの同期と更新処理 ▼▼▼
+    // ラジオボタンの同期と更新処理
     function changeItemType(sourceNumber) {
       // 変更された側の値を取得
       const selectedValue = document.querySelector(`input[name="itemType${sourceNumber}"]:checked`).value;

@@ -634,7 +634,7 @@
     let calculatedResult1 = null;
     let calculatedResult2 = null;
 
-    /* ▼▼▼▼▼▼▼▼▼ 自動切り替え設定エリア ▼▼▼▼▼▼▼▼▼ */
+    /* ▼▼▼▼▼▼▼▼ 自動切り替え設定ここから ▼▼▼▼▼▼▼▼ */
 
     const switchTargetDate = new Date('2025-12-11T12:00:00+09:00');
     const isDebugMode = document.title.indexOf('★') !== -1;
@@ -736,7 +736,7 @@
     const gradeConfigPattern2 = useNewData ? gradeConfigPattern2_New : gradeConfigPattern2_Old;
     const defaultValues       = useNewData ? defaultValues_New       : defaultValues_Old;
 
-    /* ▲▲▲▲▲▲▲▲▲ 設定エリア終了 ▲▲▲▲▲▲▲▲▲ */
+    /* ▲▲▲▲▲▲▲▲ 自動切り替え設定ここから ▲▲▲▲▲▲▲▲ */
 
     // メニュー関連
     function toggleMenu() {
@@ -780,7 +780,7 @@
 
     // ページ設定
     const PAGE_SETTING_KEY = 'PageSettings'; 
-    // デフォルトの grade_mode を 'manual' (OFF状態) に設定 ★★★初期値を変更したい場合ここを変更する↓★★★ manual or pattern1 or pattern2
+    // デフォルトの grade_mode を 'manual' (OFF状態) に設定 ★★★初期値を変更したい場合ここを変更する↓★★★ or patternX
     let pageSettings = { 'ikuseicalc_zoom': 1.0, 'ikuseicalc_column': 1, 'ikuseicalc_grade_mode': 'pattern1' };
     
     function changeZoom(delta) {
