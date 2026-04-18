@@ -7,7 +7,7 @@
   <link rel="shortcut icon" href="favicon-raidcalc.ico">
   <link rel="apple-touch-icon" href="apple-touch-icon-raidcalc.png">
   <link rel="icon" type="image/png" href="android-chrome-144x144-raidcalc.png">
-  <title>７周年制圧戦・報酬効率比較ツール</title> 
+  <title>ドラクエTACT制圧戦・報酬効率比較ツール</title> 
   <style>
 
     body {
@@ -241,10 +241,10 @@
     /* グレード換算表本体のスタイル */
     table.grade-table { table-layout: fixed; width: 100%; }
     .grade-table th:nth-of-type(1) { width: 8%; }
-    .grade-table th:nth-of-type(2) { width: 25%; }
+    .grade-table th:nth-of-type(2) { width: 27%; }
     .grade-table th:nth-of-type(3) { width: 27%; }
-    .grade-table th:nth-of-type(4) { width: 20%; }
-    .grade-table th:nth-of-type(5) { width: 20%; }
+    .grade-table th:nth-of-type(4) { width: 19%; }
+    .grade-table th:nth-of-type(5) { width: 19%; }
     .grade-table td { word-wrap: break-word; font-size: 14px; }
 
     /* ズームボタン */
@@ -465,7 +465,7 @@
   </div>
 
   <div class="header">
-    <h2><span class="hamburger" onclick="toggleMenu()">☰</span> <span id="titleTrigger" onclick="toggleLayout()">７周年制圧戦・報酬効率比較ツール</span></h2>
+    <h2><span class="hamburger" onclick="toggleMenu()">☰</span> <span id="titleTrigger" onclick="toggleLayout()">ドラクエTACT制圧戦・報酬効率比較ツール</span></h2>
   </div>
 
   <div id="warning">※グレードにより個数が判明していない部分は入力してください。</div>
@@ -500,10 +500,10 @@
       <div class="input-wrapper" id="itemSelect1">
         <span class="input-label-area"><label>アイテム選択：</label></span>
         <div class="radio-group">
-          <label><input type="radio" name="itemType1" value="shinka" onchange="changeItemType(1)">覇衣進化</label>
-          <label><input type="radio" name="itemType1" value="renma" onchange="changeItemType(1)">覇衣練磨</label>
-          <label><input type="radio" name="itemType1" value="unkai" onchange="changeItemType(1)">雲海魔晶</label>
-          <label><input type="radio" name="itemType1" value="raima" onchange="changeItemType(1)" checked>雷魔の石</label>
+          <label><input type="radio" name="itemType1" value="shinka" onchange="changeItemType(1)">剣練磨石</label>
+          <label><input type="radio" name="itemType1" value="renma" onchange="changeItemType(1)">鎧練磨石</label>
+          <label><input type="radio" name="itemType1" value="unkai" onchange="changeItemType(1)">モナン印</label>
+          <label><input type="radio" name="itemType1" value="raima" onchange="changeItemType(1)" checked>たから箱</label>
         </div>
       </div>
 
@@ -553,10 +553,10 @@
       <div class="input-wrapper" id="itemSelect2">
         <span class="input-label-area"><label>アイテム選択：</label></span>
         <div class="radio-group">
-          <label><input type="radio" name="itemType2" value="shinka" onchange="changeItemType(2)">覇衣進化</label>
-          <label><input type="radio" name="itemType2" value="renma" onchange="changeItemType(2)">覇衣練磨</label>
-          <label><input type="radio" name="itemType2" value="unkai" onchange="changeItemType(2)">雲海魔晶</label>
-          <label><input type="radio" name="itemType2" value="raima" onchange="changeItemType(2)" checked>雷魔の石</label>
+          <label><input type="radio" name="itemType2" value="shinka" onchange="changeItemType(2)">剣練磨石</label>
+          <label><input type="radio" name="itemType2" value="renma" onchange="changeItemType(2)">鎧練磨石</label>
+          <label><input type="radio" name="itemType2" value="unkai" onchange="changeItemType(2)">モナン印</label>
+          <label><input type="radio" name="itemType2" value="raima" onchange="changeItemType(2)" checked>たから箱</label>
         </div>
       </div>
 
@@ -620,8 +620,8 @@
       <thead>
         <tr>
           <th>Gr.</th>
-          <th>シムメシュ<br>アレツ<br>ノーア</th>
-          <th>シャムマベル<br>ラスボス</th>
+          <th>ドラゴン<br>あくまのきし</th>
+          <th>ゴーレム<br>りゅうおう<br>ラスボス?</th>
           <th>成長判定回数</th>
           <th>ボーナス倍率</th>
         </tr>
@@ -636,37 +636,37 @@
         </tr>
         <tr>
           <td class="num">6</td>
-          <td class="num">5億</td>
-          <td class="num">5億</td>
+          <td class="num">200億</td>
+          <td class="num">200億</td>
           <td class="num">8回</td>
           <td class="num">2.90倍</td>
         </tr>
         <tr>
           <td class="num">7</td>
-          <td class="num">10億</td>
-          <td class="num">10億</td>
+          <td class="num">225億</td>
+          <td class="num">235億</td>
           <td class="num">9回</td>
           <td class="num">3.60倍</td>
         </tr>
         <tr>
           <td class="num">8</td>
-          <td class="num">50億</td>
-          <td class="num">30億</td>
+          <td class="num">250億</td>
+          <td class="num">270億</td>
           <td class="num">10回</td>
           <td class="num">4.35倍</td>
         </tr>
         <tr>
           <td class="num">9</td>
-          <td class="num">100億</td>
-          <td class="num">50億</td>
-          <td class="num">15回</td>
+          <td class="num">275億</td>
+          <td class="num">300億</td>
+          <td class="num">20回</td>
           <td class="num">7.00倍</td>
         </tr>
         <tr>
           <td class="num">10</td>
-          <td class="num">200億</td>
-          <td class="num">100億</td>
-          <td class="num">20回</td>
+          <td class="num">300億</td>
+          <td class="num">350億</td>
+          <td class="num">40回</td>
           <td class="num">9.30倍</td>
         </tr>
       </tbody>
@@ -677,9 +677,7 @@
   <br>
 
   ■関連記事<br>
-  <a href="https://x.com/jessy_romasaga/status/1995811478390161728">https://x.com/jessy_romasaga/status/1995811478390161728</a><br>
-  <a href="https://x.com/jessy_romasaga/status/1995511608219767026">https://x.com/jessy_romasaga/status/1995511608219767026</a><br>
-  <a href="https://x.com/jessy_romasaga/status/1994728915689246767">https://x.com/jessy_romasaga/status/1994728915689246767</a><br>
+  <a href="https://x.com/jessy_romasaga/status/2045368209256460722">https://x.com/jessy_romasaga/status/2045368209256460722</a><br>
 
   <footer>
     ※使用は自己責任にて。<br>
@@ -929,39 +927,39 @@
     if (isNewDataMode) {
         // 新データ (指定日時以降、またはデバッグ時)
         itemData = {
-          // 覇衣進化
+          // 剣練磨石
           shinka: {
-            0: null, 6: null, 7: 92.5, 8: null, 9: 107.5, 10: 339.6
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // 覇衣練磨
+          // 鎧練磨石
           renma: {
-            0: null, 6: null, 7: 77.4, 8: null, 9: 101.1, 10: 111.9
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // 雷魔の石 (旧データのraimaの値をunkaiにセット。表示はスクリプトで変更)
+          // モナン印 (旧データのraimaの値をunkaiにセット。表示はスクリプトで変更)
           unkai: {
-            0: null, 6: null, 7: 276.6, 8: null, 9: 458.6, 10: 559.3
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // トレジャーBOX (新規データ。表示はスクリプトで変更)
+          // たから箱 (新規データ。表示はスクリプトで変更)
           raima: {
-            0: 1, 6: 1, 7: 1, 8: 2, 9: 3, 10: 10
+            0: 1, 6: 1, 7: 1, 8: 2, 9: 4, 10: 10
           }
         };
     } else {
         // 旧データ (デフォルト)
         itemData = {
-          // 覇衣進化
+          // 剣練磨石
           shinka: {
             0: null, 6: null, 7: 92.5, 8: null, 9: 107.5, 10: 115.3
           },
-          // 覇衣練磨
+          // 鎧練磨石
           renma: {
             0: null, 6: null, 7: 77.4, 8: null, 9: 101.1, 10: 111.9
           },
-          // 雲海魔晶
+          // モナン印
           unkai: {
             0: null, 6: null, 7: 3243.0, 8: null, 9: 5047.0, 10: 6068.3
           },
-          // 雷魔の石（既存データ）
+          // たから箱（既存データ）
           raima: {
             0: null, 6: null, 7: 276.6, 8: null, 9: 458.6, 10: 559.3
           }
@@ -984,16 +982,16 @@
               if (rows.length >= 6) {
                   const cells = rows[5].querySelectorAll('td');
                   if (cells.length >= 4) {
-                      cells[3].textContent = '30回';
+                      cells[3].textContent = '40回';
                   }
               }
           }
 
           // 2. ラジオボタンのラベル書き換え
-          // unkai → 雷魔の石, raima → トレジャーBOX
+          // unkai → 雷魔の石, raima → たからばこ
           const radioMap = {
-              'unkai': '雷魔の石',
-              'raima': 'ﾄﾚｼﾞｬｰBOX' // ラベルの長さ調整のため半角カナを使用するか、全角にするかは好みで調整可。ここでは全角で統一する場合は'トレジャーBOX'。ご指定の「ﾄﾚｼﾞｬｰBOX」に合わせます。
+              'unkai': 'モナン印',
+              'raima': 'たから箱' 
           };
 
           for (const [key, labelText] of Object.entries(radioMap)) {
@@ -1028,7 +1026,7 @@
 
       // ▼▼▼ デフォルトグレードの切り替え ▼▼▼
       if (isNewDataMode) {
-          document.getElementById('gradeSelect1').value = "7"; // 新モード時は9
+          document.getElementById('gradeSelect1').value = "9"; // 新モード時は9
       } else {
           document.getElementById('gradeSelect1').value = "7"; // 旧モード時は7
       }
