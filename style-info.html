@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="favicon.ico">
-    <title>スタイル情報ビューア</title>
+    <title>★スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
@@ -1655,7 +1655,20 @@
         if (data['種類']) slashParts.push(data['種類']);
         if (data['遠近']) slashParts.push(data['遠近']);
         if (data['方法']) slashParts.push(data['方法']);
-        if (data['行動順'] && type !== 'addInfo') slashParts.push(data['行動順']);
+        
+        // --- 変更部分 ここから ---
+        let showActionOrder = (type !== 'addInfo');
+        if (type === 'addInfo' && data['スキル名'] && reverseIndex[data['スキル名']]) {
+            // 親スキルの効果詳細に溜め技/術としての指定があるか確認
+            showActionOrder = reverseIndex[data['スキル名']].some(parent => {
+                const detailText = findDetailText(parent.name);
+                return detailText && (detailText.includes(`溜め技：「${data['スキル名']}」`) || detailText.includes(`溜め術：「${data['スキル名']}」`));
+            });
+        }
+        if (data['行動順'] && showActionOrder) {
+            slashParts.push(data['行動順']);
+        }
+        // --- 変更部分 ここまで ---
         
         let rawRange = data['範囲'] || '';
         let rawTarget = data['対象'] || '';
