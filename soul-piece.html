@@ -49,7 +49,13 @@
             color: #ddd;
             display: flex;
             align-items: center;
+            gap: 6px; /* ★追加: ラジオボタンと文字の隙間を確保 */
             white-space: nowrap; 
+        }
+        .input-mode-selector input[type="radio"] {
+            margin: 0; /* ★追加: ブラウザ標準の余白を消して縦ズレ（下に寄る）を解消 */
+            cursor: pointer;
+            transform: translateY(-1px);
         }
 
         /* 計算エリア (Flexboxで自動最適化) */
@@ -114,14 +120,18 @@
         
         /* 計算結果エリア */
         .result {
-            flex: 0 0 auto; 
+            display: block; 
+            flex: 0 1 auto; 
+            max-width: 100%;
             font-size: 1.6em;
             font-weight: bold;
             color: gold;
             margin-left: auto; 
             padding-left: 20px;
             border-left: 2px dashed #666;
-            white-space: nowrap;
+            text-align: right; 	
+            word-break: break-word; /* エラー文が長い場合は折り返す */
+            line-height: 1.4;
         }
 
         /* 汎用ボタン */
@@ -172,14 +182,25 @@
         .matrix-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: clamp(11px, 2vw, 15px); 
-            min-width: 600px;
+            table-layout: fixed; /* 列幅を完全に均等にする */
+            min-width: 850px;    /* ズームしても絶対に文字がはみ出さない安全な最小幅 */
         }
+        /* 各列の幅を均等にする設定 */
+        .matrix-table th:not(:first-child), 
+        .matrix-table td:not(:first-child) {
+            width: 9%; 
+        }
+        .matrix-table th.corner-cell,
+        .matrix-table td.header-col {
+            width: 10%; 
+        }
+        
         .matrix-table th, .matrix-table td {
             border: 1px solid #ccc;
             padding: 6px 4px;
             text-align: right;
             white-space: nowrap;
+            font-size: 15px; /* 安定したサイズで固定 */
             transition: background-color 0.2s;
         }
         .matrix-table th {
@@ -214,7 +235,7 @@
         .matrix-table td.highlight {
             background-color: #C99004 !important;
             color: #fff;
-            /* ガタつき防止用疑似太字は維持 */
+            /* ガタつきを防止するための疑似太字 */
             font-weight: normal !important; 
             text-shadow: 0.5px 0 0 #fff, -0.5px 0 0 #fff; 
             box-shadow: none;
@@ -356,7 +377,20 @@
             line-height: 2;
         }
 
-        /* --- 細かな微調整用メディアクエリ --- */
+        /* --- 画面幅による計算パネルのレイアウト調整 --- */
+        @media (max-width: 600px) {
+            /* 画面が狭くなり必要数エリアが下に回り込んだ際の装飾変更 */
+            .result {
+                width: 100%;
+                margin-left: 0;
+                padding-left: 0;
+                border-left: none;
+                border-top: 2px dashed #666;
+                padding-top: 15px;
+                text-align: right;
+            }
+        }
+
         @media (max-width: 450px) {
             .table-controls {
                 gap: 8px;
@@ -585,13 +619,20 @@
         function highlightMatrixCell(curLv, tarLv) {
             document.querySelectorAll('.matrix-table .highlight').forEach(el => el.classList.remove('highlight'));
             document.querySelectorAll('.matrix-table .crosshair').forEach(el => el.classList.remove('crosshair'));
+            
             if (isNaN(curLv) || isNaN(tarLv)) return;
-            const rowHeader = document.querySelector(`.matrix-table td.header-col[data-row="${curLv}"]`);
-            if (rowHeader) rowHeader.classList.add('crosshair');
-            const colHeader = document.querySelector(`.matrix-table th[data-col="${tarLv}"]`);
-            if (colHeader) colHeader.classList.add('crosshair');
+            
             const targetCell = document.getElementById(`matrix-cell-${curLv}-${tarLv}`);
-            if (targetCell) targetCell.classList.add('highlight');
+            
+            if (targetCell) {
+                targetCell.classList.add('highlight');
+                
+                const rowHeader = document.querySelector(`.matrix-table td.header-col[data-row="${curLv}"]`);
+                if (rowHeader) rowHeader.classList.add('crosshair');
+                
+                const colHeader = document.querySelector(`.matrix-table th[data-col="${tarLv}"]`);
+                if (colHeader) colHeader.classList.add('crosshair');
+            }
         }
 
         function updateCalculation() {
