@@ -183,16 +183,7 @@
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed; /* 列幅を完全に均等にする */
-            min-width: 850px;    /* ズームしても絶対に文字がはみ出さない安全な最小幅 */
-        }
-        /* 各列の幅を均等にする設定 */
-        .matrix-table th:not(:first-child), 
-        .matrix-table td:not(:first-child) {
-            width: 9%; 
-        }
-        .matrix-table th.corner-cell,
-        .matrix-table td.header-col {
-            width: 10%; 
+            min-width: 760px;    /* ズームしても絶対に文字がはみ出さない安全な最小幅 */
         }
         
         .matrix-table th, .matrix-table td {
@@ -200,7 +191,7 @@
             padding: 6px 4px;
             text-align: right;
             white-space: nowrap;
-            font-size: 15px; /* 安定したサイズで固定 */
+            font-size: clamp(13px, 1.8vw, 15px); 
             transition: background-color 0.2s;
         }
         .matrix-table th {
