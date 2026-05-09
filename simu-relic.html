@@ -504,7 +504,7 @@
     let MAX_STARS = TARGET_ITEMS.length * GOAL_COUNT;
 
     // ==========================================
-    // 🎲 プールの自動生成
+    // 🎲 プールの自動生成 (区切り文字を導入)
     // ==========================================
     let pool1And2 = [];
     let pool3 = [];
@@ -513,9 +513,10 @@
         pool1And2 = [];
         pool3 = [];
         TARGET_ITEMS.forEach(item => {
-            pool1And2.push('SS' + item);
-            pool1And2.push('S' + item);
-            pool3.push('SS' + item);
+            // 文字列が混ざらないよう _(アンダーバー) で明確に区切る
+            pool1And2.push('SS_' + item);
+            pool1And2.push('S_' + item);
+            pool3.push('SS_' + item);
         });
     }
 
@@ -533,7 +534,6 @@
         TARGET_ITEMS = RELIC_DATA[currentRelicType].items;
         MAX_STARS = TARGET_ITEMS.length * GOAL_COUNT;
         
-        // リセット処理を実行 (タイトル変更処理は削除)
         generatePools();
         resetSimulation();
     }
@@ -572,7 +572,6 @@
             const isComplete = count >= GOAL_COUNT;
             const completeClass = isComplete ? 'complete' : '';
             
-            // 選択中のレリックに合わせてプレフィックス（N, C, P）を変更
             let prefix = 'N';
             if (currentRelicType === 'chaos') {
                 prefix = 'C';
@@ -598,12 +597,11 @@
         document.getElementById('currentStars').innerText = totalStars;
     }
 
-    // ログ表示用にアイテム名を整形する関数
+    // ログ表示用にアイテム名を整形する関数 (アンダーバーで分割して括弧をつける)
     function formatItemName(item) {
-        if (item.startsWith('SS')) {
-            return '(SS)' + item.substring(2);
-        } else if (item.startsWith('S')) {
-            return '(S)' + item.substring(1);
+        const parts = item.split('_');
+        if (parts.length === 2) {
+            return `(${parts[0]})${parts[1]}`;
         }
         return item;
     }
@@ -627,8 +625,8 @@
 
         if (totalPulls === 0) logArea.innerHTML = '';
 
-        // 余白調整 (SS) が付く分だけ長さを確保する
-        const padLen = currentRelicType === 'chaos' ? 10 : 8;
+        // 余白調整 (SS) とアイテム名の最大長さに合わせる
+        const padLen = currentRelicType === 'chaos' ? 11 : 9;
 
         for (let i = 0; i < pulls; i++) {
             totalPulls++;
@@ -637,7 +635,8 @@
             const r2 = pool1And2[Math.floor(Math.random() * pool1And2.length)];
             const r3 = pool3[Math.floor(Math.random() * pool3.length)];
 
-            const isMatch = (r1 === r2 && r2 === r3 && r1.startsWith('SS'));
+            // SS_ から始まるものだけを厳密にマッチング判定
+            const isMatch = (r1 === r2 && r2 === r3 && r1.startsWith('SS_'));
             
             const row = document.createElement('div');
             row.className = 'log-entry';
@@ -650,7 +649,8 @@
             let comboText = `${String(totalPulls).padStart(5, ' ')}回目: [ ${f1.padEnd(padLen, ' ')} | ${f2.padEnd(padLen, ' ')} | ${f3.padEnd(padLen, ' ')} ]`;
 
             if (isMatch) {
-                const itemName = r1.replace('SS', ''); 
+                // アンダーバーより後ろの部分（純粋なアイテム名）を取得
+                const itemName = r1.split('_')[1]; 
                 if (matchedCounts[itemName] < GOAL_COUNT) {
                     matchedCounts[itemName]++;
                 }
