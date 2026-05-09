@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="icon/favicon-relic.ico">
+  <link rel="apple-touch-icon" href="icon/apple-touch-icon-relic.png">
+  <link rel="icon" type="image/png" href="icon/web-app-manifest-192x192-relic.png">
+  <title>練成シミュレーター</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --panel-bg: #1e1e1e;
+      --text-main: #e0e0e0;
+      --accent: #FF00FF;
+      --border-color: #333;
+      --star-filled: #FFD700;
+      --star-empty: #666666;
+      --match-log: #FFD700;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Segoe UI', Meiryo, system-ui, sans-serif;
+      padding: 10px 20px 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      color: var(--accent);
+      text-shadow: 0 0 5px rgba(255, 0, 255, 0.3);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-top: 0;
+      margin-bottom: 15px;
+    }
+
+    .control-panel {
+      background: var(--panel-bg);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    /* レリック選択用のスタイル */
+    .relic-type-selector {
+      width: 100%;
+      margin-bottom: 0px;
+      padding-bottom: 15px;
+      border-bottom: 1px dashed var(--border-color);
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .relic-type-selector label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: bold;
+      font-size: 1.0em;
+    }
+
+    .relic-type-selector input[type="radio"] {
+      cursor: pointer;
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+      margin-right: 2px;
+    }
+
+    .input-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .input-actions label {
+      white-space: nowrap;
+    }
+
+    input[type="number"] {
+      background: var(--bg-color);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px;
+      width: 100%;
+      max-width: 100px;
+      min-width: 50px; 
+      flex: 1; 
+      border-radius: 4px;
+      font-size: 1.1em;
+      letter-spacing: 1px;
+      text-align: right;
+    }
+
+    button {
+      background-color: transparent;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-run {
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-run:hover {
+      background-color: rgba(255, 0, 255, 0.2);
+      box-shadow: 0 0 12px rgba(255, 0, 255, 0.8);
+    }
+
+    .btn-reset {
+      color: #aaa;
+      border: 1px solid #666;
+    }
+
+    .btn-reset:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+      color: #fff;
+    }
+
+    .stats-area {
+      margin-left: auto;
+      display: flex;
+      gap: 25px;
+      font-size: 1.1em;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    /* アストラル用の色指定 */
+    .N01 { color: lightgray; }
+    .N02 { color: lightgray; }
+    .N03 { color: lightgray; }
+    .N04 { color: orangered; }
+    .N05 { color: dodgerblue; }
+    .N06 { color: yellow; }
+    .N07 { color: darkorange; }
+    .N08 { color: darkorchid; }
+    .N09 { color: darkgray; }
+
+    /* カオス用の色指定 */
+    .C01 { color: darkorchid; }
+    .C02 { color: dodgerblue; }
+    .C03 { color: dodgerblue; }
+    .C04 { color: dodgerblue; }
+    .C05 { color: lime; }
+    .C06 { color: lime; }
+    .C07 { color: lime; }
+    .C08 { color: yellow; }
+    .C09 { color: yellow; }
+    .C10 { color: yellow; }
+    .C11 { color: orangered; }
+    .C12 { color: darkgray; }
+
+    /* ファンタズム用の色指定 */
+    .P01 { color: dodgerblue; }
+    .P02 { color: dodgerblue; }
+    .P03 { color: dodgerblue; }
+    .P04 { color: lime; }
+    .P05 { color: lime; }
+    .P06 { color: lime; }
+    .P07 { color: yellow; }
+    .P08 { color: yellow; }
+    .P09 { color: yellow; }
+    .P10 { color: orangered; }
+    .P11 { color: darkgray; }
+
+    .main-layout {
+      display: flex;
+      gap: 30px;
+      align-items: stretch;
+    }
+
+    .status-column {
+      display: grid;
+      grid-template-columns: max-content max-content; 
+      row-gap: 12px;
+      column-gap: 10px; 
+      background: var(--panel-bg);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      align-content: start;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .item-name-cell {
+      text-align: right;
+      font-size: 1.2em;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .item-name-cell.complete {
+      text-shadow: 0 0 8px currentColor;
+    }
+
+    .stars-cell {
+      text-align: left;
+      font-size: 1.5em;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+    }
+
+    .star-filled {
+      color: var(--star-filled);
+    }
+
+    .star-empty {
+      color: var(--star-empty);
+    }
+
+    .log-wrapper {
+      flex-grow: 1;
+      position: relative;
+      min-width: 0;
+    }
+
+    .log-column {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 15px;
+      overflow-y: auto;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 1em;
+      line-height: 1.5;
+    }
+
+    .log-entry {
+      margin-bottom: 4px;
+      border-bottom: 1px dashed #333;
+      padding-bottom: 2px;
+      white-space: nowrap;
+    }
+    
+    @media (max-width: 600px) {
+      .main-layout {
+        flex-direction: column; 
+      }
+      .log-wrapper {
+        min-height: 300px; 
+      }
+      .log-column {
+        position: relative;
+        height: 300px;
+      }
+    }
+
+    /* リンクのスタイル */
+    a:link { color: #1D9BF0; text-decoration: underline; }
+    a:visited { color: #7755FF; text-decoration: underline; }
+    a:hover { color: #0CFF57; }
+    a:active { color: #FF0000; text-decoration: underline; }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      cursor: pointer;
+      margin-right: 5px;
+      user-select: none;
+      color: #eee;
+      display: inline-block;
+    }
+    
+    .hamburger:hover { color: #2A99E6; }
+
+    .side-menu {
+      position: fixed; top: 0; left: -360px; width: 360px; min-height: 100vh; height: 100%;
+      text-align: left; background-color: #242424; border-right: 1px solid #555;
+      transition: left 0.3s ease; z-index: 1001; padding: 20px; box-sizing: border-box;
+      overflow-y: auto; overscroll-behavior: contain;
+    }
+
+    .side-menu.open { left: 0; }
+
+    .menu-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; min-width: 100vw; min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5); z-index: 999; opacity: 0; visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open { opacity: 1; visibility: visible; }
+
+    .menu-close {
+      position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: #eee; user-select: none;
+    }
+
+    .menu-close:hover { color: #ff6b6b; }
+
+    .menu-title { font-size: 20px; font-weight: bold; text-align: left; margin-bottom: 10px; color: #FF6E3D; }
+    .menu-item { font-size: 18px; text-align: left; display: inline-block; padding: 6px 0; color: #eee; text-decoration: none; }
+    .menu-item:hover { color: #0CFF57; }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-spacer { height: 30px; }
+    .toggle-button { cursor: pointer; color: #7755FF; text-decoration: underline; font-size: 18px; text-align: left; display: block; padding: 6px 0; user-select: none; }
+    .toggle-button:hover { color: #0CFF57; text-decoration: underline; }
+
+    #linkList, #linkList1, #linkList2, #linkList3 { display: none; color: #7755FF; }
+    #linkList1 { padding-bottom: 6px; }
+    #linkList a { display: inline-block; text-decoration: none; color: #7755FF; }
+    #linkList a:visited { color: #7755FF; text-decoration: underline; }
+    #linkList a:hover { text-decoration: underline; color: #0CFF57; }
+    #linkList a:active { color: #FF0000; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a class="menu-item" href="kiokucalc.html">記憶再戦時間計算</a><br>
+    <a class="menu-item" href="kiokucalc2.html">記憶再戦回数計算</a><br>
+    </br>
+    <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
+    <a class="menu-item" href="raidcalc.html">レイド報酬効率比較ツール</a><br>
+    </br>
+    <a class="menu-item" href="renma-armor.html">練磨(防具)統合ツール</a><br>
+    <span class="toggle-button" data-target="linkList">練磨(防具)個別ページ</span>
+    <div id="linkList">
+      ├ <a class="menu-item" href="armor-renma.html">練磨(防具)リスト</a><br>
+      ├ <a class="menu-item" href="armor-top5.html">練磨(防具)TOP5確認</a><br>
+      └ <a class="menu-item" href="armor-calc.html">練磨(防具)自動選定ツール</a><br>
+    </div>
+    </br>
+    <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
+    <div id="linkList1">
+      ├ <a class="menu-item" href="checker-astral.html">アストラルレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-chaos.html">カオスレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-relic.html">ファンタズムレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-4gen.html">四元像ピアスチェッカー</a></br>
+      ├ <a class="menu-item" href="checker-stella.html">ステライヤリングチェッカー</a></br>
+      └ <a class="menu-item" href="checker-niji.html">虹瑠璃の腕輪チェッカー</a></br>
+    </div>
+    <span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span>
+    <div id="linkList2">
+      ├ <a class="menu-item" href="report-astral.html">アストラルレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-chaos.html">カオスレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-relic.html">ファンタズムレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-4gen.html">四元像ピアス報告用</a></br>
+      ├ <a class="menu-item" href="report-stella.html">ステライヤリング報告用</a></br>
+      └ <a class="menu-item" href="report-niji.html">虹瑠璃の腕輪報告用</a></br>
+    </div>
+    </br>
+    <a href="soul-piece.html">ソウルピース必要数確認</a><br>
+    <span class="toggle-button" data-target="linkList3">その他いろいろ</span>
+    <div id="linkList3">
+      ├ <a class="menu-item" href="clear.html">クリア目安計算ツール</a><br>
+      ├ <a class="menu-item" href="expcalc.html">EXPスタンプ必要数計算</a><br>
+      ├ <a class="menu-item" href="simu-relic.html">練成シミュレーター</a><br>
+      ├ <a class="menu-item" href="gate.html">動画の関門</a><br>
+      └ <a class="menu-item" href="https://jessy-rs.github.io/Multi-Stage-Slash/">多段斬りアプリ</a><br>
+    </div>
+    </br>
+    <a class="menu-item"  href="armor.html">装備候補検索ツール</a><br>
+    <a class="menu-item"  href="style-info.html">スタイル情報ビューア</a><br>
+    <br>
+    <a class="menu-item"  href="repeat.html">周回編成まとめ</a><br>
+    <br>
+    <a class="menu-item" href="index.html">インデックスページ</a><br>
+    </br>
+  </div>
+
+  <div class="container">
+    <h2><span class="hamburger" onclick="toggleMenu()">☰</span>練成シミュレーター</h2>
+    
+    <div class="control-panel">
+      <div class="relic-type-selector">
+        <label><input type="radio" name="relicType" value="astral" checked onchange="changeRelicType()"> アストラル</label>
+        <label><input type="radio" name="relicType" value="chaos" onchange="changeRelicType()"> カオス</label>
+        <label><input type="radio" name="relicType" value="phantasm" onchange="changeRelicType()"> ファンタズム</label>
+      </div>
+
+      <div class="input-actions">
+        <label for="pullCount">1回の実行回数: </label>
+        <input type="number" id="pullCount" value="2000" min="1" onfocus="this.select()">
+        <button class="btn-run" onclick="runSimulation()">一括実行</button>
+        <button class="btn-reset" onclick="resetSimulation()">リセット</button>
+      </div>
+      
+      <div class="stats-area">
+        <div>総試行回数: <strong id="totalPullsDisplay" style="color: var(--accent);">0</strong> 回</div>
+        <div>
+          総獲得数: 
+          <strong>
+            <span id="currentStars" class="star-filled">0</span> 
+            <span style="color: #ffffff; margin: 0 4px;">/</span> 
+            <span id="maxStars" class="star-filled">0</span>
+          </strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-layout">
+      <div id="statusBoard" class="status-column"></div>
+      <div class="log-wrapper">
+        <div id="logArea" class="log-column">
+          <div class="log-entry">待機中...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ハンバーガーメニュー等のUI用スクリプト
+    function toggleMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        }
+    }
+
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+    }
+
+    let startX = 0, startY = 0, endX = 0, endY = 0;
+    document.addEventListener('touchstart', function (e) {
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      endX = e.changedTouches[0].screenX;
+      endY = e.changedTouches[0].screenY;
+      handleGesture();
+    }, false);
+
+    function handleGesture() {
+      const diffX = endX - startX; 
+      const diffY = endY - startY; 
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 50 && startX < 30) toggleMenu();
+        else if (diffX < -50) closeMenu();
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function(){
+      var toggleButtons = document.querySelectorAll(".toggle-button");
+      toggleButtons.forEach(function(button) {
+        var targetId = button.getAttribute("data-target");
+        var list = document.getElementById(targetId);
+        list.style.display = "none";
+        button.addEventListener("click", function(){
+          list.style.display = (list.style.display === "block") ? "none" : "block";
+        });
+      });
+    });
+
+    // ==========================================
+    // ⚙️ 設定エリア (レリック種別ごとのデータ)
+    // ==========================================
+    const RELIC_DATA = {
+      astral: {
+        items: ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰', '詩人']
+      },
+      chaos: {
+        items: ['GBSaGa', 'RS1', 'RS2', 'RS3', 'SF1', 'SF2', 'US', 'ES&IS', 'SSG', 'SaGaEB', 'SaGaRS', '詩人']
+      },
+      phantasm: {
+        items: ['剣', '大剣', '斧', '棍棒', '体術', '銃', '小剣', '槍', '弓', '杖', '詩人']
+      }
+    };
+
+    let currentRelicType = 'astral';
+    let TARGET_ITEMS = RELIC_DATA[currentRelicType].items;
+    const GOAL_COUNT = 5; 
+    let MAX_STARS = TARGET_ITEMS.length * GOAL_COUNT;
+
+    // ==========================================
+    // 🎲 プールの自動生成
+    // ==========================================
+    let pool1And2 = [];
+    let pool3 = [];
+
+    function generatePools() {
+        pool1And2 = [];
+        pool3 = [];
+        TARGET_ITEMS.forEach(item => {
+            pool1And2.push('SS' + item);
+            pool1And2.push('S' + item);
+            pool3.push('SS' + item);
+        });
+    }
+
+    // ==========================================
+    // 🎮 内部ステートとロジック
+    // ==========================================
+    let totalPulls = 0;
+    let matchedCounts = {};
+    let isFinished = false;
+
+    // ラジオボタン切り替え時の処理
+    function changeRelicType() {
+        const selectedRadio = document.querySelector('input[name="relicType"]:checked');
+        currentRelicType = selectedRadio.value;
+        TARGET_ITEMS = RELIC_DATA[currentRelicType].items;
+        MAX_STARS = TARGET_ITEMS.length * GOAL_COUNT;
+        
+        // リセット処理を実行 (タイトル変更処理は削除)
+        generatePools();
+        resetSimulation();
+    }
+
+    // 初期化処理
+    function init() {
+        generatePools();
+        TARGET_ITEMS.forEach(item => {
+            matchedCounts[item] = 0;
+        });
+        document.getElementById('maxStars').innerText = MAX_STARS;
+        renderBoard();
+    }
+
+    // 画面のステータスボードを描画・更新
+    function renderBoard() {
+        const board = document.getElementById('statusBoard');
+        board.innerHTML = '';
+        
+        let totalStars = 0; 
+
+        TARGET_ITEMS.forEach((item, index) => {
+            const count = matchedCounts[item];
+            const displayCount = Math.min(count, GOAL_COUNT);
+            totalStars += displayCount; 
+            
+            let starsHtml = '';
+            for (let i = 0; i < GOAL_COUNT; i++) {
+                if (i < displayCount) {
+                    starsHtml += '<span class="star-filled">★</span>';
+                } else {
+                    starsHtml += '<span class="star-empty">☆</span>';
+                }
+            }
+            
+            const isComplete = count >= GOAL_COUNT;
+            const completeClass = isComplete ? 'complete' : '';
+            
+            // 選択中のレリックに合わせてプレフィックス（N, C, P）を変更
+            let prefix = 'N';
+            if (currentRelicType === 'chaos') {
+                prefix = 'C';
+            } else if (currentRelicType === 'phantasm') {
+                prefix = 'P';
+            }
+            const classNumber = String(index + 1).padStart(2, '0');
+            const colorClass = `${prefix}${classNumber}`; 
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.className = `item-name-cell ${completeClass} ${colorClass}`;
+            nameDiv.innerText = item;
+            
+            const starsDiv = document.createElement('div');
+            starsDiv.className = 'stars-cell';
+            starsDiv.innerHTML = starsHtml;
+            
+            board.appendChild(nameDiv);
+            board.appendChild(starsDiv);
+        });
+        
+        document.getElementById('totalPullsDisplay').innerText = totalPulls;
+        document.getElementById('currentStars').innerText = totalStars;
+    }
+
+    // ログ表示用にアイテム名を整形する関数
+    function formatItemName(item) {
+        if (item.startsWith('SS')) {
+            return '(SS)' + item.substring(2);
+        } else if (item.startsWith('S')) {
+            return '(S)' + item.substring(1);
+        }
+        return item;
+    }
+
+    // ガチャ実行ロジック
+    function runSimulation() {
+        if (isFinished) {
+            alert("すでにすべてのアイテムが目標数に達しています。リセットしてください。");
+            return;
+        }
+
+        let pulls = parseInt(document.getElementById('pullCount').value, 10) || 1;
+        
+        if (pulls > 10000) {
+            alert("動作が重くなるため、1回の実行回数を10,000回に制限しました。");
+            pulls = 10000;
+        }
+
+        const logArea = document.getElementById('logArea');
+        const fragment = document.createDocumentFragment();
+
+        if (totalPulls === 0) logArea.innerHTML = '';
+
+        // 余白調整 (SS) が付く分だけ長さを確保する
+        const padLen = currentRelicType === 'chaos' ? 10 : 8;
+
+        for (let i = 0; i < pulls; i++) {
+            totalPulls++;
+            
+            const r1 = pool1And2[Math.floor(Math.random() * pool1And2.length)];
+            const r2 = pool1And2[Math.floor(Math.random() * pool1And2.length)];
+            const r3 = pool3[Math.floor(Math.random() * pool3.length)];
+
+            const isMatch = (r1 === r2 && r2 === r3 && r1.startsWith('SS'));
+            
+            const row = document.createElement('div');
+            row.className = 'log-entry';
+            
+            // アイテム名に (SS) や (S) を追加してフォーマット
+            const f1 = formatItemName(r1);
+            const f2 = formatItemName(r2);
+            const f3 = formatItemName(r3);
+
+            let comboText = `${String(totalPulls).padStart(5, ' ')}回目: [ ${f1.padEnd(padLen, ' ')} | ${f2.padEnd(padLen, ' ')} | ${f3.padEnd(padLen, ' ')} ]`;
+
+            if (isMatch) {
+                const itemName = r1.replace('SS', ''); 
+                if (matchedCounts[itemName] < GOAL_COUNT) {
+                    matchedCounts[itemName]++;
+                }
+                comboText += `  🌟`; 
+                row.style.color = 'var(--match-log)';
+                row.style.fontWeight = 'bold';
+            }
+
+            row.innerText = comboText;
+            fragment.appendChild(row);
+
+            const allComplete = TARGET_ITEMS.every(item => matchedCounts[item] >= GOAL_COUNT);
+            if (allComplete) {
+                isFinished = true;
+                const finishRow = document.createElement('div');
+                finishRow.className = 'log-entry';
+                finishRow.style.color = 'var(--match-log)';
+                finishRow.style.fontWeight = 'bold';
+                finishRow.style.marginTop = '10px';
+                finishRow.innerText = `✨ 【達成】${totalPulls}回目で全項目が揃いました！ ✨`;
+                fragment.appendChild(finishRow);
+                break;
+            }
+        }
+        
+        logArea.appendChild(fragment);
+        logArea.scrollTop = logArea.scrollHeight;
+        
+        renderBoard();
+    }
+
+    // リセット処理
+    function resetSimulation() {
+        totalPulls = 0;
+        isFinished = false;
+        matchedCounts = {};
+        TARGET_ITEMS.forEach(item => {
+            matchedCounts[item] = 0;
+        });
+        document.getElementById('logArea').innerHTML = '<div class="log-entry">待機中...</div>';
+        document.getElementById('maxStars').innerText = MAX_STARS;
+        renderBoard();
+    }
+
+    // 起動時に初期化
+    window.onload = init;
+  </script>
+</body>
+</html>
