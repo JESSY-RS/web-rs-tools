@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="icon/favicon-chaos.ico">
+  <link rel="apple-touch-icon" href="icon/apple-touch-icon-chaos.png">
+  <link rel="icon" type="image/png" href="icon/web-app-manifest-192x192-chaos.png">
+  <title>カオスレリック対決用</title> 
+  <style>
+    body {
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    header {
+        font-size: 13pt;
+        color: lime;
+    }
+
+    footer {
+        font-size: 13pt;
+        color: orangered;
+    }
+
+    /* タイトルテキストのホバー時の挙動 */
+    #addPanelBtn {
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.2s;
+    }
+
+    #addPanelBtn:hover {
+      color: #0CFF57;
+    }
+
+    /* 横並びコンテナのスタイル（画面中央配置＆スクロール対応） */
+    .users-container {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 15px;
+      padding: 10px;
+      padding-bottom: 20px;
+      align-items: flex-start;
+      width: max-content;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ユーザーごとのカードスタイル */
+    .user-card {
+      flex: 0 0 auto;
+      background-color: #333;
+      padding: 15px;
+      border-radius: 10px;
+      min-width: 240px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      border: 2px solid transparent;
+      transition: border-color 0.2s, opacity 0.2s;
+    }
+
+    /* ホバー時の枠線ハイライト */
+    .user-card:hover {
+      border-color: #0CFF57;
+    }
+
+    /* プロフィール部分のスタイル（横並び・左寄せ） */
+    .user-profile {
+      display: flex;
+      flex-direction: row; 
+      align-items: center; 
+      justify-content: flex-start; 
+      gap: 15px; 
+      margin-bottom: 15px;
+      border-bottom: 1px dashed #666;
+      padding-bottom: 15px;
+    }
+
+    /* クリック可能なアイコン */
+    .user-icon {
+      width: 40px; 
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      background-color: #555;
+      flex-shrink: 0;
+      transition: opacity 0.2s;
+      cursor: pointer;
+    }
+
+    .user-icon:hover {
+      opacity: 0.8;
+    }
+
+    /* 名前のスタイル */
+    .user-name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #ffffff; 
+      word-break: break-all;
+    }
+
+    /* 星と集計部分をまとめたクリックエリア */
+    .data-update-area {
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 5px;
+      transition: background-color 0.2s;
+    }
+
+    .data-update-area:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .pierce-group {
+      margin-top: 5px;
+    }
+
+    /* 小分類と星の横並び中央寄せ */
+    .attribute {
+      font-size: 22px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 5px 10px;
+    }
+
+    /* 小分類（左側）は右揃え、幅固定 */
+    .attribute span:first-child {
+      width: 90px;
+      text-align: right;
+      margin-right: 0px;
+    }
+    
+    /* 星（右側）は左揃え */
+    .attribute .stars {
+      text-align: left;
+    }
+
+    .stars {
+      font-size: 26px;
+    }
+
+    /* 小分類ごとの色指定 */
+    .S01 { color: darkorchid; }
+    .S02 { color: dodgerblue; }
+    .S03 { color: dodgerblue; }
+    .S04 { color: dodgerblue; }
+    .S05 { color: lime; }
+    .S06 { color: lime; }
+    .S07 { color: lime; }
+    .S08 { color: yellow; }
+    .S09 { color: yellow; }
+    .S10 { color: yellow; }
+    .S11 { color: orangered; }
+
+    /* 集計部分のスタイル */
+    .summary-box {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 16px;
+      border-top: 1px dashed #666;
+      padding-top: 10px;
+    }
+
+    /* 拡大縮小ボタンのスタイル */
+    .zoom-buttons {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      padding: 5px 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* リンクのスタイル */
+    a:link { color: #1D9BF0; text-decoration: underline; }
+    a:visited { color: #7755FF; text-decoration: underline; }
+    a:hover { color: #0CFF57; }
+    a:active { color: #FF0000; text-decoration: underline; }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      cursor: pointer;
+      margin-left: -5px;
+      margin-right: 10px;
+      user-select: none;
+      color: #eee;
+      display: inline-block;
+    }
+    
+    .hamburger:hover { color: #2A99E6; }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 320px;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1001;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .side-menu.open { left: 0; }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open { opacity: 1; visibility: visible; }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover { color: #ff6b6b; }
+    .menu-title { font-size: 20px; font-weight: bold; text-align: left; margin-bottom: 10px; color: limegreen; }
+    .menu-item { font-size: 18px; text-align: left; display: inline-block; padding: 12px 0; color: #eee; text-decoration: none; }
+    .menu-item:hover { color: #0CFF57; }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-spacer { height: 30px; }
+  </style>
+</head>
+<body>
+
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">チェッカー関連リンク</div>
+    <a href="checker-astral.html" class="menu-item">アストラルレリックチェッカー</a><br>
+    <a href="checker-chaos.html" class="menu-item">カオスレリックチェッカー</a><br>
+    <a href="checker-relic.html" class="menu-item">ファンタズムレリックチェッカー</a><br>
+    <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a><br>
+    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a><br>
+    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a><br>
+    <div class="menu-spacer"></div>
+    <a href="report-astral.html" class="menu-item">アストラルレリック報告用</a><br>
+    <a href="report-chaos.html" class="menu-item">カオスレリック報告用</a><br>
+    <a href="report-relic.html" class="menu-item">ファンタズムレリック報告用</a><br>
+    <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a><br>
+    <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a><br>
+    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a><br>
+    <div class="menu-spacer"></div>
+    <div id="variable-links-4gen">
+      <a href="#緋Anchor" class="menu-item" onclick="closeMenu()">◆緋のピアス</a><br>
+      <a href="#憲法Anchor" class="menu-item" onclick="closeMenu()">◆憲法のピアス</a><br>
+      <a href="#濡羽Anchor" class="menu-item" onclick="closeMenu()">◆濡羽のピアス</a><br>
+      <a href="#瑠璃紺Anchor" class="menu-item" onclick="closeMenu()">◆瑠璃紺のピアス</a><br>
+      <div class="menu-spacer"></div>
+    </div>
+    <a href="index.html" class="menu-item">インデックスページ</a><br>
+  </div>
+
+  <div class="header">
+    <h1>
+      <span class="hamburger" onclick="toggleMenu()">☰</span>
+      <span id="addPanelBtn" title="クリックして対象フォルダを選択し、全員分を一括読込します。">カオスレリック</span>
+    </h1>
+    <input type="file" id="folderInput" webkitdirectory directory style="display: none;">
+  </div>
+
+  <div class="zoom-buttons">
+    <button onclick="changeZoom(0.1)">＋</button>
+    <button onclick="changeZoom(-0.1)">－</button>
+  </div>
+
+  <header>
+  各プレイヤー獲得状況<br>
+  </header>
+
+  <div id="usersContainer" class="users-container"></div>
+
+  <footer>
+  ※敬称略・6個以上は未カウント<br>
+  </footer>
+
+  <script>
+    const sideMenuVisibilityConfig = {
+      'variable-links-4gen': ['四元像ピアスチェッカー']
+    };
+
+    function toggleMenu() {
+        const currentPageTitle = document.title;
+        for (const elementId in sideMenuVisibilityConfig) {
+          const targetElement = document.getElementById(elementId);
+          if (targetElement) {
+            const visiblePages = sideMenuVisibilityConfig[elementId];
+            if (visiblePages.includes(currentPageTitle)) {
+              targetElement.style.display = 'block'; 
+            } else {
+              targetElement.style.display = 'none';  
+            }
+          }
+        }
+
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        }
+    }
+
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+    }
+
+    let startX = 0, startY = 0;
+    let endX = 0, endY = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      endX = e.changedTouches[0].screenX;
+      endY = e.changedTouches[0].screenY;
+      handleGesture(); 
+    }, false);
+
+    function handleGesture() {
+      const diffX = endX - startX; 
+      const diffY = endY - startY; 
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 50 && startX < 30) {
+          toggleMenu();
+        } 
+        else if (diffX < -50) {
+          closeMenu();
+        }
+      }
+    }
+
+    const attributes = [
+      { name: "GBSaGa", className: "S01" },
+      { name: "RS1", className: "S02" },
+      { name: "RS2", className: "S03" },
+      { name: "RS3", className: "S04" },
+      { name: "SF1", className: "S05" },
+      { name: "SF2", className: "S06" },
+      { name: "US", className: "S07" },
+      { name: "ES&IS", className: "S08" },
+      { name: "SSG", className: "S09" },
+      { name: "SaGaEB", className: "S10" },
+      { name: "SaGaRS", className: "S11" },
+      { name: "詩人", className: "S01" }
+    ];
+
+    // 星装飾
+    function decorateStars(text){
+      let result = "";
+      for (let char of text) {
+        result += char === "★" ? `<span style="color:gold;">★</span>` :
+                  char === "・" ? `<span style="color:gray;">・</span>` : char;
+      }
+      return result;
+    }
+
+    function parseJsonFile(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          try {
+            resolve(JSON.parse(ev.target.result));
+          } catch(err) {
+            console.error("JSON parse error:", err);
+            resolve(null);
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    const usersContainer = document.getElementById("usersContainer");
+
+    // ユーザーカード生成関数
+    function createUserCard(initialData = {}) {
+      const card = document.createElement("div");
+      card.className = "user-card"; 
+
+      const cardJsonInput = document.createElement("input");
+      cardJsonInput.type = "file";
+      cardJsonInput.accept = ".json";
+      cardJsonInput.style.display = "none";
+
+      const imgInput = document.createElement("input");
+      imgInput.type = "file";
+      imgInput.accept = "image/*";
+      imgInput.style.display = "none";
+
+      const profileDiv = document.createElement("div");
+      profileDiv.className = "user-profile";
+
+      const iconImg = document.createElement("img");
+      iconImg.className = "user-icon";
+      iconImg.src = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="; 
+      iconImg.title = "クリックして画像を選択";
+
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "user-name";
+      nameDiv.textContent = "未設定";
+
+      profileDiv.appendChild(iconImg);
+      profileDiv.appendChild(nameDiv);
+      profileDiv.appendChild(cardJsonInput);
+      profileDiv.appendChild(imgInput);
+      card.appendChild(profileDiv);
+
+      const dataUpdateArea = document.createElement("div");
+      dataUpdateArea.className = "data-update-area";
+      dataUpdateArea.title = "クリックして個別のJSONを読込（追加・上書き）";
+
+      const pierceGroup = document.createElement("div");
+      pierceGroup.className = "pierce-group";
+      const summaryDiv = document.createElement("div");
+      summaryDiv.className = "summary-box";
+
+      dataUpdateArea.appendChild(pierceGroup);
+      dataUpdateArea.appendChild(summaryDiv);
+      card.appendChild(dataUpdateArea);
+
+      card.updateData = function(newData) {
+        pierceGroup.innerHTML = "";
+        let completeCount = 0;
+        let totalStars = 0;
+        const totalAttrs = attributes.length;
+
+        const isOldFile = Object.keys(newData).some(k => k.startsWith('カオスレリック_'));
+
+        attributes.forEach(attr => {
+          const div = document.createElement("div");
+          div.className = "attribute";
+          
+          let targetKey = `団結の証or詩人刻印のみ_${attr.name}`;
+          let oldKey = `カオスレリック_${attr.name}`;
+          
+          let rawData = "・・・・・"; 
+          
+          if (newData[targetKey]) {
+            rawData = newData[targetKey];
+          } else if (isOldFile && newData[oldKey]) {
+            rawData = newData[oldKey];
+          }
+
+          rawData = rawData.replace(/[☆◆]/g, '・');
+
+          const starCount = (rawData.match(/★/g) || []).length;
+          totalStars += starCount;
+          if (starCount === 5) completeCount++;
+
+          div.innerHTML = `<span class="${attr.className}">${attr.name}</span>&nbsp;<span class="stars">${decorateStars(rawData)}</span>`;
+          pierceGroup.appendChild(div);
+        });
+
+        const totalPossibleStars = totalAttrs * 5;
+        summaryDiv.innerHTML = `
+          トータル：${totalStars} / ${totalPossibleStars}<br>
+          コンプ数：${completeCount} / ${totalAttrs}<br>
+        `;
+      };
+
+      card.updateData(initialData);
+
+      // 個別更新イベント
+      dataUpdateArea.addEventListener("click", () => { cardJsonInput.click(); });
+      iconImg.addEventListener("click", () => { imgInput.click(); });
+
+      cardJsonInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const data = await parseJsonFile(file);
+        if (data) {
+          card.updateData(data);
+          if (card.id === "initialBlankCard") card.removeAttribute("id");
+        }
+        e.target.value = ""; 
+      });
+
+      imgInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const fileName = file.name.replace(/\.[^/.]+$/, "");
+          nameDiv.textContent = fileName;
+          const reader = new FileReader();
+          reader.onload = (ev) => { iconImg.src = ev.target.result; };
+          reader.readAsDataURL(file);
+        }
+        e.target.value = ""; 
+      });
+
+      return card;
+    }
+
+    // 初期表示
+    const initialCard = createUserCard({});
+    initialCard.id = "initialBlankCard"; 
+    usersContainer.appendChild(initialCard);
+
+    // --- フォルダ一括自動読込ロジック ---
+    const addPanelBtn = document.getElementById('addPanelBtn');
+    const folderInput = document.getElementById('folderInput');
+
+    addPanelBtn.addEventListener('click', () => {
+      folderInput.click();
+    });
+
+    folderInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+
+      const userMap = new Map();
+
+      files.forEach(file => {
+        // 正規表現で「01_ユーザー名.json」のような形式を解析
+        // _(アンダーバー)がない単なる「ユーザー名.json」でも処理可能
+        const match = file.name.match(/^(\d+)?_?(.*)\.([^.]+)$/);
+        
+        if (match) {
+          const order = match[1] ? parseInt(match[1], 10) : 999;
+          const userName = match[2];
+          const ext = match[3].toLowerCase();
+
+          // ユーザー名をキーにして、jsonと画像ペアを管理
+          if (!userMap.has(userName)) {
+            userMap.set(userName, { order: order, name: userName, jsonFile: null, imgFile: null });
+          }
+          
+          if (ext === 'json') userMap.get(userName).jsonFile = file;
+          if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) userMap.get(userName).imgFile = file;
+        }
+      });
+
+      // 順番(order)でソート
+      const sortedUsers = Array.from(userMap.values()).sort((a, b) => a.order - b.order);
+
+      // JSONが含まれているユーザーのみ抽出
+      const validUsers = sortedUsers.filter(u => u.jsonFile !== null);
+
+      if (validUsers.length > 0) {
+        // 現在のパネルをすべてクリア (ブランクパネルも消去)
+        usersContainer.innerHTML = '';
+        
+        for (const user of validUsers) {
+          const data = await parseJsonFile(user.jsonFile);
+          if (data) {
+            const card = createUserCard(data);
+            
+            // 名前の反映
+            const nameDiv = card.querySelector('.user-name');
+            nameDiv.textContent = user.name;
+
+            // 画像の反映
+            if (user.imgFile) {
+              const iconImg = card.querySelector('.user-icon');
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                iconImg.src = ev.target.result;
+              };
+              reader.readAsDataURL(user.imgFile);
+            }
+
+            // カードを追加
+            usersContainer.appendChild(card);
+          }
+        }
+      }
+      e.target.value = ''; // リセット
+    });
+
+    // --- 拡大縮小の関数 ---
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    let pageSettings = { 'battle-chaos_zoom': 1.0 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'battle-chaos_zoom';
+        let currentZoom = pageSettings[zoomKey];
+    
+        currentZoom += delta;
+        currentZoom = Math.round(currentZoom * 10) / 10;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        document.body.style.zoom = currentZoom;
+        pageSettings[zoomKey] = currentZoom;
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['battle-chaos_zoom'];
+    });
+  </script>
+</body>
+</html>
