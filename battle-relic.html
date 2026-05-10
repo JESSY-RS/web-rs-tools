@@ -11,6 +11,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <title>ファンタズムレリック対決用</title> 
   <style>
+    /* 1. 基本の指定（Windows, Android, Mac用） */
+    .hamburger::before {
+      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+    }
+    
+    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+      }
+    }
+
     /* --- 全体 --- */
     body {
       font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
@@ -300,7 +312,7 @@
 
   <div class="header">
     <h1>
-      <span class="hamburger" onclick="toggleMenu()">☰</span>
+      <span class="hamburger" onclick="toggleMenu()"></span>
       <span id="addPanelBtn" title="クリックして対象フォルダを選択し、全員分を一括読込します。">ファンタズムレリック</span>
     </h1>
     <input type="file" id="folderInput" webkitdirectory directory style="display: none;">

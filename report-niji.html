@@ -10,9 +10,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-  <title>虹瑠璃の腕輪報告用</title> <!-- Created by じぇ -->
+  <title>虹瑠璃の腕輪報告用</title>
 
   <style>
+
+    /* 1. 基本の指定（Windows, Android, Mac用） */
+    .hamburger::before {
+      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+    }
+    
+    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+      }
+    }
 
     /* --- 全体 --- */
     body {
@@ -259,7 +271,7 @@
 
   <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()">☰</span>虹瑠璃の腕輪</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()"></span>虹瑠璃の腕輪</h1>
   </div>
 
   <div class="zoom-buttons">

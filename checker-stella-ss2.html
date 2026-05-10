@@ -15,6 +15,18 @@
   <style>
 
     /* --- 基本デザイン --- */
+    /* 1. 基本の指定（Windows, Android, Mac用） */
+    .hamburger::before {
+      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+    }
+    
+    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+      }
+    }
+
     /* --- 全体 --- */
     body {
       font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
@@ -318,7 +330,7 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()">☰</span>ステラSS2チェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()"></span>ステラSS2チェッカー</h1>
   </div>
 
   <div class="controls">
