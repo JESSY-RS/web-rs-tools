@@ -13,6 +13,18 @@
   <title>タクト制圧戦・報酬効率比較ツール</title> 
   <style>
 
+/* 1. 基本の指定（Windows, Android, Mac用） */
+.hamburger::before {
+  content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+}
+
+/* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+@supports (-webkit-touch-callout: none) {
+  .hamburger::before {
+    content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+  }
+}
+
     /* --- 全体 --- */
     body {
       font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
@@ -473,7 +485,7 @@
   </div>
 
   <div class="header">
-    <h2><span class="hamburger" onclick="toggleMenu()">Ⲷ</span><span id="titleTrigger" onclick="toggleLayout()">タクト制圧戦・報酬効率比較ツール</span></h2>
+    <h2><span class="hamburger" onclick="toggleMenu()"></span><span id="titleTrigger" onclick="toggleLayout()">タクト制圧戦・報酬効率比較ツール</span></h2>
   </div>
 
   <div id="warning">※グレードにより個数が判明していない部分は入力してください。</div>
