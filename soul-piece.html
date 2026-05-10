@@ -303,6 +303,17 @@
             padding: 8px 10px;
             text-align: right;
         }
+
+        /* 一覧表のレイアウトを固定モードにする */
+        .list-table {
+            table-layout: fixed;
+        }
+        /* 各列の幅を個別に指定 (合計が100%になるようにする) */
+        .list-table th:nth-child(1) { width: 20%; } /* 現Lv */
+        .list-table th:nth-child(2) { width: 20%; } /* 次Lv */
+        .list-table th:nth-child(3) { width: 28%; } /* 必要数 */
+        .list-table th:nth-child(4) { width: 32%; } /* 累計数 */
+
         .list-table th {
             background-color: #4a3f5a; 
             text-align: center;
