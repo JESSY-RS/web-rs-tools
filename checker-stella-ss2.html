@@ -12,8 +12,18 @@
   <style>
 
     /* --- 基本デザイン --- */
+    /* 特定の記号（★■※）専用のフォントを定義する */
+    @font-face {
+      font-family: 'CustomSymbols';
+      /* iPhone用にヒラギノ、Windows用にメイリオを指定 */
+      src: local('Hiragino Sans'), local('Hiragino Kaku Gothic ProN'), local('Meiryo'), local('sans-serif');
+      /* 対象にする文字のUnicodeを指定（■ = U+25A0, ※ = U+203B, ★ = U+2605） */
+      unicode-range: U+25A0, U+203B, U+2605;
+    }
+    
+    /* --- 全体 --- */
     body {
-      font-family: 'Segoe UI', Meiryo, system-ui, sans-serif;
+      font-family: 'Segoe UI', Meiryo, 'CustomSymbols', system-ui, sans-serif;
       margin: 20px;
       background-color: #2A2A2A;
       color: #eee;
