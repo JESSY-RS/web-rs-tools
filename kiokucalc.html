@@ -13,6 +13,17 @@
   <title>記憶再戦時間計算</title>
 
   <style>
+/* 1. 基本の指定（Windows, Android, Mac用） */
+.hamburger::before {
+  content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+}
+
+/* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+@supports (-webkit-touch-callout: none) {
+  .hamburger::before {
+    content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+  }
+}
 
     /* --- 全体 --- */
     body {
@@ -184,7 +195,7 @@
     .hamburger {
       font-size: 36px;
       cursor: pointer;
-      margin-right: 10px;
+      margin-right: 8px;
       user-select: none;
       color: #eee;
       display: inline-block;
@@ -405,7 +416,7 @@
 
   <div class="container">
     <div class="header">
-      <span class="title"><span class="hamburger" onclick="toggleMenu()">☰</span>記憶再戦</span>
+      <span class="title"><span class="hamburger" onclick="toggleMenu()"></span>記憶再戦</span>
       <span class="subtitle">⏰時間計算</span>
     </div>
 
