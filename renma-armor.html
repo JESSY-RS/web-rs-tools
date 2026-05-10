@@ -15,7 +15,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        /* --- 全体 --- */
+        /* 1. 基本の指定（Windows, Android, Mac用） */
+    .hamburger::before {
+      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+    }
+    
+    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+      }
+    }
+
+    /* --- 全体 --- */
         body {
             font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
             background-color: #2A2A2A;
@@ -748,7 +760,7 @@
                 <button onclick="changeZoom(-0.1)">－</button>
             </div>
             <h1>
-                <span class="hamburger" onclick="toggleMenu()">☰</span><span id="page-title">練磨(防具)リスト管理</span>
+                <span class="hamburger" onclick="toggleMenu()"></span><span id="page-title">練磨(防具)リスト管理</span>
             </h1>
             
             <div class="tabs">

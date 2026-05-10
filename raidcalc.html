@@ -13,17 +13,17 @@
   <title>タクト制圧戦・報酬効率比較ツール</title> 
   <style>
 
-/* 1. 基本の指定（Windows, Android, Mac用） */
-.hamburger::before {
-  content: '☰'; /* 基本はハンバーガーアイコンを表示 */
-}
-
-/* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
-@supports (-webkit-touch-callout: none) {
-  .hamburger::before {
-    content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
-  }
-}
+    /* 1. 基本の指定（Windows, Android, Mac用） */
+    .hamburger::before {
+      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+    }
+    
+    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+      }
+    }
 
     /* --- 全体 --- */
     body {
