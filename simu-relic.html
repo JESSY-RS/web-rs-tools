@@ -102,6 +102,13 @@
       gap: 10px;
       flex: 1 1 auto;
       min-width: 0;
+      flex-wrap: wrap; /* 折り返しを許可 */
+    }
+
+    .input-group, .button-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .input-actions label {
@@ -280,6 +287,7 @@
       white-space: nowrap;
     }
     
+    /* ログパネルなどのレイアウトは元の600pxで折り返し */
     @media (max-width: 600px) {
       .main-layout {
         flex-direction: column; 
@@ -290,6 +298,20 @@
       .log-column {
         position: relative;
         height: 300px;
+      }
+    }
+
+    /* 上部の操作パネル・ステータスは420pxで折り返し */
+    @media (max-width: 420px) {
+      .control-panel {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .stats-area {
+        margin-left: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
       }
     }
 
@@ -424,10 +446,14 @@
       </div>
 
       <div class="input-actions">
-        <label for="pullCount">1回の実行回数: </label>
-        <input type="number" id="pullCount" value="2000" min="1" onfocus="this.select()">
-        <button class="btn-run" onclick="runSimulation()">一括実行</button>
-        <button class="btn-reset" onclick="resetSimulation()">リセット</button>
+        <div class="input-group">
+          <label for="pullCount">1回の実行回数: </label>
+          <input type="number" id="pullCount" value="2000" min="1" onfocus="this.select()">
+        </div>
+        <div class="button-group">
+          <button class="btn-run" onclick="runSimulation()">一括実行</button>
+          <button class="btn-reset" onclick="resetSimulation()">リセット</button>
+        </div>
       </div>
       
       <div class="stats-area">
@@ -451,21 +477,18 @@
         </div>
       </div>
     </div>
-  </div>
 
-<br><br>
+    <br><br>
+    ■関連記事<br>
+    <a href="https://x.com/jessy_romasaga/status/2044716877843513453">https://x.com/jessy_romasaga/status/2044716877843513453</a><br>
 
-  ■関連記事<br>
-  <a href="https://x.com/jessy_romasaga/status/2044716877843513453">https://x.com/jessy_romasaga/status/2044716877843513453</a><br>
-
-  <footer>
-    ※使用は自己責任にて。<br>
-    ※各アビリティの排出率が実際のゲームと異なる可能性があります。(当シミュレーターは均等設定)<br>
-    <br>
-    <a href="index.html">INDEXへ戻る</a><br>
-  </footer>
-
-  <script>
+    <footer>
+      ※使用は自己責任にて。<br>
+      ※各アビリティの排出率が実際のゲームと異なる可能性があります。(当シミュレーターは均等設定)<br>
+      <br>
+      <a href="index.html">INDEXへ戻る</a><br>
+    </footer>
+  </div> <script>
     // ハンバーガーメニュー等のUI用スクリプト
     function toggleMenu() {
         const sideMenu = document.getElementById('sideMenu');
