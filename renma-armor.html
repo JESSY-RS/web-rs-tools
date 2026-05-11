@@ -138,7 +138,7 @@
         a:hover { color: #0CFF57; }
         a:active { color: #FF0000; text-decoration: underline; }
 
-    /* ハンバーガーメニュー */
+        /* ハンバーガーメニューのスタイル */
     .hamburger {
       cursor: pointer;
       margin-right: 8px;
@@ -146,7 +146,10 @@
       color: #eee;
       display: inline-block;
     }
-    .hamburger:hover { color: #2A99E6; }
+    
+    .hamburger:hover {
+      color: #2A99E6;
+    }
 
     .side-menu {
       position: fixed;
@@ -165,7 +168,10 @@
       overflow-y: auto;
       overscroll-behavior: contain;
     }
-    .side-menu.open { left: 0; }
+
+    .side-menu.open {
+      left: 0;
+    }
 
     .menu-overlay {
       position: fixed;
@@ -181,7 +187,11 @@
       visibility: hidden;
       transition: opacity 0.3s, visibility 0.3s;
     }
-    .menu-overlay.open { opacity: 1; visibility: visible; }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
 
     .menu-close {
       position: absolute;
@@ -192,7 +202,10 @@
       color: #eee;
       user-select: none;
     }
-    .menu-close:hover { color: #ff6b6b; }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
 
     .menu-title {
       font-size: 20px;
@@ -201,17 +214,26 @@
       margin-bottom: 10px;
       color: #FF6E3D;
     }
+
     .menu-item {
       font-size: 18px;
       text-align: left;
       display: inline-block;
       padding: 6px 0;
       color: #eee;
-      text-decoration: none;
+      text-decoration: underline;
     }
-    .menu-item:hover { color: #0CFF57; }
-    .menu-item:last-child { border-bottom: none; }
-    .menu-spacer { height: 30px; }
+    .menu-item:hover {
+      color: #0CFF57;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
 
     .toggle-button {
       cursor: pointer;
@@ -223,17 +245,38 @@
       padding: 6px 0;
       user-select: none;
     }
-    .toggle-button:hover { color: #0CFF57; text-decoration: underline; }
 
-    #linkList, #linkList1, #linkList2, #linkList3 { display: none; color: #7755FF; }
-    #linkList a, #linkList1 a, #linkList2 a, #linkList3 a {
-      display: inline-block;
-      text-decoration: none;
+    .toggle-button:hover {
+      color: #0CFF57;
+      text-decoration: underline;
+    }
+
+    #linkList, #linkList1, #linkList2, #linkList3 {
+      font-size: 18px;
+      text-align: left;
+      display: none;
       color: #7755FF;
     }
+
+    #linkList a, #linkList1 a, #linkList2 a, #linkList3 a {
+      display: inline-block;
+      text-decoration: underline;
+      color: #7755FF;
+    }
+
+    #linkList a:visited, #linkList1 a:visited, #linkList2 a:visited, #linkList3 a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
     #linkList a:hover, #linkList1 a:hover, #linkList2 a:hover, #linkList3 a:hover {
       text-decoration: underline;
       color: #0CFF57;
+    }
+
+    #linkList a:active, #linkList1 a:active, #linkList2 a:active, #linkList3 a:active {
+      color: #FF0000;
+      text-decoration: underline;
     }
 
         /* --- 共通UI: ズームボタン --- */
