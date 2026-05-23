@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="icon/favicon.ico">
+  <title>リユニスコアバトル　聖王[厄]</title>
+  <style>
+    /* --- 全体 --- */
+    body {
+      font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+    }
+
+    h1 {
+      font-size: 24px;
+      border-bottom: 2px solid #555;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    /* 【修正】見出しと更新ボタンを左寄せにし、15pxの余白を空ける */
+    .section-header {
+      display: flex;
+      justify-content: flex-start; 
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 15px; 
+    }
+
+    h2 {
+      font-size: 20px;
+      margin: 0;
+      color: #50b4f0;
+    }
+
+    .section {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 20px;
+      background-color: #333;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    /* --- 入力フォーム --- */
+    .form-row {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .form-label {
+      width: 140px;
+      text-align: right;
+      margin-right: 15px;
+      font-weight: bold;
+      color: #ccc;
+      padding-top: 6px;
+    }
+
+    input[type="text"], input[type="number"], select {
+      background-color: #555;
+      color: white;
+      border: 1px solid #777;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 16px;
+      width: 280px;
+      box-sizing: border-box;
+    }
+
+    #input-regulation {
+      background-color: #555;
+      color: white;
+      border: 1px solid #777;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 16px;
+      width: 350px;       
+      height: 90px;       
+      min-width: 280px;   
+      min-height: 40px;   
+      box-sizing: border-box;
+      font-family: inherit;
+      resize: both;       
+      overflow: auto;
+    }
+
+    input:focus, select:focus, #input-regulation:focus {
+      outline: none;
+      border-color: #50b4f0;
+    }
+
+    /* --- ボタン --- */
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background-color: #2A99E6;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover { background-color: #1e7ebd; }
+    button:disabled { background-color: #555; color: #aaa; cursor: not-allowed; }
+    
+    #submit-btn { margin: 10px 0 0 155px; }
+
+    /* 更新ボタン専用スタイル */
+    .btn-update {
+      background-color: #444; 
+      padding: 6px 12px; 
+      font-size: 14px;
+      margin: 0;
+    }
+    .btn-update:hover { background-color: #555; }
+
+    /* 操作列の小さいボタン */
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 4px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .btn-share { background-color: #000; color: #fff; border: 1px solid #555; }
+    .btn-share:hover { background-color: #333; }
+    .btn-delete { background-color: #dc3545; color: #fff; border: none; }
+    .btn-delete:hover:not(:disabled) { background-color: #a71d2a; }
+    .btn-delete:disabled { background-color: #555; color: #aaa; cursor: not-allowed; }
+
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap; 
+    }
+
+    .status-msg {
+      margin-left: 15px;
+      font-size: 14px;
+      align-self: center;
+      margin-top: 10px;
+    }
+    .status-msg.success { color: #0CFF57; }
+    .status-msg.error { color: #FF0000; }
+
+    @media (max-width: 600px) {
+      .form-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .form-label {
+        width: 100%;
+        text-align: left;
+        margin-bottom: 5px;
+      }
+      input[type="text"], input[type="number"], #input-regulation {
+        width: 100%;
+        min-width: unset;
+      }
+      #submit-btn {
+        margin: 10px 0 0 0;
+        width: 100%;
+      }
+      .status-msg { margin-left: 0; }
+    }
+
+    /* --- テーブル --- */
+    .table-controls {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 10px;
+    }
+
+    #filter-regulation {
+      flex: 1; 
+      min-width: 150px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin-top: 10px;
+      min-width: 300px; 
+    }
+
+    th, td {
+      border: 1px solid #666;
+      padding: 8px 4px; 
+      text-align: center;
+      vertical-align: middle;
+      font-size: clamp(12px, 2.5vw, 16px); 
+    }
+
+    th {
+      background-color: #4a3f5a;
+      color: #e0e0e0;
+      font-weight: bold;
+      text-align: center !important; 
+    }
+
+    td { background-color: #2a2a2a; }
+
+    .col-rank { width: 9%; }
+    
+    .col-score { 
+      width: 26%;
+      color: #ffd700; 
+      font-weight: bold; 
+      text-align: right; 
+      padding-right: 5px; 
+      white-space: nowrap; 
+      font-size: clamp(9px, 3vw, 16px); 
+      letter-spacing: -0.5px; 
+    }
+    
+    .col-name { 
+      width: 18%; 
+      text-align: left; 
+      padding-left: 5px; 
+      word-break: break-all; 
+    }
+    
+    .col-reg { 
+      width: 27%; 
+      color: #aaa; 
+      text-align: left; 
+      padding-left: 5px; 
+      word-break: break-word; 
+    }
+    
+    .col-action { width: 20%; }
+
+    #loading {
+      color: #ffd700;
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+
+    /* 【修正】文字サイズを14pxに拡大 */
+    footer {
+      border-top: 1px solid #555;
+      padding-top: 15px;
+      margin-top: 30px;
+      font-size: 14px; 
+      color: #bbb;
+      line-height: 1.6;
+    }
+    
+    footer ul {
+      margin: 5px 0 0 0;
+      padding-left: 20px;
+    }
+    footer li { margin-bottom: 4px; }
+
+    /* 【修正】赤字用のクラスを用意 */
+    .text-danger {
+      color: #ff4444;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>リユニスコアバトル　聖王[厄]</h1>
+
+  <div class="section">
+    <h2>■ スコア送信</h2>
+    <div class="form-row">
+      <div class="form-label">ユーザー名</div>
+      <input type="text" id="input-name" placeholder="任意の文字列を入力">
+    </div>
+    <div class="form-row">
+      <div class="form-label">スコア</div>
+      <input type="number" id="input-score" placeholder="数値を入力">
+    </div>
+    <div class="form-row">
+      <div class="form-label">レギュレーション</div>
+      <textarea id="input-regulation" placeholder="空白の場合は「条件なし」になります"></textarea>
+    </div>
+    <div class="form-row">
+      <button id="submit-btn" onclick="submitData()">送信する</button>
+      <span id="submit-status" class="status-msg"></span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>■ ランキング表示</h2>
+      <button class="btn-update" onclick="fetchRankingData()">↻ 最新に更新</button>
+    </div>
+    
+    <div class="table-controls">
+      <label style="font-weight: bold; color: #ccc; white-space: nowrap;">条件で絞り込み：</label>
+      <select id="filter-regulation" onchange="renderRanking()">
+        <option value="ALL">すべて表示</option>
+      </select>
+    </div>
+
+    <div id="loading">データを読み込み中...</div>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="col-rank">順位</th>
+          <th class="col-score">スコア</th>
+          <th class="col-name">名前</th>
+          <th class="col-reg">条件</th>
+          <th class="col-action">操作</th>
+        </tr>
+      </thead>
+      <tbody id="ranking-body">
+        </tbody>
+    </table>
+  </div>
+
+  <footer>
+    <strong>【ご利用上の注意・免責事項】</strong>
+    <ul>
+      <li>運営者自身がはじめての企画の為、途中で変更や中止、緊急メンテナンスに入る可能性があります。</li>
+      <li>スコアは降順（高い順）で表示されます。</li>
+      <li>レギュレーション（条件）はなるべく短く簡潔に記載し、既に同じ条件がある場合は表記を合わせてください。</li>
+      <li>システムの仕様上、ユーザー識別にブラウザの保存機能を使用しています。<strong class="text-danger">別の端末やブラウザからアクセスした場合や、キャッシュを削除した場合は別人として扱われ、自身の送信データの削除ができなくなります</strong>のでご注意ください。</li>
+      <li>公序良俗に反する名前や条件など、管理者が不適切と判断したデータは予告なく削除する場合があります。</li>
+      <li>当システムを利用したことによるいかなるトラブルや損害についても、管理者は一切の責任を負いかねます。</li>
+    </ul>
+  </footer>
+
+  <script>
+    // =========================================================
+    // 1. GASのウェブアプリURL
+    // =========================================================
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwZtoj_23skrzmRzf3hIUqJpV0Zk-ajMzRDeLPlNAPHhFAILKN-NoYfrKRsiJhzk1tE/exec"; 
+    
+    // =========================================================
+    // 2. メンテナンス時間の設定
+    // 形式: "YYYY-MM-DDTHH:mm:ss+09:00" （+09:00は日本時間のことです）
+    // =========================================================
+    const MAINTENANCE_START = "2026-05-21T21:00:00+09:00"; 
+    const MAINTENANCE_END   = "2026-05-22T00:00:00+09:00"; 
+
+    let allRankingData = [];
+    let currentFilteredData = [];
+
+    function checkMaintenanceMode() {
+      const now = new Date();
+      const start = new Date(MAINTENANCE_START);
+      const end = new Date(MAINTENANCE_END);
+
+      const isMaintenance = (now >= start && now < end);
+      const btn = document.getElementById('submit-btn');
+      const statusEl = document.getElementById('submit-status');
+
+      if (isMaintenance) {
+        btn.disabled = true;
+        btn.textContent = "メンテナンス中";
+        
+        const endDateStr = `${end.getMonth() + 1}/${end.getDate()} ${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+        statusEl.textContent = `※現在メンテナンス中です（終了予定: ${endDateStr}）`;
+        statusEl.className = 'status-msg error';
+        return true;
+      } else {
+        btn.disabled = false;
+        btn.textContent = "送信する";
+        
+        if (statusEl.textContent.includes('メンテナンス')) {
+          statusEl.textContent = '';
+          statusEl.className = 'status-msg';
+        }
+        return false;
+      }
+    }
+
+    function getOrCreateUserId() {
+      let userId = localStorage.getItem('ranking_anonymous_id');
+      if (!userId) {
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+        localStorage.setItem('ranking_anonymous_id', userId);
+      }
+      return userId;
+    }
+
+    window.onload = function() {
+      getOrCreateUserId();
+      checkMaintenanceMode(); 
+
+      if(GAS_WEB_APP_URL === "ここにURLを貼り付けてください") {
+        document.getElementById('loading').textContent = "※GASのURLが設定されていません。コードを編集してください。";
+        document.getElementById('loading').style.color = "red";
+      } else {
+        fetchRankingData();
+      }
+    };
+
+    async function fetchRankingData() {
+      const loadingEl = document.getElementById('loading');
+      loadingEl.style.display = 'block';
+      loadingEl.textContent = 'データを読み込み中...';
+      
+      try {
+        const response = await fetch(GAS_WEB_APP_URL);
+        const data = await response.json();
+        
+        allRankingData = data.sort((a, b) => Number(b.score) - Number(a.score));
+        
+        updateFilterOptions(); 
+        renderRanking();       
+        loadingEl.style.display = 'none';
+      } catch (error) {
+        console.error("データ取得エラー:", error);
+        loadingEl.textContent = 'データの取得に失敗しました。';
+        loadingEl.style.color = 'red';
+      }
+    }
+
+    function updateFilterOptions() {
+      const selectEl = document.getElementById('filter-regulation');
+      const currentValue = selectEl.value; 
+      
+      // 空データは除外し、重複を排除して配列化
+      let regulations = [...new Set(allRankingData.map(item => item.regulation))].filter(reg => reg);
+      
+      // 「条件なし」があるか確認し、配列から一旦除外する
+      const hasNoCondition = regulations.includes("条件なし");
+      regulations = regulations.filter(reg => reg !== "条件なし");
+      
+      // それ以外の条件を文字コード順（あいうえお順/アルファベット順等）でソート
+      regulations.sort();
+      
+      selectEl.innerHTML = '<option value="ALL">すべて表示</option>';
+      
+      // 「条件なし」が存在すれば、必ず「すべて表示」のすぐ下に追加
+      if (hasNoCondition) {
+        const option = document.createElement('option');
+        option.value = "条件なし";
+        option.textContent = "条件なし";
+        selectEl.appendChild(option);
+      }
+      
+      // 残りのソート済み条件を追加
+      regulations.forEach(reg => {
+        const option = document.createElement('option');
+        option.value = reg;
+        option.textContent = reg;
+        selectEl.appendChild(option);
+      });
+
+      // 現在選択していた値が存在すれば復元する
+      if (currentValue === 'ALL' || (hasNoCondition && currentValue === "条件なし") || regulations.includes(currentValue)) {
+        selectEl.value = currentValue;
+      }
+    }
+
+    function renderRanking() {
+      const tbody = document.getElementById('ranking-body');
+      const filterValue = document.getElementById('filter-regulation').value;
+      const myUserId = getOrCreateUserId();
+      tbody.innerHTML = '';
+
+      currentFilteredData = allRankingData.filter(item => {
+        if (filterValue === 'ALL') return true;
+        return item.regulation === filterValue;
+      });
+
+      if (currentFilteredData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">データがありません。</td></tr>';
+        return;
+      }
+
+      const now = new Date();
+      const isMaintenance = (now >= new Date(MAINTENANCE_START) && now < new Date(MAINTENANCE_END));
+
+      currentFilteredData.forEach((item, index) => {
+        const rank = index + 1;
+        const tr = document.createElement('tr');
+        
+        let actionHtml = `<div class="action-buttons">`;
+        actionHtml += `<button class="btn-sm btn-share" onclick="shareOnX(${index}, ${rank})">𝕏 共有</button>`;
+        
+        if (item.userId === myUserId && item.recordId) {
+          if (isMaintenance) {
+            actionHtml += `<button class="btn-sm btn-delete" disabled>削除</button>`;
+          } else {
+            actionHtml += `<button class="btn-sm btn-delete" onclick="deleteData('${item.recordId}')">削除</button>`;
+          }
+        }
+        actionHtml += `</div>`;
+
+        const formattedScore = Number(item.score).toLocaleString();
+
+        tr.innerHTML = `
+          <td>${rank}</td>
+          <td class="col-score">${formattedScore}</td>
+          <td class="col-name">${item.name}</td>
+          <td class="col-reg">${item.regulation.replace(/\n/g, '<br>')}</td>
+          <td class="col-action">${actionHtml}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function submitData() {
+      if (checkMaintenanceMode()) return;
+
+      const btn = document.getElementById('submit-btn');
+      const statusEl = document.getElementById('submit-status');
+      
+      const name = document.getElementById('input-name').value;
+      const score = document.getElementById('input-score').value;
+      let regulation = document.getElementById('input-regulation').value.trim(); 
+      const userId = getOrCreateUserId(); 
+
+      if (!regulation) {
+        regulation = "条件なし";
+      }
+
+      if (!name || !score) {
+        statusEl.textContent = '名前と得点を入力してください。';
+        statusEl.className = 'status-msg error';
+        return;
+      }
+
+      btn.disabled = true;
+      statusEl.textContent = '送信中...';
+      statusEl.className = 'status-msg';
+
+      const payload = {
+        action: "submit",
+        name: name,
+        score: Number(score),
+        regulation: regulation,
+        userId: userId
+      };
+
+      try {
+        await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+
+        statusEl.textContent = '送信完了！';
+        statusEl.className = 'status-msg success';
+        
+        document.getElementById('input-name').value = '';
+        document.getElementById('input-score').value = '';
+        document.getElementById('input-regulation').value = '';
+        
+        fetchRankingData();
+      } catch (error) {
+        console.error("送信エラー:", error);
+        statusEl.textContent = '送信に失敗しました。';
+        statusEl.className = 'status-msg error';
+      } finally {
+        if (!checkMaintenanceMode()) {
+          btn.disabled = false;
+        }
+        setTimeout(() => { 
+          if (!checkMaintenanceMode()) statusEl.textContent = ''; 
+        }, 3000);
+      }
+    }
+
+    async function deleteData(recordId) {
+      if (checkMaintenanceMode()) {
+        alert("現在メンテナンス中のため、削除機能は利用できません。");
+        renderRanking();
+        return;
+      }
+
+      if (!confirm("本当にこの記録を削除しますか？")) return;
+
+      const loadingEl = document.getElementById('loading');
+      loadingEl.style.display = 'block';
+      loadingEl.textContent = '削除中...';
+
+      const payload = {
+        action: "delete",
+        recordId: recordId,
+        userId: getOrCreateUserId() 
+      };
+
+      try {
+        await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+        
+        fetchRankingData();
+      } catch (error) {
+        console.error("削除エラー:", error);
+        alert('削除に失敗しました。');
+        loadingEl.style.display = 'none';
+      }
+    }
+
+    function shareOnX(index, rank) {
+      const item = currentFilteredData[index];
+      const formattedScore = Number(item.score).toLocaleString();
+      const filterValue = document.getElementById('filter-regulation').value;
+      
+      // プルダウンが「すべて表示」の時は、個別の条件ではなく「全レギュレーション総合」に変更
+      let displayRegulation = item.regulation;
+      if (filterValue === 'ALL') {
+        displayRegulation = "全レギュレーション総合";
+      }
+
+      const text = `スコアバトル　聖王[厄]\n\n`
+                 + `ランキング ${rank}位！\n`
+                 + `名前：${item.name}\n`
+                 + `得点：${formattedScore}\n`
+                 + `条件：${displayRegulation}\n\n`
+                 + `#ロマサガRS\n`
+                 + `#リユニスコアバトル`; 
+
+      const encodedText = encodeURIComponent(text);
+      const url = `https://twitter.com/intent/tweet?text=${encodedText}`;
+      window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>
