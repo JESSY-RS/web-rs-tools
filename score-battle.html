@@ -21,7 +21,6 @@
       margin-bottom: 20px;
     }
 
-    /* 【修正】見出しと更新ボタンを左寄せにし、15pxの余白を空ける */
     .section-header {
       display: flex;
       justify-content: flex-start; 
@@ -71,6 +70,28 @@
       font-size: 16px;
       width: 280px;
       box-sizing: border-box;
+    }
+
+    /* 【修正】入力方式切り替え用のスタイル。flex: 1;にして見出しの右側に配置 */
+    .reg-input-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      flex: 1; /* 残りの横幅を埋めて横並びにする */
+      min-width: 280px; /* 画面が狭い時の折り返し用 */
+    }
+    .reg-radio-group {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 8px;
+      padding-top: 6px;
+    }
+    .reg-radio-group label {
+      cursor: pointer;
+    }
+    #select-regulation {
+      width: 100%;
+      max-width: 100%;
     }
 
     #input-regulation {
@@ -165,6 +186,9 @@
         width: 100%;
         min-width: unset;
       }
+      #select-regulation {
+        width: 100%;
+      }
       #submit-btn {
         margin: 10px 0 0 0;
         width: 100%;
@@ -246,7 +270,6 @@
       margin-bottom: 10px;
     }
 
-    /* 【修正】文字サイズを14pxに拡大 */
     footer {
       border-top: 1px solid #555;
       padding-top: 15px;
@@ -262,7 +285,6 @@
     }
     footer li { margin-bottom: 4px; }
 
-    /* 【修正】赤字用のクラスを用意 */
     .text-danger {
       color: #ff4444;
     }
@@ -273,7 +295,7 @@
   <h1>リユニスコアバトル　聖王[厄]</h1>
 
   <div class="section">
-    <h2>■ スコア送信</h2>
+    <h2>■ スコア登録</h2>
     <div class="form-row">
       <div class="form-label">ユーザー名</div>
       <input type="text" id="input-name" placeholder="任意の文字列を入力">
@@ -284,7 +306,16 @@
     </div>
     <div class="form-row">
       <div class="form-label">レギュレーション</div>
-      <textarea id="input-regulation" placeholder="空白の場合は「条件なし」になります"></textarea>
+      <div class="reg-input-container">
+        <div class="reg-radio-group">
+          <label><input type="radio" name="reg_mode" value="list" checked onchange="toggleRegMode()"> リストから選ぶ</label>
+          <label><input type="radio" name="reg_mode" value="manual" onchange="toggleRegMode()"> 入力する</label>
+        </div>
+        <select id="select-regulation">
+          <option value="条件なし">条件なし</option>
+        </select>
+        <textarea id="input-regulation" placeholder="空白の場合は「条件なし」になります" style="display: none;"></textarea>
+      </div>
     </div>
     <div class="form-row">
       <button id="submit-btn" onclick="submitData()">送信する</button>
@@ -326,6 +357,7 @@
     <strong>【ご利用上の注意・免責事項】</strong>
     <ul>
       <li>運営者自身がはじめての企画の為、途中で変更や中止、緊急メンテナンスに入る可能性があります。</li>
+      <li>スコアは降順（高い順）で表示されます。同じ名前で同じ条件を送信した場合は、スコアが上書きされます。</li>
       <li>レギュレーション（条件）はなるべく短く簡潔に記載し、既に同じ条件がある場合は表記を合わせてください。</li>
       <li>システムの仕様上、ユーザー識別にブラウザの保存機能を使用しています。<strong class="text-danger">別の端末やブラウザからアクセスした場合や、キャッシュを削除した場合は別人として扱われ、自身の送信データの削除ができなくなります</strong>のでご注意ください。</li>
       <li>公序良俗に反する名前や条件など、管理者が不適切と判断したデータは予告なく削除する場合があります。</li>
@@ -337,17 +369,28 @@
     // =========================================================
     // 1. GASのウェブアプリURL
     // =========================================================
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwZtoj_23skrzmRzf3hIUqJpV0Zk-ajMzRDeLPlNAPHhFAILKN-NoYfrKRsiJhzk1tE/exec"; 
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyP1A-gYmh4po89eOXKqWeHcS8hdgbgAcVmBJDWhVPRK0Vct2kJ35V21Q1h7sHyGs8c/exec"; 
     
     // =========================================================
     // 2. メンテナンス時間の設定
     // 形式: "YYYY-MM-DDTHH:mm:ss+09:00" （+09:00は日本時間のことです）
     // =========================================================
-    const MAINTENANCE_START = "2026-05-23T23:25:00+09:00"; 
-    const MAINTENANCE_END   = "2026-05-23T23:45:00+09:00"; 
+    const MAINTENANCE_START = "2026-05-21T21:00:00+09:00"; 
+    const MAINTENANCE_END   = "2026-05-22T00:00:00+09:00"; 
 
     let allRankingData = [];
     let currentFilteredData = [];
+
+    function toggleRegMode() {
+      const mode = document.querySelector('input[name="reg_mode"]:checked').value;
+      if (mode === 'list') {
+        document.getElementById('select-regulation').style.display = 'block';
+        document.getElementById('input-regulation').style.display = 'none';
+      } else {
+        document.getElementById('select-regulation').style.display = 'none';
+        document.getElementById('input-regulation').style.display = 'block';
+      }
+    }
 
     function checkMaintenanceMode() {
       const now = new Date();
@@ -422,39 +465,53 @@
 
     function updateFilterOptions() {
       const selectEl = document.getElementById('filter-regulation');
-      const currentValue = selectEl.value; 
+      const submitSelectEl = document.getElementById('select-regulation');
       
-      // 空データは除外し、重複を排除して配列化
+      const currentValue = selectEl.value; 
+      const submitCurrentValue = submitSelectEl.value;
+      
       let regulations = [...new Set(allRankingData.map(item => item.regulation))].filter(reg => reg);
       
-      // 「条件なし」があるか確認し、配列から一旦除外する
       const hasNoCondition = regulations.includes("条件なし");
       regulations = regulations.filter(reg => reg !== "条件なし");
-      
-      // それ以外の条件を文字コード順（あいうえお順/アルファベット順等）でソート
       regulations.sort();
       
       selectEl.innerHTML = '<option value="ALL">すべて表示</option>';
+      submitSelectEl.innerHTML = ''; 
       
-      // 「条件なし」が存在すれば、必ず「すべて表示」のすぐ下に追加
       if (hasNoCondition) {
         const option = document.createElement('option');
         option.value = "条件なし";
         option.textContent = "条件なし";
         selectEl.appendChild(option);
       }
+
+      // 【修正】送信側のリストには、データが存在しなくても常に「条件なし」を一番上に配置する
+      const submitOption = document.createElement('option');
+      submitOption.value = "条件なし";
+      submitOption.textContent = "条件なし";
+      submitSelectEl.appendChild(submitOption);
       
-      // 残りのソート済み条件を追加
       regulations.forEach(reg => {
         const option = document.createElement('option');
         option.value = reg;
         option.textContent = reg;
         selectEl.appendChild(option);
+
+        const subOption = document.createElement('option');
+        subOption.value = reg;
+        subOption.textContent = reg;
+        submitSelectEl.appendChild(subOption);
       });
 
-      // 現在選択していた値が存在すれば復元する
       if (currentValue === 'ALL' || (hasNoCondition && currentValue === "条件なし") || regulations.includes(currentValue)) {
         selectEl.value = currentValue;
+      }
+
+      if ((hasNoCondition && submitCurrentValue === "条件なし") || regulations.includes(submitCurrentValue)) {
+        submitSelectEl.value = submitCurrentValue;
+      } else if (submitSelectEl.options.length > 0) {
+        submitSelectEl.selectedIndex = 0;
       }
     }
 
@@ -514,8 +571,15 @@
       
       const name = document.getElementById('input-name').value;
       const score = document.getElementById('input-score').value;
-      let regulation = document.getElementById('input-regulation').value.trim(); 
       const userId = getOrCreateUserId(); 
+
+      let regulation = "";
+      const mode = document.querySelector('input[name="reg_mode"]:checked').value;
+      if (mode === 'list') {
+        regulation = document.getElementById('select-regulation').value;
+      } else {
+        regulation = document.getElementById('input-regulation').value.trim(); 
+      }
 
       if (!regulation) {
         regulation = "条件なし";
@@ -607,13 +671,12 @@
       const formattedScore = Number(item.score).toLocaleString();
       const filterValue = document.getElementById('filter-regulation').value;
       
-      // プルダウンが「すべて表示」の時は、個別の条件ではなく「全レギュレーション総合」に変更
       let displayRegulation = item.regulation;
       if (filterValue === 'ALL') {
         displayRegulation = "全レギュレーション総合";
       }
 
-      const text = `スコアバトル　聖王[厄]\n\n`
+      const text = `スコアバトル 聖王[厄]\n\n`
                  + `ランキング ${rank}位！\n`
                  + `名前：${item.name}\n`
                  + `得点：${formattedScore}\n`
