@@ -372,8 +372,8 @@
     <strong>【ご利用上の注意・免責事項】</strong>
     <ul>
       <li>運営者自身がはじめての企画の為、途中で変更や中止、緊急メンテナンスに入る可能性があります。</li>
-      <li>スコアは降順（高い順）で表示されます。同じ名前で同じ条件を送信した場合は、スコアが上書きされます。</li>
       <li>レギュレーション（条件）はなるべく短く簡潔に記載し、既に同じ条件がある場合は表記を合わせてください。</li>
+      <li>スコアは降順（高い順）で表示されます。同じ名前で同じ条件を送信した場合は、スコアが上書きされます。</li>
       <li>システムの仕様上、ユーザー識別にブラウザの保存機能を使用しています。<strong class="text-danger">別の端末やブラウザからアクセスした場合や、キャッシュを削除した場合は別人として扱われ、自身の送信データの削除ができなくなります</strong>のでご注意ください。</li>
       <li>公序良俗に反する名前や条件など、管理者が不適切と判断したデータは予告なく削除する場合があります。</li>
       <li>当システムを利用したことによるいかなるトラブルや損害についても、管理者は一切の責任を負いかねます。</li>
@@ -688,16 +688,22 @@
     }
 
     async function deleteData(recordId) {
+      // 修正：alert を window.alert に変更
       if (checkMaintenanceMode()) {
-        alert("現在メンテナンス中のため、削除機能は利用できません。");
+        window.alert("現在メンテナンス中のため、削除機能は利用できません。");
         renderRanking();
         return;
       }
 
-      if (!confirm("本当にこの記録を削除しますか？")) return;
+      // 修正：confirm を window.confirm に変更し、raidcalc.html と同じ記述法に
+      const confirmed = window.confirm("本当にこの記録を削除しますか？");
+      if (!confirmed) {
+          return;
+      }
 
       const loadingEl = document.getElementById('loading');
       loadingEl.style.display = 'block';
+      loadingEl.style.color = '#ffd700'; // デフォルト色に戻す
       loadingEl.textContent = '削除中...';
 
       const payload = {
@@ -713,10 +719,19 @@
           body: JSON.stringify(payload)
         });
         
-        fetchRankingData();
+        // 修正：raidcalc.html のように削除完了メッセージを画面に表示
+        loadingEl.textContent = '※記録を削除しました。';
+        loadingEl.style.color = 'red';
+        
+        // メッセージを少し見せた後にランキングを再取得
+        setTimeout(() => {
+            loadingEl.style.color = '#ffd700'; // 色を元に戻す
+            fetchRankingData();
+        }, 1500);
+
       } catch (error) {
         console.error("削除エラー:", error);
-        alert('削除に失敗しました。');
+        window.alert('削除に失敗しました。');
         loadingEl.style.display = 'none';
       }
     }
@@ -731,13 +746,12 @@
         displayRegulation = "全レギュレーション総合";
       }
 
-      const text = `スコアバトル　聖王[厄]\n\n`
+      const text = `#リユニスコアバトル　聖王[厄]\n\n`
                  + `ランキング ${rank}位！\n`
                  + `名前：${item.name}\n`
                  + `得点：${formattedScore}\n`
                  + `条件：${displayRegulation}\n\n`
-                 + `#ロマサガRS\n`
-                 + `#リユニスコアバトル`; 
+                 + `#ロマサガRS`; 
 
       const encodedText = encodeURIComponent(text);
       const url = `https://twitter.com/intent/tweet?text=${encodedText}`;
