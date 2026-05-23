@@ -72,13 +72,12 @@
       box-sizing: border-box;
     }
 
-    /* 【修正】入力方式切り替え用のスタイル。flex: 1;にして見出しの右側に配置 */
     .reg-input-container {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      flex: 1; /* 残りの横幅を埋めて横並びにする */
-      min-width: 280px; /* 画面が狭い時の折り返し用 */
+      flex: 1; 
+      min-width: 280px; 
     }
     .reg-radio-group {
       display: flex;
@@ -89,11 +88,14 @@
     .reg-radio-group label {
       cursor: pointer;
     }
+    
+    /* 【修正】widthを100%に変更し、余白をいっぱいまで広げる */
     #select-regulation {
       width: 100%;
       max-width: 100%;
     }
 
+    /* 【修正】widthを100%に変更 */
     #input-regulation {
       background-color: #555;
       color: white;
@@ -101,7 +103,7 @@
       padding: 8px;
       border-radius: 4px;
       font-size: 16px;
-      width: 350px;       
+      width: 100%;       
       height: 90px;       
       min-width: 280px;   
       min-height: 40px;   
@@ -380,6 +382,7 @@
 
     let allRankingData = [];
     let currentFilteredData = [];
+    let isFirstLoad = true; // 【追加】初回ロード判定用フラグ
 
     function toggleRegMode() {
       const mode = document.querySelector('input[name="reg_mode"]:checked').value;
@@ -430,9 +433,43 @@
       return userId;
     }
 
+    // 【追加】ユーザー名と条件をローカルストレージから復元する関数
+    function loadUserDataLocally() {
+      const savedName = localStorage.getItem('rs_score_name');
+      const savedMode = localStorage.getItem('rs_score_reg_mode');
+      const savedReg = localStorage.getItem('rs_score_reg');
+
+      if (savedName) {
+        document.getElementById('input-name').value = savedName;
+      }
+
+      if (savedMode) {
+        const radios = document.getElementsByName('reg_mode');
+        for (let i = 0; i < radios.length; i++) {
+          if (radios[i].value === savedMode) {
+            radios[i].checked = true;
+          }
+        }
+        toggleRegMode();
+      }
+
+      // 手入力欄への復元
+      if (savedReg && savedMode === 'manual') {
+        document.getElementById('input-regulation').value = savedReg;
+      }
+    }
+
+    // 【追加】送信時にユーザー名と条件をローカルストレージに保存する関数
+    function saveUserDataLocally(name, mode, reg) {
+      localStorage.setItem('rs_score_name', name);
+      localStorage.setItem('rs_score_reg_mode', mode);
+      localStorage.setItem('rs_score_reg', reg);
+    }
+
     window.onload = function() {
       getOrCreateUserId();
       checkMaintenanceMode(); 
+      loadUserDataLocally(); // 【追加】ページ読み込み時に復元
 
       if(GAS_WEB_APP_URL === "ここにURLを貼り付けてください") {
         document.getElementById('loading').textContent = "※GASのURLが設定されていません。コードを編集してください。";
@@ -468,7 +505,17 @@
       const submitSelectEl = document.getElementById('select-regulation');
       
       const currentValue = selectEl.value; 
-      const submitCurrentValue = submitSelectEl.value;
+      let submitCurrentValue = submitSelectEl.value;
+
+      // 【追加】初回ロード時かつリストモードの場合、保存した条件を選択状態にする
+      if (isFirstLoad) {
+        const savedMode = localStorage.getItem('rs_score_reg_mode');
+        const savedReg = localStorage.getItem('rs_score_reg');
+        if (savedMode === 'list' && savedReg) {
+          submitCurrentValue = savedReg;
+        }
+        isFirstLoad = false;
+      }
       
       let regulations = [...new Set(allRankingData.map(item => item.regulation))].filter(reg => reg);
       
@@ -486,7 +533,6 @@
         selectEl.appendChild(option);
       }
 
-      // 【修正】送信側のリストには、データが存在しなくても常に「条件なし」を一番上に配置する
       const submitOption = document.createElement('option');
       submitOption.value = "条件なし";
       submitOption.textContent = "条件なし";
@@ -586,7 +632,7 @@
       }
 
       if (!name || !score) {
-        statusEl.textContent = '名前と得点を入力してください。';
+        statusEl.textContent = 'ユーザー名とスコアを入力してください。';
         statusEl.className = 'status-msg error';
         return;
       }
@@ -613,9 +659,11 @@
         statusEl.textContent = '送信完了！';
         statusEl.className = 'status-msg success';
         
-        document.getElementById('input-name').value = '';
+        // 【追加】送信成功時に名前と条件を保存
+        saveUserDataLocally(name, mode, regulation);
+
+        // 【修正】スコアだけを空にして、名前と条件は残す
         document.getElementById('input-score').value = '';
-        document.getElementById('input-regulation').value = '';
         
         fetchRankingData();
       } catch (error) {
@@ -676,7 +724,7 @@
         displayRegulation = "全レギュレーション総合";
       }
 
-      const text = `スコアバトル 聖王[厄]\n\n`
+      const text = `スコアバトル　聖王[厄]\n\n`
                  + `ランキング ${rank}位！\n`
                  + `名前：${item.name}\n`
                  + `得点：${formattedScore}\n`
