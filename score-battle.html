@@ -3,7 +3,12 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="icon/favicon.ico">
+  <link rel="shortcut icon" href="icon/favicon.ico">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  
   <title>リユニスコアバトル　聖王[厄]</title>
   <style>
     /* --- 全体 --- */
@@ -84,6 +89,7 @@
       padding-top: 6px;
     }
 
+    /* ★修正：入力欄の幅を固定から伸縮（flex）に変更し、折り返しタイミングを統一 */
     input[type="text"], input[type="number"], select {
       background-color: #555;
       color: white;
@@ -91,8 +97,9 @@
       padding: 8px;
       border-radius: 4px;
       font-size: 16px;
-      width: 280px;
-      max-width: 100%;
+      flex: 1; /* 余白を埋めるように伸縮 */
+      min-width: 0; /* 狭いときに縮むのを許可 */
+      max-width: 280px; /* 最大幅は元と同じ280pxに制限 */
       box-sizing: border-box;
     }
 
@@ -192,7 +199,7 @@
 
     /* --- テーブル --- */
     
-    /* 【追加】テーブルを囲む専用コンテナ（ズーム時のサイズ基準） */
+    /* テーブルを囲む専用コンテナ（ズーム時のサイズ基準） */
     .table-container {
       container-type: inline-size;
       width: 100%;
@@ -237,8 +244,9 @@
       text-align: right; 
       padding-right: 4px; /* スマホ時のデフォルトの余白 */
       white-space: nowrap; 
-      font-size: clamp(9.5px, 2.8vw, 16px); 
-      font-size: clamp(9.5px, 3.2cqi, 16px); /* ズーム追従 */
+      /* ★修正：基準の最大サイズを18pxにアップ */
+      font-size: clamp(10px, 3.2vw, 18px); 
+      font-size: clamp(10px, 3.8cqi, 18px); 
       letter-spacing: -0.5px; 
     }
     
@@ -297,9 +305,10 @@
     @media (min-width: 768px) {
       .col-rank { width: 8%; }
       .col-score { 
-        width: 18%; 
+        width: 20%; 
+        /* ★修正：基準の最大サイズを18pxにアップ */
         font-size: 18px; 
-        font-size: clamp(12px, 2.6cqi, 18px); /* ズーム追従 */
+        font-size: clamp(11px, 2.6cqi, 18px); 
       }
       .col-name { 
         width: 20%; 
@@ -338,8 +347,10 @@
         text-align: left;
         margin-bottom: 5px;
       }
+      /* ★修正：折り返し時に全幅になるよう max-width: 100% を追加して固定幅の制限を解除 */
       input[type="text"], input[type="number"], #input-regulation, #select-regulation, #filter-regulation {
         width: 100%;
+        max-width: 100%;
         min-width: 0;
         box-sizing: border-box;
       }
