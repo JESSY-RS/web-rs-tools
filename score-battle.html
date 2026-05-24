@@ -912,9 +912,11 @@
 
         const formattedScore = Number(item.score).toLocaleString();
 
+        const scoreStyle = rank >= 4 ? 'style="color: #bbb;"' : '';
+
         tr.innerHTML = `
           <td>${rankDisplay}</td>
-          <td class="col-score">${formattedScore}</td>
+          <td class="col-score" ${scoreStyle}>${formattedScore}</td>
           <td class="col-name">${item.name}</td>
           <td class="col-reg">${item.regulation.replace(/\n/g, '<br>')}</td>
           <td class="col-action">${actionHtml}</td>
