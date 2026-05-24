@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   
-  <title>リユニスコアバトル　聖王[厄]</title>
+  <title>リユニスコアバトル 聖王[厄]</title>
   <style>
     /* --- 全体 --- */
     body {
@@ -242,7 +242,6 @@
       font-weight: bold; 
       text-align: right; 
       white-space: nowrap; 
-      /* ★修正：基準の最大サイズを17pxに変更 */
       font-size: clamp(10px, 3.0vw, 16px); 
       font-size: clamp(10px, 3.5cqi, 16px); 
       letter-spacing: -0.5px; 
@@ -304,7 +303,6 @@
       .col-rank { width: 8%; }
       .col-score { 
         width: 20%; 
-        /* ★修正：基準の最大サイズを17pxに変更 */
         font-size: 17px; 
         font-size: clamp(11px, 2.6cqi, 17px); 
       }
@@ -386,6 +384,52 @@
     .text-danger {
       color: red;
     }
+
+    /* --- カスタムモーダル --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .modal-content {
+      background-color: #333;
+      padding: 25px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      border: 1px solid #555;
+      width: 80%;
+      max-width: 320px;
+    }
+    .modal-content p {
+      margin-top: 0;
+      margin-bottom: 25px;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    .btn-cancel {
+      background-color: #555;
+      color: #fff;
+    }
+    .btn-cancel:hover { background-color: #666; }
+    
+    .btn-delete-confirm {
+      background-color: #dc3545;
+      color: #fff;
+    }
+    .btn-delete-confirm:hover { background-color: #a71d2a; }
   </style>
 </head>
 <body>
@@ -395,7 +439,7 @@
       <button onclick="changeZoom(0.1)">＋</button>
   </div>
 
-  <h1>リユニスコアバトル　聖王[厄]</h1>
+  <h1>リユニスコアバトル 聖王[厄]</h1>
 
   <div class="section">
     <h2>スコア登録</h2>
@@ -465,11 +509,30 @@
       <li>レギュレーション（条件）はなるべく短く簡潔に記載し、既に同じ条件がある場合は表記を合わせてください。</li>
       <li>スコアは降順（高い順）で表示されます。同じ名前で同じ条件を送信した場合は、スコアが上書きされます。</li>
       <li>システムの仕様上、ユーザー識別にブラウザの保存機能を使用しています。<strong class="text-danger">別の端末やブラウザからアクセスした場合や、キャッシュを削除した場合は別人として扱われ、自身の送信データの削除ができなくなります</strong>のでご注意ください。</li>
-      <li>どうしても削除できなくなった場合はご連絡いただければ、こちらで削除します。現在確認出来ているところでiPhoneのXのアプリから直接このページを開き登録した場合は削除ボタンが機能しません。一度ブラウザから開くで登録していただければ削除は可能です。
+      <li>どうしても削除できなくなった場合はご連絡いただければ、こちらで削除します。</li>
       <li>公序良俗に反する名前や条件など、管理者が不適切と判断したデータは予告なく削除する場合があります。</li>
       <li>当システムを利用したことによるいかなるトラブルや損害についても、管理者は一切の責任を負いかねます。</li>
     </ul>
   </footer>
+
+  <div id="custom-confirm-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <p id="custom-confirm-message">本当にこの記録を削除しますか？</p>
+      <div class="modal-actions">
+        <button onclick="closeConfirmModal()" class="btn-cancel">キャンセル</button>
+        <button onclick="executeDelete()" class="btn-delete-confirm">削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="custom-alert-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <p id="custom-alert-message"></p>
+      <div class="modal-actions">
+        <button onclick="closeAlertModal()" class="btn-cancel">閉じる</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     // =========================================================
@@ -818,17 +881,42 @@
       }
     }
 
-    async function deleteData(recordId) {
+    // --- 削除用の独自モーダル処理 ---
+    let pendingDeleteRecordId = null;
+
+    function showCustomAlert(message) {
+      document.getElementById('custom-alert-message').textContent = message;
+      document.getElementById('custom-alert-modal').style.display = 'flex';
+    }
+
+    function closeAlertModal() {
+      document.getElementById('custom-alert-modal').style.display = 'none';
+    }
+
+    // 削除ボタンが押された時に呼ばれる（確認モーダルを表示）
+    function deleteData(recordId) {
       if (checkMaintenanceMode()) {
-        window.alert("現在メンテナンス中のため、削除機能は利用できません。");
+        showCustomAlert("現在メンテナンス中のため、削除機能は利用できません。");
         renderRanking();
         return;
       }
+      
+      pendingDeleteRecordId = recordId;
+      document.getElementById('custom-confirm-modal').style.display = 'flex';
+    }
 
-      const confirmed = window.confirm("本当にこの記録を削除しますか？");
-      if (!confirmed) {
-          return;
-      }
+    // キャンセルボタンが押された時
+    function closeConfirmModal() {
+      document.getElementById('custom-confirm-modal').style.display = 'none';
+      pendingDeleteRecordId = null;
+    }
+
+    // 削除するボタンが押された時（実際の削除処理）
+    async function executeDelete() {
+      if (!pendingDeleteRecordId) return;
+      
+      const recordId = pendingDeleteRecordId;
+      closeConfirmModal(); // モーダルを閉じる
 
       const loadingEl = document.getElementById('loading');
       loadingEl.style.display = 'block';
@@ -858,7 +946,7 @@
 
       } catch (error) {
         console.error("削除エラー:", error);
-        window.alert('削除に失敗しました。');
+        showCustomAlert('削除に失敗しました。');
         loadingEl.style.display = 'none';
       }
     }
@@ -873,7 +961,7 @@
         displayRegulation = "全レギュレーション総合";
       }
 
-      const text = `#リユニスコアバトル　聖王[厄]\n\n`
+      const text = `#リユニスコアバトル 聖王[厄]\n\n`
                  + `ランキング ${rank}位！\n`
                  + `名前：${item.name}\n`
                  + `得点：${formattedScore}\n`
