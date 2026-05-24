@@ -4,7 +4,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="icon/favicon.ico">
-  <title>リユニスコアバトル　聖王[厄]</title>
+  <title>リユニスコアバトル 聖王[厄]</title>
   <style>
     /* --- 全体 --- */
     body {
@@ -44,6 +44,29 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
 
+    /* ズームボタンのスタイル */
+    .zoom-buttons {
+      position: absolute;
+      top: 22px;
+      right: 20px;
+      display: flex;
+      flex-direction: row;
+      gap: 5px;
+      z-index: 1000;
+    }
+    .zoom-buttons button {
+      color: #000;
+      background-color: #eee;
+      padding: 5px 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      border: none;
+    }
+    .zoom-buttons button:hover {
+      background-color: #ddd;
+    }
+
     /* --- 入力フォーム --- */
     .form-row {
       display: flex;
@@ -61,7 +84,6 @@
       padding-top: 6px;
     }
 
-    /* 【修正】max-width: 100%; を追加してはみ出しを防止 */
     input[type="text"], input[type="number"], select {
       background-color: #555;
       color: white;
@@ -74,7 +96,6 @@
       box-sizing: border-box;
     }
 
-    /* 【修正】min-widthを0にし、max-width: 100% を追加 */
     .reg-input-container {
       display: flex;
       flex-direction: column;
@@ -85,7 +106,6 @@
       max-width: 100%;
     }
     
-    /* 【修正】ラジオボタンが画面外に出ないように折り返しを許可 */
     .reg-radio-group {
       display: flex;
       gap: 15px;
@@ -97,14 +117,12 @@
       cursor: pointer;
     }
     
-    /* 【修正】box-sizing を追加して内側の余白が幅を超えないようにする */
     #select-regulation {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
     }
 
-    /* 【修正】min-widthを0に変更し、max-width: 100% を追加 */
     #input-regulation {
       background-color: #555;
       color: white;
@@ -121,6 +139,15 @@
       resize: both;       
       overflow: auto;
       max-width: 100%;
+    }
+
+    /* 条件で絞り込みのリストボックス（上部のレギュレーションと幅を揃える） */
+    #filter-regulation {
+      flex: 1; 
+      min-width: 0;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     input:focus, select:focus, #input-regulation:focus {
@@ -154,10 +181,101 @@
     }
     .btn-update:hover { background-color: #555; }
 
-    /* 操作列の小さいボタン */
+    .status-msg {
+      margin-left: 15px;
+      font-size: 14px;
+      align-self: center;
+      margin-top: 10px;
+    }
+    .status-msg.success { color: #0CFF57; }
+    .status-msg.error { color: #FF0000; }
+
+    /* --- テーブル --- */
+    
+    /* 【追加】テーブルを囲む専用コンテナ（ズーム時のサイズ基準） */
+    .table-container {
+      container-type: inline-size;
+      width: 100%;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin-top: 10px;
+    }
+
+    th, td {
+      border: 1px solid #666;
+      padding: 6px 2px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: clamp(10px, 2.5vw, 16px); 
+      font-size: clamp(10px, 2.8cqi, 16px); /* ズーム追従 */
+    }
+
+    th {
+      background-color: #4a3f5a;
+      color: #e0e0e0;
+      font-weight: bold;
+      text-align: center !important; 
+    }
+
+    td { background-color: #2a2a2a; }
+
+    /* ==========================================================
+       ▼▼ ここから画面幅に応じたテーブル列レイアウト調整 ▼▼
+       ========================================================== */
+    
+    /* 【ベース（スマホなど狭い画面用）】 */
+    .col-rank { width: 9%; }
+    
+    .col-score { 
+      width: 30%; 
+      color: gold; 
+      font-weight: bold; 
+      text-align: right; 
+      padding-right: 4px; /* スマホ時のデフォルトの余白 */
+      white-space: nowrap; 
+      font-size: clamp(9.5px, 2.8vw, 16px); 
+      font-size: clamp(9.5px, 3.2cqi, 16px); /* ズーム追従 */
+      letter-spacing: -0.5px; 
+    }
+    
+    .col-name { 
+      width: 20%; 
+      text-align: left; 
+      padding-left: 4px; 
+      word-break: break-all; 
+      font-size: clamp(9.5px, 2.5vw, 15px);
+      font-size: clamp(9.5px, 2.8cqi, 15px); /* ズーム追従 */
+    }
+    
+    .col-reg { 
+      width: 25%; 
+      text-align: left; 
+      padding-left: 4px; 
+      word-break: break-word; 
+      font-size: clamp(9.5px, 2.5vw, 15px);
+      font-size: clamp(9.5px, 2.8cqi, 15px); /* ズーム追従 */
+    }
+    
+    .col-action { width: 16%; }
+    
+    /* スマホは縦並び（2段） */
+    .action-buttons {
+      display: flex;
+      flex-direction: column; 
+      align-items: stretch;
+      gap: 5px;
+      padding: 0 2px;
+    }
+
     .btn-sm {
-      padding: 6px 10px;
-      font-size: 13px;
+      padding: 5px 0;
+      width: 100%;
+      font-size: clamp(9px, 2.2vw, 13px);
+      font-size: clamp(9px, 2.5cqi, 13px); /* ズーム追従 */
       border-radius: 4px;
       white-space: nowrap;
       cursor: pointer;
@@ -168,22 +286,48 @@
     .btn-delete:hover:not(:disabled) { background-color: #a71d2a; }
     .btn-delete:disabled { background-color: #555; color: #aaa; cursor: not-allowed; }
 
-    .action-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      flex-wrap: wrap; 
+    /* 【折り返しが発生しない画面幅（601px以上）】 */
+    @media (min-width: 601px) {
+      .col-score {
+        padding-right: 10px; /* 見出しや入力ボックスが折り返されない時は右余白を10pxに */
+      }
     }
 
-    .status-msg {
-      margin-left: 15px;
-      font-size: 14px;
-      align-self: center;
-      margin-top: 10px;
-    }
-    .status-msg.success { color: #0CFF57; }
-    .status-msg.error { color: #FF0000; }
+    /* 【PC・タブレットなど広い画面用（768px以上）】 */
+    @media (min-width: 768px) {
+      .col-rank { width: 8%; }
+      .col-score { 
+        width: 18%; 
+        font-size: 18px; 
+        font-size: clamp(12px, 2.6cqi, 18px); /* ズーム追従 */
+      }
+      .col-name { 
+        width: 20%; 
+        font-size: 15px; 
+        font-size: clamp(10px, 2.1cqi, 15px); /* ズーム追従 */
+      }
+      .col-reg { 
+        width: 34%; 
+        font-size: 15px; 
+        font-size: clamp(10px, 2.3cqi, 15px); /* ズーム追従 */
+      }
+      .col-action { width: 18%; }
 
+      /* PCは横並び（左右配置） */
+      .action-buttons {
+        flex-direction: row; 
+        justify-content: center;
+        gap: 6px;
+      }
+      .btn-sm {
+        padding: 6px 12px;
+        width: auto; 
+        font-size: 13px;
+        font-size: clamp(9px, 1.8cqi, 13px); /* ズーム追従 */
+      }
+    }
+
+    /* フォーム周りのモバイル対応 */
     @media (max-width: 600px) {
       .form-row {
         flex-direction: column;
@@ -194,8 +338,7 @@
         text-align: left;
         margin-bottom: 5px;
       }
-      /* 【修正】コンテナやすべての入力要素に対して幅100%を徹底 */
-      input[type="text"], input[type="number"], #input-regulation, #select-regulation {
+      input[type="text"], input[type="number"], #input-regulation, #select-regulation, #filter-regulation {
         width: 100%;
         min-width: 0;
         box-sizing: border-box;
@@ -210,74 +353,6 @@
       }
       .status-msg { margin-left: 0; }
     }
-
-    /* --- テーブル --- */
-    .table-controls {
-      display: flex;
-      align-items: center;
-      margin-bottom: 15px;
-      gap: 10px;
-    }
-
-    #filter-regulation {
-      flex: 1; 
-      min-width: 150px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      margin-top: 10px;
-      min-width: 300px; 
-    }
-
-    th, td {
-      border: 1px solid #666;
-      padding: 8px 4px; 
-      text-align: center;
-      vertical-align: middle;
-      font-size: clamp(12px, 2.5vw, 16px); 
-    }
-
-    th {
-      background-color: #4a3f5a;
-      color: #e0e0e0;
-      font-weight: bold;
-      text-align: center !important; 
-    }
-
-    td { background-color: #2a2a2a; }
-
-    .col-rank { width: 9%; }
-    
-    .col-score { 
-      width: 26%;
-      color: #ffd700; 
-      font-weight: bold; 
-      text-align: right; 
-      padding-right: 5px; 
-      white-space: nowrap; 
-      font-size: clamp(9px, 3vw, 16px); 
-      letter-spacing: -0.5px; 
-    }
-    
-    .col-name { 
-      width: 18%; 
-      text-align: left; 
-      padding-left: 5px; 
-      word-break: break-all; 
-    }
-    
-    .col-reg { 
-      width: 27%; 
-      color: #aaa; 
-      text-align: left; 
-      padding-left: 5px; 
-      word-break: break-word; 
-    }
-    
-    .col-action { width: 20%; }
 
     #loading {
       color: #ffd700;
@@ -301,13 +376,18 @@
     footer li { margin-bottom: 4px; }
 
     .text-danger {
-      color: #ff4444;
+      color: red;
     }
   </style>
 </head>
 <body>
 
-  <h1>リユニスコアバトル　聖王[厄]</h1>
+  <div class="zoom-buttons">
+      <button onclick="changeZoom(-0.1)">－</button>
+      <button onclick="changeZoom(0.1)">＋</button>
+  </div>
+
+  <h1>リユニスコアバトル 聖王[厄]</h1>
 
   <div class="section">
     <h2>■ スコア登録</h2>
@@ -344,8 +424,8 @@
       <button class="btn-update" onclick="fetchRankingData()">↻ 最新に更新</button>
     </div>
     
-    <div class="table-controls">
-      <label style="font-weight: bold; color: #ccc; white-space: nowrap;">条件で絞り込み：</label>
+    <div class="form-row">
+      <div class="form-label">条件で絞り込み</div>
       <select id="filter-regulation" onchange="renderRanking()">
         <option value="ALL">すべて表示</option>
       </select>
@@ -353,19 +433,21 @@
 
     <div id="loading">データを読み込み中...</div>
 
-    <table>
-      <thead>
-        <tr>
-          <th class="col-rank">順位</th>
-          <th class="col-score">スコア</th>
-          <th class="col-name">名前</th>
-          <th class="col-reg">条件</th>
-          <th class="col-action">操作</th>
-        </tr>
-      </thead>
-      <tbody id="ranking-body">
-        </tbody>
-    </table>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-rank">順位</th>
+            <th class="col-score">スコア</th>
+            <th class="col-name">名前</th>
+            <th class="col-reg">条件</th>
+            <th class="col-action">操作</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-body">
+          </tbody>
+      </table>
+    </div>
   </div>
 
   <footer>
@@ -397,6 +479,42 @@
     let allRankingData = [];
     let currentFilteredData = [];
     let isFirstLoad = true;
+
+    // --- ズーム設定関連の処理 ---
+    const PAGE_SETTING_KEY = 'PageSettings';
+    let pageSettings = { 'score-battle_zoom': 1.0 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'score-battle_zoom';
+        let currentZoom = pageSettings[zoomKey] || 1.0;
+        currentZoom += delta;
+        currentZoom = Math.round(currentZoom * 10) / 10;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        document.body.style.zoom = currentZoom;
+        pageSettings[zoomKey] = currentZoom;
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+    // -------------------------
 
     function toggleRegMode() {
       const mode = document.querySelector('input[name="reg_mode"]:checked').value;
@@ -481,6 +599,10 @@
       getOrCreateUserId();
       checkMaintenanceMode(); 
       loadUserDataLocally(); 
+      
+      // ズーム設定の読み込みと適用
+      loadPageSettings();
+      document.body.style.zoom = pageSettings['score-battle_zoom'] || 1.0;
 
       if(GAS_WEB_APP_URL === "ここにURLを貼り付けてください") {
         document.getElementById('loading').textContent = "※GASのURLが設定されていません。コードを編集してください。";
@@ -689,14 +811,12 @@
     }
 
     async function deleteData(recordId) {
-      // 修正：alert を window.alert に変更
       if (checkMaintenanceMode()) {
         window.alert("現在メンテナンス中のため、削除機能は利用できません。");
         renderRanking();
         return;
       }
 
-      // 修正：confirm を window.confirm に変更し、raidcalc.html と同じ記述法に
       const confirmed = window.confirm("本当にこの記録を削除しますか？");
       if (!confirmed) {
           return;
@@ -704,7 +824,7 @@
 
       const loadingEl = document.getElementById('loading');
       loadingEl.style.display = 'block';
-      loadingEl.style.color = '#ffd700'; // デフォルト色に戻す
+      loadingEl.style.color = '#ffd700';
       loadingEl.textContent = '削除中...';
 
       const payload = {
@@ -720,13 +840,11 @@
           body: JSON.stringify(payload)
         });
         
-        // 修正：raidcalc.html のように削除完了メッセージを画面に表示
         loadingEl.textContent = '※記録を削除しました。';
         loadingEl.style.color = 'red';
         
-        // メッセージを少し見せた後にランキングを再取得
         setTimeout(() => {
-            loadingEl.style.color = '#ffd700'; // 色を元に戻す
+            loadingEl.style.color = '#ffd700'; 
             fetchRankingData();
         }, 1500);
 
@@ -747,7 +865,7 @@
         displayRegulation = "全レギュレーション総合";
       }
 
-      const text = `#リユニスコアバトル　聖王[厄]\n\n`
+      const text = `#リユニスコアバトル 聖王[厄]\n\n`
                  + `ランキング ${rank}位！\n`
                  + `名前：${item.name}\n`
                  + `得点：${formattedScore}\n`
