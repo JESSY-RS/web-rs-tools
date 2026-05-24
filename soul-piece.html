@@ -1,892 +1,1072 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="shortcut icon" href="icon/favicon.ico">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="icon/favicon-soul.ico">
+    <link rel="apple-touch-icon" href="icon/apple-touch-icon-soul.png">
+    <link rel="icon" type="image/png" href="icon/web-app-manifest-192x192-soul.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-  
-  <title>リユニスコアバトル 聖王[厄]</title>
-  <style>
+  <title>ソウルピース必要数確認</title>
+    <style>
+        /* 1. 基本の指定（Windows, Android, Mac用） */
+    .hamburger::before {
+      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+    }
+    
+    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+      }
+    }
+
     /* --- 全体 --- */
-    body {
-      font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
-      margin: 20px;
-      background-color: #2A2A2A;
+        body {
+            font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+            background-color: #2A2A2A;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+        h1 {
+            font-size: 1.8em;
+            color: white;
+            margin: 0 0 0 0;
+        }
+        h2 {
+            font-size: 1.4em;
+            color: #50b4f0; 
+            margin-bottom: 15px;
+            border-bottom: 1px solid #555;
+            padding-bottom: 5px;
+        }
+        .header-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #555;
+        }
+        
+        /* 入力方式の選択ラジオボタン (Flexboxで自動最適化) */
+        .input-mode-selector {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            display: flex;
+            flex-wrap: wrap; /* 幅が足りない場合は自動で折り返し */
+            gap: 10px 20px;  
+        }
+        .input-mode-selector label {
+            cursor: pointer;
+            color: #ddd;
+            display: flex;
+            align-items: center;
+            gap: 6px; /* ★追加: ラジオボタンと文字の隙間を確保 */
+            white-space: nowrap; 
+        }
+        .input-mode-selector input[type="radio"] {
+            margin: 0; /* ★追加: ブラウザ標準の余白を消して縦ズレ（下に寄る）を解消 */
+            cursor: pointer;
+        }
+
+        /* 計算エリア (Flexboxで自動最適化) */
+        .calculator {
+            display: flex;
+            flex-wrap: wrap; /* ズーム時などに幅が足りなくなると自動で折り返し */
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .calc-item {
+            display: flex;
+            flex-wrap: wrap; /* 現在Lvと目標Lvのグループも自動で折り返し */
+            align-items: center;
+            gap: 20px; 
+            flex: 1 1 auto; /* 空きスペースに合わせて伸縮 */
+        }
+        
+        /* ラベルと入力欄をひとまとめにするグループ */
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+        .input-group label {
+            font-weight: bold;
+            color: #ccc;
+            font-size: 1.1em;
+        }
+        
+        /* 入力欄とプルダウンの共通設定 */
+        input[type="number"], select {
+            background-color: #222;
+            color: white;
+            border: 1px solid #666;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 18px;
+            width: 140px;
+            box-sizing: border-box;
+            font-family: sans-serif;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            text-align: right;
+            letter-spacing: 2px;
+        }
+        select {
+            text-align: left;
+            letter-spacing: normal;
+        }
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #50b4f0; 
+        }
+        
+        /* 計算結果エリア */
+        .result {
+            display: block; 
+            flex: 0 1 auto; 
+            max-width: 100%;
+            font-size: 1.6em;
+            font-weight: bold;
+            color: gold;
+            margin-left: auto; 
+            padding-left: 20px;
+            border-left: 2px dashed #666;
+            text-align: right;     
+            word-break: break-word; /* エラー文が長い場合は折り返す */
+            line-height: 1.4;
+        }
+
+        /* 汎用ボタン */
+        button {
+            background-color: #444;
+            color: white;
+            border: 1px solid #666;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        
+        /* レイアウト最適化ボタンの個別デザイン */
+        #toggle-layout {
+            background-color: #ff4500;
+            color: white;
+            border: 1px solid #ff4500;
+        }
+        #toggle-layout:hover {
+            background-color: #cc3700;
+            border-color: #cc3700;
+        }
+        #toggle-layout.active {
+            background-color: #9b59b6;
+            color: white;
+            border-color: #9b59b6;
+            font-weight: normal; 
+        }
+        #toggle-layout.active:hover {
+            background-color: #8e44ad;
+            border-color: #8e44ad;
+        }
+
+        /* クロスマトリックス（早見表） */
+        .matrix-table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 30px;
+            background-color: #2A2A2A;
+            border-radius: 6px;
+            padding: 5px;
+            max-width: 900px; 
+        }
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed; /* 列幅を完全に均等にする */
+            min-width: 750px;    /* ズームしても絶対に文字がはみ出さない安全な最小幅 */
+        }
+        
+        .matrix-table th, .matrix-table td {
+            border: 1px solid #ccc;
+            padding: 6px 4px;
+            text-align: right;
+            white-space: nowrap;
+            font-size: clamp(13px, 1.8vw, 15px); 
+            transition: background-color 0.2s;
+        }
+        .matrix-table th {
+            background-color: #2a3a4a; 
+            text-align: center;
+            font-weight: bold;
+            color: #e0e0e0;
+        }
+        .matrix-table th.corner-cell {
+            background-color: #4a3f5a;
+            color: #e0e0e0;
+        }
+        .matrix-table td.header-col {
+            background-color: #394a34;
+            text-align: center;
+            font-weight: bold;
+            color: #e0e0e0;
+        }
+        .matrix-table td.empty-cell {
+            background-color: #2A2A2A;
+        }
+        
+        /* 十字ハイライト用 */
+        .matrix-table th.crosshair {
+            background-color: #3b5066; 
+        }
+        .matrix-table td.header-col.crosshair {
+            background-color: #4b6145; 
+        }
+
+        /* 交差セル（ハイライト） */
+        .matrix-table td.highlight {
+            background-color: #C99004 !important;
+            color: #fff;
+            /* ガタつきを防止するための疑似太字 */
+            font-weight: normal !important; 
+            text-shadow: 0.5px 0 0 #fff, -0.5px 0 0 #fff; 
+            box-shadow: none;
+        }
+
+        /* 一覧表の操作エリア */
+        .table-controls {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap; /* 小さい画面用に折り返し許可 */
+            gap: 15px;
+        }
+
+        /* テーブルのコンテナ */
+        .tables-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .tables-container.multi-column {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            align-items: start;
+            width: 100%;
+        }
+
+        /* 一覧表テーブルのデザイン */
+        .table-wrapper {
+            background-color: #333;
+            border-radius: 6px; 
+            overflow: hidden;
+            border: 1px solid #666;
+            scroll-margin-top: 20px;
+            width: 100%;
+            max-width: 360px; 
+        }
+        .table-header {
+            background-color: #222;
+            padding: 8px 10px;
+            border-bottom: 1px solid #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .table-title {
+            color: #50b4f0; 
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .table-nav {
+            display: flex;
+            gap: 6px;
+        }
+        .table-nav button {
+            padding: 3px 8px; 
+            font-size: 12px;
+            background-color: #444;
+            border: 1px solid #666;
+        }
+        .table-nav button:hover { background-color: #555; }
+        .table-nav button:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 16px;
+        }
+        th, td {
+            border: 1px solid #666;
+            padding: 8px 10px;
+            text-align: right;
+        }
+
+        /* 一覧表のレイアウトを固定モードにする */
+        .list-table {
+            table-layout: fixed;
+        }
+        /* 各列の幅を個別に指定 (合計が100%になるようにする) */
+        .list-table th:nth-child(1) { width: 20%; } /* 現Lv */
+        .list-table th:nth-child(2) { width: 20%; } /* 次Lv */
+        .list-table th:nth-child(3) { width: 28%; } /* 必要数 */
+        .list-table th:nth-child(4) { width: 32%; } /* 累計数 */
+
+        .list-table th {
+            background-color: #4a3f5a; 
+            text-align: center;
+            font-weight: normal;
+            color: #ccc;
+        }
+        
+        /* 一覧表の各列の配色設定 */
+        .list-table td.col-lv {
+            text-align: center;
+            font-weight: normal;
+            background-color: #2a2a2a;
+            color: white;
+        }
+        .list-table td.col-req {
+            color: white;
+            font-weight: normal;
+        }
+        .list-table td.col-tot {
+            background-color: #2a2a2a;
+            color: white;
+        }
+
+        #app-content {
+            display: none;
+        }
+
+        /* ズームボタンのスタイル */
+        .zoom-buttons { position: absolute; top: 22px; right: 20px; display: flex; flex-direction: row; gap: 5px; z-index: 1000; }
+        .zoom-buttons button { color: #000; background-color: #eee; padding: 5px 10px; font-size: 16px; cursor: pointer; border-radius: 5px; }
+
+        /* フッターのスタイル */
+        footer {
+          border-top: 1px solid #eee;
+          padding-top: 10px;
+          margin-top: 20px;
+        }
+
+        /* リンクのスタイル */
+        a:link {
+          color: #1D9BF0;
+          text-decoration: underline;
+        }
+
+        a:visited {
+          color: #7755FF;
+          text-decoration: underline;
+        }
+
+        a:hover {
+          color: #0CFF57;
+        }
+
+        a:active {
+          color: #FF0000;
+          text-decoration: underline;
+        }
+
+        .bottom {
+            margin-top: 20px;
+            font-size: 16pt;
+            line-height: 2;
+        }
+
+        /* --- 画面幅による計算パネルのレイアウト調整 --- */
+        @media (max-width: 600px) {
+            /* 画面が狭くなり必要数エリアが下に回り込んだ際の装飾変更 */
+            .result {
+                width: 100%;
+                margin-left: 0;
+                padding-left: 0;
+                border-left: none;
+                border-top: 2px dashed #666;
+                padding-top: 15px;
+                text-align: right;
+            }
+        }
+
+        @media (max-width: 450px) {
+            .table-controls {
+                gap: 8px;
+            }
+            #toggle-layout {
+                padding: 8px 6px;
+                font-size: 12px;
+                flex-shrink: 1;
+            }
+            .table-controls span {
+                white-space: nowrap; 
+                font-size: 0.9em; 
+            }
+        }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      cursor: pointer;
+      margin-right: 8px;
+      user-select: none;
       color: #eee;
+      display: inline-block;
+    }
+    
+    .hamburger:hover {
+      color: #2A99E6;
     }
 
-    h1 {
-      font-size: 24px;
-      border-bottom: 2px solid #555;
-      padding-bottom: 10px;
-      margin-bottom: 20px;
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -360px;
+      width: 360px;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1001;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
-    .section-header {
-      display: flex;
-      justify-content: flex-start; 
-      align-items: center;
-      margin-bottom: 15px;
-      gap: 15px; 
+    .side-menu.open {
+      left: 0;
     }
 
-    h2 {
-      font-size: 20px;
-      margin: 0;
-      color: #50b4f0;
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
     }
 
-    .section {
-      border: 1px solid #ccc;
-      padding: 15px;
-      margin-bottom: 20px;
-      background-color: #333;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
     }
 
-    /* ズームボタンのスタイル */
-    .zoom-buttons {
+    .menu-close {
       position: absolute;
-      top: 22px;
+      top: 20px;
       right: 20px;
-      display: flex;
-      flex-direction: row;
-      gap: 5px;
-      z-index: 1000;
-    }
-    .zoom-buttons button {
-      color: #000;
-      background-color: #eee;
-      padding: 5px 10px;
-      font-size: 16px;
+      font-size: 24px;
       cursor: pointer;
-      border-radius: 5px;
-      border: none;
-    }
-    .zoom-buttons button:hover {
-      background-color: #ddd;
+      color: #eee;
+      user-select: none;
     }
 
-    /* --- 入力フォーム --- */
-    .form-row {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 14px;
-      flex-wrap: wrap;
+    .menu-close:hover {
+      color: #ff6b6b;
     }
 
-    .form-label {
-      width: 140px;
-      text-align: right;
-      margin-right: 15px;
+    .menu-title {
+      font-size: 20px;
       font-weight: bold;
-      color: #ccc;
-      padding-top: 6px;
-    }
-
-    /* ★修正：入力欄の幅を固定から伸縮（flex）に変更し、折り返しタイミングを統一 */
-    input[type="text"], input[type="number"], select {
-      background-color: #555;
-      color: white;
-      border: 1px solid #777;
-      padding: 8px;
-      border-radius: 4px;
-      font-size: 16px;
-      flex: 1; /* 余白を埋めるように伸縮 */
-      min-width: 0; /* 狭いときに縮むのを許可 */
-      max-width: 280px; /* 最大幅は元と同じ280pxに制限 */
-      box-sizing: border-box;
-    }
-
-    .reg-input-container {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      flex: 1; 
-      min-width: 0; 
-      width: 100%;
-      max-width: 100%;
-    }
-    
-    .reg-radio-group {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 8px;
-      padding-top: 6px;
-      flex-wrap: wrap;
-    }
-    .reg-radio-group label {
-      cursor: pointer;
-    }
-    
-    #select-regulation {
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-
-    #input-regulation {
-      background-color: #555;
-      color: white;
-      border: 1px solid #777;
-      padding: 8px;
-      border-radius: 4px;
-      font-size: 16px;
-      width: 100%;       
-      height: 90px;       
-      min-width: 0;   
-      min-height: 40px;   
-      box-sizing: border-box;
-      font-family: inherit;
-      resize: both;       
-      overflow: auto;
-      max-width: 100%;
-    }
-
-    /* 条件で絞り込みのリストボックス（上部のレギュレーションと幅を揃える） */
-    #filter-regulation {
-      flex: 1; 
-      min-width: 0;
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-
-    input:focus, select:focus, #input-regulation:focus {
-      outline: none;
-      border-color: #50b4f0;
-    }
-
-    /* --- ボタン --- */
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      font-weight: bold;
-      color: #fff;
-      background-color: #2A99E6;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    button:hover { background-color: #1e7ebd; }
-    button:disabled { background-color: #555; color: #aaa; cursor: not-allowed; }
-    
-    #submit-btn { margin: 10px 0 0 155px; }
-
-    /* 更新ボタン専用スタイル */
-    .btn-update {
-      background-color: #444; 
-      padding: 6px 12px; 
-      font-size: 14px;
-      margin: 0;
-    }
-    .btn-update:hover { background-color: #555; }
-
-    .status-msg {
-      margin-left: 15px;
-      font-size: 14px;
-      align-self: center;
-      margin-top: 10px;
-    }
-    .status-msg.success { color: #0CFF57; }
-    .status-msg.error { color: #FF0000; }
-
-    /* --- テーブル --- */
-    
-    /* テーブルを囲む専用コンテナ（ズーム時のサイズ基準） */
-    .table-container {
-      container-type: inline-size;
-      width: 100%;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      margin-top: 10px;
-    }
-
-    th, td {
-      border: 1px solid #666;
-      padding: 6px 2px;
-      text-align: center;
-      vertical-align: middle;
-      font-size: clamp(10px, 2.5vw, 16px); 
-      font-size: clamp(10px, 2.8cqi, 16px); /* ズーム追従 */
-    }
-
-    th {
-      background-color: #4a3f5a;
-      color: #e0e0e0;
-      font-weight: bold;
-      text-align: center !important; 
-    }
-
-    td { background-color: #2a2a2a; }
-
-    /* ==========================================================
-       ▼▼ ここから画面幅に応じたテーブル列レイアウト調整 ▼▼
-       ========================================================== */
-    
-    /* 【ベース（スマホなど狭い画面用）】 */
-    .col-rank { width: 9%; }
-    
-    .col-score { 
-      width: 30%; 
-      color: gold; 
-      font-weight: bold; 
-      text-align: right; 
-      padding-right: 4px; /* スマホ時のデフォルトの余白 */
-      white-space: nowrap; 
-      /* ★修正：基準の最大サイズを18pxにアップ */
-      font-size: clamp(10px, 3.2vw, 18px); 
-      font-size: clamp(10px, 3.8cqi, 18px); 
-      letter-spacing: -0.5px; 
-    }
-    
-    .col-name { 
-      width: 20%; 
-      text-align: left; 
-      padding-left: 4px; 
-      word-break: break-all; 
-      font-size: clamp(9.5px, 2.5vw, 15px);
-      font-size: clamp(9.5px, 2.8cqi, 15px); /* ズーム追従 */
-    }
-    
-    .col-reg { 
-      width: 25%; 
-      text-align: left; 
-      padding-left: 4px; 
-      word-break: break-word; 
-      font-size: clamp(9.5px, 2.5vw, 15px);
-      font-size: clamp(9.5px, 2.8cqi, 15px); /* ズーム追従 */
-    }
-    
-    .col-action { width: 16%; }
-    
-    /* スマホは縦並び（2段） */
-    .action-buttons {
-      display: flex;
-      flex-direction: column; 
-      align-items: stretch;
-      gap: 5px;
-      padding: 0 2px;
-    }
-
-    .btn-sm {
-      padding: 5px 0;
-      width: 100%;
-      font-size: clamp(9px, 2.2vw, 13px);
-      font-size: clamp(9px, 2.5cqi, 13px); /* ズーム追従 */
-      border-radius: 4px;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-    .btn-share { background-color: #000; color: #fff; border: 1px solid #555; }
-    .btn-share:hover { background-color: #333; }
-    .btn-delete { background-color: #dc3545; color: #fff; border: none; }
-    .btn-delete:hover:not(:disabled) { background-color: #a71d2a; }
-    .btn-delete:disabled { background-color: #555; color: #aaa; cursor: not-allowed; }
-
-    /* 【折り返しが発生しない画面幅（601px以上）】 */
-    @media (min-width: 601px) {
-      .col-score {
-        padding-right: 10px; /* 見出しや入力ボックスが折り返されない時は右余白を10pxに */
-      }
-    }
-
-    /* 【PC・タブレットなど広い画面用（768px以上）】 */
-    @media (min-width: 768px) {
-      .col-rank { width: 8%; }
-      .col-score { 
-        width: 20%; 
-        /* ★修正：基準の最大サイズを18pxにアップ */
-        font-size: 18px; 
-        font-size: clamp(11px, 2.6cqi, 18px); 
-      }
-      .col-name { 
-        width: 20%; 
-        font-size: 15px; 
-        font-size: clamp(10px, 2.1cqi, 15px); /* ズーム追従 */
-      }
-      .col-reg { 
-        width: 34%; 
-        font-size: 15px; 
-        font-size: clamp(10px, 2.3cqi, 15px); /* ズーム追従 */
-      }
-      .col-action { width: 18%; }
-
-      /* PCは横並び（左右配置） */
-      .action-buttons {
-        flex-direction: row; 
-        justify-content: center;
-        gap: 6px;
-      }
-      .btn-sm {
-        padding: 6px 12px;
-        width: auto; 
-        font-size: 13px;
-        font-size: clamp(9px, 1.8cqi, 13px); /* ズーム追従 */
-      }
-    }
-
-    /* フォーム周りのモバイル対応 */
-    @media (max-width: 600px) {
-      .form-row {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .form-label {
-        width: 100%;
-        text-align: left;
-        margin-bottom: 5px;
-      }
-      /* ★修正：折り返し時に全幅になるよう max-width: 100% を追加して固定幅の制限を解除 */
-      input[type="text"], input[type="number"], #input-regulation, #select-regulation, #filter-regulation {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        box-sizing: border-box;
-      }
-      .reg-input-container {
-        width: 100%;
-        min-width: 0;
-      }
-      #submit-btn {
-        margin: 10px 0 0 0;
-        width: 100%;
-      }
-      .status-msg { margin-left: 0; }
-    }
-
-    #loading {
-      color: #ffd700;
-      font-style: italic;
+      text-align: left;
       margin-bottom: 10px;
+      color: #FF6E3D;
     }
 
-    footer {
-      border-top: 1px solid #555;
-      padding-top: 15px;
-      margin-top: 30px;
-      font-size: 14px; 
-      color: #bbb;
-      line-height: 1.6;
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: inline-block;
+      padding: 6px 0;
+      color: #eee;
+      text-decoration: underline;
     }
+    .menu-item:hover {
+      color: #0CFF57;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
+    .toggle-button {
+      cursor: pointer;
+      color: #7755FF;
+      text-decoration: underline;
+      font-size: 18px;
+      text-align: left;
+      display: block;
+      padding: 6px 0;
+      user-select: none;
+    }
+
+    .toggle-button:hover {
+      color: #0CFF57;
+      text-decoration: underline;
+    }
+
+    #linkList, #linkList1, #linkList2, #linkList3 {
+      font-size: 18px;
+      text-align: left;
+      display: none;
+      color: #7755FF;
+    }
+
     
-    footer ul {
-      margin: 5px 0 0 0;
-      padding-left: 20px;
-    }
-    footer li { margin-bottom: 4px; }
 
-    .text-danger {
-      color: red;
-    }
-  </style>
+    </style>
 </head>
 <body>
 
-  <div class="zoom-buttons">
-      <button onclick="changeZoom(-0.1)">－</button>
-      <button onclick="changeZoom(0.1)">＋</button>
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a class="menu-item" href="kiokucalc.html">記憶再戦時間計算</a><br>
+    <a class="menu-item" href="kiokucalc2.html">記憶再戦回数計算</a><br>
+    </br>
+    <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
+    <a class="menu-item" href="raidcalc.html">レイド報酬効率比較ツール</a><br>
+    </br>
+    <a class="menu-item" href="renma-armor.html">練磨(防具)統合ツール</a><br>
+    <span class="toggle-button" data-target="linkList">練磨(防具)個別ページ</span>
+    <div id="linkList">
+      ├ <a class="menu-item" href="armor-renma.html">練磨(防具)リスト</a><br>
+      ├ <a class="menu-item" href="armor-top5.html">練磨(防具)TOP5確認</a><br>
+      └ <a class="menu-item" href="armor-calc.html">練磨(防具)自動選定ツール</a><br>
+    </div>
+    </br>
+    <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
+    <div id="linkList1">
+      ├ <a class="menu-item" href="checker-astral.html">アストラルレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-chaos.html">カオスレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-relic.html">ファンタズムレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-4gen.html">四元像ピアスチェッカー</a></br>
+      ├ <a class="menu-item" href="checker-stella.html">ステライヤリングチェッカー</a></br>
+      └ <a class="menu-item" href="checker-niji.html">虹瑠璃の腕輪チェッカー</a></br>
+    </div>
+    <span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span>
+    <div id="linkList2">
+      ├ <a class="menu-item" href="report-astral.html">アストラルレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-chaos.html">カオスレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-relic.html">ファンタズムレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-4gen.html">四元像ピアス報告用</a></br>
+      ├ <a class="menu-item" href="report-stella.html">ステライヤリング報告用</a></br>
+      └ <a class="menu-item" href="report-niji.html">虹瑠璃の腕輪報告用</a></br>
+    </div>
+    </br>
+    <a class="menu-item" href="soul-piece.html">ソウルピース必要数確認</a><br>
+    <span class="toggle-button" data-target="linkList3">その他いろいろ</span>
+    <div id="linkList3">
+      ├ <a class="menu-item" href="clear.html">クリア目安計算ツール</a><br>
+      ├ <a class="menu-item" href="expcalc.html">EXPスタンプ必要数計算</a><br>
+      ├ <a class="menu-item" href="simu-relic.html">練成シミュレーター</a><br>
+      ├ <a class="menu-item" href="gate.html">動画の関門</a><br>
+      └ <a class="menu-item" href="https://jessy-rs.github.io/Multi-Stage-Slash/">多段斬りアプリ</a><br>
+    </div>
+    </br>
+    <a class="menu-item"  href="armor.html">装備候補検索ツール</a><br>
+    <a class="menu-item"  href="style-info.html">スタイル情報ビューア</a><br>
+    <br>
+    <a class="menu-item"  href="repeat.html">周回編成まとめ</a><br>
+    <br>
+    <a class="menu-item" href="index.html">インデックスページ</a><br>
+    </br>
   </div>
 
-  <h1>リユニスコアバトル 聖王[厄]</h1>
+    <div class="zoom-buttons">
+        <button onclick="changeZoom(-0.1)">－</button>
+        <button onclick="changeZoom(0.1)">＋</button>
+    </div>
 
-  <div class="section">
-    <h2>■ スコア登録</h2>
-    <div class="form-row">
-      <div class="form-label">ユーザー名</div>
-      <input type="text" id="input-name" placeholder="任意の文字列を入力">
+    <div class="header-section" id="header-section">
+        <h1><span class="hamburger" onclick="toggleMenu()"></span>ソウルピース必要数確認</h1>
     </div>
-    <div class="form-row">
-      <div class="form-label">スコア</div>
-      <input type="number" id="input-score" placeholder="数値を入力">
-    </div>
-    <div class="form-row">
-      <div class="form-label">レギュレーション</div>
-      <div class="reg-input-container">
-        <div class="reg-radio-group">
-          <label><input type="radio" name="reg_mode" value="list" checked onchange="toggleRegMode()"> リストから選ぶ</label>
-          <label><input type="radio" name="reg_mode" value="manual" onchange="toggleRegMode()"> 入力する</label>
+
+    <div id="app-content">
+        <h2>早見表</h2>
+        
+        <div class="input-mode-selector">
+            <label><input type="radio" name="input-mode" id="mode-dropdown" checked> プルダウンで選択</label>
+            <label><input type="radio" name="input-mode" id="mode-manual"> 任意の値を入力</label>
         </div>
-        <select id="select-regulation">
-          <option value="条件なし">条件なし</option>
-        </select>
-        <textarea id="input-regulation" placeholder="空白の場合は「条件なし」になります" style="display: none;"></textarea>
-      </div>
-    </div>
-    <div class="form-row">
-      <button id="submit-btn" onclick="submitData()">送信する</button>
-      <span id="submit-status" class="status-msg"></span>
-    </div>
-  </div>
 
-  <div class="section">
-    <div class="section-header">
-      <h2>■ ランキング表示</h2>
-      <button class="btn-update" onclick="fetchRankingData()">↻ 最新に更新</button>
-    </div>
-    
-    <div class="form-row">
-      <div class="form-label">条件で絞り込み</div>
-      <select id="filter-regulation" onchange="renderRanking()">
-        <option value="ALL">すべて表示</option>
-      </select>
-    </div>
+        <div class="calculator">
+            <div class="calc-item" id="dropdown-inputs">
+                <div class="input-group">
+                    <label for="current-lv-select">現在Lv</label>
+                    <select id="current-lv-select"></select>
+                </div>
+                <div class="input-group">
+                    <label for="target-lv-select">目標Lv</label>
+                    <select id="target-lv-select"></select>
+                </div>
+            </div>
 
-    <div id="loading">データを読み込み中...</div>
+            <div class="calc-item" id="manual-inputs" style="display: none;">
+                <div class="input-group">
+                    <label for="current-lv-input">現在Lv</label>
+                    <input type="number" id="current-lv-input" placeholder="例: 100">
+                </div>
+                <div class="input-group">
+                    <label for="target-lv-input">目標Lv</label>
+                    <input type="number" id="target-lv-input" placeholder="例: 150">
+                </div>
+            </div>
+            
+            <div class="calc-item result" id="calc-result">
+                必要数: -
+            </div>
+        </div>
 
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th class="col-rank">順位</th>
-            <th class="col-score">スコア</th>
-            <th class="col-name">名前</th>
-            <th class="col-reg">条件</th>
-            <th class="col-action">操作</th>
-          </tr>
-        </thead>
-        <tbody id="ranking-body">
-          </tbody>
-      </table>
+        <div class="matrix-table-wrapper" id="matrix-table-container">
+            </div>
+
+        <h2>一覧表</h2>
+        <div class="table-controls">
+            <button id="toggle-layout">モニター幅に合わせて列数を最適化</button>
+            <span style="font-size: 0.9em; color: #aaa;">現在:<span id="layout-status">1列表示</span></span>
+        </div>
+        <div id="tables-container" class="tables-container">
+            </div>
     </div>
-  </div>
 
   <footer>
-    <strong>【ご利用上の注意・免責事項】</strong>
-    <ul>
-      <li>運営者自身がはじめての企画の為、途中で変更や中止、緊急メンテナンスに入る可能性があります。</li>
-      <li>レギュレーション（条件）はなるべく短く簡潔に記載し、既に同じ条件がある場合は表記を合わせてください。</li>
-      <li>スコアは降順（高い順）で表示されます。同じ名前で同じ条件を送信した場合は、スコアが上書きされます。</li>
-      <li>システムの仕様上、ユーザー識別にブラウザの保存機能を使用しています。<strong class="text-danger">別の端末やブラウザからアクセスした場合や、キャッシュを削除した場合は別人として扱われ、自身の送信データの削除ができなくなります</strong>のでご注意ください。</li>
-      <li>どうしても削除できなくなった場合はご連絡いただければ、こちらで削除します。現在確認出来ているところでiPhoneのXのアプリから直接このページを開き登録した場合は削除ボタンが機能しません。一度ブラウザから開くで登録していただければ削除は可能です。
-      <li>公序良俗に反する名前や条件など、管理者が不適切と判断したデータは予告なく削除する場合があります。</li>
-      <li>当システムを利用したことによるいかなるトラブルや損害についても、管理者は一切の責任を負いかねます。</li>
-    </ul>
+    ※使用は自己責任にて。<br>
+    ※列数を最適化はモニター幅が十分にない場合は切り替わりません。<br>
+    <br>
+    <a href="index.html">INDEXへ戻る</a><br>
   </footer>
 
-  <script>
-    // =========================================================
-    // 1. GASのウェブアプリURL
-    // =========================================================
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyP1A-gYmh4po89eOXKqWeHcS8hdgbgAcVmBJDWhVPRK0Vct2kJ35V21Q1h7sHyGs8c/exec"; 
-    
-    // =========================================================
-    // 2. メンテナンス時間の設定
-    // 形式: "YYYY-MM-DDTHH:mm:ss+09:00" （+09:00は日本時間のことです）
-    // =========================================================
-    const MAINTENANCE_START = "2026-05-21T21:00:00+09:00"; 
-    const MAINTENANCE_END   = "2026-05-22T00:00:00+09:00"; 
+    <script>
 
-    let allRankingData = [];
-    let currentFilteredData = [];
-    let isFirstLoad = true;
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
 
-    // --- ズーム設定関連の処理 ---
-    const PAGE_SETTING_KEY = 'PageSettings';
-    let pageSettings = { 'score-battle_zoom': 1.0 };
-    
-    function changeZoom(delta) {
-        const zoomKey = 'score-battle_zoom';
-        let currentZoom = pageSettings[zoomKey] || 1.0;
-        currentZoom += delta;
-        currentZoom = Math.round(currentZoom * 10) / 10;
-        if (currentZoom < 0.5) currentZoom = 0.5;
-        if (currentZoom > 2.0) currentZoom = 2.0;
-        document.body.style.zoom = currentZoom;
-        pageSettings[zoomKey] = currentZoom;
-        savePageSettings();
-    }
-    
-    function loadPageSettings() {
-        try {
-            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
-            if (savedSettings) {
-                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
-            }
-        } catch (error) {
-            console.error("ページ設定の読み込みに失敗しました:", error);
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
         }
     }
-    
-    function savePageSettings() {
-        try {
-            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
-        } catch (error) {
-            console.error("ページ設定の保存に失敗しました:", error);
+
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const menuClose = document.getElementById('menuClose');
+
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+        menuClose.style.color = '#eee';
+    }
+
+    // フリックでメニュー開閉（スクロール誤作動対策版）
+    let startX = 0, startY = 0;
+    let endX = 0, endY = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      // タッチ開始時のX座標とY座標を記録
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      // タッチ終了時のX座標とY座標を記録
+      endX = e.changedTouches[0].screenX;
+      endY = e.changedTouches[0].screenY;
+      handleGesture(); // ジェスチャーを判定する関数を呼び出し
+    }, false);
+
+    function handleGesture() {
+      const diffX = endX - startX; // 水平方向の移動量
+      const diffY = endY - startY; // 垂直方向の移動量
+
+      // 条件1: 水平方向の移動量が、垂直方向の移動量よりも大きい場合のみ処理（スワイプかスクロールかを判定）
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+
+        // 条件2-1: 右へのスワイプ（50px以上移動し、かつ画面の左端30px以内から開始）
+        if (diffX > 50 && startX < 30) {
+          // 右にフリックしてメニューを開く
+          toggleMenu();
+        } 
+        // 条件2-2: 左へのスワイプ（50px以上移動）
+        else if (diffX < -50) {
+          // 左にフリックしてメニューを閉じる
+          closeMenu();
         }
-    }
-    // -------------------------
-
-    function toggleRegMode() {
-      const mode = document.querySelector('input[name="reg_mode"]:checked').value;
-      if (mode === 'list') {
-        document.getElementById('select-regulation').style.display = 'block';
-        document.getElementById('input-regulation').style.display = 'none';
-      } else {
-        document.getElementById('select-regulation').style.display = 'none';
-        document.getElementById('input-regulation').style.display = 'block';
       }
+      // 垂直方向の移動量が大きい場合は、何もしない（ブラウザの標準スクロールに任せる）
     }
 
-    function checkMaintenanceMode() {
-      const now = new Date();
-      const start = new Date(MAINTENANCE_START);
-      const end = new Date(MAINTENANCE_END);
+    document.addEventListener("DOMContentLoaded", function(){
+      var toggleButtons = document.querySelectorAll(".toggle-button");
 
-      const isMaintenance = (now >= start && now < end);
-      const btn = document.getElementById('submit-btn');
-      const statusEl = document.getElementById('submit-status');
+      toggleButtons.forEach(function(button) {
+        var targetId = button.getAttribute("data-target");
+        var list = document.getElementById(targetId);
+        list.style.display = "none";
 
-      if (isMaintenance) {
-        btn.disabled = true;
-        btn.textContent = "メンテナンス中";
-        
-        const endDateStr = `${end.getMonth() + 1}/${end.getDate()} ${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
-        statusEl.textContent = `※現在メンテナンス中です（終了予定: ${endDateStr}）`;
-        statusEl.className = 'status-msg error';
-        return true;
-      } else {
-        btn.disabled = false;
-        btn.textContent = "送信する";
-        
-        if (statusEl.textContent.includes('メンテナンス')) {
-          statusEl.textContent = '';
-          statusEl.className = 'status-msg';
-        }
-        return false;
-      }
-    }
-
-    function getOrCreateUserId() {
-      let userId = localStorage.getItem('ranking_anonymous_id');
-      if (!userId) {
-        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
-        localStorage.setItem('ranking_anonymous_id', userId);
-      }
-      return userId;
-    }
-
-    function loadUserDataLocally() {
-      const savedName = localStorage.getItem('rs_score_name');
-      const savedMode = localStorage.getItem('rs_score_reg_mode');
-      const savedReg = localStorage.getItem('rs_score_reg');
-
-      if (savedName) {
-        document.getElementById('input-name').value = savedName;
-      }
-
-      if (savedMode) {
-        const radios = document.getElementsByName('reg_mode');
-        for (let i = 0; i < radios.length; i++) {
-          if (radios[i].value === savedMode) {
-            radios[i].checked = true;
-          }
-        }
-        toggleRegMode();
-      }
-
-      if (savedReg && savedMode === 'manual') {
-        document.getElementById('input-regulation').value = savedReg;
-      }
-    }
-
-    function saveUserDataLocally(name, mode, reg) {
-      localStorage.setItem('rs_score_name', name);
-      localStorage.setItem('rs_score_reg_mode', mode);
-      localStorage.setItem('rs_score_reg', reg);
-    }
-
-    window.onload = function() {
-      getOrCreateUserId();
-      checkMaintenanceMode(); 
-      loadUserDataLocally(); 
-      
-      // ズーム設定の読み込みと適用
-      loadPageSettings();
-      document.body.style.zoom = pageSettings['score-battle_zoom'] || 1.0;
-
-      if(GAS_WEB_APP_URL === "ここにURLを貼り付けてください") {
-        document.getElementById('loading').textContent = "※GASのURLが設定されていません。コードを編集してください。";
-        document.getElementById('loading').style.color = "red";
-      } else {
-        fetchRankingData();
-      }
-    };
-
-    async function fetchRankingData() {
-      const loadingEl = document.getElementById('loading');
-      loadingEl.style.display = 'block';
-      loadingEl.textContent = 'データを読み込み中...';
-      
-      try {
-        const response = await fetch(GAS_WEB_APP_URL);
-        const data = await response.json();
-        
-        allRankingData = data.sort((a, b) => Number(b.score) - Number(a.score));
-        
-        updateFilterOptions(); 
-        renderRanking();       
-        loadingEl.style.display = 'none';
-      } catch (error) {
-        console.error("データ取得エラー:", error);
-        loadingEl.textContent = 'データの取得に失敗しました。';
-        loadingEl.style.color = 'red';
-      }
-    }
-
-    function updateFilterOptions() {
-      const selectEl = document.getElementById('filter-regulation');
-      const submitSelectEl = document.getElementById('select-regulation');
-      
-      const currentValue = selectEl.value; 
-      let submitCurrentValue = submitSelectEl.value;
-
-      if (isFirstLoad) {
-        const savedMode = localStorage.getItem('rs_score_reg_mode');
-        const savedReg = localStorage.getItem('rs_score_reg');
-        if (savedMode === 'list' && savedReg) {
-          submitCurrentValue = savedReg;
-        }
-        isFirstLoad = false;
-      }
-      
-      let regulations = [...new Set(allRankingData.map(item => item.regulation))].filter(reg => reg);
-      
-      const hasNoCondition = regulations.includes("条件なし");
-      regulations = regulations.filter(reg => reg !== "条件なし");
-      regulations.sort();
-      
-      selectEl.innerHTML = '<option value="ALL">すべて表示</option>';
-      submitSelectEl.innerHTML = ''; 
-      
-      if (hasNoCondition) {
-        const option = document.createElement('option');
-        option.value = "条件なし";
-        option.textContent = "条件なし";
-        selectEl.appendChild(option);
-      }
-
-      const submitOption = document.createElement('option');
-      submitOption.value = "条件なし";
-      submitOption.textContent = "条件なし";
-      submitSelectEl.appendChild(submitOption);
-      
-      regulations.forEach(reg => {
-        const option = document.createElement('option');
-        option.value = reg;
-        option.textContent = reg;
-        selectEl.appendChild(option);
-
-        const subOption = document.createElement('option');
-        subOption.value = reg;
-        subOption.textContent = reg;
-        submitSelectEl.appendChild(subOption);
-      });
-
-      if (currentValue === 'ALL' || (hasNoCondition && currentValue === "条件なし") || regulations.includes(currentValue)) {
-        selectEl.value = currentValue;
-      }
-
-      if ((hasNoCondition && submitCurrentValue === "条件なし") || regulations.includes(submitCurrentValue)) {
-        submitSelectEl.value = submitCurrentValue;
-      } else if (submitSelectEl.options.length > 0) {
-        submitSelectEl.selectedIndex = 0;
-      }
-    }
-
-    function renderRanking() {
-      const tbody = document.getElementById('ranking-body');
-      const filterValue = document.getElementById('filter-regulation').value;
-      const myUserId = getOrCreateUserId();
-      tbody.innerHTML = '';
-
-      currentFilteredData = allRankingData.filter(item => {
-        if (filterValue === 'ALL') return true;
-        return item.regulation === filterValue;
-      });
-
-      if (currentFilteredData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5">データがありません。</td></tr>';
-        return;
-      }
-
-      const now = new Date();
-      const isMaintenance = (now >= new Date(MAINTENANCE_START) && now < new Date(MAINTENANCE_END));
-
-      currentFilteredData.forEach((item, index) => {
-        const rank = index + 1;
-        const tr = document.createElement('tr');
-        
-        let actionHtml = `<div class="action-buttons">`;
-        actionHtml += `<button class="btn-sm btn-share" onclick="shareOnX(${index}, ${rank})">𝕏 共有</button>`;
-        
-        if (item.userId === myUserId && item.recordId) {
-          if (isMaintenance) {
-            actionHtml += `<button class="btn-sm btn-delete" disabled>削除</button>`;
+        button.addEventListener("click", function(){
+          if (list.style.display === "block") {
+            list.style.display = "none";
           } else {
-            actionHtml += `<button class="btn-sm btn-delete" onclick="deleteData('${item.recordId}')">削除</button>`;
+            list.style.display = "block";
           }
-        }
-        actionHtml += `</div>`;
-
-        const formattedScore = Number(item.score).toLocaleString();
-
-        tr.innerHTML = `
-          <td>${rank}</td>
-          <td class="col-score">${formattedScore}</td>
-          <td class="col-name">${item.name}</td>
-          <td class="col-reg">${item.regulation.replace(/\n/g, '<br>')}</td>
-          <td class="col-action">${actionHtml}</td>
-        `;
-        tbody.appendChild(tr);
+        });
       });
-    }
+    });
 
-    async function submitData() {
-      if (checkMaintenanceMode()) return;
+        let csvData = [];
+        const csvFileName = 'data/soul-piece.csv';
 
-      const btn = document.getElementById('submit-btn');
-      const statusEl = document.getElementById('submit-status');
-      
-      const name = document.getElementById('input-name').value;
-      const score = document.getElementById('input-score').value;
-      const userId = getOrCreateUserId(); 
+        const LAYOUT_STORAGE_KEY = 'soulPieceLayout_isMulti';
+        let isMultiColumn = localStorage.getItem(LAYOUT_STORAGE_KEY) === 'true';
 
-      let regulation = "";
-      const mode = document.querySelector('input[name="reg_mode"]:checked').value;
-      if (mode === 'list') {
-        regulation = document.getElementById('select-regulation').value;
-      } else {
-        regulation = document.getElementById('input-regulation').value.trim(); 
-      }
-
-      if (!regulation) {
-        regulation = "条件なし";
-      }
-
-      if (!name || !score) {
-        statusEl.textContent = 'ユーザー名とスコアを入力してください。';
-        statusEl.className = 'status-msg error';
-        return;
-      }
-
-      btn.disabled = true;
-      statusEl.textContent = '送信中...';
-      statusEl.className = 'status-msg';
-
-      const payload = {
-        action: "submit",
-        name: name,
-        score: Number(score),
-        regulation: regulation,
-        userId: userId
-      };
-
-      try {
-        await fetch(GAS_WEB_APP_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(payload)
-        });
-
-        statusEl.textContent = '送信完了！';
-        statusEl.className = 'status-msg success';
+        const PAGE_SETTING_KEY = 'PageSettings'; 
+        let pageSettings = { 'soul-piece_zoom': 1.0 };
         
-        saveUserDataLocally(name, mode, regulation);
-
-        document.getElementById('input-score').value = '';
-        
-        fetchRankingData();
-      } catch (error) {
-        console.error("送信エラー:", error);
-        statusEl.textContent = '送信に失敗しました。';
-        statusEl.className = 'status-msg error';
-      } finally {
-        if (!checkMaintenanceMode()) {
-          btn.disabled = false;
+        function changeZoom(delta) {
+            const zoomKey = 'soul-piece_zoom';
+            let currentZoom = pageSettings[zoomKey];
+            currentZoom += delta;
+            currentZoom = Math.round(currentZoom * 10) / 10;
+            if (currentZoom < 0.5) currentZoom = 0.5;
+            if (currentZoom > 2.0) currentZoom = 2.0;
+            document.body.style.zoom = currentZoom;
+            pageSettings[zoomKey] = currentZoom;
+            savePageSettings();
         }
-        setTimeout(() => { 
-          if (!checkMaintenanceMode()) statusEl.textContent = ''; 
-        }, 3000);
-      }
-    }
+        
+        function loadPageSettings() {
+            try {
+                const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+                if (savedSettings) {
+                    pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+                }
+            } catch (error) {
+                console.error("ページ設定の読み込みに失敗しました:", error);
+            }
+        }
+        
+        function savePageSettings() {
+            try {
+                localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+            } catch (error) {
+                console.error("ページ設定の保存に失敗しました:", error);
+            }
+        }
 
-    async function deleteData(recordId) {
-      if (checkMaintenanceMode()) {
-        window.alert("現在メンテナンス中のため、削除機能は利用できません。");
-        renderRanking();
-        return;
-      }
-
-      const confirmed = window.confirm("本当にこの記録を削除しますか？");
-      if (!confirmed) {
-          return;
-      }
-
-      const loadingEl = document.getElementById('loading');
-      loadingEl.style.display = 'block';
-      loadingEl.style.color = '#ffd700';
-      loadingEl.textContent = '削除中...';
-
-      const payload = {
-        action: "delete",
-        recordId: recordId,
-        userId: getOrCreateUserId() 
-      };
-
-      try {
-        await fetch(GAS_WEB_APP_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(payload)
+        document.addEventListener('focusin', (e) => {
+            if (e.target.type === 'number') {
+                e.target.select();
+            }
         });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPageSettings();
+            document.body.style.zoom = pageSettings['soul-piece_zoom'];
+
+            fetch(csvFileName)
+                .then(response => {
+                    if (!response.ok) throw new Error('File not found');
+                    return response.text();
+                })
+                .then(text => {
+                    parseCSV(text);
+                    if (csvData.length > 0) {
+                        document.getElementById('app-content').style.display = 'block';
+                        initializeUI();
+                    }
+                })
+                .catch(error => {
+                    console.log('CSV読み込みに失敗しました:', error);
+                });
+        });
+
+        function parseCSV(text) {
+            csvData = [];
+            const lines = text.trim().split(/\r?\n/);
+            for (let i = 1; i < lines.length; i++) {
+                let line = lines[i];
+                let parts = [];
+                let inQuotes = false;
+                let currentPart = '';
+                for (let j = 0; j < line.length; j++) {
+                    let char = line[j];
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === ',' && !inQuotes) {
+                        parts.push(currentPart);
+                        currentPart = '';
+                    } else currentPart += char;
+                }
+                parts.push(currentPart);
+                if (parts.length >= 4) {
+                    csvData.push({
+                        curLv: parseInt(parts[0], 10),
+                        nextLv: parseInt(parts[1], 10),
+                        req: parseInt(parts[2].replace(/,/g, ''), 10),
+                        total: parseInt(parts[3].replace(/,/g, ''), 10)
+                    });
+                }
+            }
+        }
+
+        function initializeUI() {
+            populateDropdowns();
+            generateMatrixTable();
+            generateTables();
+            updateCalculation();
+            applyLayoutState(); 
+        }
+
+        const radioDropdown = document.getElementById('mode-dropdown');
+        const radioManual = document.getElementById('mode-manual');
+        const dropdownInputs = document.getElementById('dropdown-inputs');
+        const manualInputs = document.getElementById('manual-inputs');
+
+        function switchInputMode() {
+            if (radioDropdown.checked) {
+                dropdownInputs.style.display = ''; 
+                manualInputs.style.display = 'none';
+            } else {
+                dropdownInputs.style.display = 'none';
+                manualInputs.style.display = ''; 
+            }
+            updateCalculation();
+        }
+
+        radioDropdown.addEventListener('change', switchInputMode);
+        radioManual.addEventListener('change', switchInputMode);
+
+        const milestones = [100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 999];
         
-        loadingEl.textContent = '※記録を削除しました。';
-        loadingEl.style.color = 'red';
-        
-        setTimeout(() => {
-            loadingEl.style.color = '#ffd700'; 
-            fetchRankingData();
-        }, 1500);
+        function populateDropdowns() {
+            const curSel = document.getElementById('current-lv-select');
+            const tarSel = document.getElementById('target-lv-select');
+            curSel.innerHTML = '<option value="" disabled selected></option>'; 
+            tarSel.innerHTML = '<option value="" disabled selected></option>';
+            milestones.forEach(lv => {
+                if (lv !== 999) curSel.add(new Option(lv, lv));
+                if (lv !== 100) tarSel.add(new Option(lv, lv));
+            });
+        }
 
-      } catch (error) {
-        console.error("削除エラー:", error);
-        window.alert('削除に失敗しました。');
-        loadingEl.style.display = 'none';
-      }
-    }
+        function getAccumulatedTotal(lv) {
+            const minLv = csvData[0].curLv;
+            if (lv <= minLv) return 0;
+            const targetData = csvData.find(d => d.nextLv === lv);
+            return targetData ? targetData.total : 0;
+        }
 
-    function shareOnX(index, rank) {
-      const item = currentFilteredData[index];
-      const formattedScore = Number(item.score).toLocaleString();
-      const filterValue = document.getElementById('filter-regulation').value;
-      
-      let displayRegulation = item.regulation;
-      if (filterValue === 'ALL') {
-        displayRegulation = "全レギュレーション総合";
-      }
+        function highlightMatrixCell(curLv, tarLv) {
+            document.querySelectorAll('.matrix-table .highlight').forEach(el => el.classList.remove('highlight'));
+            document.querySelectorAll('.matrix-table .crosshair').forEach(el => el.classList.remove('crosshair'));
+            
+            if (isNaN(curLv) || isNaN(tarLv)) return;
+            
+            const targetCell = document.getElementById(`matrix-cell-${curLv}-${tarLv}`);
+            
+            if (targetCell) {
+                targetCell.classList.add('highlight');
+                
+                const rowHeader = document.querySelector(`.matrix-table td.header-col[data-row="${curLv}"]`);
+                if (rowHeader) rowHeader.classList.add('crosshair');
+                
+                const colHeader = document.querySelector(`.matrix-table th[data-col="${tarLv}"]`);
+                if (colHeader) colHeader.classList.add('crosshair');
+            }
+        }
 
-      const text = `#リユニスコアバトル 聖王[厄]\n\n`
-                 + `ランキング ${rank}位！\n`
-                 + `名前：${item.name}\n`
-                 + `得点：${formattedScore}\n`
-                 + `条件：${displayRegulation}\n\n`
-                 + `#ロマサガRS`; 
+        function updateCalculation() {
+            const resultDiv = document.getElementById('calc-result');
+            let curLv, tarLv;
+            if (radioDropdown.checked) {
+                curLv = parseInt(document.getElementById('current-lv-select').value, 10);
+                tarLv = parseInt(document.getElementById('target-lv-select').value, 10);
+            } else {
+                curLv = parseInt(document.getElementById('current-lv-input').value, 10);
+                tarLv = parseInt(document.getElementById('target-lv-input').value, 10);
+            }
+            highlightMatrixCell(curLv, tarLv);
+            if (isNaN(curLv) || isNaN(tarLv)) {
+                resultDiv.textContent = '必要数: -';
+                resultDiv.style.fontSize = "1.6em"; 
+                resultDiv.style.color = "gold";
+                return;
+            }
+            if (curLv >= tarLv) {
+                resultDiv.textContent = '必要数: 0 (現在Lv≧目標Lv)';
+                resultDiv.style.fontSize = "1.6em";
+                resultDiv.style.color = "red";
+                return;
+            }
+            const minLv = csvData[0].curLv;
+            const maxLv = csvData[csvData.length - 1].nextLv;
+            if (curLv < minLv || tarLv > maxLv) {
+                resultDiv.textContent = `エラー: Lv${minLv}～${maxLv}の範囲で入力してください`;
+                resultDiv.style.fontSize = "1.1em"; 
+                resultDiv.style.color = "red";
+                return;
+            }
+            resultDiv.style.fontSize = "1.6em";
+            resultDiv.style.color = "gold"; 
+            const requiredAmount = getAccumulatedTotal(tarLv) - getAccumulatedTotal(curLv);
+            resultDiv.textContent = `必要数: ${requiredAmount.toLocaleString()}`;
+        }
 
-      const encodedText = encodeURIComponent(text);
-      const url = `https://twitter.com/intent/tweet?text=${encodedText}`;
-      window.open(url, '_blank');
-    }
-  </script>
+        document.getElementById('current-lv-select').addEventListener('change', updateCalculation);
+        document.getElementById('target-lv-select').addEventListener('change', updateCalculation);
+        document.getElementById('current-lv-input').addEventListener('input', updateCalculation);
+        document.getElementById('target-lv-input').addEventListener('input', updateCalculation);
+
+        function generateMatrixTable() {
+            const rows = [100, 150, 200, 300, 400, 500, 600, 700, 800, 900];
+            const cols = [150, 200, 300, 400, 500, 600, 700, 800, 900, 999];
+            let html = '<table class="matrix-table"><thead><tr><th class="corner-cell">魂Lv</th>';
+            cols.forEach(c => html += `<th data-col="${c}">${c}</th>`);
+            html += '</tr></thead><tbody>';
+            rows.forEach(r => {
+                html += `<tr><td class="header-col" data-row="${r}">${r}</td>`;
+                cols.forEach(c => {
+                    if (r >= c) {
+                        html += `<td class="empty-cell"></td>`;
+                    } else {
+                        const req = getAccumulatedTotal(c) - getAccumulatedTotal(r);
+                        html += `<td id="matrix-cell-${r}-${c}" data-row="${r}" data-col="${c}">${req.toLocaleString()}</td>`;
+                    }
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('matrix-table-container').innerHTML = html;
+        }
+
+        function generateTables() {
+            const container = document.getElementById('tables-container');
+            container.innerHTML = '';
+            let currentGroup = [];
+            let startHundreds = Math.floor(csvData[0].nextLv / 100);
+            const tableGroups = [];
+            csvData.forEach(d => {
+                const hundreds = Math.floor(d.nextLv / 100);
+                if (hundreds !== startHundreds && currentGroup.length > 0) {
+                    tableGroups.push([...currentGroup]);
+                    currentGroup = [];
+                    startHundreds = hundreds;
+                }
+                currentGroup.push(d);
+            });
+            if (currentGroup.length > 0) tableGroups.push([...currentGroup]);
+            let wrapperHtml = '';
+            const totalGroups = tableGroups.length;
+            let colorIndex = -1;
+            let lastReq = -1;
+            const bgColors = ['#2a3a4a','#0b4459','#394a34','#5e5600','#6b4a37','#5c3c3c'];
+            tableGroups.forEach((group, index) => {
+                const startGroupHundreds = Math.floor(group[0].nextLv / 100);
+                const titleStart = startGroupHundreds * 100;
+                const titleEnd = titleStart + 99;
+                const prevDisabled = index === 0 ? 'disabled' : '';
+                const nextDisabled = index === totalGroups - 1 ? 'disabled' : '';
+                wrapperHtml += `<div class="table-wrapper" id="table-group-${index}">
+                    <div class="table-header">
+                        <div class="table-title">Lv ${titleStart} ～ ${titleEnd}</div>
+                        <div class="table-nav">
+                            <button onclick="scrollToGroup(${index - 1})" ${prevDisabled}>▲</button>
+                            <button onclick="scrollToGroup(${index + 1})" ${nextDisabled}>▼</button>
+                        </div>
+                    </div>
+                    <table class="list-table">
+                        <thead>
+                            <tr><th>現Lv</th><th>次Lv</th><th>必要数</th><th>累計数</th></tr>
+                        </thead>
+                        <tbody>`;
+                if (titleStart === 100) {
+                    wrapperHtml += `<tr style="background-color: #444; color: #fff;">
+                        <td class="col-lv" style="background-color: transparent; color: inherit;"></td>
+                        <td class="col-lv" style="background-color: transparent; color: inherit;">100</td>
+                        <td class="col-req" style="background-color: transparent; color: inherit;">0</td>
+                        <td class="col-tot" style="background-color: transparent; color: inherit;">0</td>
+                    </tr>`;
+                }
+                group.forEach(d => {
+                    if (d.req !== lastReq) {
+                        colorIndex = (colorIndex + 1) % bgColors.length;
+                        lastReq = d.req;
+                    }
+                    wrapperHtml += `<tr>
+                        <td class="col-lv">${d.curLv}</td>
+                        <td class="col-lv">${d.nextLv}</td>
+                        <td class="col-req" style="background-color: ${bgColors[colorIndex]};">${d.req.toLocaleString()}</td>
+                        <td class="col-tot">${d.total.toLocaleString()}</td>
+                    </tr>`;
+                });
+                wrapperHtml += `</tbody></table></div>`;
+            });
+            container.innerHTML = wrapperHtml;
+        }
+
+        window.scrollToGroup = function(index) {
+            const target = document.getElementById(`table-group-${index}`);
+            if (target) target.scrollIntoView({ behavior: 'auto', block: 'start' });
+        };
+
+        function applyLayoutState() {
+            const container = document.getElementById('tables-container');
+            const toggleBtn = document.getElementById('toggle-layout');
+            const layoutStatus = document.getElementById('layout-status');
+            if (isMultiColumn) {
+                container.classList.add('multi-column');
+                toggleBtn.classList.add('active');
+                toggleBtn.textContent = '1列表示に戻す';
+                layoutStatus.textContent = '自動最適化';
+            } else {
+                container.classList.remove('multi-column');
+                toggleBtn.classList.remove('active');
+                toggleBtn.textContent = 'モニター幅に合わせて列数を最適化';
+                layoutStatus.textContent = '1列表示';
+            }
+        }
+
+        const toggleBtn = document.getElementById('toggle-layout');
+        toggleBtn.addEventListener('click', () => {
+            isMultiColumn = !isMultiColumn;
+            localStorage.setItem(LAYOUT_STORAGE_KEY, isMultiColumn); 
+            applyLayoutState();
+        });
+    </script>
 </body>
 </html>
