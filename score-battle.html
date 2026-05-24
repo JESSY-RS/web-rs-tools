@@ -547,6 +547,12 @@
     const MAINTENANCE_START = "2026-05-21T21:00:00+09:00"; 
     const MAINTENANCE_END   = "2026-05-22T00:00:00+09:00"; 
 
+    // =========================================================
+    // 3. スコア登録の終了日時設定
+    // 形式: "YYYY-MM-DDTHH:mm:ss+09:00"
+    // =========================================================
+    const EVENT_END_TIME = "2026-06-01T00:00:00+09:00";
+
     let allRankingData = [];
     let currentFilteredData = [];
     let isFirstLoad = true;
@@ -598,33 +604,53 @@
       }
     }
 
-    function checkMaintenanceMode() {
+    // メンテナンス・終了日時の判定
+    function checkSubmitStatus() {
       const now = new Date();
-      const start = new Date(MAINTENANCE_START);
-      const end = new Date(MAINTENANCE_END);
+      const eventEnd = new Date(EVENT_END_TIME);
+      const mStart = new Date(MAINTENANCE_START);
+      const mEnd = new Date(MAINTENANCE_END);
 
-      const isMaintenance = (now >= start && now < end);
       const btn = document.getElementById('submit-btn');
       const statusEl = document.getElementById('submit-status');
 
-      if (isMaintenance) {
+      // 1. 終了日時の判定
+      if (now >= eventEnd) {
+        btn.disabled = true;
+        btn.textContent = "受付終了";
+        statusEl.textContent = "※スコアの登録受付は終了しました。";
+        statusEl.className = 'status-msg error';
+        return true; // 送信不可
+      }
+
+      // 2. メンテナンス判定
+      if (now >= mStart && now < mEnd) {
         btn.disabled = true;
         btn.textContent = "メンテナンス中";
         
-        const endDateStr = `${end.getMonth() + 1}/${end.getDate()} ${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+        const endDateStr = `${mEnd.getMonth() + 1}/${mEnd.getDate()} ${String(mEnd.getHours()).padStart(2, '0')}:${String(mEnd.getMinutes()).padStart(2, '0')}`;
         statusEl.textContent = `※現在メンテナンス中です（終了予定: ${endDateStr}）`;
         statusEl.className = 'status-msg error';
-        return true;
-      } else {
-        btn.disabled = false;
-        btn.textContent = "送信する";
-        
-        if (statusEl.textContent.includes('メンテナンス')) {
-          statusEl.textContent = '';
-          statusEl.className = 'status-msg';
-        }
-        return false;
+        return true; // 送信不可
       }
+
+      // 3. 通常時
+      btn.disabled = false;
+      btn.textContent = "送信する";
+      
+      if (statusEl.textContent.includes('メンテナンス') || statusEl.textContent.includes('終了')) {
+        statusEl.textContent = '';
+        statusEl.className = 'status-msg';
+      }
+      return false; // 送信可能
+    }
+
+    // 削除機能用のメンテナンス中判定（終了後も削除は可能にするため分ける）
+    function isMaintenanceNow() {
+      const now = new Date();
+      const start = new Date(MAINTENANCE_START);
+      const end = new Date(MAINTENANCE_END);
+      return (now >= start && now < end);
     }
 
     function getOrCreateUserId() {
@@ -668,7 +694,7 @@
 
     window.onload = function() {
       getOrCreateUserId();
-      checkMaintenanceMode(); 
+      checkSubmitStatus(); // 送信可否チェック
       loadUserDataLocally(); 
       
       // ズーム設定の読み込みと適用
@@ -780,8 +806,7 @@
         return;
       }
 
-      const now = new Date();
-      const isMaintenance = (now >= new Date(MAINTENANCE_START) && now < new Date(MAINTENANCE_END));
+      const isMaintenance = isMaintenanceNow();
 
       currentFilteredData.forEach((item, index) => {
         const rank = index + 1;
@@ -813,7 +838,7 @@
     }
 
     async function submitData() {
-      if (checkMaintenanceMode()) return;
+      if (checkSubmitStatus()) return; // 終了またはメンテ中なら弾く
 
       const btn = document.getElementById('submit-btn');
       const statusEl = document.getElementById('submit-status');
@@ -872,11 +897,11 @@
         statusEl.textContent = '送信に失敗しました。';
         statusEl.className = 'status-msg error';
       } finally {
-        if (!checkMaintenanceMode()) {
+        if (!checkSubmitStatus()) {
           btn.disabled = false;
         }
         setTimeout(() => { 
-          if (!checkMaintenanceMode()) statusEl.textContent = ''; 
+          if (!checkSubmitStatus()) statusEl.textContent = ''; 
         }, 3000);
       }
     }
@@ -895,7 +920,7 @@
 
     // 削除ボタンが押された時に呼ばれる（確認モーダルを表示）
     function deleteData(recordId) {
-      if (checkMaintenanceMode()) {
+      if (isMaintenanceNow()) {
         showCustomAlert("現在メンテナンス中のため、削除機能は利用できません。");
         renderRanking();
         return;
@@ -966,6 +991,7 @@
                  + `名前：${item.name}\n`
                  + `得点：${formattedScore}\n`
                  + `条件：${displayRegulation}\n\n`
+                 + `https://jessy-rs.github.io/web-rs-tools/score-battle.html\n\n`
                  + `#ロマサガRS`; 
 
       const encodedText = encodeURIComponent(text);
