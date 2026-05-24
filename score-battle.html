@@ -577,6 +577,9 @@
     let currentFilteredData = [];
     let isFirstLoad = true;
 
+    // ▼▼▼ これを追加 ▼▼▼
+    let isDeleteRequestMode = false;
+
     // --- ズーム設定関連の処理 ---
     const PAGE_SETTING_KEY = 'PageSettings';
     let pageSettings = { 'score-battle_zoom': 1.0 };
@@ -1001,12 +1004,32 @@
       const formattedScore = Number(item.score).toLocaleString();
       const filterValue = document.getElementById('filter-regulation').value;
       
+      // ▼▼▼ 削除依頼モードの場合の処理 ▼▼▼
+      if (isDeleteRequestMode) {
+        const text = `@jessy_romasaga\n\n`
+                   + `【ランキング削除依頼】\n`
+                   + `名前：${item.name}\n`
+                   + `得点：${formattedScore}\n`
+                   + `条件：${item.regulation}`; 
+
+        const encodedText = encodeURIComponent(text);
+        const url = `https://x.com/intent/post?text=${encodedText}`;
+        window.open(url, '_blank');
+        
+        // 終わったらモードを解除する
+        isDeleteRequestMode = false;
+        showCustomAlert("削除依頼モードを解除し、通常の投稿モードに戻りました。");
+        return; // ここで処理を終了する
+      }
+      // ▲▲▲ ここまで ▲▲▲
+
       let displayRegulation = item.regulation;
       if (filterValue === 'ALL') {
         displayRegulation = "全レギュレーション総合";
       }
 
-      const text = `#リユニスコアバトル　聖王[厄]\n\n`
+      // 以下の通常共有の処理は元のまま
+      const text = `#リユニスコアバトル 聖王[厄]\n\n`
                  + `ランキング ${rank}位！\n`
                  + `名前：${item.name}\n`
                  + `得点：${formattedScore}\n`
@@ -1021,17 +1044,9 @@
 
     // --- 削除依頼をX(Twitter)で送信する処理 ---
     function requestDeleteOnX() {
-
-      // ユーザーが依頼しやすいように、入力用のテンプレートを少し入れています
-      const text = `@jessy_romasaga\n\n`
-                 + `【ランキング削除依頼】\n`
-                 + `名前：\n`
-                 + `得点：\n`
-                 + `条件：`; 
-
-      const encodedText = encodeURIComponent(text);
-      const url = `https://x.com/intent/post?text=${encodedText}`;
-      window.open(url, '_blank');
+      // 削除依頼モードをONにする
+      isDeleteRequestMode = true;
+      showCustomAlert("【削除依頼モード】削除したい記録の「𝕏 共有」ボタンを押してください。");
     }
   </script>
 </body>
