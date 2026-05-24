@@ -577,12 +577,17 @@
     // =========================================================
     const EVENT_END_TIME = "2026-06-01T00:00:00+09:00";
 
+    const MAX_SCORE_LENGTH = 13;
+
     let allRankingData = [];
     let currentFilteredData = [];
     let isFirstLoad = true;
 
-    // ▼▼▼ これを追加 ▼▼▼
     let isDeleteRequestMode = false;
+    let FORBIDDEN_WORDS = [];
+    const MY_NG_WORD_URL = "ng_words.txt";
+
+    let isDictLoaded = false;
 
     // --- ズーム設定関連の処理 ---
     const PAGE_SETTING_KEY = 'PageSettings';
@@ -723,6 +728,7 @@
       getOrCreateUserId();
       checkSubmitStatus(); // 送信可否チェック
       loadUserDataLocally(); 
+      loadNGWords();
       
       // ズーム設定の読み込みと適用
       loadPageSettings();
@@ -735,6 +741,25 @@
         fetchRankingData();
       }
     };
+
+    async function loadNGWords() {
+      try {
+        const response = await fetch(MY_NG_WORD_URL);
+        if (!response.ok) throw new Error("NGワード辞書の読み込みに失敗しました");
+        let text = await response.text();
+        
+        text = text.replace(/\\u([0-9a-fA-F]{4})/g, (match, hex) => {
+          return String.fromCharCode(parseInt(hex, 16));
+        });
+        
+        FORBIDDEN_WORDS = text.split('\n').map(word => word.trim()).filter(word => word.length > 0);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        // ▼▼▼ これを追加 ▼▼▼
+        isDictLoaded = true; // 成功しても失敗しても準備完了とする
+      }
+    }
 
     async function fetchRankingData() {
       const loadingEl = document.getElementById('loading');
@@ -886,10 +911,41 @@
         regulation = "条件なし";
       }
 
+      if (!isDictLoaded) {
+        statusEl.textContent = 'セキュリティシステムの準備中です。数秒後にもう一度お試しください。';
+        statusEl.className = 'status-msg error';
+        return; // ここで強制終了！絶対に送信させない
+      }
+
       if (!name || !score) {
         statusEl.textContent = 'ユーザー名とスコアを入力してください。';
         statusEl.className = 'status-msg error';
         return;
+      }
+
+      // マイナス値の入力防止
+      if (Number(score) < 0) {
+        statusEl.textContent = 'スコアにマイナスの値は入力できません。';
+        statusEl.className = 'status-msg error';
+        return;
+      }
+
+      // スコアの桁数制限チェック
+      if (score.length > MAX_SCORE_LENGTH) {
+        statusEl.textContent = `スコアは${MAX_SCORE_LENGTH}桁以内で入力してください。`;
+        statusEl.className = 'status-msg error';
+        return;
+      }
+
+      // NGワードチェック（辞書が正常に読み込めている場合のみ実行）
+      if (FORBIDDEN_WORDS.length > 0) {
+        for (const word of FORBIDDEN_WORDS) {
+          if (name.includes(word) || regulation.includes(word)) {
+            statusEl.textContent = '不適切な単語が含まれているため送信できません。';
+            statusEl.className = 'status-msg error';
+            return; // ここで処理を終了し、送信させない
+          }
+        }
       }
 
       btn.disabled = true;
