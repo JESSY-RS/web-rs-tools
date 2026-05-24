@@ -72,6 +72,26 @@
       background-color: #ddd;
     }
 
+    /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
     /* --- 入力フォーム --- */
     .form-row {
       display: flex;
@@ -505,11 +525,11 @@
   <footer>
     <strong>【ご利用上の注意・免責事項】</strong>
     <ul>
-      <li>運営者自身がはじめての企画の為、途中で変更や中止、緊急メンテナンスに入る可能性があります。</li>
+      <li>運営者自身が<a href="https://x.com/jessy_romasaga/status/2058183637561143800" target="_blank">はじめての企画</a>の為、途中で変更や中止、緊急メンテナンスに入る可能性があります。</li>
       <li>レギュレーション（条件）はなるべく短く簡潔に記載し、既に同じ条件がある場合は表記を合わせてください。</li>
       <li>スコアは降順（高い順）で表示されます。同じ名前で同じ条件を送信した場合は、スコアが上書きされます。</li>
-      <li>システムの仕様上、ユーザー識別にブラウザの保存機能を使用しています。<strong class="text-danger">別の端末やブラウザからアクセスした場合や、キャッシュを削除した場合は別人として扱われ、自身の送信データの削除ができなくなります</strong>のでご注意ください。</li>
-      <li>どうしても削除できなくなった場合はご連絡いただければ、こちらで削除します。</li>
+      <li>システムの仕様上、ユーザー識別にブラウザの保存機能を使用しています。<strong class="text-danger">別の端末や別のブラウザからアクセスした場合や、キャッシュを削除した場合は別人として扱われ、自身の送信データの削除ができなくなります</strong>のでご注意ください。</li>
+      <li>どうしても削除できなくなった場合は<a href="javascript:void(0);" onclick="requestDeleteOnX()">ご連絡</a>いただければ、こちらで削除します。</li>
       <li>公序良俗に反する名前や条件など、管理者が不適切と判断したデータは予告なく削除する場合があります。</li>
       <li>当システムを利用したことによるいかなるトラブルや損害についても、管理者は一切の責任を負いかねます。</li>
     </ul>
@@ -993,6 +1013,21 @@
                  + `条件：${displayRegulation}\n\n`
                  + `https://jessy-rs.github.io/web-rs-tools/score-battle.html\n\n`
                  + `#ロマサガRS`; 
+
+      const encodedText = encodeURIComponent(text);
+      const url = `https://x.com/intent/post?text=${encodedText}`;
+      window.open(url, '_blank');
+    }
+
+    // --- 削除依頼をX(Twitter)で送信する処理 ---
+    function requestDeleteOnX() {
+
+      // ユーザーが依頼しやすいように、入力用のテンプレートを少し入れています
+      const text = `@jessy_romasaga\n\n`
+                 + `【ランキング削除依頼】\n`
+                 + `名前：\n`
+                 + `得点：\n`
+                 + `条件：`; 
 
       const encodedText = encodeURIComponent(text);
       const url = `https://x.com/intent/post?text=${encodedText}`;
