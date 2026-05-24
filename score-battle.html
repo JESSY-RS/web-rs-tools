@@ -473,7 +473,11 @@
   <h1>リユニスコアバトル　聖王[厄]</h1>
 
   <div class="section">
-    <h2>スコア登録</h2>
+    <div class="section-header">
+      <h2>スコア登録</h2>
+      <span id="end-time-display" style="color: red; font-size: 14px;"></span>
+    </div>
+    
     <div class="form-row">
       <div class="form-label">ユーザー名</div>
       <input type="text" id="input-name" placeholder="任意の文字列を入力">
@@ -731,11 +735,23 @@
       localStorage.setItem('rs_score_reg', reg);
     }
 
+    function setDisplayEndTime() {
+      const end = new Date(EVENT_END_TIME);
+      const yyyy = end.getFullYear();
+      const mm = end.getMonth() + 1;
+      const dd = end.getDate();
+      const h = end.getHours();
+      const m = String(end.getMinutes()).padStart(2, '0');
+      
+      document.getElementById('end-time-display').textContent = `(受付終了: ${yyyy}/${mm}/${dd} ${h}:${m})`;
+    }
+
     window.onload = function() {
       getOrCreateUserId();
       checkSubmitStatus(); // 送信可否チェック
       loadUserDataLocally(); 
       loadNGWords();
+      setDisplayEndTime();
       
       // ズーム設定の読み込みと適用
       loadPageSettings();
