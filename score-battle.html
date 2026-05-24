@@ -262,9 +262,13 @@
       font-weight: bold; 
       text-align: right; 
       white-space: nowrap; 
-      font-size: clamp(10px, 3.0vw, 16px); 
-      font-size: clamp(10px, 3.5cqi, 16px); 
+      /* ▼ 最小値を 8px に下げ、画面幅に対する比率（vw/cqi）も少し下げて縮小しやすくします */
+      font-size: clamp(10px, 3.0vw, 15px); 
+      font-size: clamp(10px, 3.4cqi, 15px); 
       letter-spacing: -0.5px; 
+      /* ▼ 万が一枠をはみ出そうになったら文字の後ろを消すお守り */
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     
     .col-name { 
@@ -297,10 +301,11 @@
     }
 
     .btn-sm {
-      padding: 5px 0;
+      padding: 4px 0; /* 上下の余白を少しだけ狭く */
       width: 100%;
-      font-size: clamp(9px, 2.2vw, 13px);
-      font-size: clamp(9px, 2.5cqi, 13px);
+      /* ▼ 最小値を 8px に落とし、枠線内に収まるようにします */
+      font-size: clamp(8px, 2.0vw, 12px);
+      font-size: clamp(8px, 2.3cqi, 12px);
       border-radius: 4px;
       white-space: nowrap;
       cursor: pointer;
@@ -354,6 +359,31 @@
 
     /* フォーム周りのモバイル対応 */
     @media (max-width: 600px) {
+      /* 見出し全体の横並び調整 */
+      .section-header {
+        gap: 8px; /* 隙間を少し狭くする */
+        flex-wrap: nowrap; /* 絶対に縦割れさせない */
+      }
+      
+      .section-header h2 {
+        font-size: 18px; /* 見出し自体も少しだけ小さく */
+        white-space: nowrap; /* 文字の折り返しを禁止 */
+        flex-shrink: 0; /* 右側の要素に潰されないようにする */
+      }
+
+      /* 受付終了テキストの調整 */
+      #end-time-display {
+        font-size: 13px !important; /* フォントサイズを小さく */
+        line-height: 1.2;
+      }
+
+      /* ↻ 最新に更新 ボタンの調整 */
+      .btn-update {
+        font-size: 13px; /* フォントサイズを小さく */
+        padding: 4px 8px; /* ボタンの余白を削ってコンパクトに */
+        white-space: nowrap;
+      }
+
       .form-row {
         flex-direction: column;
         align-items: stretch;
