@@ -454,6 +454,13 @@
     #custom-alert-message {
       white-space: pre-wrap;
     }
+
+    /* メダルアイコン（Twemoji）のサイズ調整 */
+    .medal-icon {
+      width: 1.4em;
+      height: 1.4em;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -862,6 +869,17 @@
 
       currentFilteredData.forEach((item, index) => {
         const rank = index + 1;
+        
+        // 1〜3位の時はTwemojiの画像（SVG）を表示する
+        let rankDisplay = rank;
+        if (rank === 1) {
+          rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f947.svg" alt="1" class="medal-icon">';
+        } else if (rank === 2) {
+          rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f948.svg" alt="2" class="medal-icon">';
+        } else if (rank === 3) {
+          rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f949.svg" alt="3" class="medal-icon">';
+        }
+
         const tr = document.createElement('tr');
         
         let actionHtml = `<div class="action-buttons">`;
@@ -879,7 +897,7 @@
         const formattedScore = Number(item.score).toLocaleString();
 
         tr.innerHTML = `
-          <td>${rank}</td>
+          <td>${rankDisplay}</td>
           <td class="col-score">${formattedScore}</td>
           <td class="col-name">${item.name}</td>
           <td class="col-reg">${item.regulation.replace(/\n/g, '<br>')}</td>
