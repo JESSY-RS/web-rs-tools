@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <title>リユニスコアバトル　聖王[厄]</title>
   <style>
     /* --- 全体 --- */
@@ -38,6 +40,14 @@
       font-size: 20px;
       margin: 0;
       color: #1DA1F2;
+    }
+
+    /* 撮影モード中のランキング表示タイトル */
+    body.screenshot-mode #ranking-title {
+      cursor: pointer;
+    }
+    body.screenshot-mode #ranking-title:hover {
+      opacity: 0.7;
     }
 
     .section {
@@ -262,11 +272,9 @@
       font-weight: bold; 
       text-align: right; 
       white-space: nowrap; 
-      /* ▼ 最小値を 8px に下げ、画面幅に対する比率（vw/cqi）も少し下げて縮小しやすくします */
       font-size: clamp(10px, 3.0vw, 15px); 
       font-size: clamp(10px, 3.4cqi, 15px); 
       letter-spacing: -0.5px; 
-      /* ▼ 万が一枠をはみ出そうになったら文字の後ろを消すお守り */
       overflow: hidden;
       text-overflow: ellipsis;
     }
@@ -301,9 +309,8 @@
     }
 
     .btn-sm {
-      padding: 4px 0; /* 上下の余白を少しだけ狭く */
+      padding: 4px 0; 
       width: 100%;
-      /* ▼ 最小値を 8px に落とし、枠線内に収まるようにします */
       font-size: clamp(8px, 2.0vw, 12px);
       font-size: clamp(8px, 2.3cqi, 12px);
       border-radius: 4px;
@@ -359,27 +366,24 @@
 
     /* フォーム周りのモバイル対応 */
     @media (max-width: 600px) {
-      /* 見出し全体の横並び調整 */
       .section-header {
-        gap: 8px; /* 隙間を少し狭くする */
-        flex-wrap: nowrap; /* 絶対に縦割れさせない */
+        gap: 8px; 
+        flex-wrap: nowrap; 
       }
       
       .section-header h2 {
-        font-size: 18px; /* 見出し自体も少しだけ小さく */
-        white-space: nowrap; /* 文字の折り返しを禁止 */
-        flex-shrink: 0; /* 右側の要素に潰されないようにする */
+        font-size: 18px; 
+        white-space: nowrap; 
+        flex-shrink: 0; 
       }
 
-      /* 受付終了テキストの調整 */
       #end-time-display {
-        font-size: 13px !important; /* フォントサイズを小さく */
+        font-size: 13px !important; 
       }
 
-      /* ↻ 最新に更新 ボタンの調整 */
       .btn-update {
-        font-size: 13px; /* フォントサイズを小さく */
-        padding: 4px 8px; /* ボタンの余白を削ってコンパクトに */
+        font-size: 13px; 
+        padding: 4px 8px; 
         white-space: nowrap;
       }
 
@@ -484,11 +488,69 @@
       white-space: pre-wrap;
     }
 
-    /* メダルアイコン（Twemoji）のサイズ調整 */
+    /* メダルアイコン（Twemoji）のサイズ調整（通常時・レスポンシブ） */
     .medal-icon {
       width: 1.4em;
       height: 1.4em;
       vertical-align: middle;
+    }
+    
+    /* =========================================
+       --- 自分の記録のインジケーター（枠外の▶） ---
+       ========================================= */
+    tr.my-record td:first-child {
+      position: relative;
+    }
+    tr.my-record td:first-child::before {
+      content: '▶';
+      position: absolute;
+      left: -14px; /* 指定いただいた -14px に設定 */
+      top: 50%;
+      transform: translateY(-50%);
+      color: #ccc; /* セクションの枠線と同じ色 */
+      font-size: 11px;
+    }
+
+    /* =========================================
+       --- スクショモード用のスタイル --- 
+       ========================================= */
+    
+    /* 登録パネル、フッター、ボタン類を完全に非表示 */
+    body.screenshot-mode .zoom-buttons,
+    body.screenshot-mode #section-score-register,
+    body.screenshot-mode footer,
+    body.screenshot-mode .btn-update,
+    body.screenshot-mode .section:nth-of-type(2) .form-row {
+      display: none !important;
+    }
+    
+    /* 操作列を非表示 */
+    body.screenshot-mode .col-action,
+    body.screenshot-mode td:nth-child(5) {
+      display: none !important;
+    }
+
+    /* 右端の線がクリッピングされて消えるのを防ぐための明示的な指定 */
+    body.screenshot-mode table {
+      border-right: 1px solid #666;
+    }
+    body.screenshot-mode th:nth-child(4),
+    body.screenshot-mode td:nth-child(4) {
+      border-right: 1px solid #666 !important;
+    }
+
+    /* スクショ時のテーブル列幅の最適化（条件を少し狭め、名前を広げる） */
+    body.screenshot-mode .col-rank { width: 9% !important; }  /* -1% */
+    body.screenshot-mode .col-score { width: 28% !important; } 
+    body.screenshot-mode .col-name { width: 24% !important; }  /* +2% (余分なスペースを吸収) */
+    body.screenshot-mode .col-reg { width: 39% !important; } /* -1% */
+
+    /* PC・タブレット用の配分 */
+    @media (min-width: 768px) {
+      body.screenshot-mode .col-rank { width: 7% !important; } /* -1% */
+      body.screenshot-mode .col-score { width: 18% !important; }
+      body.screenshot-mode .col-name { width: 24% !important; }
+      body.screenshot-mode .col-reg { width: 51% !important; } /* -1% */
     }
   </style>
 </head>
@@ -499,9 +561,9 @@
       <button onclick="changeZoom(0.1)">＋</button>
   </div>
 
-  <h1>リユニスコアバトル　聖王[厄]</h1>
+  <h1 onclick="toggleScreenshotMode()" style="cursor: pointer;" title="クリックでスクショモードを切替">リユニスコアバトル　聖王[厄]</h1>
 
-  <div class="section">
+  <div class="section" id="section-score-register">
     <div class="section-header">
       <h2>スコア登録</h2>
       <span id="end-time-display" style="color: red; font-size: 14px;"></span>
@@ -534,9 +596,9 @@
     </div>
   </div>
 
-  <div class="section">
+  <div class="section" id="section-ranking">
     <div class="section-header">
-      <h2>ランキング表示</h2>
+      <h2 id="ranking-title" onclick="takeScreenshot()" title="ランキング表示">ランキング表示</h2>
       <button class="btn-update" onclick="fetchRankingData()">↻ 最新に更新</button>
     </div>
     
@@ -628,6 +690,78 @@
     const MY_NG_WORD_URL = "ng_words.txt";
 
     let isDictLoaded = false;
+    
+    let isScreenshotMode = false;
+
+    // スクショモードの切り替え
+    function toggleScreenshotMode() {
+      isScreenshotMode = !isScreenshotMode;
+      const titleEl = document.getElementById('ranking-title');
+      
+      if (isScreenshotMode) {
+        document.body.classList.add('screenshot-mode');
+        titleEl.title = "クリックで画像をダウンロード";
+      } else {
+        document.body.classList.remove('screenshot-mode');
+        titleEl.title = "ランキング表示";
+      }
+      renderRanking(); 
+    }
+
+    // =========================================================
+    // ページ全体を画像化してダウンロードする関数
+    // =========================================================
+    function takeScreenshot() {
+      if (!isScreenshotMode) return; // 撮影モード時のみ動作
+      
+      const titleEl = document.getElementById('ranking-title');
+      const originalText = titleEl.textContent;
+      
+      // ボタンを押した瞬間に「画像生成中...」に切り替える
+      titleEl.textContent = "画像生成中...";
+      titleEl.style.color = "#FFD700";
+
+      // 少しだけ待機して「画像生成中...」の描画を確実に反映させてからスクショ処理に入る
+      setTimeout(() => {
+        html2canvas(document.body, {
+          backgroundColor: "#2A2A2A", 
+          scale: 2, // 高画質で保存
+          useCORS: true, // メダルの画像を正しく読み込むために必要
+          allowTaint: true,
+          // スクショ用の仮想データ(clonedDocument)の中身だけを操作する
+          onclone: (clonedDocument) => {
+            const clonedTitle = clonedDocument.getElementById('ranking-title');
+            if (clonedTitle) {
+              // スナップショットに写る文字だけ「ランキング表示」に戻す
+              clonedTitle.textContent = "ランキング表示";
+              clonedTitle.style.color = "#1DA1F2"; 
+            }
+            
+            // html2canvasのSVG縮小バグ対策：撮影用の裏画面でのみメダルサイズをpxで大きく固定する
+            const clonedMedals = clonedDocument.querySelectorAll('.medal-icon');
+            clonedMedals.forEach(medal => {
+              medal.style.width = '26px';
+              medal.style.height = '26px';
+            });
+          }
+        }).then(canvas => {
+          // 画像をダウンロード
+          const link = document.createElement('a');
+          link.download = 'score-battle-ranking.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+
+          // 実際の画面上のテキストを元に戻す
+          titleEl.textContent = originalText;
+          titleEl.style.color = "#1DA1F2";
+        }).catch(err => {
+          console.error("画像生成エラー:", err);
+          alert("画像の生成に失敗しました。");
+          titleEl.textContent = originalText;
+          titleEl.style.color = "#1DA1F2";
+        });
+      }, 100);
+    }
 
     // --- ズーム設定関連の処理 ---
     const PAGE_SETTING_KEY = 'PageSettings';
@@ -692,7 +826,7 @@
         btn.textContent = "受付終了";
         statusEl.textContent = "※スコアの登録受付は終了しました。";
         statusEl.className = 'status-msg error';
-        return true; // 送信不可
+        return true; 
       }
 
       // 2. メンテナンス判定
@@ -703,7 +837,7 @@
         const endDateStr = `${mEnd.getMonth() + 1}/${mEnd.getDate()} ${String(mEnd.getHours()).padStart(2, '0')}:${String(mEnd.getMinutes()).padStart(2, '0')}`;
         statusEl.textContent = `※現在メンテナンス中です（終了予定: ${endDateStr}）`;
         statusEl.className = 'status-msg error';
-        return true; // 送信不可
+        return true; 
       }
 
       // 3. 通常時
@@ -714,7 +848,7 @@
         statusEl.textContent = '';
         statusEl.className = 'status-msg';
       }
-      return false; // 送信可能
+      return false; 
     }
 
     // 削除機能用のメンテナンス中判定（終了後も削除は可能にするため分ける）
@@ -777,7 +911,7 @@
 
     window.onload = function() {
       getOrCreateUserId();
-      checkSubmitStatus(); // 送信可否チェック
+      checkSubmitStatus(); 
       loadUserDataLocally(); 
       loadNGWords();
       setDisplayEndTime();
@@ -808,8 +942,7 @@
       } catch (error) {
         console.error(error);
       } finally {
-        // ▼▼▼ これを追加 ▼▼▼
-        isDictLoaded = true; // 成功しても失敗しても準備完了とする
+        isDictLoaded = true; 
       }
     }
 
@@ -912,25 +1045,48 @@
 
       const isMaintenance = isMaintenanceNow();
 
-      currentFilteredData.forEach((item, index) => {
-        const rank = index + 1;
+      let displayData = [];
+      if (isScreenshotMode) {
+        // スクショモード時は上位10位までを取得
+        displayData = currentFilteredData.slice(0, 10);
         
-        // 1〜3位の時はTwemojiの画像（SVG）を表示する
+        // 自分の記録を探す
+        const myIndex = currentFilteredData.findIndex(item => item.userId === myUserId);
+        
+        // 自分が11位以降にいる場合は、そのまま末尾に追加（「・・・」は無し）
+        if (myIndex >= 10) {
+          displayData.push(currentFilteredData[myIndex]);
+        }
+      } else {
+        displayData = currentFilteredData;
+      }
+
+      displayData.forEach((item, index) => {
+        const realIndex = currentFilteredData.indexOf(item);
+        const rank = realIndex + 1;
+        const isMyRecord = (item.userId === myUserId);
+        
         let rankDisplay = rank;
+        // HTML側では通常どおりのimgタグに戻しています（1.4emで可変になります）
         if (rank === 1) {
-          rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f947.svg" alt="1" class="medal-icon">';
+          rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f947.svg" alt="1" class="medal-icon" crossorigin="anonymous">';
         } else if (rank === 2) {
-          rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f948.svg" alt="2" class="medal-icon">';
+          rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f948.svg" alt="2" class="medal-icon" crossorigin="anonymous">';
         } else if (rank === 3) {
-          rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f949.svg" alt="3" class="medal-icon">';
+          rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f949.svg" alt="3" class="medal-icon" crossorigin="anonymous">';
         }
 
         const tr = document.createElement('tr');
         
-        let actionHtml = `<div class="action-buttons">`;
-        actionHtml += `<button class="btn-sm btn-share" onclick="shareOnX(${index}, ${rank})">𝕏 共有</button>`;
+        // 自分の記録の場合はクラスを付与
+        if (isMyRecord) {
+          tr.className = 'my-record';
+        }
         
-        if (item.userId === myUserId && item.recordId) {
+        let actionHtml = `<div class="action-buttons">`;
+        actionHtml += `<button class="btn-sm btn-share" onclick="shareOnX(${realIndex}, ${rank})">𝕏 共有</button>`;
+        
+        if (isMyRecord && item.recordId) {
           if (isMaintenance) {
             actionHtml += `<button class="btn-sm btn-delete" disabled>削除</button>`;
           } else {
@@ -940,7 +1096,6 @@
         actionHtml += `</div>`;
 
         const formattedScore = Number(item.score).toLocaleString();
-
         const scoreStyle = rank >= 4 ? 'style="color: #bbb;"' : '';
 
         tr.innerHTML = `
@@ -955,7 +1110,7 @@
     }
 
     async function submitData() {
-      if (checkSubmitStatus()) return; // 終了またはメンテ中なら弾く
+      if (checkSubmitStatus()) return; 
 
       const btn = document.getElementById('submit-btn');
       const statusEl = document.getElementById('submit-status');
@@ -979,7 +1134,7 @@
       if (!isDictLoaded) {
         statusEl.textContent = 'セキュリティシステムの準備中です。数秒後にもう一度お試しください。';
         statusEl.className = 'status-msg error';
-        return; // ここで強制終了！絶対に送信させない
+        return; 
       }
 
       if (!name || !score) {
@@ -988,27 +1143,24 @@
         return;
       }
 
-      // マイナス値の入力防止
       if (Number(score) < 0) {
         statusEl.textContent = 'スコアにマイナスの値は入力できません。';
         statusEl.className = 'status-msg error';
         return;
       }
 
-      // スコアの桁数制限チェック
       if (score.length > MAX_SCORE_LENGTH) {
         statusEl.textContent = `スコアは${MAX_SCORE_LENGTH}桁以内で入力してください。`;
         statusEl.className = 'status-msg error';
         return;
       }
 
-      // NGワードチェック（辞書が正常に読み込めている場合のみ実行）
       if (FORBIDDEN_WORDS.length > 0) {
         for (const word of FORBIDDEN_WORDS) {
           if (name.includes(word) || regulation.includes(word)) {
             statusEl.textContent = '不適切な単語が含まれているため送信できません。';
             statusEl.className = 'status-msg error';
-            return; // ここで処理を終了し、送信させない
+            return; 
           }
         }
       }
@@ -1054,7 +1206,6 @@
       }
     }
 
-    // --- 削除用の独自モーダル処理 ---
     let pendingDeleteRecordId = null;
 
     function showCustomAlert(message) {
@@ -1066,7 +1217,6 @@
       document.getElementById('custom-alert-modal').style.display = 'none';
     }
 
-    // 削除ボタンが押された時に呼ばれる（確認モーダルを表示）
     function deleteData(recordId) {
       if (isMaintenanceNow()) {
         showCustomAlert("現在メンテナンス中のため、削除機能は利用できません。");
@@ -1078,18 +1228,16 @@
       document.getElementById('custom-confirm-modal').style.display = 'flex';
     }
 
-    // キャンセルボタンが押された時
     function closeConfirmModal() {
       document.getElementById('custom-confirm-modal').style.display = 'none';
       pendingDeleteRecordId = null;
     }
 
-    // 削除するボタンが押された時（実際の削除処理）
     async function executeDelete() {
       if (!pendingDeleteRecordId) return;
       
       const recordId = pendingDeleteRecordId;
-      closeConfirmModal(); // モーダルを閉じる
+      closeConfirmModal(); 
 
       const loadingEl = document.getElementById('loading');
       loadingEl.style.display = 'block';
@@ -1129,7 +1277,6 @@
       const formattedScore = Number(item.score).toLocaleString();
       const filterValue = document.getElementById('filter-regulation').value;
       
-      // ▼▼▼ 削除依頼モードの場合の処理 ▼▼▼
       if (isDeleteRequestMode) {
         const text = `@jessy_romasaga\n\n`
                    + `【ランキング削除依頼】\n`
@@ -1141,19 +1288,16 @@
         const url = `https://x.com/intent/post?text=${encodedText}`;
         window.open(url, '_blank');
         
-        // 終わったらモードを解除する
         isDeleteRequestMode = false;
         showCustomAlert("削除依頼モードを解除し、\n通常の投稿モードに戻りました。");
-        return; // ここで処理を終了する
+        return; 
       }
-      // ▲▲▲ ここまで ▲▲▲
 
       let displayRegulation = item.regulation;
       if (filterValue === 'ALL') {
         displayRegulation = "全レギュレーション総合";
       }
 
-      // 以下の通常共有の処理は元のまま
       const text = `#リユニスコアバトル　聖王[厄]\n\n`
                  + `ランキング ${rank}位！\n`
                  + `名前：${item.name}\n`
@@ -1167,9 +1311,7 @@
       window.open(url, '_blank');
     }
 
-    // --- 削除依頼をX(Twitter)で送信する処理 ---
     function requestDeleteOnX() {
-      // 削除依頼モードをONにする
       isDeleteRequestMode = true;
       showCustomAlert("【削除依頼モード】削除したい記録の\n「𝕏 共有」ボタンを押してください。");
     }
