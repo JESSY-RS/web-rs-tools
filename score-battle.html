@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
 
   <title>リユニスコアバトル　聖王[厄]</title>
   <style>
@@ -130,6 +130,11 @@
       min-width: 0; 
       max-width: 280px; 
       box-sizing: border-box;
+    }
+
+    /* 数値入力欄（スコア）の文字間隔を調整 */
+    input[type="number"] {
+        letter-spacing: 2px;
     }
 
     .reg-input-container {
@@ -488,11 +493,14 @@
       white-space: pre-wrap;
     }
 
-    /* メダルアイコン（Twemoji）のサイズ調整（通常時・レスポンシブ） */
+    /* =========================================
+       --- メダルアイコンの通常スタイル ---
+       ========================================= */
     .medal-icon {
       width: 1.4em;
       height: 1.4em;
       vertical-align: middle;
+      display: inline-block;
     }
     
     /* =========================================
@@ -504,10 +512,10 @@
     tr.my-record td:first-child::before {
       content: '▶';
       position: absolute;
-      left: -14px; /* 指定いただいた -14px に設定 */
+      left: -14px; 
       top: 50%;
       transform: translateY(-50%);
-      color: #ccc; /* セクションの枠線と同じ色 */
+      color: #ccc; 
       font-size: 11px;
     }
 
@@ -515,11 +523,10 @@
        --- スクショモード用のスタイル --- 
        ========================================= */
     
-    /* 登録パネル、フッター、ボタン類を完全に非表示 */
+    /* 登録パネル、フッター、不要な要素を非表示（.btn-update は非表示にしない） */
     body.screenshot-mode .zoom-buttons,
     body.screenshot-mode #section-score-register,
     body.screenshot-mode footer,
-    body.screenshot-mode .btn-update,
     body.screenshot-mode .section:nth-of-type(2) .form-row {
       display: none !important;
     }
@@ -528,6 +535,12 @@
     body.screenshot-mode .col-action,
     body.screenshot-mode td:nth-child(5) {
       display: none !important;
+    }
+
+    /* メダルの行の高さが変わるのを防ぐためのクリーンな調整（サイズは弄らず、余白だけを消す） */
+    body.screenshot-mode .medal-icon {
+      display: block !important;
+      margin: 0 auto !important;
     }
 
     /* 右端の線がクリッピングされて消えるのを防ぐための明示的な指定 */
@@ -540,21 +553,17 @@
     }
 
     /* スクショ時のテーブル列幅の最適化（条件を少し狭め、名前を広げる） */
-    body.screenshot-mode .col-rank { width: 9% !important; }  /* -1% */
+    body.screenshot-mode .col-rank { width: 9% !important; }  
     body.screenshot-mode .col-score { width: 28% !important; } 
-    body.screenshot-mode .col-name { width: 24% !important; }  /* +2% (余分なスペースを吸収) */
-    body.screenshot-mode .col-reg { width: 39% !important; } /* -1% */
+    body.screenshot-mode .col-name { width: 24% !important; }  
+    body.screenshot-mode .col-reg { width: 39% !important; } 
 
     /* PC・タブレット用の配分 */
     @media (min-width: 768px) {
-      body.screenshot-mode .col-rank { width: 7% !important; } /* -1% */
+      body.screenshot-mode .col-rank { width: 7% !important; } 
       body.screenshot-mode .col-score { width: 18% !important; }
       body.screenshot-mode .col-name { width: 24% !important; }
-      body.screenshot-mode .col-reg { width: 51% !important; } /* -1% */
-    }
-
-    input[type="number"] {
-        letter-spacing: 2px;
+      body.screenshot-mode .col-reg { width: 51% !important; } 
     }
   </style>
 </head>
@@ -602,7 +611,7 @@
 
   <div class="section" id="section-ranking">
     <div class="section-header">
-      <h2 id="ranking-title" onclick="takeScreenshot()" title="ランキング表示">ランキング表示</h2>
+      <h2 id="ranking-title" onclick="takeScreenshot()">ランキング表示</h2>
       <button class="btn-update" onclick="fetchRankingData()">↻ 最新に更新</button>
     </div>
     
@@ -683,7 +692,7 @@
     // =========================================================
     const EVENT_END_TIME = "2026-06-01T00:00:00+09:00";
 
-    const MAX_SCORE_LENGTH = 12;
+    const MAX_SCORE_LENGTH = 12; // 13から12に変更
 
     let allRankingData = [];
     let currentFilteredData = [];
@@ -713,58 +722,28 @@
     }
 
     // =========================================================
-    // ページ全体を画像化してダウンロードする関数
+    // ページ全体を画像化してダウンロードする関数 (サイレント版)
     // =========================================================
     function takeScreenshot() {
-      if (!isScreenshotMode) return; // 撮影モード時のみ動作
-      
-      const titleEl = document.getElementById('ranking-title');
-      const originalText = titleEl.textContent;
-      
-      // ボタンを押した瞬間に「画像生成中...」に切り替える
-      titleEl.textContent = "画像生成中...";
-      titleEl.style.color = "#FFD700";
+      if (!isScreenshotMode) return; 
 
-      // 少しだけ待機して「画像生成中...」の描画を確実に反映させてからスクショ処理に入る
-      setTimeout(() => {
-        html2canvas(document.body, {
-          backgroundColor: "#2A2A2A", 
-          scale: 2, // 高画質で保存
-          useCORS: true, // メダルの画像を正しく読み込むために必要
-          allowTaint: true,
-          // スクショ用の仮想データ(clonedDocument)の中身だけを操作する
-          onclone: (clonedDocument) => {
-            const clonedTitle = clonedDocument.getElementById('ranking-title');
-            if (clonedTitle) {
-              // スナップショットに写る文字だけ「ランキング表示」に戻す
-              clonedTitle.textContent = "ランキング表示";
-              clonedTitle.style.color = "#1DA1F2"; 
-            }
-            
-            // html2canvasのSVG縮小バグ対策：撮影用の裏画面でのみメダルサイズをpxで大きく固定する
-            const clonedMedals = clonedDocument.querySelectorAll('.medal-icon');
-            clonedMedals.forEach(medal => {
-              medal.style.width = '26px';
-              medal.style.height = '26px';
-            });
-          }
-        }).then(canvas => {
-          // 画像をダウンロード
+      const target = document.body;
+      const options = {
+        bgcolor: '#2A2A2A',
+        width: document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight
+      };
+
+      domtoimage.toPng(target, options)
+        .then(function (dataUrl) {
           const link = document.createElement('a');
           link.download = 'score-battle-ranking.png';
-          link.href = canvas.toDataURL('image/png');
+          link.href = dataUrl;
           link.click();
-
-          // 実際の画面上のテキストを元に戻す
-          titleEl.textContent = originalText;
-          titleEl.style.color = "#1DA1F2";
-        }).catch(err => {
-          console.error("画像生成エラー:", err);
-          alert("画像の生成に失敗しました。");
-          titleEl.textContent = originalText;
-          titleEl.style.color = "#1DA1F2";
+        })
+        .catch(function (error) {
+          console.error("画像生成エラー:", error);
         });
-      }, 100);
     }
 
     // --- ズーム設定関連の処理 ---
@@ -1071,7 +1050,6 @@
         const isMyRecord = (item.userId === myUserId);
         
         let rankDisplay = rank;
-        // HTML側では通常どおりのimgタグに戻しています（1.4emで可変になります）
         if (rank === 1) {
           rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f947.svg" alt="1" class="medal-icon" crossorigin="anonymous">';
         } else if (rank === 2) {
