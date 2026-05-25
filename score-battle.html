@@ -11,7 +11,7 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-  <title>リユニスコアバトル 聖王[厄]</title>
+  <title>リユニスコアバトル　聖王[厄]</title>
   <style>
     /* --- 全体 --- */
     body {
@@ -488,9 +488,7 @@
       white-space: pre-wrap;
     }
 
-    /* =========================================
-       --- メダルアイコンの通常スタイル ---
-       ========================================= */
+    /* メダルアイコン（Twemoji）のサイズ調整（通常時・レスポンシブ） */
     .medal-icon {
       width: 1.4em;
       height: 1.4em;
@@ -506,10 +504,10 @@
     tr.my-record td:first-child::before {
       content: '▶';
       position: absolute;
-      left: -14px; 
+      left: -14px; /* 指定いただいた -14px に設定 */
       top: 50%;
       transform: translateY(-50%);
-      color: #ccc; 
+      color: #ccc; /* セクションの枠線と同じ色 */
       font-size: 11px;
     }
 
@@ -530,15 +528,6 @@
     body.screenshot-mode .col-action,
     body.screenshot-mode td:nth-child(5) {
       display: none !important;
-    }
-
-    /* ★修正点：メダルサイズのpx指定＋マイナス余白で、セルの高さを広げずにはみ出させる */
-    body.screenshot-mode .medal-icon {
-      width: 26px !important;
-      height: 26px !important;
-      margin-top: -4px !important;
-      margin-bottom: -4px !important;
-      vertical-align: middle !important;
     }
 
     /* 右端の線がクリッピングされて消えるのを防ぐための明示的な指定 */
@@ -563,6 +552,10 @@
       body.screenshot-mode .col-name { width: 24% !important; }
       body.screenshot-mode .col-reg { width: 51% !important; } /* -1% */
     }
+
+    input[type="number"] {
+        letter-spacing: 2px;
+    }
   </style>
 </head>
 <body>
@@ -572,7 +565,7 @@
       <button onclick="changeZoom(0.1)">＋</button>
   </div>
 
-  <h1 onclick="toggleScreenshotMode()" style="cursor: pointer;" title="クリックでスクショモードを切替">リユニスコアバトル 聖王[厄]</h1>
+  <h1 onclick="toggleScreenshotMode()" style="cursor: pointer;" title="クリックでスクショモードを切替">リユニスコアバトル　聖王[厄]</h1>
 
   <div class="section" id="section-score-register">
     <div class="section-header">
@@ -690,7 +683,7 @@
     // =========================================================
     const EVENT_END_TIME = "2026-06-01T00:00:00+09:00";
 
-    const MAX_SCORE_LENGTH = 12;
+    const MAX_SCORE_LENGTH = 13;
 
     let allRankingData = [];
     let currentFilteredData = [];
@@ -747,6 +740,13 @@
               clonedTitle.textContent = "ランキング表示";
               clonedTitle.style.color = "#1DA1F2"; 
             }
+            
+            // html2canvasのSVG縮小バグ対策：撮影用の裏画面でのみメダルサイズをpxで大きく固定する
+            const clonedMedals = clonedDocument.querySelectorAll('.medal-icon');
+            clonedMedals.forEach(medal => {
+              medal.style.width = '26px';
+              medal.style.height = '26px';
+            });
           }
         }).then(canvas => {
           // 画像をダウンロード
@@ -1071,6 +1071,7 @@
         const isMyRecord = (item.userId === myUserId);
         
         let rankDisplay = rank;
+        // HTML側では通常どおりのimgタグに戻しています（1.4emで可変になります）
         if (rank === 1) {
           rankDisplay = '<img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f947.svg" alt="1" class="medal-icon" crossorigin="anonymous">';
         } else if (rank === 2) {
@@ -1301,7 +1302,7 @@
         displayRegulation = "全レギュレーション総合";
       }
 
-      const text = `#リユニスコアバトル 聖王[厄]\n\n`
+      const text = `#リユニスコアバトル　聖王[厄]\n\n`
                  + `ランキング ${rank}位！\n`
                  + `名前：${item.name}\n`
                  + `得点：${formattedScore}\n`
