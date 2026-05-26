@@ -523,7 +523,7 @@
        --- スクショモード用のスタイル --- 
        ========================================= */
     
-    /* 登録パネル、フッター、不要な要素を非表示（.btn-update は非表示にしない） */
+    /* 登録パネル、フッターなどを非表示（.btn-update は非表示にしない） */
     body.screenshot-mode .zoom-buttons,
     body.screenshot-mode #section-score-register,
     body.screenshot-mode footer,
@@ -535,12 +535,6 @@
     body.screenshot-mode .col-action,
     body.screenshot-mode td:nth-child(5) {
       display: none !important;
-    }
-
-    /* メダルの行の高さが変わるのを防ぐためのクリーンな調整（サイズは弄らず、余白だけを消す） */
-    body.screenshot-mode .medal-icon {
-      display: block !important;
-      margin: 0 auto !important;
     }
 
     /* 右端の線がクリッピングされて消えるのを防ぐための明示的な指定 */
@@ -692,7 +686,7 @@
     // =========================================================
     const EVENT_END_TIME = "2026-06-01T00:00:00+09:00";
 
-    const MAX_SCORE_LENGTH = 12; // 13から12に変更
+    const MAX_SCORE_LENGTH = 12;
 
     let allRankingData = [];
     let currentFilteredData = [];
@@ -722,7 +716,7 @@
     }
 
     // =========================================================
-    // ページ全体を画像化してダウンロードする関数 (サイレント版)
+    // ページ全体を画像化してダウンロードする関数 (シンプル版)
     // =========================================================
     function takeScreenshot() {
       if (!isScreenshotMode) return; 
@@ -730,10 +724,13 @@
       const target = document.body;
       const options = {
         bgcolor: '#2A2A2A',
+        // スクロール全体をカバーするよう明示的に指定して見切れを防止
         width: document.documentElement.scrollWidth,
-        height: document.documentElement.scrollHeight
+        height: document.documentElement.scrollHeight,
+        scale: 2 // 高画質化オプション
       };
 
+      // ポップアップなどの余計な処理は一切せず、そのまま素直にキャプチャ
       domtoimage.toPng(target, options)
         .then(function (dataUrl) {
           const link = document.createElement('a');
@@ -1028,21 +1025,8 @@
 
       const isMaintenance = isMaintenanceNow();
 
-      let displayData = [];
-      if (isScreenshotMode) {
-        // スクショモード時は上位10位までを取得
-        displayData = currentFilteredData.slice(0, 10);
-        
-        // 自分の記録を探す
-        const myIndex = currentFilteredData.findIndex(item => item.userId === myUserId);
-        
-        // 自分が11位以降にいる場合は、そのまま末尾に追加（「・・・」は無し）
-        if (myIndex >= 10) {
-          displayData.push(currentFilteredData[myIndex]);
-        }
-      } else {
-        displayData = currentFilteredData;
-      }
+      // ★ 全件表示に変更
+      let displayData = currentFilteredData;
 
       displayData.forEach((item, index) => {
         const realIndex = currentFilteredData.indexOf(item);
