@@ -11,7 +11,7 @@
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
 
-  <title>リユニスコアバトル 聖王[厄]</title>
+  <title>リユニスコアバトル　聖王[厄]</title>
   <style>
     /* --- 全体 --- */
     body {
@@ -537,12 +537,6 @@
       display: none !important;
     }
 
-    /* メダルの行の高さが変わるのを防ぐためのクリーンな調整（サイズは弄らず、余白だけを消す） */
-    body.screenshot-mode .medal-icon {
-      display: block !important;
-      margin: 0 auto !important;
-    }
-
     /* 右端の線がクリッピングされて消えるのを防ぐための明示的な指定 */
     body.screenshot-mode table {
       border-right: 1px solid #666;
@@ -574,7 +568,7 @@
       <button onclick="changeZoom(0.1)">＋</button>
   </div>
 
-  <h1 onclick="toggleScreenshotMode()" style="cursor: pointer;" title="クリックでスクショモードを切替">リユニスコアバトル 聖王[厄]</h1>
+  <h1 onclick="toggleScreenshotMode()" style="cursor: pointer;" title="クリックでスクショモードを切替">リユニスコアバトル　聖王[厄]</h1>
 
   <div class="section" id="section-score-register">
     <div class="section-header">
@@ -716,7 +710,7 @@
         titleEl.title = "クリックで画像をダウンロード";
       } else {
         document.body.classList.remove('screenshot-mode');
-        titleEl.title = "";
+        titleEl.title = "ランキング表示";
       }
       renderRanking(); 
     }
@@ -732,10 +726,11 @@
         bgcolor: '#2A2A2A',
         // スクロール全体をカバーするよう明示的に指定して見切れを防止
         width: document.documentElement.scrollWidth,
-        height: document.documentElement.scrollHeight
+        height: document.documentElement.scrollHeight,
+        scale: 2 // 高画質化オプション
       };
 
-      // 余計な処理は一切せず、そのまま素直にキャプチャ
+      // ポップアップなどの余計な処理は一切せず、そのまま素直にキャプチャ
       domtoimage.toPng(target, options)
         .then(function (dataUrl) {
           const link = document.createElement('a');
@@ -947,7 +942,7 @@
         loadingEl.style.display = 'none';
       } catch (error) {
         console.error("データ取得エラー:", error);
-        loadingEl.textContent = '数据的取得に失敗しました。';
+        loadingEl.textContent = 'データの取得に失敗しました。';
         loadingEl.style.color = 'red';
       }
     }
@@ -1030,7 +1025,7 @@
 
       const isMaintenance = isMaintenanceNow();
 
-      // ★ 全件表示
+      // ★ 全件表示に変更
       let displayData = currentFilteredData;
 
       displayData.forEach((item, index) => {
@@ -1269,7 +1264,7 @@
         displayRegulation = "全レギュレーション総合";
       }
 
-      const text = `#リユニスコアバトル 聖王[厄]\n\n`
+      const text = `#リユニスコアバトル　聖王[厄]\n\n`
                  + `ランキング ${rank}位！\n`
                  + `名前：${item.name}\n`
                  + `得点：${formattedScore}\n`
