@@ -42,11 +42,13 @@
       color: #1DA1F2;
     }
 
-    /* 撮影モード中のランキング表示タイトル */
-    body.screenshot-mode #ranking-title {
+    /* ランキング表示タイトル（通常時・撮影モード共通） */
+    #ranking-title {
       cursor: pointer;
+      transition: opacity 0.2s;
+      user-select: none; /* ダブルクリック時の文字選択を防ぐ */
     }
-    body.screenshot-mode #ranking-title:hover {
+    #ranking-title:hover {
       opacity: 0.7;
     }
 
@@ -191,6 +193,11 @@
       box-sizing: border-box;
     }
 
+    /* パネル内のチェックボックスの余白調整 */
+    .setting-checkbox {
+      margin-left: 10px;
+    }
+
     input:focus, select:focus, #input-regulation:focus {
       outline: none;
       border-color: #50b4f0;
@@ -260,6 +267,7 @@
       color: #e0e0e0;
       font-weight: bold;
       text-align: center !important; 
+      position: relative; /* 列幅リサイザーの基準位置 */
     }
 
     td { background-color: #2a2a2a; }
@@ -304,6 +312,23 @@
     
     .col-action { width: 16%; }
     
+    /* 列幅変更用リサイザー */
+    .resizer {
+      position: absolute;
+      top: 0;
+      right: -3px; /* 罫線の上に重なるように配置 */
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      z-index: 1;
+      user-select: none;
+      background-color: transparent;
+      transition: background-color 0.2s;
+    }
+    .resizer:hover, .resizer.resizing {
+      background-color: #1DA1F2;
+    }
+
     /* スマホは縦並び（2段） */
     .action-buttons {
       display: flex;
@@ -311,6 +336,7 @@
       align-items: stretch;
       gap: 5px;
       padding: 0 2px;
+      flex-wrap: wrap;
     }
 
     .btn-sm {
@@ -355,11 +381,12 @@
       }
       .col-action { width: 18%; }
 
-      /* PCは横並び（左右配置） */
+      /* PCは横並び（左右配置・折り返し許可） */
       .action-buttons {
         flex-direction: row; 
         justify-content: center;
         gap: 6px;
+        flex-wrap: wrap; 
       }
       .btn-sm {
         padding: 6px 12px;
@@ -416,6 +443,10 @@
         width: 100%;
       }
       .status-msg { margin-left: 0; }
+      
+      .setting-checkbox {
+        margin-left: 0; 
+      }
     }
 
     #loading {
@@ -520,7 +551,7 @@
     }
 
     /* =========================================
-       --- スクショモード用のスタイル --- 
+       --- 撮影モード用のスタイル --- 
        ========================================= */
     
     /* 登録パネル、フッターなどを非表示（.btn-update は非表示にしない） */
@@ -531,7 +562,7 @@
       display: none !important;
     }
     
-    /* 操作列を非表示 */
+    /* 操作列を非表示（リサイザーは非表示にしないため撮影時も幅変更可能） */
     body.screenshot-mode .col-action,
     body.screenshot-mode td:nth-child(5) {
       display: none !important;
@@ -546,18 +577,19 @@
       border-right: 1px solid #666 !important;
     }
 
-    /* スクショ時のテーブル列幅の最適化（条件を少し狭め、名前を広げる） */
-    body.screenshot-mode .col-rank { width: 9% !important; }  
-    body.screenshot-mode .col-score { width: 28% !important; } 
-    body.screenshot-mode .col-name { width: 24% !important; }  
-    body.screenshot-mode .col-reg { width: 39% !important; } 
+    /* 撮影時のテーブル列幅の最適化（条件を少し狭め、名前を広げる） 
+       ※ユーザーが手動で幅を変更している場合は上書きしない設定にしています */
+    body.screenshot-mode table:not(.user-resized) .col-rank { width: 9% !important; }  
+    body.screenshot-mode table:not(.user-resized) .col-score { width: 28% !important; } 
+    body.screenshot-mode table:not(.user-resized) .col-name { width: 24% !important; }  
+    body.screenshot-mode table:not(.user-resized) .col-reg { width: 39% !important; } 
 
     /* PC・タブレット用の配分 */
     @media (min-width: 768px) {
-      body.screenshot-mode .col-rank { width: 7% !important; } 
-      body.screenshot-mode .col-score { width: 18% !important; }
-      body.screenshot-mode .col-name { width: 24% !important; }
-      body.screenshot-mode .col-reg { width: 51% !important; } 
+      body.screenshot-mode table:not(.user-resized) .col-rank { width: 7% !important; } 
+      body.screenshot-mode table:not(.user-resized) .col-score { width: 18% !important; }
+      body.screenshot-mode table:not(.user-resized) .col-name { width: 24% !important; }
+      body.screenshot-mode table:not(.user-resized) .col-reg { width: 51% !important; } 
     }
   </style>
 </head>
@@ -568,7 +600,7 @@
       <button onclick="changeZoom(0.1)">＋</button>
   </div>
 
-  <h1 onclick="toggleScreenshotMode()" style="cursor: pointer;" title="クリックでスクショモードを切替">リユニスコアバトル　聖王[厄]</h1>
+  <h1 onclick="toggleScreenshotMode()" style="cursor: pointer;" title="クリックで撮影モードを切替">リユニスコアバトル　聖王[厄]</h1>
 
   <div class="section" id="section-score-register">
     <div class="section-header">
@@ -605,8 +637,21 @@
 
   <div class="section" id="section-ranking">
     <div class="section-header">
-      <h2 id="ranking-title" onclick="takeScreenshot()">ランキング表示</h2>
+      <h2 id="ranking-title" onclick="handleRankingTitleClick()" title="クリックで表示設定を開閉">ランキング表示</h2>
       <button class="btn-update" onclick="fetchRankingData()">↻ 最新に更新</button>
+    </div>
+
+    <div id="display-limit-settings" style="display: none; background-color: #444; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 14px;">
+        <span style="font-weight: bold; color: #ccc;">表示件数</span>
+        <label><input type="radio" name="limit_mode" value="all" checked onchange="renderRanking()"> すべて</label>
+        <label><input type="radio" name="limit_mode" value="custom" onchange="renderRanking()"> 上位</label>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <input type="number" id="input-limit-num" min="1" value="10" style="width: 70px; padding: 4px; text-align: right; font-size: 14px; background-color: #555; color: white; border: 1px solid #777; border-radius: 4px;" oninput="document.querySelector('input[name=\'limit_mode\'][value=\'custom\']').checked = true; renderRanking()"> 件
+        </div>
+        <label class="setting-checkbox"><input type="checkbox" id="check-include-my-rank" onchange="renderRanking()"> ＋自分の順位を表示する</label>
+        <label class="setting-checkbox"><input type="checkbox" id="check-reset-width" onchange="handleWidthResetToggle()"> 項目幅をリセットする</label>
+      </div>
     </div>
     
     <div class="form-row">
@@ -619,13 +664,13 @@
     <div id="loading">データを読み込み中...</div>
 
     <div class="table-container">
-      <table>
+      <table id="main-ranking-table">
         <thead>
           <tr>
-            <th class="col-rank">順位</th>
-            <th class="col-score">スコア</th>
-            <th class="col-name">名前</th>
-            <th class="col-reg">条件</th>
+            <th class="col-rank">順位<div class="resizer"></div></th>
+            <th class="col-score">スコア<div class="resizer"></div></th>
+            <th class="col-name">名前<div class="resizer"></div></th>
+            <th class="col-reg">条件<div class="resizer"></div></th>
             <th class="col-action">操作</th>
           </tr>
         </thead>
@@ -700,19 +745,211 @@
     
     let isScreenshotMode = false;
 
-    // スクショモードの切り替え
+    // --- 各種設定・列幅のローカル保存処理 ---
+    const APP_SETTINGS_KEY = 'score-battle-app-settings';
+    let appSettings = {
+      limitMode: 'all',
+      limitNum: 10,
+      includeMyRank: false,
+      resetWidthNormal: false,
+      resetWidthScreenshot: false,
+      columnWidthsNormal: [],
+      columnWidthsScreenshot: [] 
+    };
+
+    function loadAppSettings() {
+      try {
+        const saved = localStorage.getItem(APP_SETTINGS_KEY);
+        if (saved) {
+          let parsed = JSON.parse(saved);
+          
+          if (parsed.columnWidths && !parsed.columnWidthsNormal) {
+              parsed.columnWidthsNormal = parsed.columnWidths;
+          }
+          if (parsed.resetWidth !== undefined && parsed.resetWidthNormal === undefined) {
+              parsed.resetWidthNormal = parsed.resetWidth;
+          }
+          
+          appSettings = { ...appSettings, ...parsed };
+          
+          const modeRadio = document.querySelector(`input[name="limit_mode"][value="${appSettings.limitMode}"]`);
+          if (modeRadio) modeRadio.checked = true;
+          document.getElementById('input-limit-num').value = appSettings.limitNum || 10;
+          document.getElementById('check-include-my-rank').checked = appSettings.includeMyRank || false;
+          
+          document.getElementById('check-reset-width').checked = appSettings.resetWidthNormal || false;
+        }
+      } catch (error) {
+        console.error("設定の読み込みに失敗しました:", error);
+      }
+      applyColumnWidths();
+    }
+
+    function saveAppSettings() {
+      const modeEl = document.querySelector('input[name="limit_mode"]:checked');
+      if (modeEl) appSettings.limitMode = modeEl.value;
+      appSettings.limitNum = parseInt(document.getElementById('input-limit-num').value) || 10;
+      appSettings.includeMyRank = document.getElementById('check-include-my-rank').checked;
+      
+      const resetChecked = document.getElementById('check-reset-width').checked;
+      if (isScreenshotMode) {
+        appSettings.resetWidthScreenshot = resetChecked;
+      } else {
+        appSettings.resetWidthNormal = resetChecked;
+      }
+      
+      localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(appSettings));
+    }
+
+    function handleWidthResetToggle() {
+      saveAppSettings();
+      applyColumnWidths();
+    }
+
+    function applyColumnWidths() {
+      const ths = document.querySelectorAll('#main-ranking-table th');
+      const table = document.getElementById('main-ranking-table');
+      
+      const isReset = isScreenshotMode ? appSettings.resetWidthScreenshot : appSettings.resetWidthNormal;
+      const widths = isScreenshotMode ? appSettings.columnWidthsScreenshot : appSettings.columnWidthsNormal;
+      
+      if (isReset) {
+        ths.forEach(th => th.style.removeProperty('width'));
+        table.classList.remove('user-resized');
+      } else {
+        let hasCustom = false;
+        ths.forEach((th, i) => {
+          th.style.removeProperty('width'); 
+          if (widths && widths[i]) {
+            const cleanWidth = widths[i].replace('!important', '').trim();
+            if (cleanWidth) {
+              th.style.setProperty('width', cleanWidth, 'important');
+              hasCustom = true;
+            }
+          }
+        });
+        if (hasCustom) {
+          table.classList.add('user-resized');
+        } else {
+          table.classList.remove('user-resized');
+        }
+      }
+    }
+    // ----------------------------------------
+
+    // クリック判定用のタイマー
+    let clickTimer = null;
+
+    // ランキング表示タイトルをクリックした時の処理（シングル/ダブルクリック判定）
+    function handleRankingTitleClick() {
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+        takeScreenshot(); 
+      } else {
+        clickTimer = setTimeout(() => {
+          const settingsDiv = document.getElementById('display-limit-settings');
+          settingsDiv.style.display = settingsDiv.style.display === 'none' ? 'block' : 'none';
+          clickTimer = null;
+        }, 250); 
+      }
+    }
+
+    // 撮影モードの切り替え
     function toggleScreenshotMode() {
       isScreenshotMode = !isScreenshotMode;
       const titleEl = document.getElementById('ranking-title');
       
       if (isScreenshotMode) {
         document.body.classList.add('screenshot-mode');
-        titleEl.title = "クリックで画像をダウンロード";
+        titleEl.title = "【撮影モード】シングルクリック: 表示設定を変更 / ダブルクリック: 画像を保存";
       } else {
         document.body.classList.remove('screenshot-mode');
-        titleEl.title = "ランキング表示";
+        titleEl.title = "クリックで表示設定を開閉";
       }
+      
+      document.getElementById('check-reset-width').checked = isScreenshotMode ? (appSettings.resetWidthScreenshot || false) : (appSettings.resetWidthNormal || false);
+      
+      applyColumnWidths();
       renderRanking(); 
+    }
+
+    // =========================================================
+    // 列幅をドラッグで変更可能にする機能
+    // =========================================================
+    function initResizableColumns() {
+      const resizers = document.querySelectorAll('.resizer');
+      let currentResizer;
+      let startX, startWidth;
+
+      const startDrag = function(e) {
+        currentResizer = e.target;
+        startX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+        const th = currentResizer.parentElement;
+        startWidth = th.offsetWidth;
+        
+        currentResizer.classList.add('resizing');
+        
+        document.getElementById('main-ranking-table').classList.add('user-resized');
+        
+        const resetCheckbox = document.getElementById('check-reset-width');
+        if (resetCheckbox.checked) {
+          resetCheckbox.checked = false;
+          if (isScreenshotMode) {
+            appSettings.resetWidthScreenshot = false;
+          } else {
+            appSettings.resetWidthNormal = false;
+          }
+        }
+        
+        document.addEventListener('mousemove', doDrag);
+        document.addEventListener('touchmove', doDrag);
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchend', stopDrag);
+      };
+
+      const doDrag = function(e) {
+        if (!currentResizer) return;
+        const pageX = e.type.includes('mouse') ? e.pageX : e.touches[0].pageX;
+        const dx = pageX - startX;
+        const th = currentResizer.parentElement;
+        const table = document.getElementById('main-ranking-table');
+        
+        let newWidth = startWidth + dx;
+        let newWidthPct = (newWidth / table.offsetWidth) * 100;
+        
+        if (newWidthPct > 2) { 
+          th.style.setProperty('width', `${newWidthPct}%`, 'important');
+        }
+      };
+
+      const stopDrag = function() {
+        if(currentResizer) currentResizer.classList.remove('resizing');
+        currentResizer = null;
+        document.removeEventListener('mousemove', doDrag);
+        document.removeEventListener('touchmove', doDrag);
+        document.removeEventListener('mouseup', stopDrag);
+        document.removeEventListener('touchend', stopDrag);
+
+        const ths = document.querySelectorAll('#main-ranking-table th');
+        let currentWidths = [];
+        ths.forEach((th, i) => {
+          currentWidths[i] = th.style.getPropertyValue('width');
+        });
+        
+        if (isScreenshotMode) {
+          appSettings.columnWidthsScreenshot = currentWidths;
+        } else {
+          appSettings.columnWidthsNormal = currentWidths;
+        }
+        
+        saveAppSettings();
+      };
+
+      resizers.forEach(function(resizer) {
+        resizer.addEventListener('mousedown', startDrag);
+        resizer.addEventListener('touchstart', startDrag);
+      });
     }
 
     // =========================================================
@@ -722,23 +959,31 @@
       if (!isScreenshotMode) return; 
 
       const target = document.body;
+      
+      // 画像生成の間だけ「最新に更新」ボタンを一時的に完全非表示にする
+      const updateBtn = document.querySelector('.btn-update');
+      if (updateBtn) updateBtn.style.setProperty('display', 'none', 'important');
+
       const options = {
         bgcolor: '#2A2A2A',
-        // スクロール全体をカバーするよう明示的に指定して見切れを防止
         width: document.documentElement.scrollWidth,
         height: document.documentElement.scrollHeight,
-        scale: 2 // 高画質化オプション
+        scale: 2 
       };
 
-      // ポップアップなどの余計な処理は一切せず、そのまま素直にキャプチャ
       domtoimage.toPng(target, options)
         .then(function (dataUrl) {
+          // 生成が終わったらボタンの非表示設定を解除して元に戻す
+          if (updateBtn) updateBtn.style.removeProperty('display');
+
           const link = document.createElement('a');
           link.download = 'score-battle-ranking.png';
           link.href = dataUrl;
           link.click();
         })
         .catch(function (error) {
+          // エラーが発生した場合も同様に元に戻す
+          if (updateBtn) updateBtn.style.removeProperty('display');
           console.error("画像生成エラー:", error);
         });
     }
@@ -800,7 +1045,6 @@
       const btn = document.getElementById('submit-btn');
       const statusEl = document.getElementById('submit-status');
 
-      // 1. 終了日時の判定
       if (now >= eventEnd) {
         btn.disabled = true;
         btn.textContent = "受付終了";
@@ -809,7 +1053,6 @@
         return true; 
       }
 
-      // 2. メンテナンス判定
       if (now >= mStart && now < mEnd) {
         btn.disabled = true;
         btn.textContent = "メンテナンス中";
@@ -820,7 +1063,6 @@
         return true; 
       }
 
-      // 3. 通常時
       btn.disabled = false;
       btn.textContent = "送信する";
       
@@ -896,9 +1138,12 @@
       loadNGWords();
       setDisplayEndTime();
       
-      // ズーム設定の読み込みと適用
       loadPageSettings();
       document.body.style.zoom = pageSettings['score-battle_zoom'] || 1.0;
+
+      loadAppSettings();
+      
+      initResizableColumns();
 
       if(GAS_WEB_APP_URL === "ここにURLを貼り付けてください") {
         document.getElementById('loading').textContent = "※GASのURLが設定されていません。コードを編集してください。";
@@ -1008,6 +1253,8 @@
     }
 
     function renderRanking() {
+      saveAppSettings();
+
       const tbody = document.getElementById('ranking-body');
       const filterValue = document.getElementById('filter-regulation').value;
       const myUserId = getOrCreateUserId();
@@ -1025,8 +1272,26 @@
 
       const isMaintenance = isMaintenanceNow();
 
-      // ★ 全件表示に変更
       let displayData = currentFilteredData;
+      
+      const limitMode = document.querySelector('input[name="limit_mode"]:checked').value;
+      if (limitMode === 'custom') {
+        const limitNum = parseInt(document.getElementById('input-limit-num').value) || 10;
+        const includeMyRank = document.getElementById('check-include-my-rank').checked;
+        
+        let finalData = currentFilteredData.slice(0, limitNum);
+        
+        if (includeMyRank) {
+          let myRecords = currentFilteredData.filter(item => item.userId === myUserId);
+          myRecords.forEach(myRecord => {
+            if (!finalData.includes(myRecord)) {
+              finalData.push(myRecord);
+            }
+          });
+          finalData.sort((a, b) => Number(b.score) - Number(a.score));
+        }
+        displayData = finalData;
+      }
 
       displayData.forEach((item, index) => {
         const realIndex = currentFilteredData.indexOf(item);
@@ -1044,7 +1309,6 @@
 
         const tr = document.createElement('tr');
         
-        // 自分の記録の場合はクラスを付与
         if (isMyRecord) {
           tr.className = 'my-record';
         }
