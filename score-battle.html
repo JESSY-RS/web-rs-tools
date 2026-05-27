@@ -767,6 +767,16 @@
     </div>
   </div>
 
+  <div id="id-confirm-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <p>ユーザーIDを上書きしますか？<br><br><span style="font-size: 14px; color: #bbb;">※現在のIDで登録したスコアは<br>自分から削除できなくなります</span></p>
+      <div class="modal-actions">
+        <button onclick="closeIdConfirmModal()" class="btn-cancel">キャンセル</button>
+        <button onclick="executeSetUserId()" class="btn-delete-confirm">上書きする</button>
+      </div>
+    </div>
+  </div>
+
   <div id="custom-alert-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
       <p id="custom-alert-message"></p>
@@ -847,6 +857,8 @@
       document.body.removeChild(tempInput);
     }
 
+    let pendingNewUserId = null;
+
     function setUserId() {
       const newId = document.getElementById('new-user-id').value.trim();
       
@@ -855,22 +867,33 @@
         return;
       }
 
-      // 不正な文字入力やイタズラを防ぐための形式チェック（user_数字_英数字 の形式になっているか）
       const idPattern = /^user_\d+_[a-z0-9]+$/;
       if (!idPattern.test(newId)) {
         showCustomAlert("不正なユーザーIDの形式です。\nコピーした正しいIDを貼り付けてください。");
         return;
       }
       
-      if (confirm("ユーザーIDを上書きしますか？\n(現在のIDで登録したスコアは自分から削除できなくなります)")) {
-        localStorage.setItem('ranking_anonymous_id', newId);
-        document.getElementById('current-user-id').value = newId;
-        document.getElementById('new-user-id').value = '';
-        showCustomAlert("ユーザーIDを引き継ぎました。\nランキングの表示を更新します。");
-        
-        // ID変更による「自分の記録」表示の更新
-        renderRanking();
-      }
+      // カスタムモーダルを表示して待機
+      pendingNewUserId = newId;
+      document.getElementById('id-confirm-modal').style.display = 'flex';
+    }
+
+    function closeIdConfirmModal() {
+      document.getElementById('id-confirm-modal').style.display = 'none';
+      pendingNewUserId = null;
+    }
+
+    function executeSetUserId() {
+      if (!pendingNewUserId) return;
+
+      localStorage.setItem('ranking_anonymous_id', pendingNewUserId);
+      document.getElementById('current-user-id').value = pendingNewUserId;
+      document.getElementById('new-user-id').value = '';
+      
+      closeIdConfirmModal();
+      showCustomAlert("ユーザーIDを引き継ぎました。\nランキングの表示を更新します。");
+      
+      renderRanking();
     }
 
     // --- 各種設定・列幅のローカル保存処理 ---
