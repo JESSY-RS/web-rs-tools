@@ -46,7 +46,7 @@
     #ranking-title {
       cursor: pointer;
       transition: opacity 0.2s;
-      user-select: none; /* ダブルクリック時の文字選択を防ぐ */
+      user-select: none;
     }
     #ranking-title:hover {
       opacity: 0.7;
@@ -198,6 +198,35 @@
       margin-left: 10px;
     }
 
+    /* --- ユーザーID設定パネル用スタイル --- */
+    .uid-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .uid-block {
+      flex: 1; 
+      min-width: 360px; 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .uid-label {
+      color: #ccc;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .uid-inputs {
+      display: flex;
+      gap: 5px;
+      flex: 1;
+      min-width: 0; 
+    }
+    .uid-inputs input {
+      flex: 1;
+      min-width: 0;
+    }
+
     input:focus, select:focus, #input-regulation:focus {
       outline: none;
       border-color: #50b4f0;
@@ -267,8 +296,8 @@
       color: #e0e0e0;
       font-weight: bold;
       text-align: center !important; 
-      position: relative; /* 列幅リサイザーの基準位置 */
-      user-select: none;  /* テキストの選択を防いでドラッグ操作を安定させる */
+      position: relative; 
+      user-select: none;  
     }
 
     td { background-color: #2a2a2a; }
@@ -317,7 +346,7 @@
     .resizer {
       position: absolute;
       top: 0;
-      right: -3px; /* 罫線の上に重なるように配置 */
+      right: -3px; 
       width: 6px;
       height: 100%;
       cursor: col-resize;
@@ -362,6 +391,22 @@
       }
     }
 
+    /* 【中〜小画面用（767px以下）レイアウト】 */
+    @media (max-width: 767px) {
+      .uid-block {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+        min-width: 100%; 
+      }
+      .uid-label {
+        white-space: normal;
+      }
+      .uid-inputs {
+        width: 100%;
+      }
+    }
+
     /* 【PC・タブレットなど広い画面用（768px以上）】 */
     @media (min-width: 768px) {
       .col-rank { width: 8%; }
@@ -382,7 +427,6 @@
       }
       .col-action { width: 18%; }
 
-      /* PCは横並び（左右配置・折り返し許可） */
       .action-buttons {
         flex-direction: row; 
         justify-content: center;
@@ -578,14 +622,11 @@
       border-right: 1px solid #666 !important;
     }
 
-    /* 撮影時のテーブル列幅の最適化（条件を少し狭め、名前を広げる） 
-       ※ユーザーが手動で幅を変更している場合は上書きしない設定にしています */
     body.screenshot-mode table:not(.user-resized) .col-rank { width: 9% !important; }  
     body.screenshot-mode table:not(.user-resized) .col-score { width: 28% !important; } 
     body.screenshot-mode table:not(.user-resized) .col-name { width: 24% !important; }  
     body.screenshot-mode table:not(.user-resized) .col-reg { width: 39% !important; } 
 
-    /* PC・タブレット用の配分 */
     @media (min-width: 768px) {
       body.screenshot-mode table:not(.user-resized) .col-rank { width: 7% !important; } 
       body.screenshot-mode table:not(.user-resized) .col-score { width: 18% !important; }
@@ -609,20 +650,25 @@
       <span id="end-time-display" style="color: red; font-size: 14px;"></span>
     </div>
 
-    <div id="user-id-settings" style="display: none; background-color: #444; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
-      <div style="font-size: 14px; margin-bottom: 8px;">
-        <span style="color: #ccc; font-weight: bold;">現在のユーザーID:</span>
-        <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
-          <input type="text" id="current-user-id" readonly onfocus="this.select()" style="font-size: 14px; padding: 4px; flex: 1;">
-          <button onclick="copyUserId()" class="btn-update" id="copy-id-btn" style="background-color: #2A99E6; padding: 4px 10px;">コピー</button>
+    <div id="user-id-settings" style="display: none; background-color: #444; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+      <div class="uid-container">
+        
+        <div class="uid-block">
+          <div class="uid-label">現在のユーザーID:</div>
+          <div class="uid-inputs">
+            <input type="text" id="current-user-id" readonly onfocus="this.select()" style="font-size: 14px; padding: 4px;" placeholder="未発行 (送信時に自動で発行されます)">
+            <button onclick="copyUserId()" class="btn-update" id="copy-id-btn" style="background-color: #2A99E6; padding: 4px 10px; white-space: nowrap;">コピー</button>
+          </div>
         </div>
-      </div>
-      <div style="font-size: 14px; margin-top: 15px;">
-        <span style="color: #ccc; font-weight: bold;">IDを引き継ぐ (機種変更時など):</span>
-        <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
-          <input type="text" id="new-user-id" placeholder="別の端末でコピーしたIDを貼り付け" onfocus="this.select()" style="font-size: 14px; padding: 4px; flex: 1;">
-          <button onclick="setUserId()" class="btn-update" style="background-color: #dc3545; padding: 4px 10px;">セット</button>
+
+        <div class="uid-block">
+          <div class="uid-label">IDを引き継ぐ:</div>
+          <div class="uid-inputs">
+            <input type="text" id="new-user-id" placeholder="別の端末でコピーしたIDを貼り付け" onfocus="this.select()" style="font-size: 14px; padding: 4px;">
+            <button onclick="setUserId()" class="btn-update" style="background-color: #dc3545; padding: 4px 10px; white-space: nowrap;">セット</button>
+          </div>
         </div>
+
       </div>
     </div>
     
@@ -734,14 +780,14 @@
     // =========================================================
     // 1. GASのウェブアプリURL
     // =========================================================
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyP1A-gYmh4po89eOXKqWeHcS8hdgbgAcVmBJDWhVPRK0Vct2kJ35V21Q1h7sHyGs8c/exec"; 
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz8WawBVBRND3TtNuaDdGiNC1PlP94VatPV9LSRsRx07_2PMSsQJ6ZiqQ1-lwJzE4KW/exec"; 
     
     // =========================================================
     // 2. メンテナンス時間の設定
     // 形式: "YYYY-MM-DDTHH:mm:ss+09:00" （+09:00は日本時間のことです）
     // =========================================================
     const MAINTENANCE_START = "2026-05-27T21:30:00+09:00"; 
-    const MAINTENANCE_END   = "2026-05-27T23:00:00+09:00"; 
+    const MAINTENANCE_END   = "2026-05-27T22:30:00+09:00"; 
 
     // =========================================================
     // 3. スコア登録の終了日時設定
@@ -763,12 +809,17 @@
     
     let isScreenshotMode = false;
 
+    // --- ユーザーID取得関数（ローカルストレージに無い場合は空文字を返す） ---
+    function getLocalUserId() {
+      return localStorage.getItem('ranking_anonymous_id') || "";
+    }
+
     // --- ユーザーID設定・コピー関連の処理 ---
     function toggleUserIdPanel() {
       const panel = document.getElementById('user-id-settings');
       if (panel.style.display === 'none') {
         panel.style.display = 'block';
-        document.getElementById('current-user-id').value = getOrCreateUserId();
+        document.getElementById('current-user-id').value = getLocalUserId();
       } else {
         panel.style.display = 'none';
       }
@@ -776,6 +827,10 @@
 
     function copyUserId() {
       const userId = document.getElementById('current-user-id').value;
+      if (!userId) {
+        showCustomAlert("ユーザーIDがまだ発行されていません。\n一度スコアを送信すると発行されます。");
+        return;
+      }
       const tempInput = document.createElement('input');
       tempInput.value = userId;
       document.body.appendChild(tempInput);
@@ -794,8 +849,16 @@
 
     function setUserId() {
       const newId = document.getElementById('new-user-id').value.trim();
+      
       if (!newId) {
         showCustomAlert("新しいユーザーIDを入力してください。");
+        return;
+      }
+
+      // 不正な文字入力やイタズラを防ぐための形式チェック（user_数字_英数字 の形式になっているか）
+      const idPattern = /^user_\d+_[a-z0-9]+$/;
+      if (!idPattern.test(newId)) {
+        showCustomAlert("不正なユーザーIDの形式です。\nコピーした正しいIDを貼り付けてください。");
         return;
       }
       
@@ -1099,6 +1162,18 @@
 
     // メンテナンス・終了日時の判定
     function checkSubmitStatus() {
+      if (document.title.includes('★')) {
+        const btn = document.getElementById('submit-btn');
+        const statusEl = document.getElementById('submit-status');
+        btn.disabled = false;
+        btn.textContent = "送信する";
+        if (statusEl.textContent.includes('メンテナンス') || statusEl.textContent.includes('終了')) {
+          statusEl.textContent = '';
+          statusEl.className = 'status-msg';
+        }
+        return false;
+      }
+
       const now = new Date();
       const eventEnd = new Date(EVENT_END_TIME);
       const mStart = new Date(MAINTENANCE_START);
@@ -1137,19 +1212,12 @@
 
     // 削除機能用のメンテナンス中判定（終了後も削除は可能にするため分ける）
     function isMaintenanceNow() {
+      if (document.title.includes('★')) return false;
+      
       const now = new Date();
       const start = new Date(MAINTENANCE_START);
       const end = new Date(MAINTENANCE_END);
       return (now >= start && now < end);
-    }
-
-    function getOrCreateUserId() {
-      let userId = localStorage.getItem('ranking_anonymous_id');
-      if (!userId) {
-        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
-        localStorage.setItem('ranking_anonymous_id', userId);
-      }
-      return userId;
     }
 
     function loadUserDataLocally() {
@@ -1194,7 +1262,6 @@
     }
 
     window.onload = function() {
-      getOrCreateUserId();
       checkSubmitStatus(); 
       loadUserDataLocally(); 
       loadNGWords();
@@ -1319,7 +1386,7 @@
 
       const tbody = document.getElementById('ranking-body');
       const filterValue = document.getElementById('filter-regulation').value;
-      const myUserId = getOrCreateUserId();
+      const myUserId = getLocalUserId(); 
       tbody.innerHTML = '';
 
       currentFilteredData = allRankingData.filter(item => {
@@ -1343,7 +1410,7 @@
         
         let finalData = currentFilteredData.slice(0, limitNum);
         
-        if (includeMyRank) {
+        if (includeMyRank && myUserId) { 
           let myRecords = currentFilteredData.filter(item => item.userId === myUserId);
           myRecords.forEach(myRecord => {
             if (!finalData.includes(myRecord)) {
@@ -1358,7 +1425,7 @@
       displayData.forEach((item, index) => {
         const realIndex = currentFilteredData.indexOf(item);
         const rank = realIndex + 1;
-        const isMyRecord = (item.userId === myUserId);
+        const isMyRecord = (item.userId === myUserId && myUserId !== ""); 
         
         let rankDisplay = rank;
         if (rank === 1) {
@@ -1409,7 +1476,7 @@
       
       const name = document.getElementById('input-name').value;
       const score = document.getElementById('input-score').value;
-      const userId = getOrCreateUserId(); 
+      const userId = getLocalUserId(); 
 
       let regulation = "";
       const mode = document.querySelector('input[name="reg_mode"]:checked').value;
@@ -1470,11 +1537,18 @@
       };
 
       try {
-        await fetch(GAS_WEB_APP_URL, {
+        const response = await fetch(GAS_WEB_APP_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(payload)
         });
+        
+        const resultData = await response.json(); 
+        
+        if (resultData.status === "success" && resultData.userId) {
+            localStorage.setItem('ranking_anonymous_id', resultData.userId);
+            document.getElementById('current-user-id').value = resultData.userId;
+        }
 
         statusEl.textContent = '送信完了！';
         statusEl.className = 'status-msg success';
@@ -1539,7 +1613,7 @@
       const payload = {
         action: "delete",
         recordId: recordId,
-        userId: getOrCreateUserId() 
+        userId: getLocalUserId() 
       };
 
       try {
