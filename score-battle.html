@@ -268,6 +268,7 @@
       font-weight: bold;
       text-align: center !important; 
       position: relative; /* 列幅リサイザーの基準位置 */
+      user-select: none;  /* テキストの選択を防いでドラッグ操作を安定させる */
     }
 
     td { background-color: #2a2a2a; }
@@ -604,8 +605,25 @@
 
   <div class="section" id="section-score-register">
     <div class="section-header">
-      <h2>スコア登録</h2>
+      <h2 onclick="toggleUserIdPanel()" style="cursor: pointer;" title="クリックでユーザーID設定を開閉">スコア登録</h2>
       <span id="end-time-display" style="color: red; font-size: 14px;"></span>
+    </div>
+
+    <div id="user-id-settings" style="display: none; background-color: #444; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+      <div style="font-size: 14px; margin-bottom: 8px;">
+        <span style="color: #ccc; font-weight: bold;">現在のユーザーID:</span>
+        <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
+          <input type="text" id="current-user-id" readonly onfocus="this.select()" style="font-size: 14px; padding: 4px; flex: 1;">
+          <button onclick="copyUserId()" class="btn-update" id="copy-id-btn" style="background-color: #2A99E6; padding: 4px 10px;">コピー</button>
+        </div>
+      </div>
+      <div style="font-size: 14px; margin-top: 15px;">
+        <span style="color: #ccc; font-weight: bold;">IDを引き継ぐ (機種変更時など):</span>
+        <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
+          <input type="text" id="new-user-id" placeholder="別の端末でコピーしたIDを貼り付け" onfocus="this.select()" style="font-size: 14px; padding: 4px; flex: 1;">
+          <button onclick="setUserId()" class="btn-update" style="background-color: #dc3545; padding: 4px 10px;">セット</button>
+        </div>
+      </div>
     </div>
     
     <div class="form-row">
@@ -744,6 +762,53 @@
     let isDictLoaded = false;
     
     let isScreenshotMode = false;
+
+    // --- ユーザーID設定・コピー関連の処理 ---
+    function toggleUserIdPanel() {
+      const panel = document.getElementById('user-id-settings');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        document.getElementById('current-user-id').value = getOrCreateUserId();
+      } else {
+        panel.style.display = 'none';
+      }
+    }
+
+    function copyUserId() {
+      const userId = document.getElementById('current-user-id').value;
+      const tempInput = document.createElement('input');
+      tempInput.value = userId;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+        const btn = document.getElementById('copy-id-btn');
+        const originalText = btn.textContent;
+        btn.textContent = 'コピー完了！';
+        setTimeout(() => { btn.textContent = originalText; }, 2000);
+      } catch (err) {
+        alert('クリップボードにコピーできませんでした: ' + err);
+      }
+      document.body.removeChild(tempInput);
+    }
+
+    function setUserId() {
+      const newId = document.getElementById('new-user-id').value.trim();
+      if (!newId) {
+        showCustomAlert("新しいユーザーIDを入力してください。");
+        return;
+      }
+      
+      if (confirm("ユーザーIDを上書きしますか？\n(現在のIDで登録したスコアは自分から削除できなくなります)")) {
+        localStorage.setItem('ranking_anonymous_id', newId);
+        document.getElementById('current-user-id').value = newId;
+        document.getElementById('new-user-id').value = '';
+        showCustomAlert("ユーザーIDを引き継ぎました。\nランキングの表示を更新します。");
+        
+        // ID変更による「自分の記録」表示の更新
+        renderRanking();
+      }
+    }
 
     // --- 各種設定・列幅のローカル保存処理 ---
     const APP_SETTINGS_KEY = 'score-battle-app-settings';
@@ -960,7 +1025,6 @@
 
       const target = document.body;
       
-      // 画像生成の間だけ「最新に更新」ボタンを一時的に完全非表示にする
       const updateBtn = document.querySelector('.btn-update');
       if (updateBtn) updateBtn.style.setProperty('display', 'none', 'important');
 
@@ -973,7 +1037,6 @@
 
       domtoimage.toPng(target, options)
         .then(function (dataUrl) {
-          // 生成が終わったらボタンの非表示設定を解除して元に戻す
           if (updateBtn) updateBtn.style.removeProperty('display');
 
           const link = document.createElement('a');
@@ -982,7 +1045,6 @@
           link.click();
         })
         .catch(function (error) {
-          // エラーが発生した場合も同様に元に戻す
           if (updateBtn) updateBtn.style.removeProperty('display');
           console.error("画像生成エラー:", error);
         });
