@@ -1106,12 +1106,16 @@
     // =========================================================
     // ページ全体を画像化してダウンロードする関数 (シンプル版)
     // =========================================================
+    // =========================================================
+    // ページ全体を画像化してダウンロードする関数 (シンプル版)
+    // =========================================================
     function takeScreenshot() {
       if (!isScreenshotMode) return; 
 
       const target = document.body;
       
-      const updateBtn = document.querySelector('.btn-update');
+      // 【修正】ランキングエリア内にある更新ボタンをピンポイントで指定する
+      const updateBtn = document.querySelector('#section-ranking .btn-update');
       if (updateBtn) updateBtn.style.setProperty('display', 'none', 'important');
 
       const options = {
