@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-  <title>タクト制圧戦・報酬効率比較ツール</title> 
+  <title>7.5周年・報酬効率比較ツール</title> 
   <style>
 
     /* 1. 基本の指定（Windows, Android, Mac用） */
@@ -509,7 +509,7 @@
   </div>
 
   <div class="header">
-    <h2><span class="hamburger" onclick="toggleMenu()"></span><span id="titleTrigger" onclick="toggleLayout()">タクト制圧戦・報酬効率比較ツール</span></h2>
+    <h2><span class="hamburger" onclick="toggleMenu()"></span><span id="titleTrigger" onclick="toggleLayout()">7.5周年・報酬効率比較ツール</span></h2>
   </div>
 
   <div id="warning">※グレードにより個数が判明していない部分は入力してください。</div>
@@ -544,10 +544,10 @@
       <div class="input-wrapper" id="itemSelect1">
         <span class="input-label-area"><label>アイテム選択：</label></span>
         <div class="radio-group">
-          <label><input type="radio" name="itemType1" value="item1" onchange="changeItemType(1)">剣練磨石</label>
-          <label><input type="radio" name="itemType1" value="item2" onchange="changeItemType(1)">鎧練磨石</label>
-          <label><input type="radio" name="itemType1" value="item3" onchange="changeItemType(1)">モナン印</label>
-          <label><input type="radio" name="itemType1" value="item4" onchange="changeItemType(1)" checked>記念宝箱</label>
+          <label><input type="radio" name="itemType1" value="item1" onchange="changeItemType(1)">練磨石</label>
+          <label><input type="radio" name="itemType1" value="item2" onchange="changeItemType(1)">黒厄石</label>
+          <label><input type="radio" name="itemType1" value="item3" onchange="changeItemType(1)">祈詩の虹輪</label>
+          <label><input type="radio" name="itemType1" value="item4" onchange="changeItemType(1)" checked>フラッグ</label>
         </div>
       </div>
 
@@ -597,10 +597,10 @@
       <div class="input-wrapper" id="itemSelect2">
         <span class="input-label-area"><label>アイテム選択：</label></span>
         <div class="radio-group">
-          <label><input type="radio" name="itemType2" value="item1" onchange="changeItemType(2)">剣練磨石</label>
-          <label><input type="radio" name="itemType2" value="item2" onchange="changeItemType(2)">鎧練磨石</label>
-          <label><input type="radio" name="itemType2" value="item3" onchange="changeItemType(2)">モナン印</label>
-          <label><input type="radio" name="itemType2" value="item4" onchange="changeItemType(2)" checked>記念宝箱</label>
+          <label><input type="radio" name="itemType2" value="item1" onchange="changeItemType(2)">練磨石</label>
+          <label><input type="radio" name="itemType2" value="item2" onchange="changeItemType(2)">黒厄石</label>
+          <label><input type="radio" name="itemType2" value="item3" onchange="changeItemType(2)">祈詩の虹輪</label>
+          <label><input type="radio" name="itemType2" value="item4" onchange="changeItemType(2)" checked>フラッグ</label>
         </div>
       </div>
 
@@ -664,8 +664,8 @@
       <thead>
         <tr>
           <th>Gr.</th>
-          <th>ドラゴン<br>あくまのきし</th>
-          <th>ゴーレム<br>りゅうおう<br>竜王</th>
+          <th>ジェラール<br>サラ<br>T260G</th>
+          <th>白薔薇姫<br>ミルザ<br>聖王</th>
           <th>成長判定回数</th>
           <th>ボーナス倍率</th>
         </tr>
@@ -680,38 +680,38 @@
         </tr>
         <tr>
           <td class="num">6</td>
-          <td class="num">200億</td>
-          <td class="num">200億</td>
+          <td class="num">250億</td>
+          <td class="num">300億</td>
           <td class="num">8回</td>
-          <td class="num">2.90倍</td>
+          <td class="num">2.9倍</td>
         </tr>
         <tr>
           <td class="num">7</td>
-          <td class="num">225億</td>
-          <td class="num">235億</td>
+          <td class="num">300億</td>
+          <td class="num">360億</td>
           <td class="num">9回</td>
-          <td class="num">3.60倍</td>
+          <td class="num">3.6倍</td>
         </tr>
         <tr>
           <td class="num">8</td>
-          <td class="num">250億</td>
-          <td class="num">270億</td>
+          <td class="num">350億</td>
+          <td class="num">420億</td>
           <td class="num">10回</td>
-          <td class="num">4.35倍</td>
+          <td class="num">4.4倍</td>
         </tr>
         <tr>
           <td class="num">9</td>
-          <td class="num">275億</td>
-          <td class="num">300億</td>
+          <td class="num">400億</td>
+          <td class="num">480億</td>
           <td class="num">20回</td>
-          <td class="num">7.00倍</td>
+          <td class="num">7.0倍</td>
         </tr>
         <tr>
           <td class="num">10</td>
-          <td class="num">300億</td>
-          <td class="num">350億</td>
+          <td class="num">500億</td>
+          <td class="num">600億</td>
           <td class="num">40回</td>
-          <td class="num">9.30倍</td>
+          <td class="num">9.3倍</td>
         </tr>
       </tbody>
     </table>
@@ -968,39 +968,39 @@
     if (isNewDataMode) {
         // 新データ (指定日時以降、またはデバッグ時)
         itemData = {
-          // 剣練磨石
+          // 練磨石
           item1: {
-            0: null, 6: null, 7: null, 8: null, 9: null, 10: 112.0
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // 鎧練磨石
+          // 黒厄石
           item2: {
-            0: null, 6: null, 7: null, 8: null, 9: null, 10: 112.0
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // モナン印
+          // 祈詩の虹輪
           item3: {
-            0: null, 6: null, 7: null, 8: null, 9: null, 10: 557.7
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // 記念宝箱 (新規データ。表示はスクリプトで変更)
+          // フラッグ (新規データ。表示はスクリプトで変更)
           item4: {
-            0: 1, 6: 1, 7: 1, 8: 2, 9: 4, 10: 10
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           }
         };
     } else {
         // 旧データ (デフォルト)
         itemData = {
-          // 剣練磨石
+          // 練磨石
           item1: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // 鎧練磨石
+          // 黒厄石
           item2: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // モナン印
+          // 祈詩の虹輪
           item3: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // 記念宝箱（既存データ）
+          // フラッグ（既存データ）
           item4: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           }
