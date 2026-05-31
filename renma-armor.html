@@ -1132,6 +1132,21 @@
     // === グローバル変数と共通関数 ==================================================
     // =========================================================================
     
+    // ★特殊なシリーズ効果を持つ装備の名称リスト（今後増えたらここに追加するだけでOK）
+    const SPECIAL_SERIES_ARMORS = [
+        '名将の鎧',
+        '英傑の足甲',
+        'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ',
+        'バトルヴァンブレイス',
+        'ゾクのはちまき'
+    ];
+
+    // ★装備名に上記のリストのいずれかが含まれているか判定する関数
+    const isSpecialArmorName = (armorName) => {
+        if (!armorName) return false;
+        return SPECIAL_SERIES_ARMORS.some(specialName => armorName.includes(specialName));
+    };
+
     const urlParams = new URLSearchParams(window.location.search);
     const paramMode = urlParams.get('mode');
     
@@ -2755,7 +2770,7 @@ function getPartData(part) {
             let totalAddedValue = 0;
 
             if (includeUnique) {
-                const isSpecialArmor = item.armorName.includes("名将の鎧") || item.armorName.includes("英傑の足甲") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ") || item.armorName.includes("バトルヴァンブレイス");
+                const isSpecialArmor = isSpecialArmorName(item.armorName);
                 if (!isSpecialArmor) {
                     let armorBonuses = uniqueAbilities[item.armorName];
                     if (!armorBonuses) {
@@ -2844,7 +2859,7 @@ function getPartData(part) {
                         if (item.isCombined) {
                             armorCellHTML = `<span class="combined-armor-name">${item.armorName} (+${item.addedValue})</span>`;
                             valueCellClass += ' combined-value';
-                        } else if (item.armorName.includes("名将の鎧") || item.armorName.includes("英傑の足甲") || item.armorName.includes("ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ")) {
+                        } else if (isSpecialArmorName(item.armorName)) {
                             armorCellHTML = `<span class="special-armor-name">${item.armorName}</span>`;
                         } else {
                             armorCellHTML = item.armorName;
@@ -3050,7 +3065,7 @@ function getPartData(part) {
 
         for (const ability of abilities) {
             let shouldAddValue = true;
-            if (armorName.includes('名将の鎧') || armorName.includes('英傑の足甲') || armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || armorName.includes('バトルヴァンブレイス')) {
+            if (isSpecialArmorName(armorName)) {
                 if (selectedSeries === '未選択') {
                     shouldAddValue = false;
                 } else {
@@ -3367,7 +3382,7 @@ function getPartData(part) {
         
         if (!mainArmor || mainArmor.armorName === '該当なし') mainArmorNameStyle = 'style="color: red;"';
         else if (isMainDupe) mainArmorNameStyle = 'style="color: red;"'; // 重複時は赤 (最優先)
-        else if (mainArmor.armorName.includes('名将の鎧') || mainArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) mainArmorNameStyle = 'style="color: magenta;"';
+        else if (isSpecialArmorName(mainArmor.armorName)) mainArmorNameStyle = 'style="color: magenta;"';
         else if (mainArmor.nativeValue > 0) mainArmorNameStyle = 'style="color: orange;"';
         
         // 副防具のスタイル判定
@@ -3376,7 +3391,7 @@ function getPartData(part) {
 
         if (!subArmor || subArmor.armorName === '該当なし') subArmorNameStyle = 'style="color: red;"';
         else if (isSubDupe) subArmorNameStyle = 'style="color: red;"'; // 重複時は赤 (最優先)
-        else if (subArmor.armorName.includes('名将の鎧') || subArmor.armorName.includes('英傑の足甲') || subArmor.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) subArmorNameStyle = 'style="color: magenta;"';
+        else if (isSpecialArmorName(subArmor.armorName)) subArmorNameStyle = 'style="color: magenta;"';
         else if (subArmor.nativeValue > 0) subArmorNameStyle = 'style="color: orange;"';
 
         const mainArmorNameText = mainArmor.nativeValue > 0 && mainArmor.armorName !== '該当なし' ? `${mainArmor.armorName}(+${mainArmor.nativeValue})` : mainArmor.armorName;
