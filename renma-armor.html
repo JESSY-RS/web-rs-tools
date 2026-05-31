@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+n<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -1132,19 +1132,29 @@
     // === グローバル変数と共通関数 ==================================================
     // =========================================================================
     
-    // ★特殊なシリーズ効果を持つ装備の名称リスト（今後増えたらここに追加するだけでOK）
-    const SPECIAL_SERIES_ARMORS = [
-        '名将の鎧',
-        '英傑の足甲',
-        'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ',
-        'バトルヴァンブレイス',
-        'ゾクのはちまき'
-    ];
+    // ★「▶」のサブメニュー【あり】の特殊装備（動的シリーズ）
+    // 装備名(全角)をキーに、サブメニューに出したいシリーズの配列を定義する
+    const SPECIAL_SERIES_ARMORS = {
+        '名将の鎧': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'],
+        '英傑の足甲': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'],
+        'バトルヴァンブレイス': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US・ES・IS','SSG','SaGaRS','SaGaEB']
+    };
 
-    // ★装備名に上記のリストのいずれかが含まれているか判定する関数
-    const isSpecialArmorName = (armorName) => {
-        if (!armorName) return false;
-        return SPECIAL_SERIES_ARMORS.some(specialName => armorName.includes(specialName));
+    // ★「▶」のサブメニュー【なし】の特殊装備（固定シリーズ）
+    // 今後増えたら、ここに「'装備名': ['シリーズ名1', 'シリーズ名2']」を書き足すだけでOK！
+    const FIXED_SERIES_ARMORS = {
+        'ゾクのはちまき': ['GBSaGa']
+    };
+
+    // ★装備名の半角/全角を統一してから判定する関数
+    const isSpecialArmorName = (rawArmorName) => {
+        if (!rawArmorName) return false;
+        // NFKC正規化で半角カナを全角カナに自動変換
+        const armorName = rawArmorName.normalize('NFKC');
+        
+        const isDynamic = Object.keys(SPECIAL_SERIES_ARMORS).some(name => armorName.includes(name));
+        const isFixed = Object.keys(FIXED_SERIES_ARMORS).some(name => armorName.includes(name));
+        return isDynamic || isFixed;
     };
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -1236,14 +1246,12 @@
     function setDataDirty(isDirty) {
         isDataDirty = isDirty;
         
-        // エクスポート状態をLocalStorageに保存
         if (isDirty) {
             localStorage.setItem(EXPORT_STATE_KEY, 'true');
         } else {
             localStorage.removeItem(EXPORT_STATE_KEY);
         }
         
-        // エクスポートボタンの警告表示制御
         const exportButtons = document.querySelectorAll('#export-btn, #export-btn-footer');
         exportButtons.forEach(button => {
             if (isDirty) {
@@ -1257,14 +1265,11 @@
 
         syncDataFromListTab();
 
-        // モードによる保存処理の分岐
         if (isCloudMode) {
-            // クラウドモードの場合: 自動保存フックを呼び出す
             if (isDirty && window.handleAutoSave) {
                 window.handleAutoSave(); 
             }
         } else {
-            // 通常モードの場合: ローカルストレージに未保存データを記録
             if (isDirty) {
                 localStorage.setItem(UNSAVED_DATA_KEY, JSON.stringify(sharedArmorData));
                 localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: true }));
@@ -1378,9 +1383,6 @@
         }
     }
 
-    // =========================================================================
-    // === DOMContentLoaded: メイン処理 ============================================
-    // =========================================================================
     document.addEventListener('DOMContentLoaded', async () => {
         loadPageSettings();
         await initializeCommonData();
@@ -1454,10 +1456,6 @@
         });
     }
     
-    // =========================================================================
-    // === 1. リストタブ (renma-armor.html) のスクリプト =============================
-    // =========================================================================
-    
     async function loadCSV_list(filePath) {
         try {
             const response = await fetch(filePath);
@@ -1499,20 +1497,18 @@
         let targetBaseName = null;
         let extractedSeries = "";
 
-        if (inputName.includes('名将の鎧')) {
-            targetBaseName = '名将の鎧';
-            const match = inputName.match(/[\(（](.+)[\)）]/);
-            if (match) extractedSeries = `(${match[1]})`;
-        }
-        else if (inputName.includes('英傑の足甲')) {
-            targetBaseName = '英傑の足甲';
-            const match = inputName.match(/[\(（](.+)[\)）]/);
-            if (match) extractedSeries = `(${match[1]})`;
-        }
-        else if (inputName.includes('バトルヴァンブレイス') || inputName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) {
-            targetBaseName = 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ'; 
-            const match = inputName.match(/[\(（](.+)[\)）]/);
-            if (match) extractedSeries = `(${match[1]})`;
+        const normalizedInput = inputName.normalize('NFKC');
+        const specialKey = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedInput.includes(name));
+        const fixedKey = Object.keys(FIXED_SERIES_ARMORS).find(name => normalizedInput.includes(name));
+
+        if (specialKey || fixedKey) {
+            const searchKey = specialKey || fixedKey;
+            const found = allArmorData.find(item => (item.baseName || '').normalize('NFKC').includes(searchKey));
+            if (found) {
+                targetBaseName = found.baseName;
+                const match = inputName.match(/[\(（](.+)[\)）]/);
+                if (match) extractedSeries = `(${match[1]})`;
+            }
         }
 
         if (targetBaseName) {
@@ -1548,15 +1544,10 @@
         const searchPanel = document.getElementById('search-panel');
         const sortPanel = document.getElementById('sort-panel');
         const template = document.getElementById('armor-part-template');
-        
-        const warlordArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'];
-        const eiketsuArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'];
-        const vanbraceArmorSublist = ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US・ES・IS','SSG','SaGaRS','SaGaEB'];
 
         let applyFilterFunction = () => {};
         
         const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
-        const toHalfWidthBattleVanbrace = (str) => str.replace('バトルヴァンブレイス', 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
 
         function setupDropdown(part, armorType, options = {}) {
             const { addNone = false, addListOrder = false } = options;
@@ -1594,7 +1585,9 @@
 
             data.forEach(item => {
                 if (item.名称) {
-                    if (item.baseName === '名将の鎧' || item.baseName === '英傑の足甲' || item.baseName === 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') {
+                    const normalizedBaseName = (item.baseName || '').normalize('NFKC');
+
+                    if (Object.keys(SPECIAL_SERIES_ARMORS).some(name => normalizedBaseName.includes(name))) {
                         const optionEl = document.createElement('div');
                         optionEl.className = 'dropdown-option';
                         optionEl.dataset.hasSubmenu = 'true';
@@ -1754,17 +1747,11 @@
                     updateTop5Tab(sharedArmorData);
                     updateCalcTab(sharedArmorData);
                     
-                    // ▼▼▼ 修正箇所ここから ▼▼▼
-                    
-                    // 1. クラウドモードなら即時保存 (同期)
                     if (isCloudMode && window.saveToCloud) {
                         await window.saveToCloud();
                     }
 
-                    // 2. エクスポートボタンは「未保存」にせず通常状態にする
                     setDataDirty(false);
-
-                    // ▲▲▲ 修正箇所ここまで ▲▲▲
 
                     if (isAdminMode) {
                          localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(sharedArmorData));
@@ -1903,10 +1890,14 @@
                         text = target.dataset.value;
                         value = target.dataset.value;
                     } else {
-                        // 結合時に強制的に半角にする
-                        if (parentName.includes('バトルヴァンブレイス')) {
-                            parentName = toHalfWidthBattleVanbrace(parentName);
+                        // マスターデータから正規化(全角統一)で検索し、CSV側の本来の文字列を取得する
+                        const normalizedParent = parentName.normalize('NFKC');
+                        const foundData = allArmorData.find(item => (item.baseName || '').normalize('NFKC') === normalizedParent || (item.baseName || '').normalize('NFKC').includes(normalizedParent));
+                        
+                        if (foundData) {
+                            parentName = foundData.baseName;
                         }
+                        
                         text = `${parentName}(${valueText})`;
                         value = text;
                     }
@@ -1958,13 +1949,12 @@
                 let sublist = [];
                 let formattedParentText = parentText;
 
-                if (parentText.includes('名将の鎧')) {
-                    sublist = warlordArmorSublist;
-                } else if (parentText.includes('英傑の足甲')) {
-                    sublist = eiketsuArmorSublist;
-                } else if (parentText.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || parentText.includes('バトルヴァンブレイス')) {
-                    sublist = vanbraceArmorSublist;
-                    formattedParentText = toHalfWidthBattleVanbrace(parentText);
+                const normalizedParentText = parentText.normalize('NFKC');
+                const specialKey = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedParentText.includes(name));
+
+                if (specialKey) {
+                    sublist = SPECIAL_SERIES_ARMORS[specialKey];
+                    formattedParentText = parentText; 
                 }
 
                 const parentPart = option.closest('.armor-part');
@@ -2008,7 +1998,6 @@
         async function exportData() {
             syncDataFromListTab();
             
-            // クラウドモードなら即時保存
             if (isCloudMode && window.saveToCloud) {
                 await window.saveToCloud();
             }
@@ -2021,7 +2010,6 @@
             a.click();
             URL.revokeObjectURL(a.href);
             
-            // どのモードでもエクスポートしたら「未保存」フラグ（ボタンの警告）を消す
             setDataDirty(false);
         }
 
@@ -2099,9 +2087,11 @@
                     if (!filterArmorName) {
                         nameMatch = true; 
                     } else if (filterArmorName.endsWith('(全対象)')) {
-                        if (filterArmorName.includes('名将の鎧')) nameMatch = partArmorName.includes('名将の鎧');
-                        else if (filterArmorName.includes('英傑の足甲')) nameMatch = partArmorName.includes('英傑の足甲');
-                        else if (filterArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ')) nameMatch = partArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+                        const normalizedFilter = filterArmorName.normalize('NFKC');
+                        const specialKey = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedFilter.includes(name));
+                        if (specialKey) {
+                            nameMatch = partArmorName.normalize('NFKC').includes(specialKey);
+                        }
                     } else {
                         const parentArmorMatch = partArmorName.match(/(.+)\((.+)\)/);
                         if (parentArmorMatch) {
@@ -2318,77 +2308,51 @@
                     if (sortArmorName && sortArmorName !== 'none') {
                         let result = 0;
                         if (sortArmorName.endsWith('(シリーズ順)')) {
-                            const isWarlord = sortArmorName.includes('名将の鎧');
-                            const isEiketsu = sortArmorName.includes('英傑の足甲');
-                            const isVanbrace = sortArmorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
-                            const targetStr = isWarlord ? '名将の鎧' : (isEiketsu ? '英傑の足甲' : (isVanbrace ? 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ' : ''));
-                            const sublist = isWarlord ? warlordArmorSublist : (isEiketsu ? eiketsuArmorSublist : vanbraceArmorSublist);
+                            const normalizedSortArmorName = sortArmorName.normalize('NFKC');
+                            const specialKey = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedSortArmorName.includes(name));
+                            
+                            if (specialKey) {
+                                const targetStr = specialKey;
+                                const sublist = SPECIAL_SERIES_ARMORS[specialKey];
 
-                            const aIsTarget = aData.armorName.includes(targetStr);
-                            const bIsTarget = bData.armorName.includes(targetStr);
+                                const aIsTarget = (aData.armorName.normalize('NFKC')).includes(targetStr);
+                                const bIsTarget = (bData.armorName.normalize('NFKC')).includes(targetStr);
 
-                            if (aIsTarget !== bIsTarget) {
-                                result = aIsTarget ? -1 : 1;
-                            } else if (aIsTarget && bIsTarget) {
+                                if (aIsTarget !== bIsTarget) {
+                                    result = aIsTarget ? -1 : 1;
+                                } else if (aIsTarget && bIsTarget) {
+                                    const regex = /\(([^)]+)\)/;
+                                    const aMatch = aData.armorName.match(regex);
+                                    const bMatch = bData.armorName.match(regex);
+                                    const aIndex = aMatch ? sublist.indexOf(aMatch[1]) : -1;
+                                    const bIndex = bMatch ? sublist.indexOf(bMatch[1]) : -1;
+                                    result = aIndex - bIndex;
+                                }
+                            }
+                        } else if (sortArmorName === 'list_order') {
+                            const normalizedNameA = aData.armorName.normalize('NFKC');
+                            const normalizedNameB = bData.armorName.normalize('NFKC');
+                            const specialKeyA = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedNameA.includes(name));
+                            const specialKeyB = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedNameB.includes(name));
+
+                            if (specialKeyA && specialKeyA === specialKeyB) {
                                 const regex = /\(([^)]+)\)/;
                                 const aMatch = aData.armorName.match(regex);
                                 const bMatch = bData.armorName.match(regex);
-                                const aIndex = aMatch ? sublist.indexOf(aMatch[1]) : -1;
-                                const bIndex = bMatch ? sublist.indexOf(bMatch[1]) : -1;
-                                result = aIndex - bIndex;
-                            }
-                        } else if (sortArmorName === 'list_order') {
-                            const regex = /\(([^)]+)\)/;
-                            const isWarlordA = aData.armorName.includes('名将の鎧');
-                            const isWarlordB = bData.armorName.includes('名将の鎧');
-                            const isEiketsuA = aData.armorName.includes('英傑の足甲');
-                            const isEiketsuB = bData.armorName.includes('英傑の足甲');
-                            // バトルヴァンブレイスは半角・全角の両方を考慮
-                            const isVanbraceA = aData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || aData.armorName.includes('バトルヴァンブレイス');
-                            const isVanbraceB = bData.armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || bData.armorName.includes('バトルヴァンブレイス');
-
-                            // 両方とも名将の鎧シリーズの場合のソート
-                            if (isWarlordA && isWarlordB) {
-                                const aMatch = aData.armorName.match(regex);
-                                const bMatch = bData.armorName.match(regex);
-                                const aIdx = aMatch ? warlordArmorSublist.indexOf(aMatch[1]) : -1;
-                                const bIdx = bMatch ? warlordArmorSublist.indexOf(bMatch[1]) : -1;
-                                if(aIdx !== bIdx) result = aIdx - bIdx;
-                            // 両方とも英傑の足甲シリーズの場合のソート
-                            } else if (isEiketsuA && isEiketsuB) {
-                                const aMatch = aData.armorName.match(regex);
-                                const bMatch = bData.armorName.match(regex);
-                                const aIdx = aMatch ? eiketsuArmorSublist.indexOf(aMatch[1]) : -1;
-                                const bIdx = bMatch ? eiketsuArmorSublist.indexOf(bMatch[1]) : -1;
-                                if(aIdx !== bIdx) result = aIdx - bIdx;
-                            // 両方ともバトルヴァンブレイスシリーズの場合のソート
-                            } else if (isVanbraceA && isVanbraceB) {
-                                const aMatch = aData.armorName.match(regex);
-                                const bMatch = bData.armorName.match(regex);
-                                const aIdx = aMatch ? vanbraceArmorSublist.indexOf(aMatch[1]) : -1;
-                                const bIdx = bMatch ? vanbraceArmorSublist.indexOf(bMatch[1]) : -1;
-                                if(aIdx !== bIdx) result = aIdx - bIdx;
+                                const sublist = SPECIAL_SERIES_ARMORS[specialKeyA];
+                                const aIdx = aMatch ? sublist.indexOf(aMatch[1]) : -1;
+                                const bIdx = bMatch ? sublist.indexOf(bMatch[1]) : -1;
+                                if (aIdx !== bIdx) result = aIdx - bIdx;
                             } else {
-                                // インデックス取得用のヘルパー関数
                                 const getMasterIndex = (name) => {
-                                    // 1. 完全一致で検索
                                     let idx = allArmorData.findIndex(item => item.displayName === name);
                                     if (idx !== -1) return idx;
                                     
-                                    // 2. バトルヴァンブレイス（半角/全角混在）の対応
-                                    // CSV読み込み時にbaseNameは半角「ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ」に変換されています
-                                    if (name.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || name.includes('バトルヴァンブレイス')) {
-                                        return allArmorData.findIndex(item => item.baseName === 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
-                                    }
+                                    const normalizedName = name.normalize('NFKC');
+                                    const key = Object.keys(SPECIAL_SERIES_ARMORS).find(k => normalizedName.includes(k)) || Object.keys(FIXED_SERIES_ARMORS).find(k => normalizedName.includes(k));
                                     
-                                    // 3. 名将の鎧（シリーズ付き）の対応
-                                    if (name.includes('名将の鎧')) {
-                                        return allArmorData.findIndex(item => item.baseName === '名将の鎧');
-                                    }
-
-                                    // 4. 英傑の足甲（シリーズ付き）の対応
-                                    if (name.includes('英傑の足甲')) {
-                                        return allArmorData.findIndex(item => item.baseName === '英傑の足甲');
+                                    if (key) {
+                                        return allArmorData.findIndex(item => (item.baseName || '').normalize('NFKC').includes(key));
                                     }
                                     return -1;
                                 };
@@ -2398,10 +2362,13 @@
                                 if (aIndex !== bIndex) result = aIndex - bIndex;
                             }
                         } else if (sortArmorName.endsWith('(全対象)')) {
-                            const targetStr = sortArmorName.includes('名将の鎧') ? '名将の鎧' : (sortArmorName.includes('英傑の足甲') ? '英傑の足甲' : 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
-                            const aIsTarget = aData.armorName.includes(targetStr);
-                            const bIsTarget = bData.armorName.includes(targetStr);
-                            if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
+                            const normalizedSortArmorName = sortArmorName.normalize('NFKC');
+                            const specialKey = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedSortArmorName.includes(name));
+                            if (specialKey) {
+                                const aIsTarget = aData.armorName.normalize('NFKC').includes(specialKey);
+                                const bIsTarget = bData.armorName.normalize('NFKC').includes(specialKey);
+                                if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
+                            }
                         } else {
                             const aIsTarget = aData.armorName === sortArmorName;
                             const bIsTarget = bData.armorName === sortArmorName;
@@ -2565,7 +2532,6 @@ function getPartData(part) {
         });
 
         function checkForUnsavedBackup() {
-            // クラウドモードの場合は、通常モード用チェックはスキップ
             if (isCloudMode) return;
 
             try {
@@ -2639,24 +2605,19 @@ function getPartData(part) {
         if (!loadedFromAdmin) addNewPart(null, null, false);
         originalPartOrder = Array.from(partsContainer.children);
         
-        // ▼▼▼ 修正箇所: バックアップ存在確認とDirty状態復元の順序制御 ▼▼▼
-        // バックアップ設定の確認
         let hasLocalBackup = false;
         try {
-            if (!isCloudMode) { // クラウドモードでない場合のみ確認
+            if (!isCloudMode) { 
                 const settings = JSON.parse(localStorage.getItem(BACKUP_SETTINGS_KEY));
                 hasLocalBackup = settings && settings.hasUnsavedChanges;
             }
         } catch(e) {}
 
-        // バックアップが存在しない場合のみ、エクスポート未完了状態(Dirty)を復元する
-        // (バックアップがある場合にこれをやると、空データでバックアップを上書きしてしまうため)
         if (!hasLocalBackup) {
             if (localStorage.getItem(EXPORT_STATE_KEY) === 'true') {
                 setDataDirty(true);
             }
         }
-        // ▲▲▲ 修正箇所ここまで ▲▲▲
 
         document.getElementById('edit-mode-btn').addEventListener('click', toggleEditMode);
         document.getElementById('export-btn').addEventListener('click', exportData);
@@ -2873,14 +2834,13 @@ function getPartData(part) {
         });
     }
 
-
     // =========================================================================
     // === 3. 自動選定ツールタブ (armor-calc.html) のスクリプト =======================
     // =========================================================================
     
     let armorData_calc = [];
-    let lastCalcConfig = null; // 直前の計算設定を保持
-    let lastCalcLoadout = null; // 直前の計算結果（装備構成）を保持
+    let lastCalcConfig = null; 
+    let lastCalcLoadout = null; 
 
     async function loadCsvData_calc(url, targetMap) {
         try {
@@ -3065,18 +3025,29 @@ function getPartData(part) {
 
         for (const ability of abilities) {
             let shouldAddValue = true;
-            if (isSpecialArmorName(armorName)) {
+            
+            const normalizedArmorName = armorName.normalize('NFKC');
+
+            if (isSpecialArmorName(normalizedArmorName)) {
                 if (selectedSeries === '未選択') {
                     shouldAddValue = false;
                 } else {
-                    const armorSeriesMatch = armorName.match(/\(([^)]+)\)/);
-                    if (armorSeriesMatch) {
-                        const armorSeriesStr = armorSeriesMatch[1];
-                        if ((armorName.includes('☆ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') || armorName.includes('バトルヴァンブレイス')) && armorSeriesStr === 'US・ES・IS') {
-                            if (!['US', 'ES', 'IS'].includes(selectedSeries)) shouldAddValue = false;
-                        } else {
-                            const armorSeriesList = armorSeriesStr.split(/[&＆]/).map(s => s.trim());
-                            if (!armorSeriesList.includes(selectedSeries)) shouldAddValue = false;
+                    const fixedArmorKey = Object.keys(FIXED_SERIES_ARMORS).find(name => normalizedArmorName.includes(name));
+                    
+                    if (fixedArmorKey) {
+                        if (!FIXED_SERIES_ARMORS[fixedArmorKey].includes(selectedSeries)) {
+                            shouldAddValue = false;
+                        }
+                    } else {
+                        const armorSeriesMatch = armorName.match(/\(([^)]+)\)/);
+                        if (armorSeriesMatch) {
+                            const armorSeriesStr = armorSeriesMatch[1];
+                            if (normalizedArmorName.includes('バトルヴァンブレイス') && armorSeriesStr === 'US・ES・IS') {
+                                if (!['US', 'ES', 'IS'].includes(selectedSeries)) shouldAddValue = false;
+                            } else {
+                                const armorSeriesList = armorSeriesStr.split(/[&＆]/).map(s => s.trim());
+                                if (!armorSeriesList.includes(selectedSeries)) shouldAddValue = false;
+                            }
                         }
                     }
                 }
@@ -3112,8 +3083,6 @@ function getPartData(part) {
                 const nativeValue = getNativeAbilityValue_calc(armor.armorName, armorType, selectedConditions, abilityType, charId);
                 let combinedValue;
                 
-                // 名将の鎧（主）または英傑の足甲（副）で、かつ「味方威力+」の場合、
-                // シリーズが一致する他のメンバー（アタッカー）がいるかをチェック
                 let isBeneficialToParty = false;
                 if (abilityType === '味方威力＋' && 
                     ((armor.armorName.includes('名将の鎧') && armor.armorType === 'main') || 
@@ -3194,27 +3163,22 @@ function getPartData(part) {
         }
 
         for (const receiver of characterResults) {
-            // 自分自身の効果値（装備の数値 + ネイティブ合計）
             const selfValue = (receiver.mainArmor.value || 0) + (receiver.subArmor.value || 0) + (receiver.mainArmor.nativeValue || 0) + (receiver.subArmor.nativeValue || 0);
             let partyValue = 0;
 
             for (const provider of characterResults) {
                 if (receiver.charId === provider.charId) continue;
                 
-                // 条件の一致確認（条件が一つも合致しない場合はスキップ）
                 const commonConditions = receiver.selectedConditions.filter(c => provider.selectedConditions.includes(c));
                 if (commonConditions.length === 0) continue;
                 
                 let contribution = 0;
 
-                // --- 主防具からの寄与 ---
-                // 1. 練磨アビリティ（ランダムOP）部分
                 const mainCond = getConditionFromAbilityName_calc(provider.mainArmor.abilityName);
                 if (provider.mainArmor.abilityName.includes("味方威力＋") && provider.selectedConditions.includes(mainCond)) {
                     contribution += provider.mainArmor.value;
                 }
 
-                // 2. 固定アビリティ（ネイティブ）部分
                 if (mainNativeAbilities.has(provider.mainArmor.armorName) || Array.from(mainNativeAbilities.keys()).some(k => provider.mainArmor.armorName.endsWith(k))) {
                     const abilities = mainNativeAbilities.get(provider.mainArmor.armorName) || Array.from(mainNativeAbilities.entries()).find(e => provider.mainArmor.armorName.endsWith(e[0]))?.[1];
                     
@@ -3230,26 +3194,21 @@ function getPartData(part) {
                                 }
                             }
                             if (isMatch) {
-                                // ★修正箇所: nativeValue(合計値)ではなく、'味方威力'単体の数値をマスタから取得して加算
                                 const partyAbility = abilities.find(a => a.target === '味方威力');
                                 if (partyAbility) contribution += partyAbility.value;
                             }
                         } else {
-                            // 名将以外（通常装備）で味方威力がついている場合
                             const partyAbility = abilities.find(a => a.target === '味方威力');
                             if (partyAbility) contribution += partyAbility.value;
                         }
                     }
                 }
 
-                // --- 副防具からの寄与 ---
-                // 1. 練磨アビリティ（ランダムOP）部分
                 const subCond = getConditionFromAbilityName_calc(provider.subArmor.abilityName);
                 if (provider.subArmor.abilityName.includes("味方威力＋") && provider.selectedConditions.includes(subCond)) {
                     contribution += provider.subArmor.value;
                 }
 
-                // 2. 固定アビリティ（ネイティブ）部分
                 const subAbilities = subNativeAbilities.get(provider.subArmor.armorName) || Array.from(subNativeAbilities.entries()).find(e => provider.subArmor.armorName.endsWith(e[0]))?.[1];
                 if (subAbilities && subAbilities.some(a => a.target === '味方威力')) {
                     const hasEiketsu = provider.subArmor.armorName.includes('英傑の足甲');
@@ -3263,12 +3222,10 @@ function getPartData(part) {
                             }
                         }
                         if (isMatch) {
-                            // ★修正箇所: nativeValue(合計値)ではなく、'味方威力'単体の数値をマスタから取得して加算
                             const partyAbility = subAbilities.find(a => a.target === '味方威力');
                             if (partyAbility) contribution += partyAbility.value;
                         }
                     } else {
-                        // 英傑以外（通常装備）で味方威力がついている場合
                         const partyAbility = subAbilities.find(a => a.target === '味方威力');
                         if (partyAbility) contribution += partyAbility.value;
                     }
@@ -3346,14 +3303,11 @@ function getPartData(part) {
         }
 
         if (bestLoadout) {
-            // ▼▼▼ 追加：直前の計算結果を保持 ▼▼▼
             lastCalcConfig = partyConfig;
             lastCalcLoadout = bestLoadout;
-            // ▲▲▲ 追加ここまで ▲▲▲
 
             const finalResults = calculateFinalResults_calc(bestLoadout, partyConfig);
             
-            // ▼▼▼ 追加：装備の重複チェック ▼▼▼
             const usageCounts = {};
             finalResults.forEach(r => {
                 if (r.mainArmor && r.mainArmor.uniqueId) {
@@ -3363,34 +3317,30 @@ function getPartData(part) {
                     usageCounts[r.subArmor.uniqueId] = (usageCounts[r.subArmor.uniqueId] || 0) + 1;
                 }
             });
-            // ▲▲▲ 追加ここまで ▲▲▲
 
-            finalResults.forEach(r => displayResult_calc(r, usageCounts)); // usageCountsを渡す
+            finalResults.forEach(r => displayResult_calc(r, usageCounts)); 
         } else {
             partyConfig.forEach(c => displayEmptyResult_calc(c.charId));
         }
     }
     
-    // ▼▼▼ 修正：usageCountsを受け取るように変更 ▼▼▼
     function displayResult_calc(result, usageCounts) {
         const { charId, mainArmor, subArmor, totals } = result;
         const resultArea = document.getElementById(`result-area-${charId}`);
         
-        // 主防具のスタイル判定
         let mainArmorNameStyle = '';
         const isMainDupe = (usageCounts && mainArmor && usageCounts[mainArmor.uniqueId] > 1);
         
         if (!mainArmor || mainArmor.armorName === '該当なし') mainArmorNameStyle = 'style="color: red;"';
-        else if (isMainDupe) mainArmorNameStyle = 'style="color: red;"'; // 重複時は赤 (最優先)
+        else if (isMainDupe) mainArmorNameStyle = 'style="color: red;"'; 
         else if (isSpecialArmorName(mainArmor.armorName)) mainArmorNameStyle = 'style="color: magenta;"';
         else if (mainArmor.nativeValue > 0) mainArmorNameStyle = 'style="color: orange;"';
         
-        // 副防具のスタイル判定
         let subArmorNameStyle = '';
         const isSubDupe = (usageCounts && subArmor && usageCounts[subArmor.uniqueId] > 1);
 
         if (!subArmor || subArmor.armorName === '該当なし') subArmorNameStyle = 'style="color: red;"';
-        else if (isSubDupe) subArmorNameStyle = 'style="color: red;"'; // 重複時は赤 (最優先)
+        else if (isSubDupe) subArmorNameStyle = 'style="color: red;"'; 
         else if (isSpecialArmorName(subArmor.armorName)) subArmorNameStyle = 'style="color: magenta;"';
         else if (subArmor.nativeValue > 0) subArmorNameStyle = 'style="color: orange;"';
 
@@ -3421,9 +3371,8 @@ function getPartData(part) {
         document.getElementById(`result-area-${charId}`).innerHTML = `<p>条件を選択して計算を実行してください。</p>`;
     }
 
-    // ▼▼▼ 追加：モーダル関連関数 ▼▼▼
     function openCalcModal(charId, armorType) {
-        if (!lastCalcConfig || !lastCalcLoadout) return; // 計算前なら何もしない
+        if (!lastCalcConfig || !lastCalcLoadout) return; 
 
         const config = lastCalcConfig.find(c => c.charId === charId);
         if (!config) return;
@@ -3435,7 +3384,6 @@ function getPartData(part) {
         title.textContent = `装備変更 (キャラ${charId} - ${armorType === 'main' ? '主防具' : '副防具'})`;
         list.innerHTML = '';
 
-        // 候補を抽出（条件一致のみ）
         const candidates = [];
         const availableArmor = armorData_calc.filter(item => item.armorType === armorType);
         
@@ -3443,19 +3391,16 @@ function getPartData(part) {
             const jsonAbilityCondition = getConditionFromAbilityName_calc(armor.abilityName);
             const jsonAbilityType = armor.abilityName.includes('味方威力＋') ? '味方威力＋' : '威力＋';
             
-            // 装備可能なタイプか判定（威力+選択時に味方威力+も候補に含めるなど、solverのロジックに準拠）
             let typeMatch = (config.abilityType === jsonAbilityType);
             if (config.abilityType === '威力＋' && jsonAbilityType === '味方威力＋') typeMatch = true;
 
             if (typeMatch && config.selectedConditions.includes(jsonAbilityCondition)) {
-                // ここでの計算は「そのキャラ自身が得られる効果値」の概算（ネイティブ込み）
                 const nativeValue = getNativeAbilityValue_calc(armor.armorName, armorType, config.selectedConditions, config.abilityType, charId);
                 const totalVal = armor.value + nativeValue;
                 candidates.push({ ...armor, nativeValue, totalVal });
             }
         });
 
-        // ソート: 合計値の降順
         candidates.sort((a, b) => b.totalVal - a.totalVal);
 
         candidates.forEach(cand => {
@@ -3482,19 +3427,15 @@ function getPartData(part) {
     function selectManualArmor(charId, armorType, uniqueId) {
         if (!lastCalcConfig || !lastCalcLoadout) return;
 
-        // 選択された装備データを取得
         const selectedArmor = armorData_calc.find(item => item.uniqueId === uniqueId);
         if (!selectedArmor) return;
 
-        // 構成を更新
         const loadout = lastCalcLoadout[charId - 1];
         if (armorType === 'main') loadout.mainArmor = selectedArmor;
         else loadout.subArmor = selectedArmor;
 
-        // 再計算（味方威力などの影響を及ぼすため全体を再評価）
         const finalResults = calculateFinalResults_calc(lastCalcLoadout, lastCalcConfig);
         
-        // ▼▼▼ 追加：再計算時も重複チェックを行う ▼▼▼
         const usageCounts = {};
         finalResults.forEach(r => {
             if (r.mainArmor && r.mainArmor.uniqueId) {
@@ -3504,10 +3445,8 @@ function getPartData(part) {
                 usageCounts[r.subArmor.uniqueId] = (usageCounts[r.subArmor.uniqueId] || 0) + 1;
             }
         });
-        // ▲▲▲ 追加ここまで ▲▲▲
 
-        // 結果表示を更新
-        finalResults.forEach(r => displayResult_calc(r, usageCounts)); // usageCountsを渡す
+        finalResults.forEach(r => displayResult_calc(r, usageCounts)); 
 
         closeCalcModal();
     }
@@ -3515,9 +3454,8 @@ function getPartData(part) {
     function closeCalcModal() {
         document.getElementById('calc-modal').classList.remove('active');
     }
-    window.openCalcModal = openCalcModal; // HTML onclickから呼ぶためにグローバル化
+    window.openCalcModal = openCalcModal; 
     window.closeCalcModal = closeCalcModal;
-    // ▲▲▲ 追加ここまで ▲▲▲
 
 </script>
 
@@ -3540,12 +3478,10 @@ function getPartData(part) {
     // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     const isCloudMode = (localStorage.getItem('RenmaArmorCloudMode') === 'true');
-    // モジュール内で使うキー定義
     const CLOUD_TEMP_KEY = 'RenmaArmorCloudTemp';
 
     if (isCloudMode) {
         document.getElementById('cloud-ui-container').style.display = 'flex';
-        // クラウドモード時の免責事項を表示
         const disclaimer = document.getElementById('cloud-disclaimer');
         if (disclaimer) disclaimer.style.display = 'block';
         
@@ -3558,17 +3494,14 @@ function getPartData(part) {
         let autoSaveTimer = null;
         const AUTO_SAVE_DELAY = 3000;
 
-        // UI要素
         const loginBtn = document.getElementById('login-btn-header');
         const logoutBtn = document.getElementById('logout-btn-header');
         const userIcon = document.getElementById('header-user-icon');
         const statusText = document.getElementById('cloud-status-text');
 
-        // ログイン状態監視
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
             if (user) {
-                // ログイン時
                 loginBtn.style.display = 'none';
                 logoutBtn.style.display = 'block';
                 userIcon.src = user.photoURL || '';
@@ -3576,10 +3509,8 @@ function getPartData(part) {
                 userIcon.title = user.displayName;
                 statusText.textContent = '';
                 
-                // クラウドモード専用のバックアップチェックから開始
                 await checkCloudTempData();
             } else {
-                // 未ログイン時
                 loginBtn.style.display = 'block';
                 logoutBtn.style.display = 'none';
                 userIcon.style.display = 'none';
@@ -3590,24 +3521,19 @@ function getPartData(part) {
         loginBtn.onclick = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
         logoutBtn.onclick = () => signOut(auth).then(() => location.reload());
 
-        // --- 自動保存フック ---
         window.handleAutoSave = function() {
             if (!currentUser) return;
             
-            // 1. 即時ローカルバックアップ (保険: クラウド専用キー)
             saveToLocalBackup();
             
-            // 2. ステータス更新 (保存中メッセージは非表示)
             updateStatus('saving');
             if (autoSaveTimer) clearTimeout(autoSaveTimer);
             
-            // 3. 3秒後にクラウド送信
             autoSaveTimer = setTimeout(() => {
                 saveToCloud();
             }, AUTO_SAVE_DELAY);
         };
 
-        // --- クラウド保存処理 ---
         async function saveToCloud() {
             if (!currentUser) return;
 
@@ -3620,7 +3546,6 @@ function getPartData(part) {
                     armorData: dataToSave
                 });
 
-                // クラウド保存が完了したので「クラウド用一時バックアップ」は消す
                 localStorage.removeItem(CLOUD_TEMP_KEY);
                 updateStatus('saved');
 
@@ -3629,42 +3554,33 @@ function getPartData(part) {
                 updateStatus('error');
             }
         }
-        // グローバル関数として公開
         window.saveToCloud = saveToCloud;
 
-        // クラウドモード専用バックアップチェック
         async function checkCloudTempData() {
             const tempBackup = localStorage.getItem(CLOUD_TEMP_KEY);
             
             if (tempBackup) {
                 console.log("未完了のクラウド送信データがあります。");
-                updateStatus('waiting'); // ステータス表示
+                updateStatus('waiting'); 
                 
-                // 復元パネルを生成
                 const warningDiv = document.createElement('div');
                 warningDiv.id = 'cloud-backup-warning';
                 warningDiv.style.cssText = 'color: red; background-color: rgb(67, 46, 46); padding: 10px; margin: 10px 0; border: 1px solid red; border-radius: 5px; text-align: center;';
                 
-                // ボタンのキャプションとスタイルを変更
                 warningDiv.innerHTML = `前回、クラウドに保存されていないデータがあります。<button id="cloud-restore-btn" style="margin-left: 15px; padding: 5px 10px; cursor: pointer;">データの保存</button><button id="cloud-discard-btn" style="color: #fff; background-color: #e53e3e; margin-left: 10px; padding: 5px 10px; cursor: pointer;">データの破棄</button>`;
                 
                 const mainElement = document.querySelector('#tab-list main');
                 mainElement.insertBefore(warningDiv, mainElement.firstChild);
 
-                // 保存ボタン (旧復元ボタン)
                 document.getElementById('cloud-restore-btn').addEventListener('click', () => {
                     const restoredData = JSON.parse(tempBackup);
                     applyDataToUI(restoredData);
                     warningDiv.remove();
-                    // 復元したらすぐにクラウドへ保存して同期をとる
                     saveToCloud();
-                    // 復元＝ローカルとクラウドの差分を埋めた -> エクスポート的にはDirtyにすべき
                     if (typeof window.setDataDirty === 'function') window.setDataDirty(true);
                 });
 
-                // 破棄ボタン
                 document.getElementById('cloud-discard-btn').addEventListener('click', () => {
-                    // 確認メッセージ
                     if (window.confirm('バックアップデータを本当に削除しますか？この操作は元に戻せません。')) {
                         localStorage.removeItem(CLOUD_TEMP_KEY);
                         warningDiv.remove();
@@ -3673,12 +3589,10 @@ function getPartData(part) {
                 });
 
             } else {
-                // バックアップがなければ通常通りロード
                 await loadFromCloud();
             }
         }
 
-        // --- クラウド読込処理 ---
         async function loadFromCloud() {
             if (!currentUser) return;
             updateStatus('loading');
@@ -3701,7 +3615,6 @@ function getPartData(part) {
             }
         }
 
-        // UI反映用ヘルパー
         function applyDataToUI(data) {
             const partsContainer = document.getElementById('parts-container');
             const searchPanel = document.getElementById('search-panel');
@@ -3728,13 +3641,11 @@ function getPartData(part) {
             if (typeof window.updateTop5Tab === 'function') window.updateTop5Tab(window.sharedArmorData);
             if (typeof window.updateCalcTab === 'function') window.updateCalcTab(window.sharedArmorData);
             
-            // クラウド読込時、LocalStorageに保存された「エクスポート未完了状態」を確認して復元
             if (typeof window.setDataDirty === 'function') {
                 const isExportDirty = localStorage.getItem('RenmaArmorExportDirty') === 'true';
                 if (isExportDirty) {
                     window.setDataDirty(true);
                 } else {
-                    // ボタンを通常状態に戻す
                     const exportButtons = document.querySelectorAll('#export-btn, #export-btn-footer');
                     exportButtons.forEach(button => {
                         button.classList.remove('needs-export');
@@ -3744,7 +3655,6 @@ function getPartData(part) {
             }
         }
 
-        // --- ヘルパー関数 ---
         function updateStatus(state) {
             statusText.className = 'cloud-status';
             statusText.style.color = ''; 
@@ -3773,7 +3683,6 @@ function getPartData(part) {
 
         function saveToLocalBackup() {
             if (window.sharedArmorData) {
-                // クラウドモード専用キーに保存
                 localStorage.setItem(CLOUD_TEMP_KEY, JSON.stringify(window.sharedArmorData));
             }
         }
