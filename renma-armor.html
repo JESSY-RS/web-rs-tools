@@ -1087,7 +1087,7 @@
                 <footer>
                     <br>
                     ※使用は自己責任にて。<br>
-                    ※名将の鎧(+15)、英傑の足甲(+50/+20)、バトルヴァンブレイス(+20)のシリーズ一致分は加味されていませんので注意してください。
+                    ※名将の鎧・英傑の足甲・バトルヴァンブレイス・SSS進化防具などシリーズ一致分(文字色が紫のもの)は加味されていませんので注意してください。
                 </footer>
     <div class="bottom2">
         <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a>
@@ -1133,7 +1133,6 @@
     // =========================================================================
     
     // ★「▶」のサブメニュー【あり】の特殊装備（動的シリーズ）
-    // 装備名(全角)をキーに、サブメニューに出したいシリーズの配列を定義する
     const SPECIAL_SERIES_ARMORS = {
         '名将の鎧': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'],
         '英傑の足甲': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'],
@@ -1141,15 +1140,18 @@
     };
 
     // ★「▶」のサブメニュー【なし】の特殊装備（固定シリーズ）
-    // 今後増えたら、ここに「'装備名': ['シリーズ名1', 'シリーズ名2']」を書き足すだけでOK！
     const FIXED_SERIES_ARMORS = {
         'ゾクのはちまき': ['GBSaGa']
+    };
+
+    // ★表示を短くするため（1行に収めるため）の置換辞書
+    const SHORT_NAMES = {
+        'バトルヴァンブレイス': 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ'
     };
 
     // ★装備名の半角/全角を統一してから判定する関数
     const isSpecialArmorName = (rawArmorName) => {
         if (!rawArmorName) return false;
-        // NFKC正規化で半角カナを全角カナに自動変換
         const armorName = rawArmorName.normalize('NFKC');
         
         const isDynamic = Object.keys(SPECIAL_SERIES_ARMORS).some(name => armorName.includes(name));
@@ -1163,10 +1165,9 @@
     const ADMIN_MODE_PERSIST_KEY = 'RenmaArmorAdminModeEnabled'; 
     const ADMIN_DATA_KEY = 'RenmaArmorAdminData'; 
     const CLOUD_MODE_KEY = 'RenmaArmorCloudMode'; 
-    const CLOUD_TEMP_KEY = 'RenmaArmorCloudTemp'; // クラウドモード用一時バックアップキー
-    const EXPORT_STATE_KEY = 'RenmaArmorExportDirty'; // エクスポート未完了状態の維持用
+    const CLOUD_TEMP_KEY = 'RenmaArmorCloudTemp'; 
+    const EXPORT_STATE_KEY = 'RenmaArmorExportDirty'; 
 
-    // モード切り替え・競合回避ロジック
     if (paramMode === 'secret_admin_on') {
         localStorage.setItem(ADMIN_MODE_PERSIST_KEY, 'true');
         localStorage.removeItem(CLOUD_MODE_KEY); 
@@ -1180,7 +1181,6 @@
         localStorage.removeItem(CLOUD_MODE_KEY);
     }
 
-    // 競合状態の強制解決
     if (localStorage.getItem(CLOUD_MODE_KEY) === 'true') {
         localStorage.removeItem(ADMIN_MODE_PERSIST_KEY);
     }
@@ -1202,7 +1202,6 @@
     let tabScrollPositions = { list: 0, top5: 0, calc: 0 };
     let isDataDirty = false;
     
-    // --- CSVデータ用のグローバル変数 ---
     let armorMainData = [], armorSubData = [], renmaAbilityData = [], allArmorData = [];
     let mainNativeAbilities = new Map();
     let subNativeAbilities = new Map();
@@ -1289,8 +1288,13 @@
         document.querySelectorAll('#parts-container .armor-part').forEach(part => {
             let armorName = part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
             
-            if (armorName && armorName.includes('バトルヴァンブレイス')) {
-                armorName = armorName.replace('バトルヴァンブレイス', 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ');
+            // 短縮辞書を使った保存時の半角化
+            if (armorName) {
+                Object.entries(SHORT_NAMES).forEach(([full, short]) => {
+                    if (armorName.includes(full)) {
+                        armorName = armorName.replace(full, short);
+                    }
+                });
             }
 
             partsData.push({
@@ -1471,13 +1475,9 @@
                 const symbol = obj['記号'] || ''; 
                 const rawName = obj['名称'] || ''; 
 
-                let baseName = rawName;
-                if (baseName === 'バトルヴァンブレイス') {
-                    baseName = 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ'; 
-                }
-
+                // ★修正：過去の直書き（ハードコード）を完全撤廃！
                 obj.symbol = symbol;
-                obj.baseName = baseName;       
+                obj.baseName = rawName;       
                 obj.rawBaseName = rawName;     
                 
                 obj.displayName = symbol + rawName; 
@@ -1514,8 +1514,9 @@
         if (targetBaseName) {
             const currentItem = allArmorData.find(item => item.baseName === targetBaseName);
             if (currentItem) {
-                if (targetBaseName === 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ' && extractedSeries) {
-                    return currentItem.symbol + currentItem.baseName + extractedSeries;
+                // ★修正：rawBaseName(元の全角名称)で辞書を引く。シリーズ名がある時だけ半角化。
+                if (SHORT_NAMES[currentItem.rawBaseName] && extractedSeries) {
+                    return currentItem.symbol + SHORT_NAMES[currentItem.rawBaseName] + extractedSeries;
                 } else {
                     return currentItem.symbol + currentItem.rawBaseName + extractedSeries;
                 }
@@ -1533,7 +1534,7 @@
 
         return inputName;
     }
-    window.resolveArmorName = resolveArmorName; 
+    window.resolveArmorName = resolveArmorName;
 
     function initializeListTab() {
         let isEditMode = false, sortableInstance = null;
@@ -1890,15 +1891,24 @@
                         text = target.dataset.value;
                         value = target.dataset.value;
                     } else {
-                        // マスターデータから正規化(全角統一)で検索し、CSV側の本来の文字列を取得する
-                        const normalizedParent = parentName.normalize('NFKC');
-                        const foundData = allArmorData.find(item => (item.baseName || '').normalize('NFKC') === normalizedParent || (item.baseName || '').normalize('NFKC').includes(normalizedParent));
+                        // ★修正：記号を分離して短縮形を正確に適用する
+                        const stripSymbol = name => name ? name.replace(/^[^a-zA-Z0-9ぁ-んァ-ヶ亜-熙\uFF65-\uFF9F]/, '') : '';
+                        const symbol = parentName.charAt(0) !== stripSymbol(parentName).charAt(0) ? parentName.charAt(0) : '';
+                        let cleanParent = stripSymbol(parentName);
+
+                        const normalizedParent = cleanParent.normalize('NFKC');
+                        const foundData = allArmorData.find(item => (item.baseName || '').normalize('NFKC') === normalizedParent);
                         
                         if (foundData) {
-                            parentName = foundData.baseName;
+                            cleanParent = foundData.baseName;
                         }
                         
-                        text = `${parentName}(${valueText})`;
+                        // 短縮辞書にあれば置換
+                        if (SHORT_NAMES[cleanParent]) {
+                            cleanParent = SHORT_NAMES[cleanParent];
+                        }
+                        
+                        text = `${symbol}${cleanParent}(${valueText})`;
                         value = text;
                     }
                 } else {
@@ -1954,7 +1964,17 @@
 
                 if (specialKey) {
                     sublist = SPECIAL_SERIES_ARMORS[specialKey];
-                    formattedParentText = parentText; 
+                    
+                    // ★修正：記号を分離して短縮形（半角など）を適用する
+                    const stripSymbol = name => name ? name.replace(/^[^a-zA-Z0-9ぁ-んァ-ヶ亜-熙\uFF65-\uFF9F]/, '') : '';
+                    const symbol = parentText.charAt(0) !== stripSymbol(parentText).charAt(0) ? parentText.charAt(0) : '';
+                    let cleanName = stripSymbol(parentText);
+
+                    const foundData = allArmorData.find(item => (item.baseName || '').normalize('NFKC') === cleanName.normalize('NFKC'));
+                    if (foundData) cleanName = foundData.baseName;
+
+                    // 短縮辞書にあれば置換して結合
+                    formattedParentText = SHORT_NAMES[cleanName] ? symbol + SHORT_NAMES[cleanName] : symbol + cleanName;
                 }
 
                 const parentPart = option.closest('.armor-part');
@@ -2082,8 +2102,8 @@
                     const partFavorite = part.querySelector('.favorite-toggle').dataset.favorite === 'true';
 
                     const typeMatch = !filterArmorType || filterArmorType === partArmorType;
-                    let nameMatch = false;
                     
+                    let nameMatch = false;
                     if (!filterArmorName) {
                         nameMatch = true; 
                     } else if (filterArmorName.endsWith('(全対象)')) {
@@ -2093,17 +2113,27 @@
                             nameMatch = partArmorName.normalize('NFKC').includes(specialKey);
                         }
                     } else {
-                        const parentArmorMatch = partArmorName.match(/(.+)\((.+)\)/);
-                        if (parentArmorMatch) {
-                            const parentName = parentArmorMatch[1];
-                            const filterParentMatch = filterArmorName.match(/(.+)\((.+)\)/);
-                            if(filterParentMatch) {
-                                nameMatch = filterArmorName === partArmorName; 
+                        // 記号を無視してベース名とシリーズ名で正確に一致判定する
+                        const normalizedFilter = filterArmorName.normalize('NFKC');
+                        const specialKey = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedFilter.includes(name));
+
+                        if (specialKey) {
+                            const filterParentMatch = filterArmorName.match(/\(([^)]+)\)/);
+                            const parentArmorMatch = partArmorName.match(/\(([^)]+)\)/);
+                            
+                            if (filterParentMatch && parentArmorMatch) {
+                                const fSeries = filterParentMatch[1];
+                                const pSeries = parentArmorMatch[1];
+                                nameMatch = (fSeries === pSeries) && partArmorName.normalize('NFKC').includes(specialKey);
+                            } else if (!filterParentMatch) {
+                                nameMatch = partArmorName.normalize('NFKC').includes(specialKey);
                             } else {
-                                nameMatch = filterArmorName === parentName || filterArmorName === partArmorName;
+                                nameMatch = false;
                             }
                         } else {
-                            nameMatch = filterArmorName === partArmorName;
+                            // 先頭の記号(1文字)を剥がして比較
+                            const stripSymbol = name => name ? name.replace(/^[^a-zA-Z0-9ぁ-んァ-ヶ亜-熙\uFF65-\uFF9F]/, '') : '';
+                            nameMatch = stripSymbol(filterArmorName) === stripSymbol(partArmorName) || partArmorName.endsWith(filterArmorName);
                         }
                     }
 
@@ -2370,8 +2400,33 @@
                                 if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
                             }
                         } else {
-                            const aIsTarget = aData.armorName === sortArmorName;
-                            const bIsTarget = bData.armorName === sortArmorName;
+                            // 記号を無視してベース名とシリーズ名で正確に一致判定する
+                            const normalizedSort = sortArmorName.normalize('NFKC');
+                            const specialKey = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedSort.includes(name));
+                            const stripSymbol = name => name ? name.replace(/^[^a-zA-Z0-9ぁ-んァ-ヶ亜-熙\uFF65-\uFF9F]/, '') : '';
+
+                            let aIsTarget = false;
+                            let bIsTarget = false;
+
+                            if (specialKey) {
+                                const sortMatch = sortArmorName.match(/\(([^)]+)\)/);
+                                if (sortMatch) {
+                                    const sSeries = sortMatch[1];
+                                    const aMatch = aData.armorName.match(/\(([^)]+)\)/);
+                                    const bMatch = bData.armorName.match(/\(([^)]+)\)/);
+                                    
+                                    aIsTarget = aMatch && aMatch[1] === sSeries && aData.armorName.normalize('NFKC').includes(specialKey);
+                                    bIsTarget = bMatch && bMatch[1] === sSeries && bData.armorName.normalize('NFKC').includes(specialKey);
+                                } else {
+                                    aIsTarget = aData.armorName.normalize('NFKC').includes(specialKey);
+                                    bIsTarget = bData.armorName.normalize('NFKC').includes(specialKey);
+                                }
+                            } else {
+                                const cleanSort = stripSymbol(sortArmorName);
+                                aIsTarget = stripSymbol(aData.armorName) === cleanSort || aData.armorName.endsWith(sortArmorName);
+                                bIsTarget = stripSymbol(bData.armorName) === cleanSort || bData.armorName.endsWith(sortArmorName);
+                            }
+
                             if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
                         }
                         if (result !== 0) return result * direction;
@@ -2417,7 +2472,8 @@
             }
             window.scrollTo(0, scrollY);
         }
-function getPartData(part) {
+        
+        function getPartData(part) {
             return {
                 armorType: part.querySelector('input[name*="armor-type"]:checked')?.value,
                 armorName: part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value,
@@ -2735,7 +2791,8 @@ function getPartData(part) {
                 if (!isSpecialArmor) {
                     let armorBonuses = uniqueAbilities[item.armorName];
                     if (!armorBonuses) {
-                        const foundKey = Object.keys(uniqueAbilities).find(k => item.armorName.endsWith(k) || k.endsWith(item.armorName));
+                        const normalizedName = item.armorName.normalize('NFKC');
+                        const foundKey = Object.keys(uniqueAbilities).find(k => normalizedName.includes(k.normalize('NFKC')));
                         if(foundKey) armorBonuses = uniqueAbilities[foundKey];
                     }
 
@@ -3009,10 +3066,11 @@ function getPartData(part) {
     function getNativeAbilityValue_calc(armorName, armorType, selectedConditions, abilityType, charId) {
         const nativeAbilityMap = armorType === 'main' ? mainNativeAbilities : subNativeAbilities;
         let abilities = nativeAbilityMap.get(armorName);
+        
         if (!abilities) {
+            const normalizedArmorName = armorName.normalize('NFKC');
             for (const [key, val] of nativeAbilityMap.entries()) {
-                if (armorName.endsWith(key) || key.endsWith(armorName) || 
-                    (armorName.includes('ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ') && key.includes('バトルヴァンブレイス'))) {
+                if (normalizedArmorName.includes(key.normalize('NFKC'))) {
                     abilities = val;
                     break;
                 }
@@ -3179,9 +3237,11 @@ function getPartData(part) {
                     contribution += provider.mainArmor.value;
                 }
 
-                if (mainNativeAbilities.has(provider.mainArmor.armorName) || Array.from(mainNativeAbilities.keys()).some(k => provider.mainArmor.armorName.endsWith(k))) {
-                    const abilities = mainNativeAbilities.get(provider.mainArmor.armorName) || Array.from(mainNativeAbilities.entries()).find(e => provider.mainArmor.armorName.endsWith(e[0]))?.[1];
-                    
+                const mainNorm = provider.mainArmor.armorName.normalize('NFKC');
+                const mainKeyMatch = Array.from(mainNativeAbilities.keys()).find(k => mainNorm.includes(k.normalize('NFKC')));
+                
+                if (mainKeyMatch) {
+                    const abilities = mainNativeAbilities.get(mainKeyMatch);
                     if (abilities && abilities.some(a => a.target === '味方威力')) {
                         const hasMeisho = provider.mainArmor.armorName.includes('名将の鎧');
                         if (hasMeisho) {
@@ -3209,7 +3269,10 @@ function getPartData(part) {
                     contribution += provider.subArmor.value;
                 }
 
-                const subAbilities = subNativeAbilities.get(provider.subArmor.armorName) || Array.from(subNativeAbilities.entries()).find(e => provider.subArmor.armorName.endsWith(e[0]))?.[1];
+                const subNorm = provider.subArmor.armorName.normalize('NFKC');
+                const subKeyMatch = Array.from(subNativeAbilities.keys()).find(k => subNorm.includes(k.normalize('NFKC')));
+                const subAbilities = subKeyMatch ? subNativeAbilities.get(subKeyMatch) : null;
+                
                 if (subAbilities && subAbilities.some(a => a.target === '味方威力')) {
                     const hasEiketsu = provider.subArmor.armorName.includes('英傑の足甲');
                     if (hasEiketsu) {
