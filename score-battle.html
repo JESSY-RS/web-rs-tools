@@ -1106,6 +1106,9 @@
     // =========================================================
     // ページ全体を画像化してダウンロードする関数 (シンプル版)
     // =========================================================
+    // =========================================================
+    // ページ全体を画像化してダウンロードする関数 (シンプル版)
+    // =========================================================
     function takeScreenshot() {
       if (!isScreenshotMode) return; 
 
@@ -1114,6 +1117,20 @@
       // 【修正】ランキングエリア内にある更新ボタンをピンポイントで指定する
       const updateBtn = document.querySelector('#section-ranking .btn-update');
       if (updateBtn) updateBtn.style.setProperty('display', 'none', 'important');
+
+      // ▼▼ここから追加▼▼
+      // select要素の現在の選択値をHTML属性に明示的に反映させる（画像化ライブラリ対策）
+      const filterSelect = document.getElementById('filter-regulation');
+      if (filterSelect) {
+        Array.from(filterSelect.options).forEach(opt => {
+          if (opt.value === filterSelect.value) {
+            opt.setAttribute('selected', 'selected');
+          } else {
+            opt.removeAttribute('selected');
+          }
+        });
+      }
+      // ▲▲ここまで追加▲▲
 
       const options = {
         bgcolor: '#2A2A2A',
