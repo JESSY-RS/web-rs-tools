@@ -542,7 +542,61 @@
       color: #7755FF;
     }
 
+    /* --- ポップアップ（複数人計算モーダル）のスタイル --- */
+    .modal-overlay-calc {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-content-calc {
+        background-color: #333;
+        padding: 20px 30px;
+        border-radius: 8px;
+        border: 1px solid #555;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        text-align: center;
+        min-width: 250px;
+    }
+    .modal-content-calc h3 {
+        margin-top: 0;
+        color: #50b4f0;
+        border-bottom: 1px solid #555;
+        padding-bottom: 10px;
+    }
+    .modal-input-group {
+        margin: 15px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    .modal-input-group input {
+        width: 80px;
+        text-align: right;
+    }
+    .modal-result {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: gold;
+        margin: 20px 0;
+    }
+    .modal-buttons button {
+        margin: 0 5px;
+        padding: 8px 20px;
+        font-size: 1.1em;
+    }
     
+    /* 計算結果エリアのクリッカブル化 */
+    #calc-result.clickable {
+        cursor: pointer;
+    }
 
     </style>
 </head>
@@ -667,6 +721,23 @@
     <br>
     <a href="index.html">INDEXへ戻る</a><br>
   </footer>
+
+    <div class="modal-overlay-calc" id="calc-modal">
+        <div class="modal-content-calc">
+            <h3 id="modal-title">複数人計算</h3>
+            <p>1人あたりの必要数: <span id="modal-base-req" style="color: #ccc; font-weight: bold;">0</span></p>
+            <div class="modal-input-group">
+                <label for="modal-people-input">人数:</label>
+                <input type="number" id="modal-people-input" value="1" min="1">
+            </div>
+            <div class="modal-result" id="modal-calc-result">
+                総必要数: -
+            </div>
+            <div class="modal-buttons">
+                <button id="modal-close-btn">閉じる</button>
+            </div>
+        </div>
+    </div>
 
     <script>
 
@@ -921,6 +992,11 @@
                 tarLv = parseInt(document.getElementById('target-lv-input').value, 10);
             }
             highlightMatrixCell(curLv, tarLv);
+            
+            // エラー等で計算できない場合はクリック不可にする
+            resultDiv.classList.remove('clickable');
+            delete resultDiv.dataset.req;
+            
             if (isNaN(curLv) || isNaN(tarLv)) {
                 resultDiv.textContent = '必要数: -';
                 resultDiv.style.fontSize = "1.6em"; 
@@ -941,10 +1017,17 @@
                 resultDiv.style.color = "red";
                 return;
             }
+            
             resultDiv.style.fontSize = "1.6em";
             resultDiv.style.color = "gold"; 
             const requiredAmount = getAccumulatedTotal(tarLv) - getAccumulatedTotal(curLv);
             resultDiv.textContent = `必要数: ${requiredAmount.toLocaleString()}`;
+            
+            // 計算成功時のみクリック可能にし、データを保持させる
+            resultDiv.classList.add('clickable');
+            resultDiv.dataset.curLv = curLv;
+            resultDiv.dataset.tarLv = tarLv;
+            resultDiv.dataset.req = requiredAmount;
         }
 
         document.getElementById('current-lv-select').addEventListener('change', updateCalculation);
@@ -1066,6 +1149,86 @@
             isMultiColumn = !isMultiColumn;
             localStorage.setItem(LAYOUT_STORAGE_KEY, isMultiColumn); 
             applyLayoutState();
+        });
+
+        // --- モーダル（複数人計算ポップアップ）制御関数 ---
+        let currentModalBaseReq = 0;
+
+        function openCalcModal(curLv, tarLv, req) {
+            currentModalBaseReq = req;
+            
+            // モーダル内のテキスト更新（Lvのあとに半角スペース）
+            document.getElementById('modal-title').textContent = `Lv ${curLv} → ${tarLv}`;
+            document.getElementById('modal-base-req').textContent = req.toLocaleString();
+            
+            const peopleInput = document.getElementById('modal-people-input');
+            peopleInput.value = 1; // 初期値リセット
+            
+            const resultDiv = document.getElementById('modal-calc-result');
+            resultDiv.textContent = `総必要数: ${req.toLocaleString()}`;
+            resultDiv.style.color = 'gold';
+            
+            // モーダルを表示
+            const modal = document.getElementById('calc-modal');
+            modal.style.display = 'flex';
+            
+            // 表示後にフォーカスを当てる（既存処理により自動で全選択される）
+            setTimeout(() => {
+                peopleInput.focus();
+            }, 10);
+        }
+
+        function closeCalcModal() {
+            document.getElementById('calc-modal').style.display = 'none';
+        }
+
+        function calculateMultiPeople() {
+            const peopleInput = document.getElementById('modal-people-input');
+            const people = parseInt(peopleInput.value, 10);
+            const resultDiv = document.getElementById('modal-calc-result');
+            
+            if (isNaN(people) || people < 1) {
+                resultDiv.textContent = 'エラー: 1以上の数値を入力してください';
+                resultDiv.style.color = 'red';
+            } else {
+                const totalReq = currentModalBaseReq * people;
+                resultDiv.textContent = `総必要数: ${totalReq.toLocaleString()}`;
+                resultDiv.style.color = 'gold';
+            }
+        }
+
+        // モーダル用のイベントリスナー登録
+        document.addEventListener('DOMContentLoaded', () => {
+            const modalOverlay = document.getElementById('calc-modal');
+            const closeBtn = document.getElementById('modal-close-btn');
+            const peopleInput = document.getElementById('modal-people-input');
+            const calcResultPanel = document.getElementById('calc-result');
+
+            // 必要数パネルがクリックされたらモーダルを開く
+            if(calcResultPanel) {
+                calcResultPanel.addEventListener('click', function() {
+                    if (this.classList.contains('clickable')) {
+                        const curLv = this.dataset.curLv;
+                        const tarLv = this.dataset.tarLv;
+                        const req = parseInt(this.dataset.req, 10);
+                        openCalcModal(curLv, tarLv, req);
+                    }
+                });
+            }
+
+            if(closeBtn) closeBtn.addEventListener('click', closeCalcModal);
+            
+            if(modalOverlay) {
+                modalOverlay.addEventListener('click', (e) => {
+                    // 背景部分のクリック時のみ閉じる
+                    if (e.target === modalOverlay) closeCalcModal();
+                });
+            }
+            
+            // 入力欄の値が変わるたびに自動で計算を実行
+            if(peopleInput) {
+                peopleInput.addEventListener('input', calculateMultiPeople);
+            }
         });
     </script>
 </body>
