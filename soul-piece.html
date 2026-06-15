@@ -575,11 +575,33 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 10px;
+        gap: 8px;
     }
     .modal-input-group input {
-        width: 80px;
-        text-align: right;
+        width: 70px;
+        text-align: center; /* 中央揃えに変更 */
+        font-size: 1.2em;
+    }
+    /* 増減ボタンのデザイン */
+    .step-btn {
+        background-color: #444;
+        color: white;
+        border: 1px solid #666;
+        border-radius: 4px;
+        width: 36px;
+        height: 36px;
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    .step-btn:hover {
+        background-color: #555;
+    }
+    .step-btn:active {
+        background-color: #777;
     }
     .modal-result {
         font-size: 1.5em;
@@ -728,7 +750,9 @@
             <p>1人あたりの必要数: <span id="modal-base-req" style="color: #ccc; font-weight: bold;">0</span></p>
             <div class="modal-input-group">
                 <label for="modal-people-input">人数:</label>
-                <input type="number" id="modal-people-input" value="1" min="1">
+                <input type="number" id="modal-people-input" value="2" min="2">
+                <button type="button" id="modal-btn-minus" class="step-btn">－</button>
+                <button type="button" id="modal-btn-plus" class="step-btn">＋</button>
             </div>
             <div class="modal-result" id="modal-calc-result">
                 総必要数: -
@@ -1157,25 +1181,22 @@
         function openCalcModal(curLv, tarLv, req) {
             currentModalBaseReq = req;
             
-            // モーダル内のテキスト更新（Lvのあとに半角スペース）
+            // モーダル内のテキスト更新
             document.getElementById('modal-title').textContent = `Lv ${curLv} → ${tarLv}`;
             document.getElementById('modal-base-req').textContent = req.toLocaleString();
             
             const peopleInput = document.getElementById('modal-people-input');
-            peopleInput.value = 1; // 初期値リセット
+            peopleInput.value = 2; // 初期値を2にリセット
             
+            // 初期状態（2人分）の計算結果を表示
+            const initialTotal = req * 2;
             const resultDiv = document.getElementById('modal-calc-result');
-            resultDiv.textContent = `総必要数: ${req.toLocaleString()}`;
+            resultDiv.textContent = `総必要数: ${initialTotal.toLocaleString()}`;
             resultDiv.style.color = 'gold';
             
-            // モーダルを表示
+            // モーダルを表示（※フォーカスを当てる処理は削除しました）
             const modal = document.getElementById('calc-modal');
             modal.style.display = 'flex';
-            
-            // 表示後にフォーカスを当てる（既存処理により自動で全選択される）
-            setTimeout(() => {
-                peopleInput.focus();
-            }, 10);
         }
 
         function closeCalcModal() {
@@ -1187,8 +1208,9 @@
             const people = parseInt(peopleInput.value, 10);
             const resultDiv = document.getElementById('modal-calc-result');
             
-            if (isNaN(people) || people < 1) {
-                resultDiv.textContent = 'エラー: 1以上の数値を入力してください';
+            // 下限値を2に変更
+            if (isNaN(people) || people < 2) {
+                resultDiv.textContent = 'エラー: 2以上の数値を入力してください';
                 resultDiv.style.color = 'red';
             } else {
                 const totalReq = currentModalBaseReq * people;
@@ -1203,6 +1225,8 @@
             const closeBtn = document.getElementById('modal-close-btn');
             const peopleInput = document.getElementById('modal-people-input');
             const calcResultPanel = document.getElementById('calc-result');
+            const btnMinus = document.getElementById('modal-btn-minus');
+            const btnPlus = document.getElementById('modal-btn-plus');
 
             // 必要数パネルがクリックされたらモーダルを開く
             if(calcResultPanel) {
@@ -1225,9 +1249,34 @@
                 });
             }
             
-            // 入力欄の値が変わるたびに自動で計算を実行
             if(peopleInput) {
+                // 入力欄の値が変わるたびに自動で計算を実行
                 peopleInput.addEventListener('input', calculateMultiPeople);
+                
+                // フォーカスが当たった時に全選択させる
+                peopleInput.addEventListener('focus', function() {
+                    this.select();
+                });
+            }
+
+            // [－] ボタンの処理（下限2でストップ）
+            if(btnMinus && peopleInput) {
+                btnMinus.addEventListener('click', () => {
+                    let currentValue = parseInt(peopleInput.value, 10) || 2;
+                    if (currentValue > 2) {
+                        peopleInput.value = currentValue - 1;
+                        calculateMultiPeople();
+                    }
+                });
+            }
+
+            // [＋] ボタンの処理
+            if(btnPlus && peopleInput) {
+                btnPlus.addEventListener('click', () => {
+                    let currentValue = parseInt(peopleInput.value, 10) || 2;
+                    peopleInput.value = currentValue + 1;
+                    calculateMultiPeople();
+                });
             }
         });
     </script>
