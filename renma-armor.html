@@ -1092,6 +1092,15 @@
     <div class="bottom2">
         <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a>
     </div>
+
+        <div id="top5-modal" class="calc-modal-overlay">
+            <div class="calc-modal-window" style="max-width: 420px;">
+                <h3 id="top5-modal-title">全件確認</h3>
+                <div id="top5-modal-list" style="flex-grow: 1; overflow-y: auto; margin-bottom: 15px;"></div>
+                <button id="top5-modal-close" onclick="closeTop5Modal()" style="margin-top: 10px; padding: 10px; background-color: #555; color: white; border: none; border-radius: 4px; cursor: pointer;">閉じる</button>
+            </div>
+        </div>
+
               </div>
         </div>
 
@@ -1206,6 +1215,7 @@
     let mainNativeAbilities = new Map();
     let subNativeAbilities = new Map();
     let uniqueAbilities = {};
+    let lastTop5Data = null;
 
     const PAGE_SETTING_KEY = 'PageSettings';
     const BACKUP_SETTINGS_KEY = 'RenmaArmorBackupSettings';
@@ -2743,6 +2753,7 @@
         const placeholder = document.getElementById('top5-placeholder');
         try {
             const processed = processData_top5(data || []); 
+            lastTop5Data = processed; // ★追加：処理したデータをグローバルに保持
             displayReport_top5(processed);
         } catch (error) {
             console.error("データ処理中にエラー:", error);
@@ -2829,27 +2840,27 @@
         }
         return categorizedData;
     }
-        
+
     function displayReport_top5(data) {
         const selfPowerAbilities = ["威力＋(HP満タン時)", "威力＋(瀕死時)", "威力＋(カウンター)", "威力＋(斬)", "威力＋(打)", "威力＋(突)", "威力＋(熱)", "威力＋(冷)", "威力＋(雷)", "威力＋(陽)", "威力＋(陰)"];
         const partyPowerAbilities = ["味方威力＋(HP満タン時)", "味方威力＋(瀕死時)", "味方威力＋(カウンター)", "味方威力＋(斬)", "味方威力＋(打)", "味方威力＋(突)", "味方威力＋(熱)", "味方威力＋(冷)", "味方威力＋(雷)", "味方威力＋(陽)", "味方威力＋(陰)"];
-
+    
         const categories = [
-            { id: 'main-self', abilities: selfPowerAbilities, data: data.mainSelf },
-            { id: 'sub-self', abilities: selfPowerAbilities, data: data.subSelf },
-            { id: 'main-party', abilities: partyPowerAbilities, data: data.mainParty },
-            { id: 'sub-party', abilities: partyPowerAbilities, data: data.subParty }
+            { id: 'main-self', key: 'mainSelf', abilities: selfPowerAbilities, data: data.mainSelf },
+            { id: 'sub-self', key: 'subSelf', abilities: selfPowerAbilities, data: data.subSelf },
+            { id: 'main-party', key: 'mainParty', abilities: partyPowerAbilities, data: data.mainParty },
+            { id: 'sub-party', key: 'subParty', abilities: partyPowerAbilities, data: data.subParty }
         ];
         
         categories.forEach(cat => {
             const container = document.querySelector(`#${cat.id} .table-wrapper`);
             container.innerHTML = '';
             if (!sharedArmorData || sharedArmorData.length === 0 || (sharedArmorData.length === 1 && !sharedArmorData[0].armorName)) return; 
-
+    
             const table = document.createElement('table');
             table.innerHTML = `<thead><tr><th class="col-ability">アビリティ</th><th class="col-armor">装備</th><th class="col-value value-col">効果値</th></tr></thead>`;
             const tbody = table.createTBody();
-
+    
             cat.abilities.forEach(abilityName => {
                 const items = cat.data[abilityName] || [];
                 const showTotal = abilityName.startsWith('味方威力＋');
@@ -2860,18 +2871,19 @@
                         if (items[i]) abilityTotal += items[i].value;
                     }
                 }
-
+    
                 for (let i = 0; i < 5; i++) {
                     const item = items[i];
                     const row = tbody.insertRow();
                     
                     let firstCellHTML = '';
                     if (i === 0) {
-                        firstCellHTML = `<td class="merged-ability-cell" rowspan="4">${abilityName}</td>`;
+                        // ★修正: <td> ではなく、内側の <span> タグにクリックイベントとスタイルを付与しました
+                        firstCellHTML = `<td class="merged-ability-cell" rowspan="4"><span style="cursor: pointer;" onclick="openTop5Modal('${cat.key}', '${abilityName}')" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#98fb98'">${abilityName}</span></td>`;
                     } else if (i === 4) {
                         firstCellHTML = showTotal ? `<td class="ability-total-cell">合計: ${abilityTotal}%</td>` : `<td class="ability-total-cell">&nbsp;</td>`;
                     }
-
+    
                     let armorCellHTML = '&nbsp;', valueCellHTML = '&nbsp;', valueCellClass = 'value-col';
                     if (item) {
                         if (item.isCombined) {
@@ -2890,6 +2902,55 @@
             container.appendChild(table);
         });
     }
+
+    function openTop5Modal(categoryKey, abilityName) {
+        if (!lastTop5Data) return;
+    
+        const modal = document.getElementById('top5-modal');
+        const list = document.getElementById('top5-modal-list');
+        const title = document.getElementById('top5-modal-title');
+        
+        // ★修正: タイトルのフォーマットを変更
+        title.textContent = `全件確認／${abilityName}`;
+        list.innerHTML = '';
+    
+        const items = lastTop5Data[categoryKey][abilityName] || [];
+    
+        items.forEach((cand) => {
+            const div = document.createElement('div');
+            div.className = 'calc-candidate-item';
+            div.style.cursor = 'default'; 
+    
+            let nameDisplay = cand.armorName;
+            let valStyle = 'color: #ffd700;'; 
+    
+            if (cand.isCombined) {
+                nameDisplay = `<span class="combined-armor-name">${nameDisplay} (+${cand.addedValue})</span>`;
+                valStyle = 'color: red;';
+            } else if (isSpecialArmorName(cand.armorName)) {
+                nameDisplay = `<span class="special-armor-name">${nameDisplay}</span>`;
+            }
+    
+            // ★修正: 「○位:」の表記を削除しました
+            div.innerHTML = `
+                <div>
+                    <div class="main-info">${nameDisplay}</div>
+                </div>
+                <div class="val-info" style="${valStyle}">${cand.value}%</div>
+            `;
+            list.appendChild(div);
+        });
+    
+        modal.classList.add('active');
+    }
+    
+    function closeTop5Modal() {
+        document.getElementById('top5-modal').classList.remove('active');
+    }
+    
+    // 外部から呼び出せるように登録
+    window.openTop5Modal = openTop5Modal;
+    window.closeTop5Modal = closeTop5Modal;
 
     // =========================================================================
     // === 3. 自動選定ツールタブ (armor-calc.html) のスクリプト =======================
