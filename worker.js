@@ -1,6 +1,6 @@
 // worker.js
 // PapaParseをWeb Worker内でインポート
-importScripts('https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js');
+importScripts('script/papaparse.min.js');
 
 const attributes = ['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'];
 const additionalAttributes = ['毒', '暗闇', 'スタン', 'マヒ', '眠り', '石化', '混乱', '魅了', '狂戦士', '気絶', '腕力', '体力', '器用さ', '素早さ', '知力', '精神', '愛', '魅力'];
