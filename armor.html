@@ -708,7 +708,7 @@ const deleteExcludeProfile = (type) => {
 
           useEffect(() => {
             if (window.Worker && !workerRef.current) {
-              workerRef.current = new Worker('./worker.js');
+              workerRef.current = new Worker('./script/worker.js');
 
               workerRef.current.onmessage = (event) => {
                 const { type, payload, message } = event.data;
@@ -1115,7 +1115,7 @@ const deleteExcludeProfile = (type) => {
                   workerRef.current = null;
                   console.log("既存のWorkerを終了しました。新しいWorkerを作成します。");
               }
-              workerRef.current = new Worker('./worker.js');
+              workerRef.current = new Worker('./script/worker.js');
               const newWorker = workerRef.current;
 
               const parseStateObj = (obj) => {
@@ -1515,7 +1515,7 @@ return (
                               workerRef.current = null;
                           }
                           if (window.Worker) {
-                              const newWorkerForRetry = new Worker('./worker.js');
+                              const newWorkerForRetry = new Worker('./script/worker.js');
                               workerRef.current = newWorkerForRetry;
                               newWorkerForRetry.onmessage = (event) => {
                                 const { type, payload, message } = event.data;
