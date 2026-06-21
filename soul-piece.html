@@ -727,7 +727,10 @@
 
         <div class="matrix-table-wrapper" id="matrix-table-container">
             </div>
-
+            
+        <p style="color: #ee00ee; font-size: 0.95em; margin-top: -20px; margin-bottom: 30px;">
+            ※目標Lvの数字の文字色が紫色のものは魂アビリティの枠が１つ解放されます。
+        </p>
         <h2>一覧表</h2>
         <div class="table-controls">
             <button id="toggle-layout">モニター幅に合わせて列数を最適化</button>
@@ -1062,8 +1065,17 @@
         function generateMatrixTable() {
             const rows = [100, 150, 200, 300, 400, 500, 600, 700, 800, 900];
             const cols = [150, 200, 300, 400, 500, 600, 700, 800, 900, 999];
+            const purpleCols = [150, 200, 300, 500, 700, 900]; // ★追加: 紫色にする目標Lvを指定
+            
             let html = '<table class="matrix-table"><thead><tr><th class="corner-cell">魂Lv</th>';
-            cols.forEach(c => html += `<th data-col="${c}">${c}</th>`);
+            cols.forEach(c => {
+                // ★追加: 指定したLvの時だけ文字色を紫色にする
+                if (purpleCols.includes(c)) {
+                    html += `<th data-col="${c}" style="color: #ee00ee;">${c}</th>`;
+                } else {
+                    html += `<th data-col="${c}">${c}</th>`;
+                }
+            });
             html += '</tr></thead><tbody>';
             rows.forEach(r => {
                 html += `<tr><td class="header-col" data-row="${r}">${r}</td>`;
