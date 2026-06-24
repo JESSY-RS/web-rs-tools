@@ -12,6 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <title>四元像ピアス報告用</title>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
   <style>
 
     /* 1. 基本の指定（Windows, Android, Mac用） */
@@ -278,7 +281,7 @@
 
   <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()"></span>四元像ピアス</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger">四元像ピアス</span></h1>
   </div>
 
   <div class="zoom-buttons">
@@ -453,30 +456,49 @@
       document.getElementById("summary").innerHTML = summaryHTML;
     }
 
-    // JSON読込
+    // ▼▼ 追加：データを画面に反映させる共通関数 ▼▼
+    function applyReportData(data) {
+      if (!data) return;
+      
+      for (let key in data) {
+        if (key === "_version") continue;
+        const el = document.getElementById(key);
+        if (el) {
+          el.innerHTML = decorateStars(data[key]);
+        }
+      }
+      updateSummary();
+    }
+
+    // JSON読込（手動インポート用）
     document.getElementById("importJson").addEventListener("change", e => {
       const file = e.target.files[0];
-      if (!file) return;
+      if(!file) return;
       const reader = new FileReader();
       reader.onload = e => {
-        const data = JSON.parse(e.target.result);
-        for (let key in data) {
-          const el = document.getElementById(key);
-          if (el) {
-            el.innerHTML = decorateStars(data[key]);
-          }
+        try {
+          applyReportData(JSON.parse(e.target.result));
+        } catch(error) {
+          alert('ファイルの内容が不正です。');
         }
-        updateSummary(); // 読込後に集計実行
       };
       reader.readAsText(file);
     });
+
+    // ローカルデータの読込（非ログイン時）
+    function loadLocalData() {
+        try {
+            // 四元像チェッカー側で保存されたローカルデータキーを参照
+            const savedData = localStorage.getItem('checker-4gen_admin_data');
+            if (savedData) applyReportData(JSON.parse(savedData));
+        } catch (e) {}
+    }
 
     // 初期表示の時点でも集計実行
     updateSummary();
 
     // 拡大縮小の関数
     const PAGE_SETTING_KEY = 'PageSettings'; 
-    
     let pageSettings = { 'report-4gen_zoom': 1.0 };
     
     function changeZoom(delta) {
@@ -484,19 +506,12 @@
         let currentZoom = pageSettings[zoomKey];
     
         currentZoom += delta;
-
         currentZoom = Math.round(currentZoom * 10) / 10;
-
         if (currentZoom < 0.5) currentZoom = 0.5;
         if (currentZoom > 2.0) currentZoom = 2.0;
         
-        // 画面の表示に反映
         document.body.style.zoom = currentZoom;
-        
-        // 設定オブジェクトの値を更新
         pageSettings[zoomKey] = currentZoom;
-        
-        // localStorageに保存
         savePageSettings();
     }
     
@@ -504,30 +519,45 @@
         try {
             const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
             if (savedSettings) {
-                // 保存済みの設定があれば、デフォルト値と結合して上書きします。
                 pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
             }
-        } catch (error) {
-            console.error("ページ設定の読み込みに失敗しました:", error);
-        }
+        } catch (error) {}
     }
     
     function savePageSettings() {
         try {
             localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
-        } catch (error) {
-            console.error("ページ設定の保存に失敗しました:", error);
-        }
+        } catch (error) {}
     }
     
     document.addEventListener('DOMContentLoaded', () => {
         loadPageSettings();
         document.body.style.zoom = pageSettings['report-4gen_zoom'];
+
+        // ▼▼ 同期マネージャーの起動 ▼▼
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'checker-4gen.json', // ★チェッカーと同じファイルを読み込む
+                firestoreDoc: 'checker-4gen',  // ★チェッカーと同じデータを読み込む
+                onLoad: (loadedData) => {
+                    if (loadedData) {
+                        applyReportData(loadedData); // クラウドから成功
+                    } else {
+                        loadLocalData(); // クラウドに無い、または未ログイン時はローカルを読む
+                    }
+                },
+                onSave: () => {
+                    return null; // 報告用ページからは保存しない
+                }
+            });
+        } else {
+            loadLocalData();
+        }
     });
 
-    // ページをリロードしたらサイドメニューを呼び出す
     window.onload = function () {
-        loadSideMenu();
+        if(typeof loadSideMenu === 'function') loadSideMenu();
     }
 
   </script>

@@ -12,6 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <title>アストラルレリックチェッカー</title>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
   <style>
 
     /* 1. 基本の指定（Windows, Android, Mac用） */
@@ -311,6 +314,7 @@
     .menu-spacer { height: 30px; }
 
   </style>
+
 </head>
 <body>
 
@@ -343,11 +347,11 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()"></span>アストラルレリックチェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger">アストラルレリックチェッカー</span></h1>
   </div>
 
-  <div class="controls">
-    <input type="file" id="fileInput" accept=".json"><br>
+  <div class="controls" style="display: flex; align-items: center; gap: 15px;">
+    <input type="file" id="fileInput" accept=".json">
   </div>
 
   <div id="statusContainer"></div>
@@ -488,29 +492,77 @@
         isAdminMode = (savedMode === 'admin');
     }
 
-    function saveAdminData() {
-        if (!isAdminMode) return; 
-        const result = {};
+    // ▼▼ SS2の見えないデータを壊さないためのマージ用変数 ▼▼
+    let globalFullData = {};
 
+    function getCheckerData() {
+        // ベースを最新の読み込みデータ(SS2の全データ)にする
+        const rawResult = { ...globalFullData };
+        
         const allStars = document.querySelectorAll('.stars');
         allStars.forEach(stars => {
             const key = stars.dataset.key;
             const starElems = stars.querySelectorAll('.star');
             let starString = '';
             starElems.forEach(s => {
-                if (s.classList.contains('on')) {
-                    starString += '★'; 
-                } else if (s.textContent === '★') {
-                    starString += '◆'; 
-                } else if (s.textContent === '☆') {
-                    starString += '☆'; 
-                } else {
-                    starString += '・'; 
-                }
+                if (s.classList.contains('on')) starString += '★'; 
+                else if (s.textContent === '★') starString += '◆'; 
+                else if (s.textContent === '☆') starString += '☆'; 
+                else starString += '・'; 
             });
-            result[key] = starString;
+            
+            // 無印の画面にある項目を上書きする
+            rawResult[key] = starString; 
+
+            // SS2のコンボ項目(斬_斬など)も裏で同期させる
+            const attrName = key.replace('アストラルレリック_', '');
+            if (attrName !== '詩人') {
+                rawResult[`${attrName}_${attrName}`] = starString; 
+            }
         });
-        localStorage.setItem(DATA_KEY, JSON.stringify(result));
+        
+        // ▼▼ 追加：エクスポートやクラウド保存用に、キーの並び順をSS2と同じ形に美しく整える ▼▼
+        const orderedResult = {};
+        const attrs = ["斬", "打", "突", "熱", "冷", "雷", "陽", "陰", "詩人"];
+        const comboAttrs = ["斬", "打", "突", "熱", "冷", "雷", "陽", "陰"];
+
+        // 1. 大分類（アストラルレリック）を順番に格納
+        attrs.forEach(a => {
+            const k = `アストラルレリック_${a}`;
+            if (rawResult[k]) orderedResult[k] = rawResult[k];
+        });
+
+        // 2. SS2の組み合わせ（コンボ）を規則正しく格納
+        comboAttrs.forEach(p => {
+            comboAttrs.forEach(c => {
+                const k = `${p}_${c}`;
+                if (rawResult[k]) orderedResult[k] = rawResult[k];
+            });
+        });
+
+        // 3. 万が一上記以外のデータが含まれていれば末尾に追加（安全対策）
+        Object.keys(rawResult).forEach(k => {
+            if (orderedResult[k] === undefined) orderedResult[k] = rawResult[k];
+        });
+
+        globalFullData = { ...orderedResult }; // 自分自身も整列された状態で更新しておく
+        return orderedResult;
+    }
+
+    // ▼▼ 修正：保存ロジック（クラウドを優先し、ローカルバックアップと切り分ける） ▼▼
+    function saveAdminData() {
+        // 星の状態が変わったら、クラウド保存のタイマーを発火させる
+        if (window.triggerSyncSave) window.triggerSyncSave();
+
+        // ログイン中はクラウドに任せるため、ローカル(ブラウザ)への保存はしない
+        if (window.syncManager && window.syncManager.isLoggedIn) {
+            return; 
+        }
+
+        // アドミンモードでない時はローカル保存しない
+        if (!isAdminMode) return; 
+        
+        localStorage.setItem(DATA_KEY, JSON.stringify(getCheckerData()));
     }
 
     function loadAdminData() {
@@ -527,6 +579,10 @@
     }
 
     function applyData(data) {
+        if (!data) return;
+        // ▼▼ 追加：読み込んだ全データを裏側に保存しておく ▼▼
+        globalFullData = JSON.parse(JSON.stringify(data));
+
         const isOldFile = Object.keys(data).some(key => key.startsWith('旧アストラルレリック_'));
 
         for (const key in data) {
@@ -626,14 +682,20 @@
       const container = document.getElementById('statusContainer');
       container.innerHTML = '';
 
-      if (isAdminMode) {
-          const h1 = document.querySelector('h1');
-          if (h1 && !h1.innerHTML.includes('[Admin Mode: Auto-Save ON]')) {
-              h1.innerHTML += ' <span style="color:red;">[Admin Mode: Auto-Save ON]</span>';
+      const h1 = document.querySelector('h1');
+      if (h1) {
+          h1.innerHTML = h1.innerHTML.replace(/ <span.*?>\[Admin Mode:.*?<\/span>/g, '');
+          
+          if (isAdminMode) {
+              // 前回開いていた時のログイン状態を呼び出す
+              const wasLoggedIn = localStorage.getItem('Renma_LastLoginState') === 'true';
+              // ログインしていた記憶があれば最初から隠し、未ログインなら最初から出しておく
+              const initialDisplay = wasLoggedIn ? 'none' : 'inline';
+              
+              h1.innerHTML += ` <span id="admin-indicator" style="display:${initialDisplay}; color:red;">[Admin Mode: Auto-Save ON]</span>`;
           }
       }
 
-      // ★修正箇所：forEachに index を追加
       groups.forEach((group, index) => {
         const groupBlock = document.createElement('div');
         groupBlock.className = 'group-block';
@@ -642,7 +704,6 @@
         groupTitle.className = `group-title ${group.color}`;
         groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
 
-        // 大分類のタイトルをさらにspanで囲み、文字領域だけにする
         const titleWrapper = document.createElement('span');
         
         const titleText = document.createElement('span');
@@ -659,7 +720,6 @@
 
         const zoomButtons = document.createElement('div');
         zoomButtons.className = 'zoom-buttons';
-        // ★修正箇所：ボタンのIDと関数呼び出しに index を付与
         zoomButtons.innerHTML = `
           <button id="zoomToggle-${index}" onclick="toggleZoomControls(${index})">±</button>
           <div id="zoomControls-${index}" class="zoom-controls">
@@ -692,7 +752,6 @@
              line.style.pointerEvents = 'none'; 
           }
 
-          // 小分類の項目名（幅固定と文字要素を分ける）
           const nameContainer = document.createElement('span');
           nameContainer.className = `${attr.class} name`;
           
@@ -702,13 +761,11 @@
           if (!isHiddenPoet) {
               nameText.classList.add('clickable-title');
               nameText.addEventListener('dblclick', () => {
-                  // stars要素は後で定義されるが参照可能
                   sortStars(line.querySelector('.stars'));
                   saveAdminData();
               });
           } else {
               nameText.style.color = '#2A2A2A'; 
-              // ★修正箇所：非表示の詩人見出しを選択不可にする
               nameText.style.userSelect = 'none';
           }
           
@@ -767,27 +824,7 @@
     }
 
     function exportState() {
-      const result = {};
-
-      const allStars = document.querySelectorAll('.stars');
-      allStars.forEach(stars => {
-        const key = stars.dataset.key;
-        const starElems = stars.querySelectorAll('.star');
-        let starString = '';
-        starElems.forEach(s => {
-            if (s.classList.contains('on')) {
-                starString += '★'; 
-            } else if (s.textContent === '★') {
-                starString += '◆'; 
-            } else if (s.textContent === '☆') {
-                starString += '☆'; 
-            } else {
-                starString += '・'; 
-            }
-        });
-        result[key] = starString;
-      });
-
+      const result = getCheckerData();
       const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -817,9 +854,44 @@
         document.body.style.zoom = pageSettings['checker-astral_zoom'];
         
         init(); 
-        loadAdminData(); 
-    });
 
+        // ▼▼ 追加：同期マネージャーの起動 ▼▼
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'checker-astral.json', 
+                firestoreDoc: 'checker-astral',        
+                onLoad: (loadedData) => {
+                    if (loadedData) {
+                        applyData(loadedData); // クラウドからロード成功
+                    } else {
+                        loadAdminData(); // ロード失敗または未ログイン時はローカルを読む
+                    }
+                },
+                onSave: () => {
+                    return getCheckerData(); // 保存する星データを渡す
+                }
+            });
+        } else {
+            loadAdminData(); 
+        }
+
+        // ▼▼ 修正：監視機能（状態を記憶する処理を追加） ▼▼
+        if (isAdminMode) {
+            setInterval(() => {
+                if (window.syncManager) {
+                    const isLoggedIn = window.syncManager.isLoggedIn;
+                    // 今のログイン状態を、次回リロード時のために常に記憶しておく
+                    localStorage.setItem('Renma_LastLoginState', isLoggedIn ? 'true' : 'false');
+                    
+                    const indicator = document.getElementById('admin-indicator');
+                    if (indicator && window.syncManager.syncStatus === 'ready') {
+                        indicator.style.display = isLoggedIn ? 'none' : 'inline';
+                    }
+                }
+            }, 500);
+        }
+    });
   </script>
 
 </body>

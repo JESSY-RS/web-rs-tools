@@ -12,6 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <title>虹瑠璃の腕輪チェッカー</title>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
   <style>
 
     /* 1. 基本の指定（Windows, Android, Mac用） */
@@ -356,7 +359,7 @@
 
   <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()"></span>虹瑠璃の腕輪チェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger">虹瑠璃の腕輪チェッカー</span></h1>
   </div>
 
   <div class="controls">
@@ -549,21 +552,35 @@
         isAdminMode = (savedMode === 'admin');
     }
 
-    function saveAdminData() {
-        if (!isAdminMode) return; // 管理者モードでなければ保存しない
-        
+    // ▼▼ 追加：データを抽出する共通関数 ▼▼
+    function getCheckerData() {
         const result = {};
         const allStars = document.querySelectorAll('.stars');
         allStars.forEach(stars => {
             const key = stars.dataset.key;
             const starElems = stars.querySelectorAll('.star');
             let starString = '';
-            starElems.forEach(s => starString += s.textContent);
+            starElems.forEach(s => {
+                if (s.classList.contains('on')) starString += '★'; 
+                else if (s.textContent === '★') starString += '◆'; 
+                else if (s.textContent === '☆') starString += '☆'; 
+                else starString += '・'; 
+            });
             result[key] = starString;
         });
+        return result;
+    }
+
+    // ▼▼ 上書き：保存ロジック（クラウドを優先する） ▼▼
+    function saveAdminData() {
+        if (window.triggerSyncSave) window.triggerSyncSave();
+
+        // ログイン中はローカルへ保存しない
+        if (window.syncManager && window.syncManager.isLoggedIn) return; 
+
+        if (!isAdminMode) return; 
         
-        // ローカルストレージに保存
-        localStorage.setItem(DATA_KEY, JSON.stringify(result));
+        localStorage.setItem(DATA_KEY, JSON.stringify(getCheckerData()));
     }
 
     function loadAdminData() {
@@ -620,17 +637,19 @@
       const container = document.getElementById('statusContainer');
       container.innerHTML = '';
 
-      // 管理者モードの場合、タイトルに (Admin) を追加
-      if (isAdminMode) {
-          const h1 = document.querySelector('h1');
-          if (h1 && !h1.innerHTML.includes('[Admin Mode: Auto-Save ON]')) {
-              h1.innerHTML += ' <span style="color:red;">[Admin Mode: Auto-Save ON]</span>';
+      // ▼スマート赤文字▼
+      const h1 = document.querySelector('h1');
+      if (h1) {
+          h1.innerHTML = h1.innerHTML.replace(/ <span.*?>\[Admin Mode:.*?<\/span>/g, '');
+          if (isAdminMode) {
+              const wasLoggedIn = localStorage.getItem('Renma_LastLoginState') === 'true';
+              const initialDisplay = wasLoggedIn ? 'none' : 'inline';
+              h1.innerHTML += ` <span id="admin-indicator" style="display:${initialDisplay}; color:red;">[Admin Mode: Auto-Save ON]</span>`;
           }
       }
 
       groups.forEach(group => {
         const groupTitle = document.createElement('div');
-        //groupTitle.textContent = group.title;
         groupTitle.className = `group-title ${group.color}`;
         groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
 
@@ -676,7 +695,6 @@
                 this.textContent = '☆';
                 this.classList.remove('on');
               }
-              // 管理者モードの場合、変更を即座に保存
               saveAdminData();
             });
             stars.appendChild(star);
@@ -687,7 +705,6 @@
           container.appendChild(line);
         });
 
-        // グループごとのエクスポートボタン
         const exportBtn = document.createElement('button');
         exportBtn.textContent = '状態をエクスポート';
         exportBtn.style.marginTop = '15px';
@@ -708,35 +725,14 @@
       }
 
       const downBtn = document.getElementById('scrollDown');
-      if (downBtn) {
-          downBtn.addEventListener('click', () => {
-            if (currentGroupIndex < groupTitles.length - 1) {
-              scrollToGroup(currentGroupIndex + 1);
-            }
-          });
-      }
+      if (downBtn) downBtn.addEventListener('click', () => { if (currentGroupIndex < groupTitles.length - 1) scrollToGroup(currentGroupIndex + 1); });
 
       const upBtn = document.getElementById('scrollUp');
-      if (upBtn) {
-          upBtn.addEventListener('click', () => {
-            if (currentGroupIndex > 0) {
-              scrollToGroup(currentGroupIndex - 1);
-            }
-          });
-      }
+      if (upBtn) upBtn.addEventListener('click', () => { if (currentGroupIndex > 0) scrollToGroup(currentGroupIndex - 1); });
     }
 
     function exportState() {
-      const result = {};
-      const allStars = document.querySelectorAll('.stars');
-      allStars.forEach(stars => {
-        const key = stars.dataset.key;
-        const starElems = stars.querySelectorAll('.star');
-        let starString = '';
-        starElems.forEach(s => starString += s.textContent);
-        result[key] = starString;
-      });
-
+      const result = getCheckerData();
       const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -750,9 +746,7 @@
       const reader = new FileReader();
       reader.onload = function (event) {
         try {
-          const data = JSON.parse(event.target.result);
-          applyData(data);
-          // 管理者モードの場合、インポートした内容も即保存
+          applyData(JSON.parse(event.target.result));
           saveAdminData();
         } catch (error) {
           alert('ファイルの内容が不正です。');
@@ -761,15 +755,42 @@
       reader.readAsText(file);
     });
 
-    // 初期化
     document.addEventListener('DOMContentLoaded', () => {
-        checkMode(); // モードチェック
+        checkMode(); 
         loadPageSettings();
         document.body.style.zoom = pageSettings['checker-niji_zoom'];
         
-        init(); // 画面構築
+        init(); 
 
-        loadAdminData(); // 管理者モードならデータを復元
+        // ▼▼ 同期マネージャーの起動 ▼▼
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'checker-niji.json', 
+                firestoreDoc: 'checker-niji',        
+                onLoad: (loadedData) => {
+                    if (loadedData) applyData(loadedData);
+                    else loadAdminData();
+                },
+                onSave: () => getCheckerData()
+            });
+        } else {
+            loadAdminData(); 
+        }
+
+        // ▼▼ 監視機能 ▼▼
+        if (isAdminMode) {
+            setInterval(() => {
+                if (window.syncManager) {
+                    const isLoggedIn = window.syncManager.isLoggedIn;
+                    localStorage.setItem('Renma_LastLoginState', isLoggedIn ? 'true' : 'false');
+                    const indicator = document.getElementById('admin-indicator');
+                    if (indicator && window.syncManager.syncStatus === 'ready') {
+                        indicator.style.display = isLoggedIn ? 'none' : 'inline';
+                    }
+                }
+            }, 500);
+        }
     });
 
   </script>

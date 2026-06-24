@@ -12,6 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <title>カオスレリックチェッカー</title>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
   <style>
 
     /* 1. 基本の指定（Windows, Android, Mac用） */
@@ -329,7 +332,7 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()"></span>カオスレリックチェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger">カオスレリックチェッカー</span></h1>
   </div>
 
   <div class="controls">
@@ -474,29 +477,37 @@
         isAdminMode = (savedMode === 'admin');
     }
 
-    function saveAdminData() {
-        if (!isAdminMode) return; 
+    // ▼▼ 追加：データを抽出する共通関数 ▼▼
+    function getCheckerData() {
         const result = {};
-
         const allStars = document.querySelectorAll('.stars');
         allStars.forEach(stars => {
             const key = stars.dataset.key;
             const starElems = stars.querySelectorAll('.star');
             let starString = '';
             starElems.forEach(s => {
-                if (s.classList.contains('on')) {
-                    starString += '★'; 
-                } else if (s.textContent === '★') {
-                    starString += '◆'; 
-                } else if (s.textContent === '☆') {
-                    starString += '☆'; 
-                } else {
-                    starString += '・'; 
-                }
+                if (s.classList.contains('on')) starString += '★'; 
+                else if (s.textContent === '★') starString += '◆'; 
+                else if (s.textContent === '☆') starString += '☆'; 
+                else starString += '・'; 
             });
             result[key] = starString;
         });
-        localStorage.setItem(DATA_KEY, JSON.stringify(result));
+        return result;
+    }
+
+    // ▼▼ 上書き：保存ロジック（クラウドを優先する） ▼▼
+    function saveAdminData() {
+        if (window.triggerSyncSave) window.triggerSyncSave();
+
+        // ログイン中はローカルへ保存しない
+        if (window.syncManager && window.syncManager.isLoggedIn) {
+            return; 
+        }
+
+        if (!isAdminMode) return; 
+        
+        localStorage.setItem(DATA_KEY, JSON.stringify(getCheckerData()));
     }
 
     function loadAdminData() {
@@ -616,10 +627,17 @@
       const container = document.getElementById('statusContainer');
       container.innerHTML = '';
 
-      if (isAdminMode) {
-          const h1 = document.querySelector('h1');
-          if (h1 && !h1.innerHTML.includes('[Admin Mode: Auto-Save ON]')) {
-              h1.innerHTML += ' <span style="color:red;">[Admin Mode: Auto-Save ON]</span>';
+      const h1 = document.querySelector('h1');
+      if (h1) {
+          h1.innerHTML = h1.innerHTML.replace(/ <span.*?>\[Admin Mode:.*?<\/span>/g, '');
+          
+          if (isAdminMode) {
+              // 前回開いていた時のログイン状態を呼び出す
+              const wasLoggedIn = localStorage.getItem('Renma_LastLoginState') === 'true';
+              // ログインしていた記憶があれば最初から隠し、未ログインなら最初から出しておく
+              const initialDisplay = wasLoggedIn ? 'none' : 'inline';
+              
+              h1.innerHTML += ` <span id="admin-indicator" style="display:${initialDisplay}; color:red;">[Admin Mode: Auto-Save ON]</span>`;
           }
       }
 
@@ -779,27 +797,7 @@
     }
 
     function exportState() {
-      const result = {};
-
-      const allStars = document.querySelectorAll('.stars');
-      allStars.forEach(stars => {
-        const key = stars.dataset.key;
-        const starElems = stars.querySelectorAll('.star');
-        let starString = '';
-        starElems.forEach(s => {
-            if (s.classList.contains('on')) {
-                starString += '★'; 
-            } else if (s.textContent === '★') {
-                starString += '◆'; 
-            } else if (s.textContent === '☆') {
-                starString += '☆'; 
-            } else {
-                starString += '・'; 
-            }
-        });
-        result[key] = starString;
-      });
-
+      const result = getCheckerData(); // 共通関数を利用
       const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -829,7 +827,43 @@
         document.body.style.zoom = pageSettings['checker-chaos_zoom'];
         
         init(); 
-        loadAdminData(); 
+
+        // ▼▼ 同期マネージャーの起動（カオスレリック専用のファイル名） ▼▼
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'checker-chaos.json', 
+                firestoreDoc: 'checker-chaos',        
+                onLoad: (loadedData) => {
+                    if (loadedData) {
+                        applyData(loadedData);
+                    } else {
+                        loadAdminData();
+                    }
+                },
+                onSave: () => {
+                    return getCheckerData();
+                }
+            });
+        } else {
+            loadAdminData(); 
+        }
+
+        // ▼▼ 修正：監視機能（状態を記憶する処理を追加） ▼▼
+        if (isAdminMode) {
+            setInterval(() => {
+                if (window.syncManager) {
+                    const isLoggedIn = window.syncManager.isLoggedIn;
+                    // 今のログイン状態を、次回リロード時のために常に記憶しておく
+                    localStorage.setItem('Renma_LastLoginState', isLoggedIn ? 'true' : 'false');
+                    
+                    const indicator = document.getElementById('admin-indicator');
+                    if (indicator && window.syncManager.syncStatus === 'ready') {
+                        indicator.style.display = isLoggedIn ? 'none' : 'inline';
+                    }
+                }
+            }, 500);
+        }
     });
 
   </script>

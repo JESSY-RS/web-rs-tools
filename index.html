@@ -122,21 +122,85 @@
       user-select: none;
     }
 
-    /* アドミンモード専用のスタイル */
-    .admin-only {
+    /* 自分専用(クラウドモード)のスタイル */
+    .cloud-only {
       display: none;
     }
     
-    body.admin-mode .admin-only {
+    body.cloud-mode .cloud-only {
       display: inline;
     }
 
-  </style>
+    /* ▼▼ 追加：同期用ポップアップモーダルのスタイル ▼▼ */
+    .sync-modal-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 9999; justify-content: center; align-items: center;
+    }
+    .sync-modal-window {
+      background-color: #333; padding: 20px; border-radius: 8px;
+      width: 90%; max-width: 400px; text-align: center;
+      border: 1px solid #555; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .sync-modal-title-area {
+      display: flex; align-items: center; justify-content: center; gap: 10px; 
+      margin-bottom: 25px; font-size: 22px; font-weight: bold; color: #50b4f0; width: 100%;
+    }
+    .sync-modal-title-area img {
+      width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+    }
+    .sync-policy {
+      font-size: 14px; color: #ff4444; line-height: 1.6; text-align: left;
+      margin-top: 20px; border-top: 1px dashed #555; padding-top: 12px; width: 100%;
+    }
+    /* モーダル内リストの余白調整 */
+    .sync-policy ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .sync-policy li {
+      margin-bottom: 5px;
+    }
+    /* モーダル内リンク用のスタイル */
+    .sync-modal-links {
+      margin-top: 15px;
+      font-size: 13px;
+      border-top: 1px solid #444;
+      padding-top: 12px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    .sync-modal-links a {
+      color: #2A99E6;
+      text-decoration: none;
+    }
+    .sync-modal-links a:hover {
+      color: #55b8ff;
+      text-decoration: underline;
+    }
+    .sync-btn {
+      padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 4px;
+      cursor: pointer; border: none; width: 100%; margin-bottom: 10px; box-sizing: border-box;
+    }
+    .btn-login { background-color: #2A99E6; color: white; }
+    .btn-login:hover { background-color: #1e7ebd; }
+    .btn-logout { background-color: #dc3545; color: white; }
+    .btn-logout:hover { background-color: #a71d2a; }
+    .btn-close { background-color: #555; color: white; margin-top: 10px; }
+    /* ▲▲ 追加ここまで ▲▲ */
 
-</head>
+  </style>
+  
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+  </head>
 <body>
 
-  <header>リユニのWeb版いろいろ</header>
+<header><span id="title-login-trigger" style="cursor: pointer;" title="クリックで同期設定を開く">リユニのWeb版いろいろ</span></header>
   
   <a href="kiokucalc.html">記憶再戦時間計算</a><br>
   <a href="kiokucalc2.html">記憶再戦回数計算</a><br>
@@ -190,7 +254,7 @@
   <a href="style-info.html">スタイル情報ビューア</a><br>
   <br>
   <a href="repeat.html">周回編成まとめ</a><br>
-  <span class="admin-only"><a href="speed.html">周回スピード検索</a><br></span>
+  <span class="cloud-only"><a href="speed.html">周回スピード検索</a><br></span>
   <br>
 
   <footer>
@@ -209,18 +273,25 @@
         
         if (modeParam === 'secret_admin_on') {
             localStorage.setItem(ADMIN_KEY, 'admin');
+            localStorage.removeItem('RenmaArmorCloudMode');
+        } else if (modeParam === 'secret_cloud_on') {
+            // ▼▼ secret_cloud_on に変更 ▼▼
+            localStorage.setItem(ADMIN_KEY, 'admin');
+            localStorage.setItem('RenmaArmorCloudMode', 'true');
         } else if (modeParam === 'secret_debug_on') {
             localStorage.setItem(ADMIN_KEY, 'debug');
+            localStorage.removeItem('RenmaArmorCloudMode');
         }
         
         const savedMode = localStorage.getItem(ADMIN_KEY);
         isAdminMode = (savedMode === 'admin');
 
-        // アドミンモードならbodyにクラスを追加して表示を切り替える
-        if (isAdminMode) {
-            document.body.classList.add('admin-mode');
+        // ▼▼ クラウドモード(自分専用モード)の時だけリンクを表示する ▼▼
+        const isCloudMode = (localStorage.getItem('RenmaArmorCloudMode') === 'true');
+        if (isCloudMode) {
+            document.body.classList.add('cloud-mode');
         } else {
-            document.body.classList.remove('admin-mode');
+            document.body.classList.remove('cloud-mode');
         }
     }
 
@@ -246,6 +317,127 @@
     });
     
   </script>
-  
+
+<div id="sync-modal" class="sync-modal-overlay">
+    <div class="sync-modal-window">
+      <div id="sync-modal-title" class="sync-modal-title-area">データ同期設定</div>
+      
+      <button id="modal-login-btn" class="sync-btn btn-login">Googleアカウントでログイン</button>
+      <button id="modal-logout-btn" class="sync-btn btn-logout" style="display: none;">ログアウト</button>
+
+      <button id="modal-close-btn" class="sync-btn btn-close">閉じる</button>
+
+      <div id="sync-modal-policy" class="sync-policy"></div>
+
+      <!-- ▼▼ 利用規約とプライバシーポリシーのリンクを追加 ▼▼ -->
+      <div class="sync-modal-links">
+        <a href="terms.html" target="_blank">利用規約</a>
+        <a href="privacy.html" target="_blank">プライバシーポリシー</a>
+      </div>
+    </div>
+  </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const modal = document.getElementById('sync-modal');
+      const titleTrigger = document.getElementById('title-login-trigger');
+      const loginBtn = document.getElementById('modal-login-btn');
+      const logoutBtn = document.getElementById('modal-logout-btn');
+      const closeBtn = document.getElementById('modal-close-btn');
+      const titleArea = document.getElementById('sync-modal-title');
+      const policyArea = document.getElementById('sync-modal-policy');
+
+      const isCloud = (localStorage.getItem('RenmaArmorCloudMode') === 'true');
+
+      // --- 各モード・状態ごとの説明文テキスト定義をリスト形式(ul/li)に変更 ---
+      // 1. 通常ドライブモード・ログイン前（全文表示）
+      const textDriveLoggedOut = `
+        <ul>
+          <li>ログインすると、あなたのデータは「あなた自身のGoogleドライブの隠し領域」にのみ保存され、複数の端末で自動同期されます。</li>
+          <li>アプリの管理者を含め、第三者があなたのメールアドレスや保存データを見ることはできません。</li>
+          <li>Googleのセキュリティ仕様により、ログイン状態は1時間で自動的に解除されます。</li>
+        </ul>
+      `;
+      
+      // 2. 通常ドライブモード・ログイン中（1時間の案内のみ）
+      const textDriveLoggedIn = `
+        <ul>
+          <li>Googleのセキュリティ仕様により、ログイン状態は1時間で自動的に解除されます。</li>
+        </ul>
+      `;
+      
+      // 3. クラウドモード（Firebase）・常に表示する免責事項
+      const textCloudCommon = `
+        <ul>
+          <li><strong>【警告】</strong>このモードは一般公開用ではなく、当プライバシーポリシーの適用外となる「開発者用テスト環境」です。</li>
+          <li>データはGoogle Driveではなく、外部サーバーに保存されます。</li>
+          <li>個人情報の保護は確約できず、保存されるメールアドレス等のデータが第三者に漏洩するリスクがゼロではありません。</li>
+          <li>万が一、ソースコードを解析等してこのモードにアクセスされた場合でも、完全な自己責任とし、管理者は一切の責任を負いません。</li>
+        </ul>
+      `;
+
+      // 初期状態のテキストと表題をセット
+      titleArea.textContent = 'データ同期設定';
+      policyArea.innerHTML = isCloud ? textCloudCommon : textDriveLoggedOut;
+
+      // マネージャーからの認証状態を受け取ってUIを動的に書き換える
+      setTimeout(() => {
+          if (window.syncManager) {
+              window.syncManager.onAuthChangeCallback = (isLoggedIn) => {
+                  titleArea.textContent = 'データ同期設定'; // 表題は常に固定
+                  policyArea.style.display = 'block';     // 領域は常に表示
+                  
+                  if (isCloud) {
+                      // 【クラウドモード（Firebase）時】
+                      // ログイン前・ログイン中に関わらず、指定された文章のみを固定表示
+                      policyArea.innerHTML = textCloudCommon;
+                      
+                      if (isLoggedIn) {
+                          loginBtn.style.display = 'none';
+                          logoutBtn.style.display = 'block';
+                      } else {
+                          loginBtn.style.display = 'block';
+                          logoutBtn.style.display = 'none';
+                      }
+                  } else {
+                      // 【通常のドライブモード時】
+                      if (isLoggedIn) {
+                          // ログイン中：1時間の説明のみ表示
+                          loginBtn.style.display = 'none';
+                          logoutBtn.style.display = 'block';
+                          policyArea.innerHTML = textDriveLoggedIn;
+                      } else {
+                          // ログイン前：全文表示
+                          loginBtn.style.display = 'block';
+                          logoutBtn.style.display = 'none';
+                          policyArea.innerHTML = textDriveLoggedOut;
+                      }
+                  }
+              };
+              
+              // 既に自動ログインが完了している場合の即時反映
+              if (window.syncManager.isLoggedIn) {
+                  window.syncManager.onAuthChangeCallback(true);
+              } else {
+                  window.syncManager.onAuthChangeCallback(false);
+              }
+          }
+      }, 600);
+
+      // ポップアップ開閉ロジック
+      titleTrigger.addEventListener('click', () => { modal.style.display = 'flex'; });
+      closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+      modal.addEventListener('click', (e) => { if(e.target === modal) modal.style.display = 'none'; });
+
+      // ボタンアクション
+      loginBtn.addEventListener('click', () => {
+          if (window.triggerSyncLogin) window.triggerSyncLogin();
+      });
+      logoutBtn.addEventListener('click', () => {
+          if (window.triggerSyncLogout) window.triggerSyncLogout();
+      });
+    });
+  </script>
+
 </body>
 </html>

@@ -12,6 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <title>ステラSS2チェッカー</title>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
   <style>
 
     /* --- 基本デザイン --- */
@@ -330,7 +333,7 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()"></span>ステラSS2チェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger">ステラSS2チェッカー</span></h1>
   </div>
 
   <div class="controls">
@@ -388,17 +391,35 @@
       return `${sorted[0]}_${sorted[1]}`;
     }
 
-    // --- 初期化 ---
+    // ▼▼ 追加：モードと保存用変数の定義 ▼▼
+    let isAdminMode = false;
+    function checkMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') === 'secret_admin_on') localStorage.setItem('checker-stella_mode', 'admin');
+        else if (urlParams.get('mode') === 'secret_debug_on') localStorage.setItem('checker-stella_mode', 'debug');
+        isAdminMode = (localStorage.getItem('checker-stella_mode') === 'admin');
+    }
+
     function init() {
       const container = document.getElementById('statusContainer');
       const sideLinks = document.getElementById('dynamic-links');
       container.innerHTML = '';
       sideLinks.innerHTML = '';
 
+      // ▼スマート赤文字▼
+      const h1 = document.querySelector('h1');
+      if (h1) {
+          h1.innerHTML = h1.innerHTML.replace(/ <span.*?>\[Admin Mode:.*?<\/span>/g, '');
+          if (isAdminMode) {
+              const wasLoggedIn = localStorage.getItem('Renma_LastLoginState') === 'true';
+              const initialDisplay = wasLoggedIn ? 'none' : 'inline';
+              h1.innerHTML += ` <span id="admin-indicator" style="display:${initialDisplay}; color:red; font-size:16px;">[Admin Mode: Auto-Save ON]</span>`;
+          }
+      }
+
       attributes.forEach((parentRace, index) => {
         const anchorId = `${parentRace.name}Anchor`;
 
-        // サイドリンク生成
         const link = document.createElement('a');
         link.href = `#${anchorId}`;
         link.className = `menu-item race-link ${parentRace.class}`;
@@ -407,20 +428,31 @@
         sideLinks.appendChild(link);
         sideLinks.appendChild(document.createElement('br'));
 
-        // 親グループ見出し
         const groupTitle = document.createElement('div');
         groupTitle.className = `group-title ${parentRace.class}`;
         groupTitle.id = anchorId;
 
-        // ◆マーカー
         const marker = document.createElement('span');
         marker.className = 'marker';
         marker.textContent = '◆';
         marker.onclick = function(e) { e.stopPropagation(); toggleMenu(); };
 
-        const titleText = document.createTextNode(parentRace.name);
+        const titleText = document.createElement('span');
+        titleText.textContent = parentRace.name;
+        // ▼ ダブルクリックでリセットする機能を追加
+        titleText.style.cursor = 'pointer';
+        titleText.style.userSelect = 'none';
+        titleText.addEventListener('dblclick', () => {
+            const groupStarsContainers = groupTitle.nextElementSibling.querySelectorAll('.stars');
+            groupStarsContainers.forEach(stars => {
+                const cName = stars.dataset.child;
+                if (parentRace.name === cName) inventory[parentRace.name] = 0;
+                else reservations[getPairKey(parentRace.name, cName)] = 0;
+            });
+            updateAllViews();
+            triggerSave();
+        });
 
-        // ズームボタン
         const zoomButtons = document.createElement('div');
         zoomButtons.className = 'zoom-buttons';
         zoomButtons.innerHTML = `
@@ -432,7 +464,6 @@
         groupTitle.appendChild(titleText);
         groupTitle.appendChild(zoomButtons);
 
-        // 列切り替えボタン（最初のグループのみ）
         if (index === 0) {
             const columnButtons = document.createElement('div');
             columnButtons.className = 'column-buttons';
@@ -444,14 +475,12 @@
         }
         container.appendChild(groupTitle);
 
-        // コンテナ
         const attributesContainer = document.createElement('div');
         attributesContainer.className = 'attributes-container';
         if (pageSettings['checker-stella-ss2_column'] === 2) {
             attributesContainer.classList.add('two-columns');
         }
 
-        // 子ライン
         attributes.forEach((childRace) => {
           const line = document.createElement('div');
           line.className = 'line';
@@ -459,6 +488,15 @@
           const name = document.createElement('span');
           name.textContent = childRace.name;
           name.className = `${childRace.class} name`;
+          // ▼ ダブルクリック機能
+          name.style.cursor = 'pointer';
+          name.style.userSelect = 'none';
+          name.addEventListener('dblclick', () => {
+              if (parentRace.name === childRace.name) inventory[parentRace.name] = 0;
+              else reservations[getPairKey(parentRace.name, childRace.name)] = 0;
+              updateAllViews();
+              triggerSave();
+          });
 
           const stars = document.createElement('span');
           stars.className = 'stars';
@@ -482,7 +520,6 @@
 
         container.appendChild(attributesContainer);
 
-        // グループごとのエクスポートボタン（全データ保存）
         const exportBtn = document.createElement('button');
         exportBtn.textContent = '状態をエクスポート';
         exportBtn.style.marginTop = '15px';
@@ -494,11 +531,8 @@
       updateAllViews();
     }
 
-    // --- ロジック ---
-
     function handleStarClick(pName, cName, index, starElem) {
       if (pName === cName) {
-        // 純正：トグル動作
         if (starElem.classList.contains('on')) {
             starElem.classList.remove('on');
             starElem.textContent = '☆';
@@ -506,53 +540,34 @@
             starElem.classList.add('on');
             starElem.textContent = '★';
         }
-
         const parentDiv = starElem.parentElement;
         const activeCount = parentDiv.querySelectorAll('.star.on').length;
         inventory[pName] = activeCount;
-
       } else {
-        // 混合：グレー★（予約）
         const key = getPairKey(pName, cName);
-        
-        // 既存の予約数を取得（未定義なら0）
         let currentRes = reservations[key] || 0;
-
-        // 黄色の数を計算
         const goldCount = inventory[pName] + inventory[cName];
-        
-        // クリックした星が「黄色エリア」なら何もしない
         if (index < goldCount) return;
 
-        // クリックした星が「グレー」か「空」か判定
-        if (starElem.classList.contains('gray')) {
-            // グレーをクリック -> 予約数を減らす
-            currentRes--;
-        } else {
-            // 空をクリック -> 予約数を増やす
-            currentRes++;
-        }
+        if (starElem.classList.contains('gray')) currentRes--;
+        else currentRes++;
 
-        // 負の数にならないように、また最大数を超えないように（便宜上）
         if (currentRes < 0) currentRes = 0;
-        
         reservations[key] = currentRes;
       }
-      
       updateAllViews();
+      triggerSave(); // ▼ クリックごとに保存発火
     }
     
     function updateAllViews() {
       const allStarsGroups = document.querySelectorAll('.stars');
-      
       allStarsGroups.forEach(group => {
         const pName = group.dataset.parent;
         const cName = group.dataset.child;
         const starElems = group.querySelectorAll('.star');
 
         if (pName === cName) {
-            // 純正：inventoryの数だけ左から埋める
-            const count = inventory[pName];
+            const count = inventory[pName] || 0;
             starElems.forEach((s, idx) => {
                 s.classList.remove('gray');
                 if (idx < count) {
@@ -564,17 +579,12 @@
                 }
             });
         } else {
-            // 混合：
-            // 黄色 = inventory[Parent] + inventory[Child]
-            // グレー = reservations[Key] (相対追加数)
-            
-            let gold = inventory[pName] + inventory[cName];
+            let gold = (inventory[pName] || 0) + (inventory[cName] || 0);
             if (gold > 5) gold = 5;
             
             const key = getPairKey(pName, cName);
             let gray = reservations[key] || 0;
             
-            // 合計が5を超えないように調整（グレーをトリミング）
             let visibleGray = gray;
             if (gold + visibleGray > 5) {
                 visibleGray = 5 - gold;
@@ -583,17 +593,13 @@
             
             starElems.forEach((s, idx) => {
                 s.classList.remove('on', 'gray');
-                
                 if (idx < gold) {
-                    // 黄色 (優先)
                     s.textContent = '★';
                     s.classList.add('on');
                 } else if (idx < gold + visibleGray) {
-                    // グレー (黄色の後ろに追加)
                     s.textContent = '★';
                     s.classList.add('gray');
                 } else {
-                    // 空
                     s.textContent = '☆';
                 }
             });
@@ -601,36 +607,72 @@
       });
     }
 
-    // --- UI/保存周り ---
-
     function setupScrollButtons() {
       const groupTitles = document.querySelectorAll('.group-title');
       let currentGroupIndex = 0;
-
       function scrollToGroup(index) {
         if (index >= 0 && index < groupTitles.length) {
           groupTitles[index].scrollIntoView({ behavior: 'instant', block: 'start' });
           currentGroupIndex = index;
         }
       }
-
       document.getElementById('scrollUp').addEventListener('click', () => {
         if (currentGroupIndex > 0) scrollToGroup(currentGroupIndex - 1);
       });
-
       document.getElementById('scrollDown').addEventListener('click', () => {
         if (currentGroupIndex < groupTitles.length - 1) scrollToGroup(currentGroupIndex + 1);
       });
     }
 
+    // ▼▼ データ抽出と反映の共通関数 ▼▼
+    function getCheckerData() {
+        const result = { version: 4, inventory: inventory, reservations: reservations };
+        // 無印用のキー(ステライヤリング_人間など)も互換用に出力する
+        attributes.forEach(a => {
+            let starString = '';
+            const count = inventory[a.name] || 0;
+            for(let i=0; i<5; i++) starString += (i < count) ? '★' : '☆';
+            result[`ステライヤリング_${a.name}`] = starString;
+        });
+        return result;
+    }
+
+    function applyData(data) {
+        if (!data) return;
+        if (data.inventory) {
+             inventory = data.inventory;
+             reservations = data.reservations || {};
+        } else {
+             attributes.forEach(a => inventory[a.name] = 0);
+             reservations = {};
+             for (const key in data) {
+                let raceName = key.replace('ステライヤリング_', '');
+                const val = data[key];
+                let count = 0;
+                if (typeof val === 'string') count = (val.match(/★/g) || []).length;
+                if (inventory.hasOwnProperty(raceName)) inventory[raceName] = count;
+             }
+        }
+        updateAllViews();
+    }
+
+    function triggerSave() {
+        if (window.triggerSyncSave) window.triggerSyncSave();
+        if (window.syncManager && window.syncManager.isLoggedIn) return;
+        if (!isAdminMode) return;
+        localStorage.setItem('checker-stella_admin_data', JSON.stringify(getCheckerData()));
+    }
+
+    function loadAdminData() {
+        if (!isAdminMode) return;
+        try {
+            const savedData = localStorage.getItem('checker-stella_admin_data');
+            if (savedData) applyData(JSON.parse(savedData));
+        } catch (e) {}
+    }
+
     function exportState() {
-      const data = {
-        version: 4, // バージョン更新
-        inventory: inventory,
-        reservations: reservations
-      };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(getCheckerData(), null, 2)], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = "ステラSS2獲得状況.json";
@@ -643,36 +685,8 @@
       const reader = new FileReader();
       reader.onload = function (event) {
         try {
-          const json = JSON.parse(event.target.result);
-          
-          if (json.inventory) {
-             // 新形式
-             inventory = json.inventory;
-             reservations = json.reservations || {};
-          } else {
-             // 旧形式互換読み込み
-             attributes.forEach(a => inventory[a.name] = 0);
-             reservations = {};
-             
-             for (const key in json) {
-                let raceName = key;
-                if (key.includes('_')) {
-                    const parts = key.split('_');
-                    raceName = parts[parts.length - 1];
-                }
-                const val = json[key];
-                let count = 0;
-                if (typeof val === 'string') {
-                  count = (val.match(/★/g) || []).length;
-                } else if (typeof val === 'number') {
-                  count = val;
-                }
-                if (inventory.hasOwnProperty(raceName)) {
-                  inventory[raceName] = count;
-                }
-             }
-          }
-          updateAllViews();
+          applyData(JSON.parse(event.target.result));
+          triggerSave();
         } catch (error) {
           alert('ファイル読み込みエラー');
         }
@@ -680,13 +694,13 @@
       reader.readAsText(file);
     });
 
+    // （...changeZoom, setColumns, loadPageSettings 等の既存の細かい関数はそのまま維持...）
     function changeZoom(delta) {
         let currentZoom = pageSettings['checker-stella-ss2_zoom'];
         currentZoom += delta;
         currentZoom = Math.round(currentZoom * 10) / 10;
         if (currentZoom < 0.5) currentZoom = 0.5;
         if (currentZoom > 2.0) currentZoom = 2.0;
-        
         document.body.style.zoom = currentZoom;
         pageSettings['checker-stella-ss2_zoom'] = currentZoom;
         savePageSettings();
@@ -695,21 +709,15 @@
     function setColumns(columns) {
       const containers = document.querySelectorAll('.attributes-container');
       const allBtns = document.querySelectorAll('.column-button');
-
       containers.forEach(container => {
         if (columns === 1) container.classList.remove('two-columns');
         else container.classList.add('two-columns');
       });
-      
       allBtns.forEach(btn => {
         const txt = btn.textContent;
-        if ((columns === 1 && txt === '１列') || (columns === 2 && txt === '２列')) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
+        if ((columns === 1 && txt === '１列') || (columns === 2 && txt === '２列')) btn.classList.add('active');
+        else btn.classList.remove('active');
       });
-
       pageSettings['checker-stella-ss2_column'] = columns;
       savePageSettings();
     }
@@ -748,10 +756,41 @@
     }, false);
 
     document.addEventListener('DOMContentLoaded', () => {
+        checkMode();
         loadPageSettings();
         document.body.style.zoom = pageSettings['checker-stella-ss2_zoom'];
         init();
         setColumns(pageSettings['checker-stella-ss2_column']);
+
+        // ▼▼ 同期マネージャー起動 ▼▼
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'checker-stella.json', 
+                firestoreDoc: 'checker-stella',  
+                onLoad: (loadedData) => {
+                    if (loadedData) applyData(loadedData);
+                    else loadAdminData();
+                },
+                onSave: () => getCheckerData()
+            });
+        } else {
+            loadAdminData(); 
+        }
+
+        // ▼▼ 監視機能 ▼▼
+        if (isAdminMode) {
+            setInterval(() => {
+                if (window.syncManager) {
+                    const isLoggedIn = window.syncManager.isLoggedIn;
+                    localStorage.setItem('Renma_LastLoginState', isLoggedIn ? 'true' : 'false');
+                    const indicator = document.getElementById('admin-indicator');
+                    if (indicator && window.syncManager.syncStatus === 'ready') {
+                        indicator.style.display = isLoggedIn ? 'none' : 'inline';
+                    }
+                }
+            }, 500);
+        }
     });
   </script>
 

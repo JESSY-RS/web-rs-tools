@@ -12,6 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <title>ステライヤリングチェッカー</title>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
   <style>
 
     /* 1. 基本の指定（Windows, Android, Mac用） */
@@ -414,7 +417,7 @@
 
   <!-- ハンバーガーメニューとヘッダー -->
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()"></span>ステライヤリングチェッカー</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger">ステライヤリングチェッカー</span></h1>
   </div>
 
   <div class="controls">
@@ -437,6 +440,23 @@
   </footer>
 
   <script>
+    // ▼▼ 追加：消えてしまっていたデータ定義を復活 ▼▼
+    const groups = [
+      { title: "ステライヤリング", color: "M01" }
+    ];
+
+    const attributes = [
+      { name: "人間", class: "S01" }, { name: "男性", class: "S02" }, { name: "女性", class: "S03" },
+      { name: "巨人", class: "S04" }, { name: "メカ", class: "S05" }, { name: "岩石", class: "S06" },
+      { name: "獣人", class: "S07" }, { name: "獣", class: "S08" }, { name: "竜", class: "S09" },
+      { name: "爬虫類", class: "S10" }, { name: "植物", class: "S11" }, { name: "虫", class: "S12" },
+      { name: "水棲", class: "S13" }, { name: "魚", class: "S14" }, { name: "両棲類", class: "S15" },
+      { name: "カエル", class: "S16" }, { name: "不死", class: "S17" }, { name: "骨", class: "S18" },
+      { name: "悪魔", class: "S19" }, { name: "火精", class: "S20" }, { name: "水精", class: "S21" },
+      { name: "風精", class: "S22" }, { name: "土精", class: "S23" }, { name: "鳥", class: "S24" },
+      { name: "浮遊", class: "S25" }, { name: "妖魔", class: "S26" }
+    ];
+    // ▲▲ 追加ここまで ▲▲
 
     // サイドメニューの特定項目の表示設定
     // キー：表示/非表示を切り替えたい要素のID
@@ -615,111 +635,99 @@
 
     function checkMode() {
         const urlParams = new URLSearchParams(window.location.search);
-        const modeParam = urlParams.get('mode');
-
-        // URLパラメータによるモード切り替え
-        if (modeParam === 'secret_admin_on') {
-            localStorage.setItem(ADMIN_KEY, 'admin');
-        } else if (modeParam === 'secret_debug_on') {
-            localStorage.setItem(ADMIN_KEY, 'debug');
-        }
-
-        // 保存されたモード設定を読み込み
-        const savedMode = localStorage.getItem(ADMIN_KEY);
-        isAdminMode = (savedMode === 'admin');
+        if (urlParams.get('mode') === 'secret_admin_on') localStorage.setItem(ADMIN_KEY, 'admin');
+        else if (urlParams.get('mode') === 'secret_debug_on') localStorage.setItem(ADMIN_KEY, 'debug');
+        isAdminMode = (localStorage.getItem(ADMIN_KEY) === 'admin');
     }
 
-    function saveAdminData() {
-        if (!isAdminMode) return; // 管理者モードでなければ保存しない
-        
-        const result = {};
+    // ▼▼ 追加：SS2のデータを壊さないためのマージ用変数 ▼▼
+    let globalFullData = { version: 4, inventory: {}, reservations: {} };
+    attributes.forEach(a => globalFullData.inventory[a.name] = 0);
+
+    function getCheckerData() {
+        const result = JSON.parse(JSON.stringify(globalFullData));
         const allStars = document.querySelectorAll('.stars');
         allStars.forEach(stars => {
             const key = stars.dataset.key;
+            const raceName = key.replace('ステライヤリング_', '');
             const starElems = stars.querySelectorAll('.star');
+            let count = 0;
             let starString = '';
-            starElems.forEach(s => starString += s.textContent);
+            starElems.forEach(s => {
+                if (s.classList.contains('on')) count++;
+                starString += s.textContent;
+            });
+            // 無印の画面にある項目を、SS2互換の inventory に上書きする
+            if (result.inventory.hasOwnProperty(raceName)) {
+                result.inventory[raceName] = count;
+            }
+            // 報告用などのために無印のプレーンなキーも保持する
             result[key] = starString;
         });
-        
-        // ローカルストレージに保存
-        localStorage.setItem(DATA_KEY, JSON.stringify(result));
+        globalFullData = JSON.parse(JSON.stringify(result));
+        return result;
+    }
+
+    function saveAdminData() {
+        if (window.triggerSyncSave) window.triggerSyncSave();
+        if (window.syncManager && window.syncManager.isLoggedIn) return; 
+        if (!isAdminMode) return; 
+        localStorage.setItem(DATA_KEY, JSON.stringify(getCheckerData()));
     }
 
     function loadAdminData() {
-        if (!isAdminMode) return; // 管理者モードでなければ読み込まない
-
+        if (!isAdminMode) return;
         try {
             const savedData = localStorage.getItem(DATA_KEY);
-            if (savedData) {
-                const data = JSON.parse(savedData);
-                applyData(data);
-            }
-        } catch (e) {
-            console.error('Data load error', e);
-        }
+            if (savedData) applyData(JSON.parse(savedData));
+        } catch (e) {}
     }
 
     function applyData(data) {
-        for (const key in data) {
-            const stars = document.querySelector(`.stars[data-key="${key}"]`);
-            if (stars) {
-                const starElems = stars.querySelectorAll('.star');
-                for (let i = 0; i < 5; i++) {
-                    starElems[i].textContent = data[key][i] || '☆';
-                    if (data[key][i] === '★') {
-                        starElems[i].classList.add('on');
-                    } else {
-                        starElems[i].classList.remove('on');
-                    }
+        if (!data) return;
+        
+        // 読み込んだ全データを裏側に保存
+        if (data.inventory) {
+            globalFullData.inventory = { ...globalFullData.inventory, ...data.inventory };
+            if (data.reservations) globalFullData.reservations = { ...data.reservations };
+        } else {
+            // 旧ファイルの互換対応
+            for (const key in data) {
+                if (key === "_version") continue;
+                let raceName = key.replace('ステライヤリング_', '');
+                if (globalFullData.inventory.hasOwnProperty(raceName)) {
+                    globalFullData.inventory[raceName] = (data[key].match(/★/g) || []).length;
                 }
             }
         }
+
+        // 無印の画面へ反映（inventoryの数字を星に変換して表示）
+        attributes.forEach(attr => {
+            const key = `ステライヤリング_${attr.name}`;
+            const stars = document.querySelector(`.stars[data-key="${key}"]`);
+            if (stars) {
+                const count = globalFullData.inventory[attr.name] || 0;
+                const starElems = stars.querySelectorAll('.star');
+                for (let i = 0; i < 5; i++) {
+                    starElems[i].textContent = (i < count) ? '★' : '☆';
+                    if (i < count) starElems[i].classList.add('on');
+                    else starElems[i].classList.remove('on');
+                }
+            }
+        });
     }
-    // ----------------------------------
-
-    const groups = [
-      { title: "ステライヤリング", color: "M01" },
-    ];
-
-    const attributes = [
-      { name: "人間", class: "S01" },
-      { name: "男性", class: "S02" },
-      { name: "女性", class: "S03" },
-      { name: "巨人", class: "S04" },
-      { name: "メカ", class: "S05" },
-      { name: "岩石", class: "S06" },
-      { name: "獣人", class: "S07" },
-      { name: "獣", class: "S08" },
-      { name: "竜", class: "S09" },
-      { name: "爬虫類", class: "S10" },
-      { name: "植物", class: "S11" },
-      { name: "虫", class: "S12" },
-      { name: "水棲", class: "S13" },
-      { name: "魚", class: "S14" },
-      { name: "両棲類", class: "S15" },
-      { name: "カエル", class: "S16" },
-      { name: "不死", class: "S17" },
-      { name: "骨", class: "S18" },
-      { name: "悪魔", class: "S19" },
-      { name: "火精", class: "S20" },
-      { name: "水精", class: "S21" },
-      { name: "風精", class: "S22" },
-      { name: "土精", class: "S23" },
-      { name: "鳥", class: "S24" },
-      { name: "浮遊", class: "S25" },
-      { name: "妖魔", class: "S26" }
-    ];
 
     function init() {
       const container = document.getElementById('statusContainer');
       container.innerHTML = '';
       
-      // 管理者モードの場合、タイトルに (Admin) を追加
-      if (isAdminMode) {
-          const h1 = document.querySelector('h1');
-          if (h1 && !h1.innerHTML.includes('[Admin Mode: Auto-Save ON]')) {
-              h1.innerHTML += ' <span style="color:red;">[Admin Mode: Auto-Save ON]</span>';
+      const h1 = document.querySelector('h1');
+      if (h1) {
+          h1.innerHTML = h1.innerHTML.replace(/ <span.*?>\[Admin Mode:.*?<\/span>/g, '');
+          if (isAdminMode) {
+              const wasLoggedIn = localStorage.getItem('Renma_LastLoginState') === 'true';
+              const initialDisplay = wasLoggedIn ? 'none' : 'inline';
+              h1.innerHTML += ` <span id="admin-indicator" style="display:${initialDisplay}; color:red;">[Admin Mode: Auto-Save ON]</span>`;
           }
       }
 
@@ -730,6 +738,17 @@
         
         const titleText = document.createElement('span');
         titleText.textContent = group.title;
+        // ▼ ダブルクリックでリセット
+        titleText.style.cursor = 'pointer';
+        titleText.style.userSelect = 'none';
+        titleText.addEventListener('dblclick', () => {
+            const starElems = attributesContainer.querySelectorAll('.star.on');
+            starElems.forEach(s => {
+                s.classList.remove('on');
+                s.textContent = '☆';
+            });
+            saveAdminData();
+        });
         
         const zoomButtons = document.createElement('div');
         zoomButtons.className = 'zoom-buttons';
@@ -753,9 +772,8 @@
         groupTitle.appendChild(columnButtons);
         container.appendChild(groupTitle);
 
-        // attributes用のコンテナを作成
         const attributesContainer = document.createElement('div');
-        attributesContainer.className = 'attributes-container'; // デフォルトは１列
+        attributesContainer.className = 'attributes-container'; 
         
         attributes.forEach(attr => {
           const line = document.createElement('div');
@@ -764,6 +782,17 @@
           const name = document.createElement('span');
           name.textContent = attr.name;
           name.className = `${attr.class} name`;
+          // ▼ ダブルクリック
+          name.style.cursor = 'pointer';
+          name.style.userSelect = 'none';
+          name.addEventListener('dblclick', () => {
+              const stars = line.querySelectorAll('.star.on');
+              stars.forEach(s => {
+                  s.classList.remove('on');
+                  s.textContent = '☆';
+              });
+              saveAdminData();
+          });
 
           const stars = document.createElement('span');
           stars.className = 'stars';
@@ -782,7 +811,6 @@
                 this.textContent = '☆';
                 this.classList.remove('on');
               }
-              // 管理者モードの場合、変更を即座に保存
               saveAdminData();
             });
             stars.appendChild(star);
@@ -795,7 +823,6 @@
 
         container.appendChild(attributesContainer);
 
-        // グループごとのエクスポートボタン
         const exportBtn = document.createElement('button');
         exportBtn.textContent = '状態をエクスポート';
         exportBtn.style.marginTop = '15px';
@@ -805,16 +832,7 @@
     }
 
     function exportState() {
-      const result = {};
-      const allStars = document.querySelectorAll('.stars');
-      allStars.forEach(stars => {
-        const key = stars.dataset.key;
-        const starElems = stars.querySelectorAll('.star');
-        let starString = '';
-        starElems.forEach(s => starString += s.textContent);
-        result[key] = starString;
-      });
-
+      const result = getCheckerData();
       const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -828,9 +846,7 @@
       const reader = new FileReader();
       reader.onload = function (event) {
         try {
-          const data = JSON.parse(event.target.result);
-          applyData(data);
-          // 管理者モードの場合、インポートした内容も即保存
+          applyData(JSON.parse(event.target.result));
           saveAdminData();
         } catch (error) {
           alert('ファイルの内容が不正です。');
@@ -839,20 +855,42 @@
       reader.readAsText(file);
     });
 
-    // 初期化
     document.addEventListener('DOMContentLoaded', () => {
-        checkMode(); // モードチェック
+        checkMode(); 
         loadPageSettings();
         document.body.style.zoom = pageSettings['checker-stella_zoom'];
         
-        init(); // 画面構築
-
-        loadAdminData(); // 管理者モードならデータを復元
-        
-        // 列設定の適用（init後に実行が必要）
+        init(); 
         setColumns(pageSettings['checker-stella_column']);
-    });
 
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'checker-stella.json', 
+                firestoreDoc: 'checker-stella',  
+                onLoad: (loadedData) => {
+                    if (loadedData) applyData(loadedData);
+                    else loadAdminData();
+                },
+                onSave: () => getCheckerData()
+            });
+        } else {
+            loadAdminData(); 
+        }
+
+        if (isAdminMode) {
+            setInterval(() => {
+                if (window.syncManager) {
+                    const isLoggedIn = window.syncManager.isLoggedIn;
+                    localStorage.setItem('Renma_LastLoginState', isLoggedIn ? 'true' : 'false');
+                    const indicator = document.getElementById('admin-indicator');
+                    if (indicator && window.syncManager.syncStatus === 'ready') {
+                        indicator.style.display = isLoggedIn ? 'none' : 'inline';
+                    }
+                }
+            }, 500);
+        }
+    });
   </script>
 
 </body>

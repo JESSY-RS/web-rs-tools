@@ -12,6 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <title>アストラルレリック報告用</title>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
   <style>
 
     /* 1. 基本の指定（Windows, Android, Mac用） */
@@ -278,7 +281,7 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()"></span>アストラルレリック</h1>
+    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger">アストラルレリック</span></h1>
   </div>
 
   <div class="zoom-buttons">
@@ -421,46 +424,60 @@
       return result;
     }
     
-    // JSON読込
+    // ▼▼ 追加：データを画面に反映させる共通関数 ▼▼
+    function applyReportData(data) {
+      if (!data) return;
+      const isOldFile = Object.keys(data).some(k => k.startsWith('旧アストラルレリック_'));
+
+      for (let key in data) {
+        if (key === "_version") continue;
+
+        let targetKey = key;
+        let rawData = data[key];
+
+        if (isOldFile && key.startsWith('旧アストラルレリック_')) {
+          targetKey = key.replace('旧アストラルレリック_', 'アストラルレリック_');
+          rawData = rawData.replace(/☆/g, '・');
+        }
+
+        const el = document.getElementById(targetKey);
+        if (el) {
+          el.dataset.raw = rawData;
+          el.innerHTML = decorateStars(rawData);
+        }
+      }
+      updateSummary();
+    }
+
+    // JSON読込（手動）
     document.getElementById("importJson").addEventListener("change", e => {
       const file = e.target.files[0];
       if(!file) return;
       const reader = new FileReader();
       reader.onload = e => {
-        const data = JSON.parse(e.target.result);
-
-        // 旧ファイル判定
-        const isOldFile = Object.keys(data).some(k => k.startsWith('旧アストラルレリック_'));
-
-        for (let key in data) {
-          if (key === "_version") continue;
-
-          let targetKey = key;
-          let rawData = data[key];
-
-          // 旧ファイルの場合はキー名を置き換え、☆を・に変換
-          if (isOldFile && key.startsWith('旧アストラルレリック_')) {
-            targetKey = key.replace('旧アストラルレリック_', 'アストラルレリック_');
-            rawData = rawData.replace(/☆/g, '・');
-          }
-
-          const el = document.getElementById(targetKey);
-          if (el) {
-            el.dataset.raw = rawData;
-            el.innerHTML = decorateStars(rawData);
-          }
+        try {
+          applyReportData(JSON.parse(e.target.result));
+        } catch(error) {
+          alert('ファイルの内容が不正です。');
         }
-        updateSummary();
       };
       reader.readAsText(file);
     });
+
+    // ローカルデータの読込
+    function loadLocalData() {
+        try {
+            // チェッカー側で保存されたローカルデータキーを参照
+            const savedData = localStorage.getItem('checker-astral_admin_data');
+            if (savedData) applyReportData(JSON.parse(savedData));
+        } catch (e) {}
+    }
 
     // 初期表示の時点でも集計実行
     updateSummary();
 
     // 拡大縮小の関数
     const PAGE_SETTING_KEY = 'PageSettings'; 
-    
     let pageSettings = { 'report-astral_zoom': 1.0 };
     
     function changeZoom(delta) {
@@ -499,6 +516,27 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadPageSettings();
         document.body.style.zoom = pageSettings['report-astral_zoom'];
+
+        // ▼▼ 同期マネージャーの起動 ▼▼
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'checker-astral.json', // ★チェッカーと同じファイルを読み込む
+                firestoreDoc: 'checker-astral',  // ★チェッカーと同じデータを読み込む
+                onLoad: (loadedData) => {
+                    if (loadedData) {
+                        applyReportData(loadedData); // クラウドから成功
+                    } else {
+                        loadLocalData(); // クラウドに無い、または未ログイン時はローカルを読む
+                    }
+                },
+                onSave: () => {
+                    return null; // 報告用ページからは保存(アップロード)しないのでnullを返す
+                }
+            });
+        } else {
+            loadLocalData();
+        }
     });
 
     window.onload = function () {

@@ -7,27 +7,27 @@
     <link rel="apple-touch-icon" href="icon/apple-touch-icon-renma.png">
     <link rel="icon" type="image/png" href="icon/web-app-manifest-192x192-renma.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-  <title>練磨(防具) 統合ツール</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <title>練磨(防具) 統合ツール</title>
 
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
         /* 1. 基本の指定（Windows, Android, Mac用） */
-    .hamburger::before {
-      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
-    }
-    
-    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
-    @supports (-webkit-touch-callout: none) {
-      .hamburger::before {
-        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
-      }
-    }
+        .hamburger::before {
+          content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+        }
+        
+        /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+        @supports (-webkit-touch-callout: none) {
+          .hamburger::before {
+            content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+          }
+        }
 
-    /* --- 全体 --- */
+        /* --- 全体 --- */
         body {
             font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
             background-color: #2A2A2A;
@@ -118,7 +118,6 @@
 
         /* --- ピン留めボタンのスタイル --- */
         .pin-button {
-            /* margin-left: auto; を削除し、タブの直後に配置 */
             padding: 0px 5px;
             font-size: 1.5em;
             cursor: pointer;
@@ -139,126 +138,124 @@
         a:active { color: #FF0000; text-decoration: underline; }
 
         /* ハンバーガーメニューのスタイル */
-    .hamburger {
-      cursor: pointer;
-      margin-right: 8px;
-      user-select: none;
-      color: #eee;
-      display: inline-block;
-    }
-    
-    .hamburger:hover {
-      color: #2A99E6;
-    }
+        .hamburger {
+          cursor: pointer;
+          margin-right: 8px;
+          user-select: none;
+          color: #eee;
+          display: inline-block;
+        }
+        
+        .hamburger:hover {
+          color: #2A99E6;
+        }
 
-    .side-menu {
-      position: fixed;
-      top: 0;
-      left: -360px;
-      width: 360px;
-      min-height: 100vh;
-      height: 100%;
-      text-align: left;
-      background-color: #242424;
-      border-right: 1px solid #555;
-      transition: left 0.3s ease;
-      z-index: 1001;
-      padding: 20px;
-      box-sizing: border-box;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-    }
+        .side-menu {
+          position: fixed;
+          top: 0;
+          left: -360px;
+          width: 360px;
+          min-height: 100vh;
+          height: 100%;
+          text-align: left;
+          background-color: #242424;
+          border-right: 1px solid #555;
+          transition: left 0.3s ease;
+          z-index: 1001;
+          padding: 20px;
+          box-sizing: border-box;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+        }
 
-    .side-menu.open {
-      left: 0;
-    }
+        .side-menu.open {
+          left: 0;
+        }
 
-    .menu-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      min-width: 100vw;
-      min-height: 100vh;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s;
-    }
+        .menu-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          min-width: 100vw;
+          min-height: 100vh;
+          background-color: rgba(0, 0, 0, 0.5);
+          z-index: 999;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.3s, visibility 0.3s;
+        }
 
-    .menu-overlay.open {
-      opacity: 1;
-      visibility: visible;
-    }
+        .menu-overlay.open {
+          opacity: 1;
+          visibility: visible;
+        }
 
-    .menu-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 24px;
-      cursor: pointer;
-      color: #eee;
-      user-select: none;
-    }
+        .menu-close {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          font-size: 24px;
+          cursor: pointer;
+          color: #eee;
+          user-select: none;
+        }
 
-    .menu-close:hover {
-      color: #ff6b6b;
-    }
+        .menu-close:hover {
+          color: #ff6b6b;
+        }
 
-    .menu-title {
-      font-size: 20px;
-      font-weight: bold;
-      text-align: left;
-      margin-bottom: 10px;
-      color: #FF6E3D;
-    }
+        .menu-title {
+          font-size: 20px;
+          font-weight: bold;
+          text-align: left;
+          margin-bottom: 10px;
+          color: #FF6E3D;
+        }
 
-    .menu-item {
-      font-size: 18px;
-      text-align: left;
-      display: inline-block;
-      padding: 6px 0;
-      color: #eee;
-      text-decoration: underline;
-    }
-    .menu-item:hover {
-      color: #0CFF57;
-    }
+        .menu-item {
+          font-size: 18px;
+          text-align: left;
+          display: inline-block;
+          padding: 6px 0;
+          color: #eee;
+          text-decoration: underline;
+        }
+        .menu-item:hover {
+          color: #0CFF57;
+        }
 
-    .menu-item:last-child {
-      border-bottom: none;
-    }
+        .menu-item:last-child {
+          border-bottom: none;
+        }
 
-    .menu-spacer {
-      height: 30px;
-    }
+        .menu-spacer {
+          height: 30px;
+        }
 
-    .toggle-button {
-      cursor: pointer;
-      color: #7755FF;
-      text-decoration: underline;
-      font-size: 18px;
-      text-align: left;
-      display: block;
-      padding: 6px 0;
-      user-select: none;
-    }
+        .toggle-button {
+          cursor: pointer;
+          color: #7755FF;
+          text-decoration: underline;
+          font-size: 18px;
+          text-align: left;
+          display: block;
+          padding: 6px 0;
+          user-select: none;
+        }
 
-    .toggle-button:hover {
-      color: #0CFF57;
-      text-decoration: underline;
-    }
+        .toggle-button:hover {
+          color: #0CFF57;
+          text-decoration: underline;
+        }
 
-    #linkList, #linkList1, #linkList2, #linkList3 {
-      font-size: 18px;
-      text-align: left;
-      display: none;
-      color: #7755FF;
-    }
-
-    
+        #linkList, #linkList1, #linkList2, #linkList3 {
+          font-size: 18px;
+          text-align: left;
+          display: none;
+          color: #7755FF;
+        }
 
         /* --- 共通UI: ズームボタン --- */
         .zoom-buttons {
@@ -271,15 +268,15 @@
             z-index: 1000;
         }
 
-    .zoom-buttons button {
-      color: #000;
-      background-color: #eee;
-      padding: 5px 10px;
-      font-size: 14px;
-      border: 1px solid #888;
-      cursor: pointer;
-      border-radius: 5px;
-    }
+        .zoom-buttons button {
+          color: #000;
+          background-color: #eee;
+          padding: 5px 10px;
+          font-size: 14px;
+          border: 1px solid #888;
+          cursor: pointer;
+          border-radius: 5px;
+        }
         
         .bottom-links {
             margin-top: 20px;
@@ -346,8 +343,8 @@
             line-height: 1; font-weight: bold; user-select: none;
             font-size: 1.5em;
         }
-        #tab-list .toggle-collapse-btn { top: 4px; background: transparent; color: white; font-size: 1.2em; }
         #search-panel.is-collapsed .toggle-collapse-btn, #sort-panel.is-collapsed .toggle-collapse-btn { top: 50%; transform: translateY(-50%); }
+        #tab-list .toggle-collapse-btn { top: 4px; background: transparent; color: white; font-size: 1.2em; }
         #tab-list .delete-btn { top: 4px; background: transparent; color: white; }
         #tab-list .add-part-inline-btn { bottom: 10px; background-color: #28a745; color: white; border-radius: 50%; }
         .value-sort-btn {
@@ -500,7 +497,6 @@
             padding: 5px 0;
         }
 
-
         /* ==================================================== */
         /* === 3. 自動選定ツール (armor-calc.html) のスタイル === */
         /* ==================================================== */
@@ -556,7 +552,7 @@
         #calculate-all-button {
             background-color: #f0506e; color: #fff; border: none; padding: 15px 30px;
             border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold;
-            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+            transition: background-color 0.2s;
         }
         #calculate-all-button:hover:not(:disabled) { background-color: #c8405a; }
         #calculate-all-button:disabled { background-color: #555; color: #888; cursor: not-allowed; }
@@ -597,79 +593,15 @@
         }
         
         @media (max-width: 480px) {
-            h1 {
-                display: block;
-            }
-
+            h1 { display: block; }
             .armor-part { padding-left: 40px; padding-right: 20px; }
-            .search-panel-info, .sort-panel-info { font-size: 0.8em; }
             .form-section { grid-template-columns: 65px 1fr; }
             .custom-dropdown, #tab-list select { min-width: 0; }
             #tab-calc .form-horizontal-row { flex-direction: column; align-items: stretch; }
             #tab-calc .form-type .styled-form-group { flex-wrap: wrap; }
         }
 
-        /* ▼▼▼ Firebaseログイン・クラウド用UIスタイル ▼▼▼ */
-        .cloud-ui-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding-left: 10px;
-            border-left: 1px solid #555;
-        }
-
-        .user-icon-small {
-            width: 36px; /* 36pxに変更 */
-            height: 36px; /* 36pxに変更 */
-            border-radius: 50%;
-            object-fit: cover; /* 画像の歪み防止 */
-        }
-        
-        .cloud-status {
-            font-size: 1em;
-            color: #aaa;
-            white-space: nowrap;
-        }
-        .cloud-status.saving { color: #ffd700; } /* 保存中: 金 (文字非表示制御はJSで行う) */
-        .cloud-status.saved { color: #98fb98; } /* 保存完了: 緑 (文字非表示制御はJSで行う) */
-        .cloud-status.error { color: #ff4500; } /* エラー: 赤 */
-
-        #login-btn-header {
-            background-color: #dd4b39; /* Google Red */
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9em;
-        }
-        #login-btn-header:hover { background-color: #c23321; }
-
-        #logout-btn-header {
-            background-color: #555;
-            color: white;
-            border: 1px solid #777;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9em;
-        }
-        #logout-btn-header:hover { background-color: #666; }
-        /* ▲▲▲ 追加ここまで ▲▲▲ */
-
-        /* ▼▼▼ 免責事項（クラウドモード用） ▼▼▼ */
-        .cloud-disclaimer {
-            display: none; /* JSで制御 */
-            border-top: 1px dashed #555;
-            margin-top: 15px;
-            padding-top: 10px;
-            font-size: 1em; /* 1emに変更 */
-            color: #ff4444; /* 赤文字 */
-            line-height: 1.5;
-        }
-        /* ▲▲▲ 追加ここまで ▲▲▲ */
-
-        /* ▼▼▼ 自動選定ツール：装備変更モーダル用追加CSS ▼▼▼ */
+        /* 自動選定ツール：装備変更モーダル用追加CSS */
         .calc-modal-overlay {
             display: none;
             position: fixed;
@@ -711,13 +643,27 @@
         .calc-candidate-item .val-info { font-size: 1.2em; color: #ffd700; font-weight: bold; }
         .armor-text.clickable {
             cursor: pointer;
-            text-decoration: none; /* underlineを削除 */
+            text-decoration: none;
             transition: color 0.2s;
         }
 
-        /* ▲▲▲ 追加ここまで ▲▲▲ */
-        
+        .cloud-ui-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-left: 10px;
+        }
+
+        .cloud-status {
+            font-size: 1em;
+            color: #aaa;
+            white-space: nowrap;
+            font-weight: normal;
+        }
     </style>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script type="module" src="script/sync-manager.js"></script>
 </head>
 <body>
 
@@ -784,7 +730,7 @@
                 <button onclick="changeZoom(-0.1)">－</button>
             </div>
             <h1>
-                <span class="hamburger" onclick="toggleMenu()"></span><span id="page-title">練磨(防具)リスト管理</span>
+                <span class="hamburger" onclick="toggleMenu()"></span><span id="page-title" style="cursor: pointer;" title="クリックでログイン">練磨(防具)リスト管理</span>
             </h1>
             
             <div class="tabs">
@@ -803,13 +749,10 @@
                         <input type="file" id="import-file-input" accept=".json">
                         <button id="export-btn">エクスポート</button>
                         
-                        <div id="cloud-ui-container" class="cloud-ui-group" style="display: none;">
-                            <button id="login-btn-header">Googleログイン</button>
-                            <button id="logout-btn-header" style="display: none;">ログアウト</button>
-                            <img id="header-user-icon" src="" class="user-icon-small" style="display: none;" title="ログイン中">
-                            <span id="cloud-status-text" class="cloud-status"></span>
+                        <div class="cloud-ui-group">
+                            <span class="cloud-status"></span>
                         </div>
-                        </div>
+                    </div>
                     <div class="right-buttons">
                         <button id="edit-mode-btn">編集モード開始</button>
                     </div>
@@ -996,13 +939,6 @@
                     ※並び替え機能で昇順のチェックがオフの場合は降順で並び替えられます。<br>
                     ※並び替え機能で保存のチェックがオフの場合はプレビューとして、並び順が希望の順番になっていれば、保存のチェックをオンにして、再び並び替えボタンを押して状態を反映させてください。並び順が希望の順番になっていない場合は、編集モードを一度終了させる事でキャンセル出来ます。<br>
                 </div>
-                <div id="cloud-disclaimer" class="cloud-disclaimer">
-                    【免責事項】<br>
-                    ※おそらくソースコードを解析してアクセスされたのでしょうが、このモード利用での個人情報の保護は確約できません。<br>
-                    ※クラウドモードではGoogle Firebaseを利用して認証およびデータ保存を行っています。<br>
-                    ※保存されるデータにメールアドレスがあり、それが第三者に漏れる可能性がゼロではありません。<br>
-                    ※それでもよろしければ覚悟の上で使用してください。当ツールの管理者は責任は負えません。<br>
-                </div>
                 </footer>
             <div class="bottom-links">
                 <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a><br>
@@ -1089,19 +1025,19 @@
                     ※使用は自己責任にて。<br>
                     ※名将の鎧・英傑の足甲・バトルヴァンブレイス・SSS進化防具などシリーズ一致分(文字色が紫のもの)は加味されていませんので注意してください。
                 </footer>
-    <div class="bottom2">
-        <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a>
-    </div>
+                <div class="bottom2">
+                    <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a>
+                </div>
 
-        <div id="top5-modal" class="calc-modal-overlay">
-            <div class="calc-modal-window" style="max-width: 420px;">
-                <h3 id="top5-modal-title">全件確認</h3>
-                <div id="top5-modal-list" style="flex-grow: 1; overflow-y: auto; margin-bottom: 15px;"></div>
-                <button id="top5-modal-close" onclick="closeTop5Modal()" style="margin-top: 10px; padding: 10px; background-color: #555; color: white; border: none; border-radius: 4px; cursor: pointer;">閉じる</button>
+                <div id="top5-modal" class="calc-modal-overlay">
+                    <div class="calc-modal-window" style="max-width: 420px;">
+                        <h3 id="top5-modal-title">全件確認</h3>
+                        <div id="top5-modal-list" style="flex-grow: 1; overflow-y: auto; margin-bottom: 15px;"></div>
+                        <button id="top5-modal-close" onclick="closeTop5Modal()" style="margin-top: 10px; padding: 10px; background-color: #555; color: white; border: none; border-radius: 4px; cursor: pointer;">閉じる</button>
+                    </div>
+                </div>
+
             </div>
-        </div>
-
-              </div>
         </div>
 
         <div id="tab-calc" class="tab-content">
@@ -1123,17 +1059,17 @@
                 ※シリーズで「その他」を選択してもバトルヴァンブレイスに対応するものはありません。<br>
                 <span style="color: yellow;">※計算結果の防具名をクリックすると、他の候補を選択できます。</span>
             </footer>
-    <div class="bottom3">
-        <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a>
-    </div>
-
-        <div id="calc-modal" class="calc-modal-overlay">
-            <div class="calc-modal-window">
-                <h3 id="calc-modal-title">装備変更</h3>
-                <div id="calc-modal-list"></div>
-                <button id="calc-modal-close" onclick="closeCalcModal()" style="margin-top: 10px; padding: 10px; background-color: #555; color: white; border: none; border-radius: 4px; cursor: pointer;">閉じる</button>
+            <div class="bottom3">
+                <a href="#">▲TOPへ戻る</a>　<a href="index.html">■INDEXへ戻る</a>
             </div>
-        </div>
+
+            <div id="calc-modal" class="calc-modal-overlay">
+                <div class="calc-modal-window">
+                    <h3 id="calc-modal-title">装備変更</h3>
+                    <div id="calc-modal-list"></div>
+                    <button id="calc-modal-close" onclick="closeCalcModal()" style="margin-top: 10px; padding: 10px; background-color: #555; color: white; border: none; border-radius: 4px; cursor: pointer;">閉じる</button>
+                </div>
+            </div>
         </div>
     </div>
 <script>
@@ -1168,35 +1104,22 @@
         return isDynamic || isFixed;
     };
 
+    // ▼▼ モード判定 ▼▼
     const urlParams = new URLSearchParams(window.location.search);
     const paramMode = urlParams.get('mode');
     
-    const ADMIN_MODE_PERSIST_KEY = 'RenmaArmorAdminModeEnabled'; 
     const ADMIN_DATA_KEY = 'RenmaArmorAdminData'; 
-    const CLOUD_MODE_KEY = 'RenmaArmorCloudMode'; 
-    const CLOUD_TEMP_KEY = 'RenmaArmorCloudTemp'; 
     const EXPORT_STATE_KEY = 'RenmaArmorExportDirty'; 
 
     if (paramMode === 'secret_admin_on') {
-        localStorage.setItem(ADMIN_MODE_PERSIST_KEY, 'true');
-        localStorage.removeItem(CLOUD_MODE_KEY); 
+        localStorage.setItem('index_mode', 'admin');
     } else if (paramMode === 'secret_debug_on') {
-        localStorage.removeItem(ADMIN_MODE_PERSIST_KEY);
-        localStorage.removeItem(CLOUD_MODE_KEY); 
-    } else if (paramMode === 'secret_jessy_on') {
-        localStorage.setItem(CLOUD_MODE_KEY, 'true');
-        localStorage.removeItem(ADMIN_MODE_PERSIST_KEY); 
-    } else if (paramMode === 'secret_jessy_off') {
-        localStorage.removeItem(CLOUD_MODE_KEY);
+        localStorage.setItem('index_mode', 'debug');
     }
 
-    if (localStorage.getItem(CLOUD_MODE_KEY) === 'true') {
-        localStorage.removeItem(ADMIN_MODE_PERSIST_KEY);
-    }
-
-    const isAdminMode = (localStorage.getItem(ADMIN_MODE_PERSIST_KEY) === 'true');
-    const isCloudMode = (localStorage.getItem(CLOUD_MODE_KEY) === 'true');
-    const isDebugMode = (paramMode === 'secret_debug_on');
+    const isAdminMode = (localStorage.getItem('index_mode') === 'admin');
+    const isCloudMode = (localStorage.getItem('RenmaArmorCloudMode') === 'true');
+    const isDebugMode = (localStorage.getItem('index_mode') === 'debug');
 
     function debugLog(...args) {
         if (isDebugMode) console.log('[DEBUG]', ...args);
@@ -1252,6 +1175,7 @@
         }
     }
 
+    // ▼▼ データ変更時の処理（同期マネージャーへセーブ指示） ▼▼
     function setDataDirty(isDirty) {
         isDataDirty = isDirty;
         
@@ -1274,11 +1198,13 @@
 
         syncDataFromListTab();
 
-        if (isCloudMode) {
-            if (isDirty && window.handleAutoSave) {
-                window.handleAutoSave(); 
-            }
-        } else {
+        // ★変更箇所: 同期マネージャーのセーブ関数を呼び出す
+        if (isDirty && window.triggerSyncSave) {
+            window.triggerSyncSave(); 
+        } 
+        
+        // 未ログイン時またはローカル運用時向けのバックアップ
+        if (!window.syncManager || !window.syncManager.isLoggedIn) {
             if (isDirty) {
                 localStorage.setItem(UNSAVED_DATA_KEY, JSON.stringify(sharedArmorData));
                 localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify({ hasUnsavedChanges: true }));
@@ -1298,7 +1224,6 @@
         document.querySelectorAll('#parts-container .armor-part').forEach(part => {
             let armorName = part.querySelector('.armor-name-dropdown .custom-dropdown-button').dataset.value;
             
-            // 短縮辞書を使った保存時の半角化
             if (armorName) {
                 Object.entries(SHORT_NAMES).forEach(([full, short]) => {
                     if (armorName.includes(full)) {
@@ -1353,13 +1278,8 @@
             'calc': '練磨(防具)自動選定ツール'
         };
         const pageTitleEl = document.getElementById('page-title');
-        pageTitleEl.innerHTML = titles[tabName];
-        
-        if (isAdminMode) {
-            pageTitleEl.innerHTML += " <span style='color: red;'>[Admin Mode: Auto-Save ON]</span>";
-        } else if (isCloudMode) {
-            pageTitleEl.innerHTML += " <span style='color: dodgerblue;'>[Cloud Mode: Auto-Save ON]</span>";
-        }
+        // ▼ 修正：純粋にテキストを書き換えるだけにする（赤文字は外側に置くため）
+        pageTitleEl.textContent = titles[tabName];
 
         const newScrollY = tabScrollPositions[tabName] || 0;
         window.scrollTo(0, newScrollY);
@@ -1397,6 +1317,47 @@
         }
     }
 
+    // ▼▼ クラウド/ドライブから読み込んだデータを画面に反映させる関数 ▼▼
+    function applyDataToUI(data) {
+        const partsContainer = document.getElementById('parts-container');
+        const searchPanel = document.getElementById('search-panel');
+        if (searchPanel.style.display === 'none') {
+            document.getElementById('edit-mode-btn').click(); 
+        }
+
+        partsContainer.innerHTML = ''; 
+
+        if (data && data.length > 0) {
+            data.forEach(partData => {
+                if (window.resolveArmorName && partData.armorName) {
+                    partData.armorName = window.resolveArmorName(partData.armorName);
+                }
+                if (typeof window.addNewPart === 'function') {
+                    window.addNewPart(partData, null, false);
+                }
+            });
+        } else {
+            if (typeof window.addNewPart === 'function') window.addNewPart(null, null, false);
+        }
+
+        if (typeof window.syncDataFromListTab === 'function') window.syncDataFromListTab();
+        if (typeof window.updateTop5Tab === 'function') window.updateTop5Tab(window.sharedArmorData);
+        if (typeof window.updateCalcTab === 'function') window.updateCalcTab(window.sharedArmorData);
+        
+        if (typeof window.setDataDirty === 'function') {
+            const isExportDirty = localStorage.getItem('RenmaArmorExportDirty') === 'true';
+            if (isExportDirty) {
+                window.setDataDirty(true);
+            } else {
+                const exportButtons = document.querySelectorAll('#export-btn, #export-btn-footer');
+                exportButtons.forEach(button => {
+                    button.classList.remove('needs-export');
+                    button.textContent = 'エクスポート';
+                });
+            }
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
         loadPageSettings();
         await initializeCommonData();
@@ -1415,10 +1376,47 @@
         document.body.style.zoom = pageSettings[tabToZoomKey[activeTab]];
         
         const pageTitleEl = document.getElementById('page-title');
+        pageTitleEl.textContent = '練磨(防具)リスト管理';
+
+        // ▼▼ 修正：赤文字をタイトル文字の外側(h1の末尾)に独立して配置する ▼▼
         if (isAdminMode) {
-             pageTitleEl.innerHTML += " <span style='color: red;'>[Admin Mode: Auto-Save ON]</span>";
-        } else if (isCloudMode) {
-             pageTitleEl.innerHTML += " <span style='color: dodgerblue;'>[Cloud Mode: Auto-Save ON]</span>";
+            const h1 = document.querySelector('.main-header h1');
+            if (h1 && !document.getElementById('admin-indicator')) {
+                const wasLoggedIn = localStorage.getItem('Renma_LastLoginState') === 'true';
+                const initialDisplay = wasLoggedIn ? 'none' : 'inline';
+                h1.insertAdjacentHTML('beforeend', ` <span id="admin-indicator" style="display:${initialDisplay}; color:red;">[Admin Mode: Auto-Save ON]</span>`);
+            }
+        }
+
+        // ▼▼ 追加：同期マネージャーのセットアップ ▼▼
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'page-title',     // タイトルクリックでログイン
+                fileName: 'renma-armor.json', // ドライブ用保存ファイル名
+                firestoreDoc: 'renma-armor',        // Firebase用ドキュメント名
+                onLoad: (loadedData) => {
+                    applyDataToUI(loadedData);     // データ取得後の反映処理
+                },
+                onSave: () => {
+                    if (typeof window.syncDataFromListTab === 'function') window.syncDataFromListTab();
+                    return window.sharedArmorData || []; // 保存するデータを返却
+                }
+            });
+        }
+
+        // ▼▼ 追加：赤文字のスマート監視機能（チェッカー系と同じもの） ▼▼
+        if (isAdminMode) {
+            setInterval(() => {
+                if (window.syncManager) {
+                    const isLoggedIn = window.syncManager.isLoggedIn;
+                    localStorage.setItem('Renma_LastLoginState', isLoggedIn ? 'true' : 'false');
+                    
+                    const indicator = document.getElementById('admin-indicator');
+                    if (indicator && window.syncManager.syncStatus === 'ready') {
+                        indicator.style.display = isLoggedIn ? 'none' : 'inline';
+                    }
+                }
+            }, 500);
         }
     });
 
@@ -1485,7 +1483,6 @@
                 const symbol = obj['記号'] || ''; 
                 const rawName = obj['名称'] || ''; 
 
-                // ★修正：過去の直書き（ハードコード）を完全撤廃！
                 obj.symbol = symbol;
                 obj.baseName = rawName;       
                 obj.rawBaseName = rawName;     
@@ -1524,7 +1521,6 @@
         if (targetBaseName) {
             const currentItem = allArmorData.find(item => item.baseName === targetBaseName);
             if (currentItem) {
-                // ★修正：rawBaseName(元の全角名称)で辞書を引く。シリーズ名がある時だけ半角化。
                 if (SHORT_NAMES[currentItem.rawBaseName] && extractedSeries) {
                     return currentItem.symbol + SHORT_NAMES[currentItem.rawBaseName] + extractedSeries;
                 } else {
@@ -1758,15 +1754,16 @@
                     updateTop5Tab(sharedArmorData);
                     updateCalcTab(sharedArmorData);
                     
-                    if (isCloudMode && window.saveToCloud) {
-                        await window.saveToCloud();
-                    }
-
-                    setDataDirty(false);
+                    setDataDirty(false); // ★インポート直後なので一旦Dirty解除、保存処理は不要ならこのままでOK
 
                     if (isAdminMode) {
                          localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify(sharedArmorData));
                          debugLog("Imported data saved to Admin Key.");
+                    }
+                    
+                    // クラウドモード等の場合は即座に保存
+                    if (window.triggerSyncSave) {
+                        window.triggerSyncSave();
                     }
 
                 } catch (error) {
@@ -1901,7 +1898,6 @@
                         text = target.dataset.value;
                         value = target.dataset.value;
                     } else {
-                        // ★修正：記号を分離して短縮形を正確に適用する
                         const stripSymbol = name => name ? name.replace(/^[^a-zA-Z0-9ぁ-んァ-ヶ亜-熙\uFF65-\uFF9F]/, '') : '';
                         const symbol = parentName.charAt(0) !== stripSymbol(parentName).charAt(0) ? parentName.charAt(0) : '';
                         let cleanParent = stripSymbol(parentName);
@@ -1913,7 +1909,6 @@
                             cleanParent = foundData.baseName;
                         }
                         
-                        // 短縮辞書にあれば置換
                         if (SHORT_NAMES[cleanParent]) {
                             cleanParent = SHORT_NAMES[cleanParent];
                         }
@@ -1975,7 +1970,6 @@
                 if (specialKey) {
                     sublist = SPECIAL_SERIES_ARMORS[specialKey];
                     
-                    // ★修正：記号を分離して短縮形（半角など）を適用する
                     const stripSymbol = name => name ? name.replace(/^[^a-zA-Z0-9ぁ-んァ-ヶ亜-熙\uFF65-\uFF9F]/, '') : '';
                     const symbol = parentText.charAt(0) !== stripSymbol(parentText).charAt(0) ? parentText.charAt(0) : '';
                     let cleanName = stripSymbol(parentText);
@@ -1983,7 +1977,6 @@
                     const foundData = allArmorData.find(item => (item.baseName || '').normalize('NFKC') === cleanName.normalize('NFKC'));
                     if (foundData) cleanName = foundData.baseName;
 
-                    // 短縮辞書にあれば置換して結合
                     formattedParentText = SHORT_NAMES[cleanName] ? symbol + SHORT_NAMES[cleanName] : symbol + cleanName;
                 }
 
@@ -2028,8 +2021,8 @@
         async function exportData() {
             syncDataFromListTab();
             
-            if (isCloudMode && window.saveToCloud) {
-                await window.saveToCloud();
+            if (window.triggerSyncSave) {
+                window.triggerSyncSave();
             }
 
             const jsonString = JSON.stringify(sharedArmorData, null, 2);
@@ -2123,7 +2116,6 @@
                             nameMatch = partArmorName.normalize('NFKC').includes(specialKey);
                         }
                     } else {
-                        // 記号を無視してベース名とシリーズ名で正確に一致判定する
                         const normalizedFilter = filterArmorName.normalize('NFKC');
                         const specialKey = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedFilter.includes(name));
 
@@ -2141,7 +2133,6 @@
                                 nameMatch = false;
                             }
                         } else {
-                            // 先頭の記号(1文字)を剥がして比較
                             const stripSymbol = name => name ? name.replace(/^[^a-zA-Z0-9ぁ-んァ-ヶ亜-熙\uFF65-\uFF9F]/, '') : '';
                             nameMatch = stripSymbol(filterArmorName) === stripSymbol(partArmorName) || partArmorName.endsWith(filterArmorName);
                         }
@@ -2410,7 +2401,6 @@
                                 if (aIsTarget !== bIsTarget) result = aIsTarget ? -1 : 1;
                             }
                         } else {
-                            // 記号を無視してベース名とシリーズ名で正確に一致判定する
                             const normalizedSort = sortArmorName.normalize('NFKC');
                             const specialKey = Object.keys(SPECIAL_SERIES_ARMORS).find(name => normalizedSort.includes(name));
                             const stripSymbol = name => name ? name.replace(/^[^a-zA-Z0-9ぁ-んァ-ヶ亜-熙\uFF65-\uFF9F]/, '') : '';
@@ -2598,7 +2588,8 @@
         });
 
         function checkForUnsavedBackup() {
-            if (isCloudMode) return;
+            // クラウドモードなどログインしている場合はローカルバックアップ確認をスキップ
+            if (window.syncManager && window.syncManager.isLoggedIn) return;
 
             try {
                 const settings = JSON.parse(localStorage.getItem(BACKUP_SETTINGS_KEY));
@@ -2751,16 +2742,19 @@
     
     function updateTop5Tab(data) {
         const placeholder = document.getElementById('top5-placeholder');
+        // ▼ 安全ガード：データがない、または配列でない場合は空配列にする
+        const safeData = (data && Array.isArray(data)) ? data : [];
+        
         try {
-            const processed = processData_top5(data || []); 
-            lastTop5Data = processed; // ★追加：処理したデータをグローバルに保持
+            const processed = processData_top5(safeData); 
+            lastTop5Data = processed; 
             displayReport_top5(processed);
         } catch (error) {
             console.error("データ処理中にエラー:", error);
             alert("データ処理中にエラーが発生しました。\n" + error);
         }
         
-        if (!data || data.length === 0 || (data.length === 1 && !data[0].armorName)) {
+        if (safeData.length === 0 || (safeData.length === 1 && !safeData[0].armorName)) {
             placeholder.style.display = 'block';
         } else {
             placeholder.style.display = 'none';
@@ -2878,7 +2872,6 @@
                     
                     let firstCellHTML = '';
                     if (i === 0) {
-                        // ★修正: <td> ではなく、内側の <span> タグにクリックイベントとスタイルを付与しました
                         firstCellHTML = `<td class="merged-ability-cell" rowspan="4"><span style="cursor: pointer;" onclick="openTop5Modal('${cat.key}', '${abilityName}')" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#98fb98'">${abilityName}</span></td>`;
                     } else if (i === 4) {
                         firstCellHTML = showTotal ? `<td class="ability-total-cell">合計: ${abilityTotal}%</td>` : `<td class="ability-total-cell">&nbsp;</td>`;
@@ -2910,7 +2903,6 @@
         const list = document.getElementById('top5-modal-list');
         const title = document.getElementById('top5-modal-title');
         
-        // ★修正: タイトルのフォーマットを変更
         title.textContent = `全件確認／${abilityName}`;
         list.innerHTML = '';
     
@@ -2931,7 +2923,6 @@
                 nameDisplay = `<span class="special-armor-name">${nameDisplay}</span>`;
             }
     
-            // ★修正: 「○位:」の表記を削除しました
             div.innerHTML = `
                 <div>
                     <div class="main-info">${nameDisplay}</div>
@@ -2948,9 +2939,9 @@
         document.getElementById('top5-modal').classList.remove('active');
     }
     
-    // 外部から呼び出せるように登録
     window.openTop5Modal = openTop5Modal;
     window.closeTop5Modal = closeTop5Modal;
+
 
     // =========================================================================
     // === 3. 自動選定ツールタブ (armor-calc.html) のスクリプト =======================
@@ -3581,250 +3572,6 @@
     window.openCalcModal = openCalcModal; 
     window.closeCalcModal = closeCalcModal;
 
-</script>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
-           from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc } 
-           from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
-    // ▼▼▼ ご自身の firebaseConfig に書き換えてください ▼▼▼
-    const firebaseConfig = {
-  apiKey: "AIzaSyCEaZLuD45Zu6OKco8EHtNjfBBmTW2SPik",
-  authDomain: "renmabase.firebaseapp.com",
-  projectId: "renmabase",
-  storageBucket: "renmabase.firebasestorage.app",
-  messagingSenderId: "154320130326",
-  appId: "1:154320130326:web:cb448ec515f709fcbf4037"
-    };
-    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-
-    const isCloudMode = (localStorage.getItem('RenmaArmorCloudMode') === 'true');
-    const CLOUD_TEMP_KEY = 'RenmaArmorCloudTemp';
-
-    if (isCloudMode) {
-        document.getElementById('cloud-ui-container').style.display = 'flex';
-        const disclaimer = document.getElementById('cloud-disclaimer');
-        if (disclaimer) disclaimer.style.display = 'block';
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-
-        let currentUser = null;
-        let autoSaveTimer = null;
-        const AUTO_SAVE_DELAY = 3000;
-
-        const loginBtn = document.getElementById('login-btn-header');
-        const logoutBtn = document.getElementById('logout-btn-header');
-        const userIcon = document.getElementById('header-user-icon');
-        const statusText = document.getElementById('cloud-status-text');
-
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user;
-            if (user) {
-                loginBtn.style.display = 'none';
-                logoutBtn.style.display = 'block';
-                userIcon.src = user.photoURL || '';
-                userIcon.style.display = 'block';
-                userIcon.title = user.displayName;
-                statusText.textContent = '';
-                
-                await checkCloudTempData();
-            } else {
-                loginBtn.style.display = 'block';
-                logoutBtn.style.display = 'none';
-                userIcon.style.display = 'none';
-                statusText.textContent = '';
-            }
-        });
-
-        loginBtn.onclick = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
-        logoutBtn.onclick = () => signOut(auth).then(() => location.reload());
-
-        window.handleAutoSave = function() {
-            if (!currentUser) return;
-            
-            saveToLocalBackup();
-            
-            updateStatus('saving');
-            if (autoSaveTimer) clearTimeout(autoSaveTimer);
-            
-            autoSaveTimer = setTimeout(() => {
-                saveToCloud();
-            }, AUTO_SAVE_DELAY);
-        };
-
-        async function saveToCloud() {
-            if (!currentUser) return;
-
-            try {
-                if (typeof window.syncDataFromListTab === 'function') window.syncDataFromListTab();
-                const dataToSave = window.sharedArmorData || [];
-
-                await setDoc(doc(db, "users", currentUser.uid, "renma_data", "armor_list"), {
-                    updatedAt: new Date(),
-                    armorData: dataToSave
-                });
-
-                localStorage.removeItem(CLOUD_TEMP_KEY);
-                updateStatus('saved');
-
-            } catch (e) {
-                console.error(e);
-                updateStatus('error');
-            }
-        }
-        window.saveToCloud = saveToCloud;
-
-        async function checkCloudTempData() {
-            const tempBackup = localStorage.getItem(CLOUD_TEMP_KEY);
-            
-            if (tempBackup) {
-                console.log("未完了のクラウド送信データがあります。");
-                updateStatus('waiting'); 
-                
-                const warningDiv = document.createElement('div');
-                warningDiv.id = 'cloud-backup-warning';
-                warningDiv.style.cssText = 'color: red; background-color: rgb(67, 46, 46); padding: 10px; margin: 10px 0; border: 1px solid red; border-radius: 5px; text-align: center;';
-                
-                warningDiv.innerHTML = `前回、クラウドに保存されていないデータがあります。<button id="cloud-restore-btn" style="margin-left: 15px; padding: 5px 10px; cursor: pointer;">データの保存</button><button id="cloud-discard-btn" style="color: #fff; background-color: #e53e3e; margin-left: 10px; padding: 5px 10px; cursor: pointer;">データの破棄</button>`;
-                
-                const mainElement = document.querySelector('#tab-list main');
-                mainElement.insertBefore(warningDiv, mainElement.firstChild);
-
-                document.getElementById('cloud-restore-btn').addEventListener('click', () => {
-                    const restoredData = JSON.parse(tempBackup);
-                    applyDataToUI(restoredData);
-                    warningDiv.remove();
-                    saveToCloud();
-                    if (typeof window.setDataDirty === 'function') window.setDataDirty(true);
-                });
-
-                document.getElementById('cloud-discard-btn').addEventListener('click', () => {
-                    if (window.confirm('バックアップデータを本当に削除しますか？この操作は元に戻せません。')) {
-                        localStorage.removeItem(CLOUD_TEMP_KEY);
-                        warningDiv.remove();
-                        loadFromCloud();
-                    }
-                });
-
-            } else {
-                await loadFromCloud();
-            }
-        }
-
-        async function loadFromCloud() {
-            if (!currentUser) return;
-            updateStatus('loading');
-
-            try {
-                const docRef = doc(db, "users", currentUser.uid, "renma_data", "armor_list");
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    const loadedData = docSnap.data().armorData;
-                    applyDataToUI(loadedData);
-                    updateStatus('loaded');
-                } else {
-                    updateStatus('');
-                }
-            } catch (e) {
-                console.error(e);
-                alert('読み込みに失敗しました: ' + e.message);
-                updateStatus('error');
-            }
-        }
-
-        function applyDataToUI(data) {
-            const partsContainer = document.getElementById('parts-container');
-            const searchPanel = document.getElementById('search-panel');
-            if (searchPanel.style.display === 'none') {
-                document.getElementById('edit-mode-btn').click(); 
-            }
-
-            partsContainer.innerHTML = ''; 
-
-            if (data && data.length > 0) {
-                data.forEach(partData => {
-                    if (window.resolveArmorName && partData.armorName) {
-                        partData.armorName = window.resolveArmorName(partData.armorName);
-                    }
-                    if (typeof window.addNewPart === 'function') {
-                        window.addNewPart(partData, null, false);
-                    }
-                });
-            } else {
-                if (typeof window.addNewPart === 'function') window.addNewPart(null, null, false);
-            }
-
-            if (typeof window.syncDataFromListTab === 'function') window.syncDataFromListTab();
-            if (typeof window.updateTop5Tab === 'function') window.updateTop5Tab(window.sharedArmorData);
-            if (typeof window.updateCalcTab === 'function') window.updateCalcTab(window.sharedArmorData);
-            
-            if (typeof window.setDataDirty === 'function') {
-                const isExportDirty = localStorage.getItem('RenmaArmorExportDirty') === 'true';
-                if (isExportDirty) {
-                    window.setDataDirty(true);
-                } else {
-                    const exportButtons = document.querySelectorAll('#export-btn, #export-btn-footer');
-                    exportButtons.forEach(button => {
-                        button.classList.remove('needs-export');
-                        button.textContent = 'エクスポート';
-                    });
-                }
-            }
-        }
-
-        function updateStatus(state) {
-            statusText.className = 'cloud-status';
-            statusText.style.color = ''; 
-
-            if (state === 'saving') {
-                statusText.textContent = ''; 
-                statusText.classList.add('saving');
-            } else if (state === 'saved') {
-                statusText.textContent = ''; 
-                statusText.classList.add('saved');
-            } else if (state === 'loading') {
-                statusText.textContent = '読込中...';
-            } else if (state === 'loaded') {
-                statusText.textContent = '読込完了';
-                setTimeout(() => { statusText.textContent = ''; }, 3000);
-            } else if (state === 'waiting') {
-                statusText.textContent = '未保存データ有';
-                statusText.style.color = '#ff4500'; 
-            } else if (state === 'error') {
-                statusText.textContent = 'エラー';
-                statusText.classList.add('error');
-            } else {
-                statusText.textContent = '';
-            }
-        }
-
-        function saveToLocalBackup() {
-            if (window.sharedArmorData) {
-                localStorage.setItem(CLOUD_TEMP_KEY, JSON.stringify(window.sharedArmorData));
-            }
-        }
-
-        window.addEventListener('beforeunload', (e) => {
-            if (statusText.classList.contains('saving')) {
-                e.preventDefault();
-                e.returnValue = '';
-            }
-        });
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden' && statusText.classList.contains('saving')) {
-                if (autoSaveTimer) clearTimeout(autoSaveTimer);
-                saveToCloud(); 
-            }
-        });
-    }
 </script>
 </body>
 </html>
