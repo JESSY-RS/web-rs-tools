@@ -1370,9 +1370,10 @@ const deleteExcludeProfile = (type) => {
 
           const [statusCopyActive, setStatusCopyActive] = useState(false);
 
-          // ▼▼ 同期機能用の設定（プリセット＆除外設定 同期版） ▼▼
+          // ▼▼ 同期機能用の設定（プリセット＆除外設定 同期版・並び順保持対応） ▼▼
           const syncDataRef = useRef({
               savedProfiles: {},
+              profileOrder: [], // ← 追加：並び順を記憶するための配列
               excludeSettings: { main: [], sub: [], deco: [] }
           });
 
@@ -1380,6 +1381,7 @@ const deleteExcludeProfile = (type) => {
           useEffect(() => {
               syncDataRef.current = {
                   savedProfiles,
+                  profileOrder: Object.keys(savedProfiles), // ▼ 現在の並び順を配列として記録
                   excludeSettings: {
                       main: excludeSettings.main,
                       sub: excludeSettings.sub,
@@ -1399,8 +1401,27 @@ const deleteExcludeProfile = (type) => {
                           if (loadedData) {
                               // 1. クラウドからプリセット情報を読み込み
                               if (loadedData.savedProfiles) {
-                                  setSavedProfiles(loadedData.savedProfiles);
-                                  localStorage.setItem('profiles', JSON.stringify(loadedData.savedProfiles));
+                                  // ▼ Firebaseによって狂った順序を、profileOrder配列を元に元の順番に復元する
+                                  let orderedProfiles = {};
+                                  if (loadedData.profileOrder && Array.isArray(loadedData.profileOrder)) {
+                                      // 記憶しておいた配列の順番通りにオブジェクトを作り直す
+                                      loadedData.profileOrder.forEach(key => {
+                                          if (loadedData.savedProfiles[key]) {
+                                              orderedProfiles[key] = loadedData.savedProfiles[key];
+                                          }
+                                      });
+                                      // 万が一配列にない新規キーがあった場合（安全対策）
+                                      Object.keys(loadedData.savedProfiles).forEach(key => {
+                                          if (!orderedProfiles[key]) {
+                                              orderedProfiles[key] = loadedData.savedProfiles[key];
+                                          }
+                                      });
+                                  } else {
+                                      orderedProfiles = loadedData.savedProfiles; // 過去のデータ用
+                                  }
+                                  
+                                  setSavedProfiles(orderedProfiles);
+                                  localStorage.setItem('profiles', JSON.stringify(orderedProfiles));
                               }
                               // 2. クラウドから除外設定を読み込み
                               if (loadedData.excludeSettings) {
