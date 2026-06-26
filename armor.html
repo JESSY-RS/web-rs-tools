@@ -524,75 +524,6 @@
           const [excludeSettings, setExcludeSettings] = useState({
             main: [], sub: [], deco: [], showMain: false, showSub: false, showDeco: false
           });
-          
-          // ▼▼ 同期機能用の設定 ▼▼
-          const syncDataRef = useRef({
-              targetValues: { 斬: '0', 打: '0', 突: '0', 熱: '0', 冷: '0', 雷: '0', 陽: '0', 陰: '0' },
-              excludeSettings: { main: [], sub: [], deco: [] }
-          });
-
-          // 状態が変わるたびに、保存用のRefデータを最新化する
-          useEffect(() => {
-              syncDataRef.current = {
-                  targetValues,
-                  excludeSettings: {
-                      main: excludeSettings.main,
-                      sub: excludeSettings.sub,
-                      deco: excludeSettings.deco
-                  }
-              };
-          }, [targetValues, excludeSettings.main, excludeSettings.sub, excludeSettings.deco]);
-
-          // 同期マネージャーの起動
-          useEffect(() => {
-              if (window.setupSyncSystem) {
-                  window.setupSyncSystem({
-                      loginTriggerId: 'title-login-trigger',
-                      fileName: 'armor.json',
-                      firestoreDoc: 'armor',
-                      onLoad: (loadedData) => {
-                          if (loadedData) {
-                              if (loadedData.targetValues) {
-                                  setTargetValues(loadedData.targetValues);
-                              }
-                              if (loadedData.excludeSettings) {
-                                  setExcludeSettings(prev => ({
-                                      ...prev,
-                                      main: loadedData.excludeSettings.main || [],
-                                      sub: loadedData.excludeSettings.sub || [],
-                                      deco: loadedData.excludeSettings.deco || []
-                                  }));
-                                  localStorage.setItem('exclude_main', JSON.stringify(loadedData.excludeSettings.main || []));
-                                  localStorage.setItem('exclude_sub', JSON.stringify(loadedData.excludeSettings.sub || []));
-                                  localStorage.setItem('exclude_deco', JSON.stringify(loadedData.excludeSettings.deco || []));
-                                  setExcludeProfileExists({
-                                      main: (loadedData.excludeSettings.main || []).length > 0,
-                                      sub: (loadedData.excludeSettings.sub || []).length > 0,
-                                      deco: (loadedData.excludeSettings.deco || []).length > 0,
-                                  });
-                              }
-                          } else {
-                              // クラウド/ドライブが空の場合、かつドライブモード時のみ初回移行を実行
-                              if (window.syncManager && !window.syncManager.isCloudMode) {
-                                  const currentData = syncDataRef.current;
-                                  const hasData = 
-                                      Object.values(currentData.targetValues).some(v => v !== '0') ||
-                                      currentData.excludeSettings.main.length > 0 ||
-                                      currentData.excludeSettings.sub.length > 0 ||
-                                      currentData.excludeSettings.deco.length > 0;
-                                      
-                                  if (hasData && window.triggerSyncSave) {
-                                      window.triggerSyncSave();
-                                  }
-                              }
-                          }
-                      },
-                      onSave: () => {
-                          return syncDataRef.current;
-                      }
-                  });
-              }
-          }, []);
 
           const [excludeSearch, setExcludeSearch] = useState({ main: '', sub: '', deco: '' });
           const excludeDropdownRefs = useRef({ main: null, sub: null, deco: null });
@@ -682,6 +613,9 @@ const deleteExcludeProfile = (type) => {
             setSavedProfiles(updatedProfiles);
             setProfileName('');
             localStorage.setItem('profiles', JSON.stringify(updatedProfiles));
+            
+            // ▼ プリセットが追加されたのでクラウド/ドライブに保存
+            if (window.triggerSyncSave) window.triggerSyncSave();
           };
 
           const handleDeleteProfile = () => {
@@ -695,6 +629,9 @@ const deleteExcludeProfile = (type) => {
             setSavedProfiles(updatedProfiles);
             setProfileName('');
             if (selectedPreset === trimmedName) setSelectedPreset('');
+            
+            // ▼ プリセットが削除されたのでクラウド/ドライブに保存
+            if (window.triggerSyncSave) window.triggerSyncSave();
           };
 
           const handlePresetSelect = (presetName) => {
@@ -725,7 +662,6 @@ const deleteExcludeProfile = (type) => {
                 setStatusAilmentSettings(newStatusAilmentSettings);
               }
             }
-            if (window.triggerSyncSave) window.triggerSyncSave();
           };
 
           const [selectedPreset, setSelectedPreset] = useState("");
@@ -1306,7 +1242,6 @@ const deleteExcludeProfile = (type) => {
 
           const handleTargetValueChange = useCallback((attr, value) => {
             setTargetValues(prev => ({ ...prev, [attr]: value }));
-            if (window.triggerSyncSave) window.triggerSyncSave();
           }, []);
 
           const handleLabelDoubleClick = useCallback((attr) => {
@@ -1319,7 +1254,6 @@ const deleteExcludeProfile = (type) => {
               } else if (currentValue === -999) {
                 nextValue = '0';
               }
-              if (window.triggerSyncSave) window.triggerSyncSave();
               return { ...prev, [attr]: nextValue };
             });
           }, []);
@@ -1435,6 +1369,79 @@ const deleteExcludeProfile = (type) => {
           }, [statusAilmentTypes, statusAilmentSettings]);
 
           const [statusCopyActive, setStatusCopyActive] = useState(false);
+
+          // ▼▼ 同期機能用の設定（プリセット＆除外設定 同期版） ▼▼
+          const syncDataRef = useRef({
+              savedProfiles: {},
+              excludeSettings: { main: [], sub: [], deco: [] }
+          });
+
+          // プリセットや除外設定が変わるたびに、保存用のRefデータを最新化する
+          useEffect(() => {
+              syncDataRef.current = {
+                  savedProfiles,
+                  excludeSettings: {
+                      main: excludeSettings.main,
+                      sub: excludeSettings.sub,
+                      deco: excludeSettings.deco
+                  }
+              };
+          }, [savedProfiles, excludeSettings.main, excludeSettings.sub, excludeSettings.deco]);
+
+          // 同期マネージャーの起動
+          useEffect(() => {
+              if (window.setupSyncSystem) {
+                  window.setupSyncSystem({
+                      loginTriggerId: 'title-login-trigger',
+                      fileName: 'armor.json',
+                      firestoreDoc: 'armor',
+                      onLoad: (loadedData) => {
+                          if (loadedData) {
+                              // 1. クラウドからプリセット情報を読み込み
+                              if (loadedData.savedProfiles) {
+                                  setSavedProfiles(loadedData.savedProfiles);
+                                  localStorage.setItem('profiles', JSON.stringify(loadedData.savedProfiles));
+                              }
+                              // 2. クラウドから除外設定を読み込み
+                              if (loadedData.excludeSettings) {
+                                  setExcludeSettings(prev => ({
+                                      ...prev,
+                                      main: loadedData.excludeSettings.main || [],
+                                      sub: loadedData.excludeSettings.sub || [],
+                                      deco: loadedData.excludeSettings.deco || []
+                                  }));
+                                  localStorage.setItem('exclude_main', JSON.stringify(loadedData.excludeSettings.main || []));
+                                  localStorage.setItem('exclude_sub', JSON.stringify(loadedData.excludeSettings.sub || []));
+                                  localStorage.setItem('exclude_deco', JSON.stringify(loadedData.excludeSettings.deco || []));
+                                  setExcludeProfileExists({
+                                      main: (loadedData.excludeSettings.main || []).length > 0,
+                                      sub: (loadedData.excludeSettings.sub || []).length > 0,
+                                      deco: (loadedData.excludeSettings.deco || []).length > 0,
+                                  });
+                              }
+                          } else {
+                              // クラウドが空、かつ【ドライブモードのみ】初回ログイン時にローカルデータを移行
+                              if (window.syncManager && !window.syncManager.isCloudMode) {
+                                  const currentData = syncDataRef.current;
+                                  const hasData = 
+                                      Object.keys(currentData.savedProfiles).length > 0 ||
+                                      currentData.excludeSettings.main.length > 0 ||
+                                      currentData.excludeSettings.sub.length > 0 ||
+                                      currentData.excludeSettings.deco.length > 0;
+                                      
+                                  if (hasData && window.triggerSyncSave) {
+                                      window.triggerSyncSave();
+                                  }
+                              }
+                          }
+                      },
+                      onSave: () => {
+                          return syncDataRef.current;
+                      }
+                  });
+              }
+          }, []);
+          // ▲▲ 同期機能ここまで ▲▲
 
           const applySelectedBaseResistanceToAll = useCallback((baseName) => {
             const baseData = characterResistances.find(char => char['登録名'] === baseName);
