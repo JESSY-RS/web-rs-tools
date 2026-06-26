@@ -5,13 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="icon/favicon.ico">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <title>スタイル情報ビューア</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.3.0/dom-to-image-more.min.js"></script>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script type="module" src="script/sync-manager.js"></script>
 
     <style>
         :root {
@@ -766,7 +769,7 @@
 <body>
 <h1 class="main-title">
         <span id="theme-toggle-button" style="cursor: pointer; color: #f5c542; margin-right: -8px;">★</span>
-        スタイル情報ビューア
+        <span id="title-login-trigger" style="cursor: pointer;" title="クリックでログイン/同期">スタイル情報ビューア</span>
             <div id="theme-options">
                 <div>
                     <label><input type="radio" name="theme" value="system"><span>端末の設定を使う</span></label>
@@ -3501,11 +3504,15 @@
         saveProfileBtn.addEventListener('click', () => {
             saveProfileBtn.classList.add('is-saving');
             localStorage.setItem('styleViewerExclusions', JSON.stringify(additionalExclusionList));
+            
+            // ▼ クラウド同期のセーブを発火
+            if (window.triggerSyncSave) window.triggerSyncSave();
+
             updateSelectedText();
             setTimeout(() => { saveProfileBtn.classList.remove('is-saving'); }, 500);
         });
-        deleteProfileBtn.addEventListener('click', () => {
 
+        deleteProfileBtn.addEventListener('click', () => {
             const confirmed = window.confirm("除外設定をすべて削除してよろしいですか？");
             if (!confirmed) {
                 return;
@@ -3513,6 +3520,10 @@
 
             localStorage.removeItem('styleViewerExclusions');
             additionalExclusionList = [];
+            
+            // ▼ クラウド同期のセーブを発火 (空データとして上書き)
+            if (window.triggerSyncSave) window.triggerSyncSave();
+
             renderOptions(searchInput.value);
             updateSelectedText();
 
@@ -3522,6 +3533,36 @@
             }
         });
         updateSelectedText();
+
+        // ▼▼ ここから追加: 同期システムのセットアップ ▼▼
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'style-info.json', 
+                firestoreDoc: 'style-info',        
+                onLoad: (loadedData) => {
+                    // クラウドからデータを受け取った時の処理
+                    if (loadedData && Array.isArray(loadedData)) {
+                        additionalExclusionList = loadedData.filter(item => allExclusionKeywords.includes(item));
+                        localStorage.setItem('styleViewerExclusions', JSON.stringify(additionalExclusionList));
+                        
+                        // UIを更新
+                        renderOptions(searchInput.value);
+                        updateSelectedText();
+                        
+                        // 現在表示中のスタイルがあれば再描画
+                        const currentStyleName = document.getElementById('styleBtn').dataset.value;
+                        if (currentStyleName && currentStyleName !== '---') {
+                            updateView(currentStyleName);
+                        }
+                    }
+                },
+                onSave: () => {
+                    // 保存するデータを返す
+                    return additionalExclusionList;
+                }
+            });
+        }
     }
     
     function initializeSaveButtons() {
@@ -3535,9 +3576,9 @@
         const chara = document.getElementById('characterText').textContent;
         const style = document.getElementById('styleBtn').dataset.value;
         switch(type) {
-            case 'skill': element = document.querySelector('.skill-column'); title = 'スキル'; break;
-            case 'ability': element = document.querySelector('.ability-column'); title = 'アビリティ'; break;
-            case 'addInfo': element = document.querySelector('.add-info-column'); title = '追加情報'; break;
+            case 'skill': element = document.querySelector('.skill-column'); title = '01_スキル'; break;
+            case 'ability': element = document.querySelector('.ability-column'); title = '02_アビリティ'; break;
+            case 'addInfo': element = document.querySelector('.add-info-column'); title = '03_追加情報'; break;
         }
         if (!chara || !style || chara.startsWith('現在の登録数') || style === '---') {
             alert('キャラクターとスタイルを選択してください。');
