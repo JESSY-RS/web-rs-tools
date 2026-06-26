@@ -15,6 +15,9 @@
     <script src="script/papaparse.min.js"></script>
     <script src="script/tailwindcss.js"></script>
 
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script type="module" src="script/sync-manager.js"></script>
+
     <style>
         /* 全体のスタイル */
         body {
@@ -166,6 +169,8 @@
             return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'system' : 'system';
           });
           const [showThemeOptions, setShowThemeOptions] = useState(false);
+
+         
 
           const themes = {
             light: {
@@ -520,6 +525,75 @@
             main: [], sub: [], deco: [], showMain: false, showSub: false, showDeco: false
           });
           
+          // ▼▼ 同期機能用の設定 ▼▼
+          const syncDataRef = useRef({
+              targetValues: { 斬: '0', 打: '0', 突: '0', 熱: '0', 冷: '0', 雷: '0', 陽: '0', 陰: '0' },
+              excludeSettings: { main: [], sub: [], deco: [] }
+          });
+
+          // 状態が変わるたびに、保存用のRefデータを最新化する
+          useEffect(() => {
+              syncDataRef.current = {
+                  targetValues,
+                  excludeSettings: {
+                      main: excludeSettings.main,
+                      sub: excludeSettings.sub,
+                      deco: excludeSettings.deco
+                  }
+              };
+          }, [targetValues, excludeSettings.main, excludeSettings.sub, excludeSettings.deco]);
+
+          // 同期マネージャーの起動
+          useEffect(() => {
+              if (window.setupSyncSystem) {
+                  window.setupSyncSystem({
+                      loginTriggerId: 'title-login-trigger',
+                      fileName: 'armor.json',
+                      firestoreDoc: 'armor',
+                      onLoad: (loadedData) => {
+                          if (loadedData) {
+                              if (loadedData.targetValues) {
+                                  setTargetValues(loadedData.targetValues);
+                              }
+                              if (loadedData.excludeSettings) {
+                                  setExcludeSettings(prev => ({
+                                      ...prev,
+                                      main: loadedData.excludeSettings.main || [],
+                                      sub: loadedData.excludeSettings.sub || [],
+                                      deco: loadedData.excludeSettings.deco || []
+                                  }));
+                                  localStorage.setItem('exclude_main', JSON.stringify(loadedData.excludeSettings.main || []));
+                                  localStorage.setItem('exclude_sub', JSON.stringify(loadedData.excludeSettings.sub || []));
+                                  localStorage.setItem('exclude_deco', JSON.stringify(loadedData.excludeSettings.deco || []));
+                                  setExcludeProfileExists({
+                                      main: (loadedData.excludeSettings.main || []).length > 0,
+                                      sub: (loadedData.excludeSettings.sub || []).length > 0,
+                                      deco: (loadedData.excludeSettings.deco || []).length > 0,
+                                  });
+                              }
+                          } else {
+                              // クラウド/ドライブが空の場合、かつドライブモード時のみ初回移行を実行
+                              if (window.syncManager && !window.syncManager.isCloudMode) {
+                                  const currentData = syncDataRef.current;
+                                  const hasData = 
+                                      Object.values(currentData.targetValues).some(v => v !== '0') ||
+                                      currentData.excludeSettings.main.length > 0 ||
+                                      currentData.excludeSettings.sub.length > 0 ||
+                                      currentData.excludeSettings.deco.length > 0;
+                                      
+                                  if (hasData && window.triggerSyncSave) {
+                                      window.triggerSyncSave();
+                                  }
+                              }
+                          }
+                      },
+                      onSave: () => {
+                          return syncDataRef.current;
+                      }
+                  });
+              }
+          }, []);
+
           const [excludeSearch, setExcludeSearch] = useState({ main: '', sub: '', deco: '' });
           const excludeDropdownRefs = useRef({ main: null, sub: null, deco: null });
 
@@ -571,6 +645,7 @@ const saveExcludeProfile = (type) => {
   try {
     localStorage.setItem(key, JSON.stringify(data));
     setExcludeProfileExists(prev => ({ ...prev, [category]: true })); 
+    if (window.triggerSyncSave) window.triggerSyncSave();
   }
   catch (e) { console.error(`${type}除外設定の保存に失敗しました`, e); }
   finally { setTimeout(() => { setExcludeSaving(prev => ({ ...prev, [category]: false })); }, 800); }
@@ -588,6 +663,7 @@ const deleteExcludeProfile = (type) => {
   try {
     localStorage.removeItem(key);
     setExcludeProfileExists(prev => ({ ...prev, [category]: false }));
+    if (window.triggerSyncSave) window.triggerSyncSave();
   }
   catch (e) { console.error(`${type}除外設定の削除に失敗`, e); }
   finally { setTimeout(() => { setExcludeDeleting(prev => ({ ...prev, [category]: false })); }, 800); }
@@ -649,6 +725,7 @@ const deleteExcludeProfile = (type) => {
                 setStatusAilmentSettings(newStatusAilmentSettings);
               }
             }
+            if (window.triggerSyncSave) window.triggerSyncSave();
           };
 
           const [selectedPreset, setSelectedPreset] = useState("");
@@ -1229,6 +1306,7 @@ const deleteExcludeProfile = (type) => {
 
           const handleTargetValueChange = useCallback((attr, value) => {
             setTargetValues(prev => ({ ...prev, [attr]: value }));
+            if (window.triggerSyncSave) window.triggerSyncSave();
           }, []);
 
           const handleLabelDoubleClick = useCallback((attr) => {
@@ -1241,7 +1319,7 @@ const deleteExcludeProfile = (type) => {
               } else if (currentValue === -999) {
                 nextValue = '0';
               }
-
+              if (window.triggerSyncSave) window.triggerSyncSave();
               return { ...prev, [attr]: nextValue };
             });
           }, []);
@@ -1441,7 +1519,7 @@ return (
                             >
                             ★
                             </span>
-                            装備候補検索ツール
+                            <span id="title-login-trigger" style={{ cursor: "pointer", }} title="クリックでログイン/同期">装備候補検索ツール</span>
                             {showThemeOptions && (
                               <div ref={themeOptionsRef} className={`absolute left-0 mt-2 p-4 ${currentThemeColors.pullmBak} border ${currentThemeColors.basicBdr} rounded-lg shadow-lg z-20`}>
                                 <div className="flex flex-col space-y-2">
@@ -1595,6 +1673,7 @@ return (
                                 setTargetValues({ 斬: '0', 打: '0',突: '0', 熱: '0', 冷: '0', 雷: '0', 陽: '0', 陰: '0' });
                                 setSelectedPreset("");
                                 setExcludeSettings(prev => ({ ...prev, main: [], sub: [], deco: [] }));
+                                if (window.triggerSyncSave) window.triggerSyncSave();
                               }
                             }}
                             className={`text-sm ${currentThemeColors.resetTxt} ${currentThemeColors.resetBak} px-4 py-2 rounded transition-colors`}
