@@ -3534,14 +3534,14 @@
         });
         updateSelectedText();
 
-        // ▼▼ ここから追加: 同期システムのセットアップ ▼▼
+        // ▼▼ 同期システムのセットアップ（自動移行対応版） ▼▼
         if (window.setupSyncSystem) {
             window.setupSyncSystem({
                 loginTriggerId: 'title-login-trigger',
                 fileName: 'style-info.json', 
                 firestoreDoc: 'style-info',        
                 onLoad: (loadedData) => {
-                    // クラウドからデータを受け取った時の処理
+                    // 1. クラウド（またはドライブ）からデータが正常に取得できた場合
                     if (loadedData && Array.isArray(loadedData)) {
                         additionalExclusionList = loadedData.filter(item => allExclusionKeywords.includes(item));
                         localStorage.setItem('styleViewerExclusions', JSON.stringify(additionalExclusionList));
@@ -3555,6 +3555,16 @@
                         if (currentStyleName && currentStyleName !== '---') {
                             updateView(currentStyleName);
                         }
+                    } 
+                    // 2. クラウド側にデータが無く、かつブラウザ（ローカル）に既存データが残っている場合
+                    else if (!loadedData && additionalExclusionList.length > 0) {
+                        // 自動的に現在のローカルデータをクラウドへアップロード（移行）する
+                        if (window.triggerSyncSave) {
+                            window.triggerSyncSave();
+                        }
+                        // 移行したデータを画面とボタンの状態に即時反映
+                        renderOptions(searchInput.value);
+                        updateSelectedText();
                     }
                 },
                 onSave: () => {
