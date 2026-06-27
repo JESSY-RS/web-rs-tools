@@ -12,6 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <title>育成効率比較ツール</title>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
   <style>
 
     /* 1. 基本の指定（Windows, Android, Mac用） */
@@ -46,7 +49,7 @@
       font-size: 24px;
     }
 
-    #titleTrigger {
+    #title-login-trigger {
       cursor: pointer;
       user-select: none;
     }
@@ -441,7 +444,10 @@
   </div>
 
   <div class="header">
-    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="titleTrigger" onclick="toggleLayout()">育成効率比較ツール</span></h1>
+    <h1>
+      <span class="hamburger" onclick="toggleMenu()"></span>
+      <span id="title-login-trigger" title="クリックでログイン/同期">育成効率比較ツール</span>
+    </h1>
   </div>
 
   <div class="radio-group" style="display: flex; margin: 5px 0 5px 5px;">
@@ -465,7 +471,9 @@
     <div class="section">
 
       <div class="form-row">
-        <div class="form-label" style="justify-content: flex-start;"><h2>比較①</h2></div>
+        <div class="form-label" style="justify-content: flex-start; cursor: pointer; user-select: none;" onclick="toggleLayout()" title="クリックで表示列の切り替え">
+          <h2>比較①</h2>
+        </div>
         <div class="radio-group">
           <label><input type="radio" name="計算方式1" id="計算式1" value="J" onchange="syncRadio(1)" checked>J式で計算</label>
           <label><input type="radio" name="計算方式1" value="M" onchange="syncRadio(1)">M式で計算</label>
@@ -1203,6 +1211,8 @@
       
       document.getElementById('profileMessage').textContent = '※プロファイルに現在の状態を保存しました。';
       checkProfileExistence();
+
+      if (window.triggerSyncSave) window.triggerSyncSave();
     }
 
     function deleteAllProfiles() {
@@ -1212,6 +1222,8 @@
         localStorage.removeItem(`ikusei_profile${num}`);
       });
       document.getElementById('profileMessage').textContent = '※プロファイルの情報を削除しました。';
+
+      if (window.triggerSyncSave) window.triggerSyncSave();
       location.reload(); 
     }
 
@@ -1289,6 +1301,57 @@
       applyModeDefaults(modeToApply);
 
       checkProfileExistence();
+
+      if (window.setupSyncSystem) {
+          window.setupSyncSystem({
+              loginTriggerId: 'title-login-trigger',
+              fileName: 'ikuseicalc.json',
+              firestoreDoc: 'ikuseicalc',
+              onLoad: (loadedData) => {
+                  // 1. クラウド/ドライブにデータがある場合
+                  if (loadedData && (loadedData.profile1 || loadedData.profile2)) {
+                      // クラウドからプロファイルデータを復元
+                      if (loadedData.profile1) {
+                          localStorage.setItem('ikusei_profile1', JSON.stringify(loadedData.profile1));
+                      } else {
+                          localStorage.removeItem('ikusei_profile1');
+                      }
+                      
+                      if (loadedData.profile2) {
+                          localStorage.setItem('ikusei_profile2', JSON.stringify(loadedData.profile2));
+                      } else {
+                          localStorage.removeItem('ikusei_profile2');
+                      }
+                      
+                      checkProfileExistence();
+                      
+                      // 画面へ反映（最新のプロファイル設定で再描画）
+                      let currentMode = pageSettings['ikuseicalc_grade_mode'] || 'manual';
+                      applyModeDefaults(currentMode);
+                      
+                  } 
+                  // 2. クラウドが空で、ローカルにデータがあれば初回移行 (ドライブモードのみ)
+                  else {
+                      if (window.syncManager && !window.syncManager.isCloudMode) {
+                          const p1 = localStorage.getItem('ikusei_profile1');
+                          const p2 = localStorage.getItem('ikusei_profile2');
+                          if ((p1 || p2) && window.triggerSyncSave) {
+                              window.triggerSyncSave();
+                          }
+                      }
+                  }
+              },
+              onSave: () => {
+                  // 保存するデータを返す（プロファイル1と2をまとめて送信）
+                  const p1 = localStorage.getItem('ikusei_profile1');
+                  const p2 = localStorage.getItem('ikusei_profile2');
+                  return {
+                      profile1: p1 ? JSON.parse(p1) : null,
+                      profile2: p2 ? JSON.parse(p2) : null
+                  };
+              }
+          });
+      }
     };
 
   </script>

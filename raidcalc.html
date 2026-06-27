@@ -11,6 +11,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
   <title>7.5周年・報酬効率比較ツール</title> 
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
   <style>
 
     /* 1. 基本の指定（Windows, Android, Mac用） */
@@ -57,7 +61,7 @@
     }
 
     /* タイトルクリック用スタイル */
-    #titleTrigger {
+    #title-login-trigger {
       cursor: pointer;
       user-select: none;
     }
@@ -509,7 +513,10 @@
   </div>
 
   <div class="header">
-    <h2><span class="hamburger" onclick="toggleMenu()"></span><span id="titleTrigger" onclick="toggleLayout()">7.5周年・報酬効率比較ツール</span></h2>
+    <h2>
+      <span class="hamburger" onclick="toggleMenu()"></span>
+      <span id="title-login-trigger" title="クリックでログイン/同期">7.5周年・報酬効率比較ツール</span>
+    </h2>
   </div>
 
   <div id="warning">※グレードにより個数が判明していない部分は入力してください。</div>
@@ -521,7 +528,7 @@
 
   <div id="compareContainer">
     <div class="block">
-      <h3>比較①</h3>
+      <h3 style="cursor: pointer; user-select: none;" onclick="toggleLayout()" title="クリックで表示列の切り替え">比較①</h3>
 
       <div class="time-input" id="timeInput1">
         <span class="input-label-area"><label>1回の計測時間：</label></span>
@@ -1043,6 +1050,41 @@
 
       // 全選択機能のセットアップ
       setupAutoSelect();
+
+      if (window.setupSyncSystem) {
+          window.setupSyncSystem({
+              loginTriggerId: 'title-login-trigger',
+              fileName: 'raidcalc.json',
+              firestoreDoc: 'raidcalc',
+              onLoad: (loadedData) => {
+                  // 1. クラウド/ドライブにデータがある場合
+                  if (loadedData && Object.keys(loadedData).length > 0) {
+                      // クラウドからユーザー登録データを復元
+                      userItemData = loadedData;
+                      localStorage.setItem('raidcalc_user_item_data', JSON.stringify(userItemData));
+                      
+                      updateDeleteButtonState();
+                      
+                      // 両方の入力欄の数値を最新の同期データに合わせて更新
+                      updateItemValue(1);
+                      updateItemValue(2);
+                  } 
+                  // 2. クラウドが空で、ローカルにデータがあれば初回移行 (ドライブモードのみ)
+                  else {
+                      if (window.syncManager && !window.syncManager.isCloudMode) {
+                          const localData = localStorage.getItem('raidcalc_user_item_data');
+                          if (localData && Object.keys(JSON.parse(localData)).length > 0 && window.triggerSyncSave) {
+                              window.triggerSyncSave();
+                          }
+                      }
+                  }
+              },
+              onSave: () => {
+                  // 保存するデータを返す
+                  return userItemData;
+              }
+          });
+      }
     }
 
     /* --------------------------------------------------
@@ -1074,6 +1116,8 @@
     function saveUserData() {
       localStorage.setItem('raidcalc_user_item_data', JSON.stringify(userItemData));
       updateDeleteButtonState();
+
+      if (window.triggerSyncSave) window.triggerSyncSave();
     }
 
     function updateDeleteButtonState() {
@@ -1144,6 +1188,8 @@
       updateItemValue(2);
       
       updateDeleteButtonState();
+
+      if (window.triggerSyncSave) window.triggerSyncSave();
 
       // 完了メッセージ表示
       const msgDiv = document.getElementById("deleteMessage");
