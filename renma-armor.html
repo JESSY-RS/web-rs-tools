@@ -3573,6 +3573,27 @@
     window.openCalcModal = openCalcModal; 
     window.closeCalcModal = closeCalcModal;
 
+    // =========================================================================
+    // === モーダルの背景クリックで閉じる処理 =================================
+    // =========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        // TOP5タブのモーダル用
+        const top5Modal = document.getElementById('top5-modal');
+        if (top5Modal) {
+            top5Modal.addEventListener('click', (e) => {
+                // クリックされたのが背景（オーバーレイ自体）の場合のみ閉じる
+                if (e.target === top5Modal) closeTop5Modal();
+            });
+        }
+
+        // 自動選定ツールのモーダル用（ついでにこちらも対応しておくと便利です）
+        const calcModal = document.getElementById('calc-modal');
+        if (calcModal) {
+            calcModal.addEventListener('click', (e) => {
+                if (e.target === calcModal) closeCalcModal();
+            });
+        }
+    });
 </script>
 </body>
 </html>
