@@ -614,6 +614,9 @@ const deleteExcludeProfile = (type) => {
             setProfileName('');
             localStorage.setItem('profiles', JSON.stringify(updatedProfiles));
             
+            syncDataRef.current.savedProfiles = updatedProfiles;
+            syncDataRef.current.profileOrder = Object.keys(updatedProfiles);
+
             // ▼ プリセットが追加されたのでクラウド/ドライブに保存
             if (window.triggerSyncSave) window.triggerSyncSave();
           };
@@ -629,6 +632,9 @@ const deleteExcludeProfile = (type) => {
             setSavedProfiles(updatedProfiles);
             setProfileName('');
             if (selectedPreset === trimmedName) setSelectedPreset('');
+            
+            syncDataRef.current.savedProfiles = updatedProfiles;
+            syncDataRef.current.profileOrder = Object.keys(updatedProfiles);
             
             // ▼ プリセットが削除されたのでクラウド/ドライブに保存
             if (window.triggerSyncSave) window.triggerSyncSave();
