@@ -453,10 +453,13 @@
     <span style="font-weight:bold; color:#FF6E3D; flex-shrink: 0;">基準:</span>
     <div style="display: flex; flex-wrap: wrap; margin-left: 5px;">
       <label style="margin-right: 10px; white-space: nowrap;">
-        <input type="radio" name="gradeMode" id="modePattern1" value="pattern1" onclick="toggleGradeMode(this)">ジェラール・サラ・T260G
+        <input type="radio" name="gradeMode" id="modePattern1" value="pattern1" onclick="toggleGradeMode(this)">アレツ
       </label>
       <label style="white-space: nowrap;">
-        <input type="radio" name="gradeMode" id="modePattern2" value="pattern2" onclick="toggleGradeMode(this)">白薔薇姫・ミルザ・聖王
+        <input type="radio" name="gradeMode" id="modePattern2" value="pattern2" onclick="toggleGradeMode(this)">シャムマベル・ノーア・コッペパン
+      </label>
+      <label style="white-space: nowrap;">
+        <input type="radio" name="gradeMode" id="modePattern3" value="pattern3" onclick="toggleGradeMode(this)">シムメシュ・ターミン
       </label>
     </div>
   </div>
@@ -531,7 +534,7 @@
 
       <div class="form-row">
         <div class="form-label">ボーナス倍率</div>
-        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" onfocus="this.select()" min="1" value="1">倍　</div>
+        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" onfocus="this.select()" min="1" value="1">倍 </div>
         <select id="gradeSelect1" onchange="updateItemValue(1)"></select><br>
       </div>
 
@@ -552,7 +555,7 @@
       <div class="form-row">
         <div class="form-label" style="justify-content: flex-start;"><h2>比較②</h2></div>
         <div class="radio-group">
-          <label><input type="radio" name="計算方式2" id="計算式2" value="J" onchange="syncRadio(2)" checked>J式で計算　</label>
+          <label><input type="radio" name="計算方式2" id="計算式2" value="J" onchange="syncRadio(2)" checked>J式で計算 </label>
           <label><input type="radio" name="計算方式2" value="M" onchange="syncRadio(2)">M式で計算</label>
         </div>
       </div>
@@ -609,7 +612,7 @@
 
       <div class="form-row">
         <div class="form-label">ボーナス倍率</div>
-        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率2" onfocus="this.select()" min="1" value="3.6">倍　</div>
+        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率2" onfocus="this.select()" min="1" value="3.6">倍 </div>
 
         <select id="gradeSelect2" onchange="updateItemValue(2)"></select><br>
       </div>
@@ -677,60 +680,88 @@
        【データ定義】
        --------------------------------------------------------- */
     
-    // ■ Pattern1
+// ■ Pattern1
     const gradeConfigPattern1_Old = [
-      { id: 0,  val: 1.0, count: 3,  label: "【grade 0】0" },
-      { id: 1,  val: 1.0, count: 4,  label: "【grade 1】5億" },
-      { id: 2,  val: 1.1, count: 4,  label: "【grade 2】50億" },
-      { id: 3,  val: 1.2, count: 6,  label: "【grade 3】100億" },
-      { id: 4,  val: 1.4, count: 6,  label: "【grade 4】150億" },
-      { id: 5,  val: 2.2, count: 7,  label: "【grade 5】200億" },
-      { id: 6,  val: 2.9, count: 8,  label: "【grade 6】250億" },
-      { id: 7,  val: 3.6, count: 9,  label: "【grade 7】300億" },
-      { id: 8,  val: 4.4, count: 10, label: "【grade 8】350億" },
-      { id: 9,  val: 7.0, count: 20, label: "【grade 9】400億" },
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】5億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】50億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】100億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】150億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】200億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】250億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】300億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】350億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】400億" },
       { id: 10, val: 9.3, count: 40, label: "【grade X】500億" }
     ];
     const gradeConfigPattern1_New = [
-      { id: 0,  val: 1.0, count: 3,  label: "【grade 0】0" },
-      { id: 1,  val: 1.0, count: 4,  label: "【grade 1】5億" },
-      { id: 2,  val: 1.1, count: 4,  label: "【grade 2】50億" },
-      { id: 3,  val: 1.2, count: 6,  label: "【grade 3】100億" },
-      { id: 4,  val: 1.4, count: 6,  label: "【grade 4】150億" },
-      { id: 5,  val: 2.2, count: 7,  label: "【grade 5】200億" },
-      { id: 6,  val: 2.9, count: 8,  label: "【grade 6】250億" },
-      { id: 7,  val: 3.6, count: 9,  label: "【grade 7】300億" },
-      { id: 8,  val: 4.4, count: 10, label: "【grade 8】350億" },
-      { id: 9,  val: 7.0, count: 20, label: "【grade 9】400億" },
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】5億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】50億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】100億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】150億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】200億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】250億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】300億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】350億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】400億" },
       { id: 10, val: 9.3, count: 40, label: "【grade X】500億" }
     ];
 
     // ■ Pattern2
     const gradeConfigPattern2_Old = [
-      { id: 0,  val: 1.0, count: 3,  label: "【grade 0】0" },
-      { id: 1,  val: 1.0, count: 4,  label: "【grade 1】6億" },
-      { id: 2,  val: 1.1, count: 4,  label: "【grade 2】60億" },
-      { id: 3,  val: 1.2, count: 6,  label: "【grade 3】120億" },
-      { id: 4,  val: 1.4, count: 6,  label: "【grade 4】180億" },
-      { id: 5,  val: 2.2, count: 7,  label: "【grade 5】240億" },
-      { id: 6,  val: 2.9, count: 8,  label: "【grade 6】300億" },
-      { id: 7,  val: 3.6, count: 9,  label: "【grade 7】360億" },
-      { id: 8,  val: 4.4, count: 10, label: "【grade 8】420億" },
-      { id: 9,  val: 7.0, count: 20, label: "【grade 9】480億" },
-      { id: 10, val: 9.3, count: 40, label: "【grade X】600億" }
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】7億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】70億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】140億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】210億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】280億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】350億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】420億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】490億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】560億" },
+      { id: 10, val: 9.3, count: 40, label: "【grade X】700億" }
     ];
     const gradeConfigPattern2_New = [
-      { id: 0,  val: 1.0, count: 3,  label: "【grade 0】0" },
-      { id: 1,  val: 1.0, count: 4,  label: "【grade 1】6億" },
-      { id: 2,  val: 1.1, count: 4,  label: "【grade 2】60億" },
-      { id: 3,  val: 1.2, count: 6,  label: "【grade 3】120億" },
-      { id: 4,  val: 1.4, count: 6,  label: "【grade 4】180億" },
-      { id: 5,  val: 2.2, count: 7,  label: "【grade 5】240億" },
-      { id: 6,  val: 2.9, count: 8,  label: "【grade 6】300億" },
-      { id: 7,  val: 3.6, count: 9,  label: "【grade 7】360億" },
-      { id: 8,  val: 4.4, count: 10, label: "【grade 8】420億" },
-      { id: 9,  val: 7.0, count: 20, label: "【grade 9】480億" },
-      { id: 10, val: 9.3, count: 40, label: "【grade X】600億" }
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】7億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】70億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】140億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】210億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】280億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】350億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】420億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】490億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】560億" },
+      { id: 10, val: 9.3, count: 40, label: "【grade X】700億" }
+    ];
+
+    // ■ Pattern3
+    const gradeConfigPattern3_Old = [
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】8億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】80億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】160億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】240億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】320億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】400億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】480億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】560億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】640億" },
+      { id: 10, val: 9.3, count: 40, label: "【grade X】800億" }
+    ];
+    const gradeConfigPattern3_New = [
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】8億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】80億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】160億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】240億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】320億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】400億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】480億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】560億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】640億" },
+      { id: 10, val: 9.3, count: 40, label: "【grade X】800億" }
     ];
 
     /* ---------------------------------------------------------
@@ -742,14 +773,14 @@
     const defaultIkuseiWaku2 = 5; 
 
     // ▼ パターンごとのデフォルト値
-    // ★ waku, count, bonus, grade の順序で定義
+    // ★ waku, grade のみ定義（count, bonusはgradeから動的に取得）
     const defaultValues_Old = {
-        pattern1: { waku: "5", count: "20", bonus: "7.0", grade: "9" },
-        pattern2: { waku: "5", count: "40", bonus: "9.3", grade: "10" }
+        pattern1: { waku: "5", grade: "9" },
+        pattern2: { waku: "5", grade: "10" },
     };
     const defaultValues_New = {
-        pattern1: { waku: "5", count: "20", bonus: "7.0", grade: "9" },
-        pattern2: { waku: "5", count: "40", bonus: "9.3", grade: "10" }
+        pattern1: { waku: "5", grade: "9" },
+        pattern2: { waku: "5", grade: "10" },
     };
 
     // ▼ 基準選択なし(manual)時のデフォルト値設定
@@ -763,6 +794,7 @@
     // 使用データの決定
     const gradeConfigPattern1 = useNewData ? gradeConfigPattern1_New : gradeConfigPattern1_Old;
     const gradeConfigPattern2 = useNewData ? gradeConfigPattern2_New : gradeConfigPattern2_Old;
+    const gradeConfigPattern3 = useNewData ? gradeConfigPattern3_New : gradeConfigPattern3_Old;
     const defaultValues       = useNewData ? defaultValues_New       : defaultValues_Old;
 
     /* ▲▲▲▲▲▲▲▲ 自動切り替え設定ここから ▲▲▲▲▲▲▲▲ */
@@ -878,6 +910,8 @@
         gradeConfig = gradeConfigPattern1;
       } else if (mode === 'pattern2') {
         gradeConfig = gradeConfigPattern2;
+      } else if (mode === 'pattern3') {
+        gradeConfig = gradeConfigPattern3;
       } else {
         gradeConfig = []; 
       }
@@ -932,7 +966,7 @@
              if (mode === 'manual') {
                 defaults = defaultValues_Manual;
              } else {
-                // Manual以外の場合、比較①はPattern1、比較②はPattern2の初期値を適用
+                // どのラジオボタンを選んでも、比較①はpattern1、比較②はpattern2の設定を維持
                 if (num === 1) {
                    defaults = defaultValues.pattern1;
                 } else {
@@ -950,28 +984,28 @@
              }
              document.getElementById(`育成枠${num}`).value = wakuVal;
 
-             // 2. 判定回数・ボーナス
-             document.getElementById(`成長判定回数${num}`).value = defaults.count;
-             document.getElementById(`ボーナス倍率${num}`).value = defaults.bonus;
-
-             // 3. グレード選択 (Manual以外)
-             if (defaults.grade !== undefined && mode !== 'manual') {
-                const select = document.getElementById(`gradeSelect${num}`);
-                if(select) select.value = defaults.grade;
+             // 2 & 3. 判定回数・ボーナス・グレード選択
+             if (mode !== 'manual') {
+                if (defaults.grade !== undefined) {
+                   const select = document.getElementById(`gradeSelect${num}`);
+                   if (select) {
+                      select.value = defaults.grade;
+                      // 選択中の基準(gradeConfig)から対応するデータを取得して自動セット
+                      const targetConfig = gradeConfig.find(item => item.id === parseInt(defaults.grade, 10));
+                      if (targetConfig) {
+                         document.getElementById(`ボーナス倍率${num}`).value = targetConfig.val;
+                         document.getElementById(`成長判定回数${num}`).value = targetConfig.count;
+                      }
+                   }
+                }
+             } else {
+                // Manual時はdefaultValues_Manualの固定値をセット
+                document.getElementById(`成長判定回数${num}`).value = defaults.count;
+                document.getElementById(`ボーナス倍率${num}`).value = defaults.bonus;
              }
 
              // 4. 時間系のリセット (Manual/Pattern共通)
              document.getElementById(`計算式${num}`).checked = true;
-             document.getElementById(`戦闘時${num}`).value = "0";
-             document.getElementById(`戦闘分${num}`).value = "";
-             document.getElementById(`戦闘秒${num}`).value = "";
-             document.getElementById(`間隔時${num}`).value = "0";
-             document.getElementById(`間隔分${num}`).value = "0";
-             document.getElementById(`間隔秒${num}`).value = "13";
-             document.getElementById(`所要時${num}`).value = "24";
-             document.getElementById(`所要分${num}`).value = "0";
-             document.getElementById(`所要秒${num}`).value = "0";
-             document.getElementById(`成長確率${num}`).value = "10";
           }
        });
     }
@@ -1259,7 +1293,7 @@
       
       // ★★★ 追加・変更エリア開始 ★★★ 
       // 新ファイル用のバージョン識別子（任意の文字列や数値でOK）
-      const CURRENT_VERSION = '5.0_new'; 
+      const CURRENT_VERSION = '6.0_new'; 
 
       // バージョンが一致しない場合（＝旧ファイルから来た、または初回アクセス）
       if (pageSettings['version'] !== CURRENT_VERSION) {
@@ -1281,6 +1315,7 @@
       // 2. プロファイル存在チェック
       const profile1Str = localStorage.getItem('ikusei_profile1');
       const profile2Str = localStorage.getItem('ikusei_profile2');
+      const profile3Str = localStorage.getItem('ikusei_profile3');
 
       // 3. 【修正】不整合修正ロジック
       // (上のバージョンチェックで manual になっているので、ここは念の為の保険として残します)
@@ -1321,6 +1356,12 @@
                       } else {
                           localStorage.removeItem('ikusei_profile2');
                       }
+
+                      if (loadedData.profile3) {
+                          localStorage.setItem('ikusei_profile3', JSON.stringify(loadedData.profile3));
+                      } else {
+                          localStorage.removeItem('ikusei_profile3');
+                      }
                       
                       checkProfileExistence();
                       
@@ -1334,7 +1375,8 @@
                       if (window.syncManager && !window.syncManager.isCloudMode) {
                           const p1 = localStorage.getItem('ikusei_profile1');
                           const p2 = localStorage.getItem('ikusei_profile2');
-                          if ((p1 || p2) && window.triggerSyncSave) {
+                          const p3 = localStorage.getItem('ikusei_profile3');
+                          if ((p1 || p2 || p3) && window.triggerSyncSave) {
                               window.triggerSyncSave();
                           }
                       }
@@ -1344,9 +1386,11 @@
                   // 保存するデータを返す（プロファイル1と2をまとめて送信）
                   const p1 = localStorage.getItem('ikusei_profile1');
                   const p2 = localStorage.getItem('ikusei_profile2');
+                  const p3 = localStorage.getItem('ikusei_profile3');
                   return {
                       profile1: p1 ? JSON.parse(p1) : null,
-                      profile2: p2 ? JSON.parse(p2) : null
+                      profile2: p2 ? JSON.parse(p2) : null,
+                      profile3: p3 ? JSON.parse(p3) : null
                   };
               }
           });
