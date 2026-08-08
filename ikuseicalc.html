@@ -380,7 +380,10 @@
       color: #7755FF;
     }
 
-    
+    #toggleDisplayBtn {
+      cursor: pointer;
+      user-select: none;
+    }
 
   </style>
 
@@ -455,7 +458,7 @@
       <label style="margin-right: 10px; white-space: nowrap;">
         <input type="radio" name="gradeMode" id="modePattern1" value="pattern1" onclick="toggleGradeMode(this)">アレツ
       </label>
-      <label style="white-space: nowrap;">
+      <label style="margin-right: 10px; white-space: nowrap;">
         <input type="radio" name="gradeMode" id="modePattern2" value="pattern2" onclick="toggleGradeMode(this)">シャムマベル・ノーア・コッペパン
       </label>
       <label style="white-space: nowrap;">
@@ -477,7 +480,7 @@
           <h2><span style="cursor: pointer; user-select: none;" onclick="toggleLayout()" title="クリックで表示列の切り替え">比較①</span></h2>
         </div>
         <div class="radio-group">
-          <label><input type="radio" name="計算方式1" id="計算式1" value="J" onchange="syncRadio(1)" checked>J式で計算</label>
+          <label><input type="radio" name="計算方式1" id="計算式1" value="J" onchange="syncRadio(1)" checked>J式で計算　</label>
           <label><input type="radio" name="計算方式1" value="M" onchange="syncRadio(1)">M式で計算</label>
         </div>
       </div>
