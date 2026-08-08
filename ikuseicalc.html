@@ -534,7 +534,7 @@
 
       <div class="form-row">
         <div class="form-label">ボーナス倍率</div>
-        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" onfocus="this.select()" min="1" value="1">倍 </div>
+        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" onfocus="this.select()" min="1" value="1">倍　</div>
         <select id="gradeSelect1" onchange="updateItemValue(1)"></select><br>
       </div>
 
@@ -555,7 +555,7 @@
       <div class="form-row">
         <div class="form-label" style="justify-content: flex-start;"><h2>比較②</h2></div>
         <div class="radio-group">
-          <label><input type="radio" name="計算方式2" id="計算式2" value="J" onchange="syncRadio(2)" checked>J式で計算 </label>
+          <label><input type="radio" name="計算方式2" id="計算式2" value="J" onchange="syncRadio(2)" checked>J式で計算　</label>
           <label><input type="radio" name="計算方式2" value="M" onchange="syncRadio(2)">M式で計算</label>
         </div>
       </div>
@@ -612,7 +612,7 @@
 
       <div class="form-row">
         <div class="form-label">ボーナス倍率</div>
-        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率2" onfocus="this.select()" min="1" value="3.6">倍 </div>
+        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率2" onfocus="this.select()" min="1" value="3.6">倍　</div>
 
         <select id="gradeSelect2" onchange="updateItemValue(2)"></select><br>
       </div>
@@ -1006,6 +1006,16 @@
 
              // 4. 時間系のリセット (Manual/Pattern共通)
              document.getElementById(`計算式${num}`).checked = true;
+             document.getElementById(`戦闘時${num}`).value = "0";
+             document.getElementById(`戦闘分${num}`).value = "";
+             document.getElementById(`戦闘秒${num}`).value = "";
+             document.getElementById(`間隔時${num}`).value = "0";
+             document.getElementById(`間隔分${num}`).value = "0";
+             document.getElementById(`間隔秒${num}`).value = "13";
+             document.getElementById(`所要時${num}`).value = "24";
+             document.getElementById(`所要分${num}`).value = "0";
+             document.getElementById(`所要秒${num}`).value = "0";
+             document.getElementById(`成長確率${num}`).value = "10";
           }
        });
     }
