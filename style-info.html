@@ -1639,7 +1639,15 @@
             const results = Papa.parse(csvText, { header: true, skipEmptyLines: true });
             
             if (['styles', 'searchTags', 'autoTagExclusions', 'characterOrder'].includes(dbKey)) {
-                db[dbKey] = results.data;
+                if (dbKey === 'styles') {
+                    // スキルまたはアビリティが1つでも入力されているスタイルのみを登録する
+                    db[dbKey] = results.data.filter(row => {
+                        return row['スキル1'] || row['スキル2'] || row['スキル3'] || 
+                               row['アビリティ1'] || row['アビリティ2'] || row['アビリティ3'];
+                    });
+                } else {
+                    db[dbKey] = results.data;
+                }
             } else if (dbKey === 'countExclusions') { 
                 db[dbKey] = new Set();
                 results.data.forEach(row => {
