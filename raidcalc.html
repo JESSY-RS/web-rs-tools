@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-  <title>7.5周年・報酬効率比較ツール</title> 
+  <title>雲上ロマ佐賀・報酬効率比較ツール</title> 
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script type="module" src="script/sync-manager.js"></script>
@@ -237,7 +237,7 @@
     a:active { color: #FF0000; text-decoration: underline; }
 
     .reResult { max-width: 320px; }
-    .container { max-width: 500px; }
+    .container { max-width: 540px; }
     .title-box { padding: 8px 0px; text-align: left; }
 
     table {
@@ -253,16 +253,18 @@
       background-color: gray;
       text-align: center;
       border-top: 1px solid white;
+      font-size: 14px;
     }
     td.num { text-align: right; }
 
     /* グレード換算表本体のスタイル */
     table.grade-table { table-layout: fixed; width: 100%; }
-    .grade-table th:nth-of-type(1) { width: 8%; }
-    .grade-table th:nth-of-type(2) { width: 27%; }
-    .grade-table th:nth-of-type(3) { width: 27%; }
-    .grade-table th:nth-of-type(4) { width: 19%; }
-    .grade-table th:nth-of-type(5) { width: 19%; }
+    .grade-table th:nth-of-type(1) { width: 6%; }  /* Gr. */
+    .grade-table th:nth-of-type(2) { width: 14%; } /* 列1 */
+    .grade-table th:nth-of-type(3) { width: 26%; } /* 列2 */
+    .grade-table th:nth-of-type(4) { width: 22%; } /* 列3 */
+    .grade-table th:nth-of-type(5) { width: 16%; } /* 成長判定回数 */
+    .grade-table th:nth-of-type(6) { width: 16%; } /* ボーナス倍率 */
     .grade-table td { word-wrap: break-word; font-size: 14px; }
 
     /* ズームボタン */
@@ -284,7 +286,7 @@
       margin: 5px 5px 5px 0;
     }
 
-        /* ハンバーガーメニューのスタイル */
+    /* ハンバーガーメニューのスタイル */
     .hamburger {
       cursor: pointer;
       margin-right: 8px;
@@ -550,10 +552,10 @@
       <div class="input-wrapper" id="itemSelect1">
         <span class="input-label-area"><label>アイテム選択：</label></span>
         <div class="radio-group">
-          <label><input type="radio" name="itemType1" value="item1" onchange="changeItemType(1)">練磨石</label>
-          <label><input type="radio" name="itemType1" value="item2" onchange="changeItemType(1)">黒厄石</label>
-          <label><input type="radio" name="itemType1" value="item3" onchange="changeItemType(1)">祈詩の虹輪</label>
-          <label><input type="radio" name="itemType1" value="item4" onchange="changeItemType(1)" checked>フラッグ</label>
+          <label><input type="radio" name="itemType1" value="item1" onchange="changeItemType(1)">アイテム1</label>
+          <label><input type="radio" name="itemType1" value="item2" onchange="changeItemType(1)">アイテム2</label>
+          <label><input type="radio" name="itemType1" value="item3" onchange="changeItemType(1)">アイテム3</label>
+          <label><input type="radio" name="itemType1" value="item4" onchange="changeItemType(1)" checked>アイテム4</label>
         </div>
       </div>
 
@@ -603,10 +605,10 @@
       <div class="input-wrapper" id="itemSelect2">
         <span class="input-label-area"><label>アイテム選択：</label></span>
         <div class="radio-group">
-          <label><input type="radio" name="itemType2" value="item1" onchange="changeItemType(2)">練磨石</label>
-          <label><input type="radio" name="itemType2" value="item2" onchange="changeItemType(2)">黒厄石</label>
-          <label><input type="radio" name="itemType2" value="item3" onchange="changeItemType(2)">祈詩の虹輪</label>
-          <label><input type="radio" name="itemType2" value="item4" onchange="changeItemType(2)" checked>フラッグ</label>
+          <label><input type="radio" name="itemType2" value="item1" onchange="changeItemType(2)">アイテム1</label>
+          <label><input type="radio" name="itemType2" value="item2" onchange="changeItemType(2)">アイテム2</label>
+          <label><input type="radio" name="itemType2" value="item3" onchange="changeItemType(2)">アイテム3</label>
+          <label><input type="radio" name="itemType2" value="item4" onchange="changeItemType(2)" checked>アイテム4</label>
         </div>
       </div>
 
@@ -670,8 +672,9 @@
       <thead>
         <tr>
           <th>Gr.</th>
-          <th>ジェラール<br>サラ<br>T260G</th>
-          <th>白薔薇姫<br>ミルザ<br>聖王</th>
+          <th>アレツ</th>
+          <th>シャムマベル<br>ノーア<br>コッペパン</th>
+          <th>シムメシュ<br>ターミン</th>
           <th>成長判定回数</th>
           <th>ボーナス倍率</th>
         </tr>
@@ -681,41 +684,47 @@
           <td class="num">0</td>
           <td class="num">0</td>
           <td class="num">0</td>
+          <td class="num">0</td>
           <td class="num">3回</td>
-          <td class="num">1.00倍</td>
+          <td class="num">1.4倍</td>
         </tr>
         <tr>
           <td class="num">6</td>
           <td class="num">250億</td>
-          <td class="num">300億</td>
-          <td class="num">8回</td>
-          <td class="num">2.9倍</td>
+          <td class="num">350億</td>
+          <td class="num">400億</td>
+          <td class="num">12回</td>
+          <td class="num">5.6倍</td>
         </tr>
         <tr>
           <td class="num">7</td>
           <td class="num">300億</td>
-          <td class="num">360億</td>
-          <td class="num">9回</td>
-          <td class="num">3.6倍</td>
+          <td class="num">420億</td>
+          <td class="num">480億</td>
+          <td class="num">14回</td>
+          <td class="num">6.5倍</td>
         </tr>
         <tr>
           <td class="num">8</td>
           <td class="num">350億</td>
-          <td class="num">420億</td>
-          <td class="num">10回</td>
-          <td class="num">4.4倍</td>
+          <td class="num">490億</td>
+          <td class="num">560億</td>
+          <td class="num">18回</td>
+          <td class="num">7.4倍</td>
         </tr>
         <tr>
           <td class="num">9</td>
           <td class="num">400億</td>
-          <td class="num">480億</td>
-          <td class="num">20回</td>
-          <td class="num">7.0倍</td>
+          <td class="num">560億</td>
+          <td class="num">640億</td>
+          <td class="num">24回</td>
+          <td class="num">8.4倍</td>
         </tr>
         <tr>
           <td class="num">10</td>
           <td class="num">500億</td>
-          <td class="num">600億</td>
+          <td class="num">700億</td>
+          <td class="num">800億</td>
           <td class="num">40回</td>
           <td class="num">9.3倍</td>
         </tr>
@@ -727,7 +736,7 @@
   <br>
 
   ■関連記事<br>
-  <a href="https://x.com/jessy_romasaga/status/2060680898656559137">https://x.com/jessy_romasaga/status/2060680898656559137</a><br>
+  <a href="https://x.com/jessy_romasaga/status/2085884904928420074">https://x.com/jessy_romasaga/status/2085884904928420074</a><br>
 
   <footer>
     ※使用は自己責任にて。<br>
@@ -974,39 +983,39 @@
     if (isNewDataMode) {
         // 新データ (指定日時以降、またはデバッグ時)
         itemData = {
-          // 練磨石
+          // アイテム1
           item1: {
-            0: null, 6: null, 7: null, 8: null, 9: null, 10: 111.9
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // 黒厄石
+          // アイテム2
           item2: {
-            0: null, 6: null, 7: null, 8: null, 9: null, 10: 557.6
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // 祈詩の虹輪
+          // アイテム3
           item3: {
-            0: null, 6: null, 7: null, 8: null, 9: null, 10: 327.4
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // フラッグ (新規データ。表示はスクリプトで変更)
+          // アイテム4
           item4: {
-            0: null, 6: null, 7: null, 8: null, 9: null, 10: 22
+            0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           }
         };
     } else {
         // 旧データ (デフォルト)
         itemData = {
-          // 練磨石
+          // アイテム1
           item1: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // 黒厄石
+          // アイテム2
           item2: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // 祈詩の虹輪
+          // アイテム3
           item3: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           },
-          // フラッグ（既存データ）
+          // アイテム4
           item4: {
             0: null, 6: null, 7: null, 8: null, 9: null, 10: null
           }
