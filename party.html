@@ -198,15 +198,53 @@
         }
     }
 
+    // --- ▼ 追加: キャラ名の判定用関数を3つに分離 ---
+
+    // 1. キャラ名ボックスの表示用 (括弧をそのまま表示する等)
     function getDisplayCharName(selectedName) {
         if (!selectedName) return "";
         if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
         for (const baseName of STYLE_CHAR_DB) {
             if (selectedName.startsWith(baseName + '(') || selectedName.startsWith(baseName + '（')) return baseName;
-            if (selectedName.endsWith('(' + baseName + ')') || selectedName.endsWith('（' + baseName + '）')) return baseName;
         }
         return selectedName;
     }
+
+    // 2. スタイル一覧の検索用 (ターミン・ネシハマルカー(ターミン) から ターミン・ネシハマルカー を抽出)
+    function getStyleSearchName(selectedName) {
+        if (!selectedName) return "";
+        if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
+        for (const baseName of STYLE_CHAR_DB) {
+            if (selectedName.startsWith(baseName + '(') || selectedName.startsWith(baseName + '（')) return baseName;
+        }
+        const match = selectedName.match(/^(.+?)[(（](.+?)[)）]$/);
+        if (match) {
+            const beforeParen = match[1];
+            if (STYLE_CHAR_DB.has(beforeParen)) return beforeParen;
+        }
+        return selectedName;
+    }
+
+    // 3. 魂データ共有用 (ターミン・ネシハマルカー(ターミン) から ターミン を抽出)
+    function getSoulBaseName(selectedName) {
+        if (!selectedName) return "";
+        const match = selectedName.match(/^(.+?)[(（](.+?)[)）]$/);
+        if (match) {
+            const insideParen = match[2];
+            let isBase = false;
+            for (const c of CHAR_DB) {
+                if (c.label === insideParen) { isBase = true; break; }
+            }
+            if (!isBase && STYLE_CHAR_DB.has(insideParen)) isBase = true;
+            if (isBase) return insideParen;
+        }
+        if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
+        for (const baseName of STYLE_CHAR_DB) {
+            if (selectedName.startsWith(baseName + '(') || selectedName.startsWith(baseName + '（')) return baseName;
+        }
+        return selectedName;
+    }
+    // --- ▲ 追加ここまで ---
 
     const getSkillBP = (skillName) => {
         if (!skillName || skillName === "なし" || skillName === "手動入力") return "-";
@@ -371,7 +409,7 @@
                                                 }
                                             }}
                                             data-selected={isMainSelected ? "true" : "false"}
-                                            className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isMainSelected ? 'bg-[#1D9BF0] text-white font-bold' : (expandedItem === opt.label ? 'bg-[#333] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]')}`}
+                                            className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isMainSelected ? 'bg-[#1D9BF0] text-gray-200' : (expandedItem === opt.label ? 'bg-[#333] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]')}`}
                                         >
                                             <span className="truncate">{opt.label}</span>
                                             <div className="flex items-center">
@@ -438,9 +476,9 @@
                                                         setSearchTerm("");
                                                     }}
                                                     data-selected={isCurrentSubSelected ? "true" : "false"}
-                                                    className={`px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer ${isCurrentSubSelected ? 'bg-[#1D9BF0] text-white font-bold' : 'bg-[#111] text-gray-300 hover:bg-[#1D9BF0]'}`}
+                                                    className={`px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer ${isCurrentSubSelected ? 'bg-[#1D9BF0] text-gray-200' : 'bg-[#111] text-gray-300 hover:bg-[#1D9BF0]'}`}
                                                 >
-                                                    <span className={`${isCurrentSubSelected ? 'text-white' : 'text-gray-500'} mr-2`}>└</span> {sub}
+                                                    <span className={`${isCurrentSubSelected ? 'text-gray-200' : 'text-gray-500'} mr-2`}>└</span> {sub}
                                                 </div>
                                             );
                                         })}
@@ -478,7 +516,7 @@
             return () => document.removeEventListener("mousedown", handleClickOutside, true);
         }, []);
 
-        const baseManagerChar = getDisplayCharName(managerChar);
+        const baseManagerChar = getSoulBaseName(managerChar);
         const charPresets = presets[charName] || {};
         
         const handleSave = () => {
@@ -836,7 +874,7 @@
                                     <h2 className="text-[15px] font-bold text-[rgb(217,70,239)] flex items-center">
                                         <span className="text-[20px] leading-none mr-[1px]">●</span>魂アビリティ管理
                                     </h2>
-                                    <div className="w-[300px]">
+                                    <div className="w-[250px]">
                                         <CustomSelect 
                                             value={managerChar} 
                                             options={CHAR_DB.filter(c => c.label !== "手動入力")}
@@ -847,6 +885,7 @@
                                                 setShowLearnedOnly(false);
                                             }}
                                             placeholder="キャラを選択..."
+                                            formatDisplay={getDisplayCharName}
                                         />
                                     </div>
                                     {managerChar && (
@@ -1087,7 +1126,7 @@
                                 <div 
                                     key={idx} 
                                     onClick={() => { onApply(item); setIsOpen(false); setSearchTerm(""); }}
-                                    className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${item['登録名'] === currentSelection ? 'bg-[#1D9BF0] text-white font-bold' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
+                                    className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${item['登録名'] === currentSelection ? 'bg-[#1D9BF0] text-gray-200' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
                                 >
                                     <span className="truncate">{item['登録名']}</span>
                                 </div>
@@ -1112,7 +1151,8 @@
 
         const styleList = useMemo(() => {
             if (!charName) return [];
-            const styles = STYLE_FULL_DB.filter(s => s['キャラ名'] === charName);
+            const searchName = getStyleSearchName(charName);
+            const styles = STYLE_FULL_DB.filter(s => s['キャラ名'] === searchName);
             styles.sort((a, b) => {
                 const dateA = a['実装時期'] || '';
                 const dateB = b['実装時期'] || '';
@@ -1174,7 +1214,7 @@
                                         key={idx} 
                                         onClick={() => { onApply(item); setIsOpen(false); setSearchTerm(""); }}
                                         data-selected={isSelected ? "true" : "false"}
-                                        className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isSelected ? 'bg-[#1D9BF0] text-white font-bold' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
+                                        className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isSelected ? 'bg-[#1D9BF0] text-gray-200' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
                                     >
                                         <span className="truncate">{displayStyleName}</span>
                                     </div>
@@ -1328,7 +1368,7 @@
         const charAllSkillOptions = useMemo(() => {
             const skills = new Set();
             if (data.name) {
-                const targetCharName = getDisplayCharName(data.name);
+                const targetCharName = getStyleSearchName(data.name);
                 const addSkill = (skill) => {
                     if (!skill) return;
                     skills.add(skill);
@@ -1352,7 +1392,7 @@
             const currentStyleSkills = new Set();
             
             if (data.name) {
-                const targetCharName = getDisplayCharName(data.name);
+                const targetCharName = getStyleSearchName(data.name);
                 const addSkillToSet = (set, skill) => {
                     if (!skill) return;
                     set.add(skill);
@@ -1473,7 +1513,7 @@
                             userDefBps: { s1: null, s2: null, s3: null, inh: null }
                         };
 
-                        const baseName = getDisplayCharName(val);
+                        const baseName = getSoulBaseName(val);
                         const newSoulLevel = charLevels[baseName] || "100";
                         const limit = getAbilityLimit(newSoulLevel);
                         let newAbs = [...newData.soulAbilities];
@@ -1494,6 +1534,7 @@
                         updateSlot(index, newData);
                     }} 
                     placeholder="キャラ名" 
+                    formatDisplay={getDisplayCharName}
                 />
 
                 {!hiddenSections.equip && (
@@ -1584,7 +1625,7 @@
                             updateSlot(index, { ...data, soulLevel: val, soulAbilities: newAbs });
                             
                             if (data.name) {
-                                const baseName = getDisplayCharName(data.name);
+                                const baseName = getSoulBaseName(data.name);
                                 setCharLevels(prev => ({ ...prev, [baseName]: val }));
                             }
                         }} 
@@ -1850,7 +1891,7 @@
                 {!hiddenSections.soulAbility && (
                 <div className="flex flex-col gap-1">
                     <PresetMenu 
-                        charName={getDisplayCharName(data.name)} 
+                        charName={getSoulBaseName(data.name)} 
                         currentAbilities={data.soulAbilities} 
                         currentLevel={data.soulLevel}
                         onLoad={(presetData) => {
@@ -1881,8 +1922,8 @@
                             <CustomSelect 
                                 value={data.soulAbilities[i] || ""} 
                                 options={ABILITY_DB} 
-                                learnedOptions={learnedData[getDisplayCharName(data.name)] || []}
-                                onRemoveHistory={(abilityName) => onRemoveLearned(getDisplayCharName(data.name), abilityName)}
+                                learnedOptions={learnedData[getSoulBaseName(data.name)] || []}
+                                onRemoveHistory={(abilityName) => onRemoveLearned(getSoulBaseName(data.name), abilityName)}
                                 onChange={(v) => {
                                     let newValue = v;
                                     if (v === "回避の極意(●●)") {
@@ -2005,7 +2046,7 @@
             setParty(prev => {
                 let changed = false;
                 const newParty = prev.map(p => {
-                    const baseName = getDisplayCharName(p.name);
+                    const baseName = getSoulBaseName(p.name);
                     if (baseName && charLevels[baseName] && p.soulLevel !== charLevels[baseName]) {
                         changed = true;
                         const newLevel = charLevels[baseName];
@@ -2070,7 +2111,7 @@
                 return newP; 
             });
             if (newData.name && newAbilityToLearn) {
-                const baseName = getDisplayCharName(newData.name);
+                const baseName = getSoulBaseName(newData.name);
                 setLearnedAbilities(prev => {
                     const charLearned = prev[baseName] || [];
                     if (!charLearned.includes(newAbilityToLearn)) {
