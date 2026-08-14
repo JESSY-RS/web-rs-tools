@@ -1562,6 +1562,24 @@
                                 const pLabel = k === 'inh' ? '継承技・術' : `技・術${k.replace('s','')}`;
 
                                 return (
+                                    <div className="flex flex-col gap-1">
+                            {['s1', 's2', 's3', 'inh'].map(k => {
+                                const defaultBpStr = getSkillBP(data.skillNames[k]);
+                                const curBpStr = data.bps[k];
+                                let bpColor = 'text-white';
+
+                                const defBpNum = parseInt(defaultBpStr, 10);
+                                const curBpNum = parseInt(curBpStr, 10);
+
+                                if (!isNaN(defBpNum) && !isNaN(curBpNum)) {
+                                    if (curBpNum < defBpNum) bpColor = 'text-red-500';
+                                    else if (curBpNum > defBpNum) bpColor = 'text-[#00DC00]';
+                                }
+
+                                const opts = k === 'inh' ? inhOptionsList : charAllSkillOptions;
+                                const pLabel = k === 'inh' ? '継承技・術' : `技・術${k.replace('s','')}`;
+
+                                return (
                                     <div key={k} className="flex items-center gap-1">
                                         <div className="flex-1 min-w-0">
                                             {k !== 'inh' && !!data.name && data.skillNames[k] ? (
@@ -1624,6 +1642,7 @@
                                                             skillChecks: { ...data.skillChecks, [k]: isSkillSelected ? true : data.skillChecks[k] }
                                                         };
                                                         
+                                                        // もし変更したのが継承(inh)なら、通常モード側の変数も更新
                                                         if (k === 'inh') {
                                                             newData.inheritedSkill = v;
                                                             const isNone = !v || v === "なし";
@@ -1646,9 +1665,10 @@
                                         <input 
                                             type="text"
                                             className={`w-[32px] h-[28px] bg-[#333] rounded-sm text-right px-1 text-[13px] font-bold focus:outline-none focus:bg-[#444] flex-shrink-0 ${bpColor}`}
-                                            value={data.bps[k] || "-"}
+                                            value={curBpStr !== undefined ? curBpStr : "-"}
                                             onChange={e => updateSlot(index, { ...data, bps: { ...data.bps, [k]: e.target.value } })}
                                             onFocus={e => e.target.select()}
+                                            onBlur={e => { if (e.target.value === "") updateSlot(index, { ...data, bps: { ...data.bps, [k]: "-" } }) }}
                                         />
                                     </div>
                                 )
