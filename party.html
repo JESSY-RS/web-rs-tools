@@ -263,6 +263,34 @@
             return () => document.removeEventListener("mousedown", handleClickOutside, true);
         }, []);
 
+        useEffect(() => {
+            if (isOpen) {
+                if (value) {
+                    const parentOpt = options.find(o => {
+                        if (typeof o === 'string') return false;
+                        if (!o.subOptions) return false;
+                        if (o.exactSub) {
+                            return o.subOptions.some(sub => {
+                                if (sub.includes('●')) return value.startsWith(sub.split('●')[0]);
+                                return value === sub;
+                            });
+                        } else {
+                            return value.startsWith(o.label + '(');
+                        }
+                    });
+                    if (parentOpt) {
+                        setExpandedItem(parentOpt.label);
+                    }
+                }
+                setTimeout(() => {
+                    if (wrapperRef.current) {
+                        const el = wrapperRef.current.querySelector('[data-selected="true"]');
+                        if (el) el.scrollIntoView({ block: 'center' });
+                    }
+                }, 50);
+            }
+        }, [isOpen, value, options]);
+
         const filtered = useMemo(() => {
             const term = hiraganaToKatakana(searchTerm.toLowerCase());
             const historyItems = learnedOptions.map(lo => ({ label: lo, searchStr: hiraganaToKatakana(lo.toLowerCase()), isHistory: true }));
@@ -326,80 +354,105 @@
                             )}
                         </div>
                         <div className="overflow-y-auto max-h-64">
-                            {filtered.length > 0 ? filtered.map((opt, idx) => (
-                                <React.Fragment key={idx}>
-                                    <div 
-                                        onClick={(e) => { 
-                                            if (opt.subOptions) {
-                                                e.stopPropagation();
-                                                setExpandedItem(expandedItem === opt.label ? null : opt.label);
-                                            } else if (opt.label === "手動入力") {
-                                                e.stopPropagation();
-                                                const userInput = prompt("名称を入力してください:", "");
-                                                if (userInput) {
-                                                    onChange(userInput);
-                                                }
-                                                setIsOpen(false);
-                                                setSearchTerm("");
-                                            } else {
-                                                onChange(opt.label); setIsOpen(false); setSearchTerm(""); 
-                                            }
-                                        }}
-                                        className={`px-2 py-1.5 text-[13px] text-gray-200 hover:bg-[#1D9BF0] cursor-pointer border-b border-gray-700 flex justify-between items-center ${expandedItem === opt.label ? 'bg-[#333]' : ''}`}
-                                    >
-                                        <span className="truncate">{opt.label}</span>
-                                        <div className="flex items-center">
-                                            {opt.isHistory && !searchTerm && (
-                                                <div className="flex items-center">
-                                                    <span className="text-[10px] text-fuchsia-400 whitespace-nowrap mr-1">習得</span>
-                                                    {onRemoveHistory && (
-                                                        <span 
-                                                            className="text-[11px] text-gray-400 hover:text-[#FF0000] px-1"
-                                                            title="この履歴を削除"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onRemoveHistory(opt.label);
-                                                            }}
-                                                        >×</span>
-                                                    )}
-                                                </div>
-                                            )}
-                                            {opt.subOptions && <span className="text-[10px] text-gray-400 ml-1">{expandedItem === opt.label ? '▼' : '▶'}</span>}
-                                        </div>
-                                    </div>
-                                    {opt.subOptions && expandedItem === opt.label && opt.subOptions.map((sub, sIdx) => (
-                                        <div
-                                            key={`${idx}-${sIdx}`}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                let finalVal;
-                                                if (opt.exactSub) {
-                                                    finalVal = sub;
-                                                    if (finalVal.includes('●')) {
-                                                        const userInput = prompt(`「${sub}」の部分を入力してください:`, "");
-                                                        if (!userInput) return; 
-                                                        finalVal = finalVal.replace(/●+/g, userInput);
+                            {filtered.length > 0 ? filtered.map((opt, idx) => {
+                                const isMainSelected = opt.label === value && !opt.subOptions;
+                                
+                                return (
+                                    <React.Fragment key={idx}>
+                                        <div 
+                                            onClick={(e) => { 
+                                                if (opt.subOptions) {
+                                                    e.stopPropagation();
+                                                    setExpandedItem(expandedItem === opt.label ? null : opt.label);
+                                                } else if (opt.label === "手動入力") {
+                                                    e.stopPropagation();
+                                                    const userInput = prompt("名称を入力してください:", "");
+                                                    if (userInput) {
+                                                        onChange(userInput);
                                                     }
+                                                    setIsOpen(false);
+                                                    setSearchTerm("");
                                                 } else {
-                                                    let finalSub = sub;
-                                                    if (sub.includes('●')) {
-                                                        const userInput = prompt(`「${sub}」の部分を入力してください:`, "");
-                                                        if (!userInput) return; 
-                                                        finalSub = userInput;
-                                                    }
-                                                    finalVal = `${opt.label}(${finalSub})`;
+                                                    onChange(opt.label); setIsOpen(false); setSearchTerm(""); 
                                                 }
-                                                onChange(finalVal);
-                                                setIsOpen(false);
-                                                setSearchTerm("");
                                             }}
-                                            className="px-4 py-1.5 text-[13px] text-gray-300 bg-[#111] hover:bg-[#1D9BF0] cursor-pointer border-b border-gray-800 flex items-center"
+                                            data-selected={isMainSelected ? "true" : "false"}
+                                            className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isMainSelected ? 'bg-[#0284c7] text-white font-bold hover:bg-[#1D9BF0]' : (expandedItem === opt.label ? 'bg-[#333] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]')}`}
                                         >
-                                            <span className="text-gray-500 mr-2">└</span> {sub}
+                                            <span className="truncate">{opt.label}</span>
+                                            <div className="flex items-center">
+                                                {opt.isHistory && !searchTerm && (
+                                                    <div className="flex items-center">
+                                                        <span className="text-[10px] text-fuchsia-400 whitespace-nowrap mr-1">習得</span>
+                                                        {onRemoveHistory && (
+                                                            <span 
+                                                                className="text-[11px] text-gray-400 hover:text-[#FF0000] px-1"
+                                                                title="この履歴を削除"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onRemoveHistory(opt.label);
+                                                                }}
+                                                            >×</span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                {opt.subOptions && <span className="text-[10px] text-gray-400 ml-1">{expandedItem === opt.label ? '▼' : '▶'}</span>}
+                                            </div>
                                         </div>
-                                    ))}
-                                </React.Fragment>
-                            )) : <div className="px-2 py-2 text-[13px] text-gray-500">候補なし</div>}
+                                        {opt.subOptions && expandedItem === opt.label && opt.subOptions.map((sub, sIdx) => {
+                                            let isCurrentSubSelected = false;
+                                            if (opt.exactSub) {
+                                                if (sub.includes('●')) {
+                                                    const prefix = sub.split('●')[0];
+                                                    isCurrentSubSelected = !!value && value.startsWith(prefix);
+                                                } else {
+                                                    isCurrentSubSelected = value === sub;
+                                                }
+                                            } else {
+                                                if (sub.includes('●')) {
+                                                    const prefix = `${opt.label}(`;
+                                                    isCurrentSubSelected = !!value && value.startsWith(prefix);
+                                                } else {
+                                                    isCurrentSubSelected = value === `${opt.label}(${sub})`;
+                                                }
+                                            }
+                                            return (
+                                                <div
+                                                    key={`${idx}-${sIdx}`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        let finalVal;
+                                                        if (opt.exactSub) {
+                                                            if (sub.includes('●')) {
+                                                                const userInput = prompt(`「${sub}」の部分を入力してください:`, "");
+                                                                if (!userInput) return; 
+                                                                finalVal = finalVal.replace(/●+/g, userInput);
+                                                            } else {
+                                                                finalVal = sub;
+                                                            }
+                                                        } else {
+                                                            let finalSub = sub;
+                                                            if (sub.includes('●')) {
+                                                                const userInput = prompt(`「${sub}」の部分を入力してください:`, "");
+                                                                if (!userInput) return; 
+                                                                finalSub = userInput;
+                                                            }
+                                                            finalVal = `${opt.label}(${finalSub})`;
+                                                        }
+                                                        onChange(finalVal);
+                                                        setIsOpen(false);
+                                                        setSearchTerm("");
+                                                    }}
+                                                    data-selected={isCurrentSubSelected ? "true" : "false"}
+                                                    className={`px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer ${isCurrentSubSelected ? 'bg-[#0284c7] text-white font-bold hover:bg-[#1D9BF0]' : 'bg-[#111] text-gray-300 hover:bg-[#1D9BF0]'}`}
+                                                >
+                                                    <span className={`${isCurrentSubSelected ? 'text-gray-300' : 'text-gray-500'} mr-2`}>└</span> {sub}
+                                                </div>
+                                            );
+                                        })}
+                                    </React.Fragment>
+                                );
+                            }) : <div className="px-2 py-2 text-[13px] text-gray-500">候補なし</div>}
                         </div>
                     </div>
                 )}
@@ -794,7 +847,7 @@
                                             value={managerChar} 
                                             options={CHAR_DB.filter(c => c.label !== "手動入力")}
                                             onChange={val => {
-                                                setManagerChar(val);
+                                                setManagerChar(getDisplayCharName(val));
                                                 setManagerMode("history");
                                                 setLimitMessage("");
                                                 setShowLearnedOnly(false);
@@ -1052,16 +1105,25 @@
         );
     };
 
-    const StyleMenu = ({ index, themeColor, charName, onApply }) => {
+    const StyleMenu = ({ index, themeColor, charName, currentStyle, onApply }) => {
         const [isOpen, setIsOpen] = useState(false);
         const [searchTerm, setSearchTerm] = useState("");
-        const menuRef = useRef(null);
+        const wrapperRef = useRef(null);
 
         useEffect(() => {
-            const handleClickOutside = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setIsOpen(false); };
+            const handleClickOutside = (e) => { if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setIsOpen(false); };
             document.addEventListener("mousedown", handleClickOutside, true);
             return () => document.removeEventListener("mousedown", handleClickOutside, true);
         }, []);
+
+        useEffect(() => {
+            if (isOpen && wrapperRef.current) {
+                setTimeout(() => {
+                    const el = wrapperRef.current.querySelector('[data-selected="true"]');
+                    if (el) el.scrollIntoView({ block: 'center' });
+                }, 50);
+            }
+        }, [isOpen]);
 
         const styleList = useMemo(() => {
             if (!charName) return [];
@@ -1088,7 +1150,7 @@
         }, [searchTerm, styleList]);
 
         return (
-            <div className={`relative w-full ${isOpen ? 'z-50' : 'z-10'}`} ref={menuRef}>
+            <div className={`relative w-full ${isOpen ? 'z-50' : 'z-10'}`} ref={wrapperRef}>
                 <div 
                     onClick={() => setIsOpen(!isOpen)} 
                     className={`${themeColor} font-bold text-[16px] flex items-center mb-0.5 cursor-pointer select-none w-fit hover:opacity-80`}
@@ -1119,11 +1181,16 @@
                                 const displayStyleName = item['実装時期'] 
                                     ? `[${item['グレード']}] ${item['スタイル名'] || item['名称']} (${item['実装時期']})` 
                                     : `[${item['グレード']}] ${item['スタイル名'] || item['名称']}`;
+                                
+                                const itemStyleName = item['スタイル名'] || item['名称'];
+                                const isSelected = currentStyle === itemStyleName || currentStyle === displayStyleName;
+
                                 return (
                                     <div 
                                         key={idx} 
                                         onClick={() => { onApply(item); setIsOpen(false); setSearchTerm(""); }}
-                                        className="px-2 py-1.5 text-[13px] text-gray-200 hover:bg-[#1D9BF0] cursor-pointer border-b border-gray-700 flex justify-between items-center"
+                                        data-selected={isSelected ? "true" : "false"}
+                                        className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isSelected ? 'bg-[#0284c7] text-white font-bold hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
                                     >
                                         <span className="truncate">{displayStyleName}</span>
                                     </div>
@@ -1378,6 +1445,7 @@
                     index={index} 
                     themeColor={themeColor} 
                     charName={data.name}
+                    currentStyle={data.styleName}
                     onApply={(style) => {
                         const s1 = style['スキル1'] || "";
                         const s2 = style['スキル2'] || "";
@@ -1581,7 +1649,8 @@
                                         skills: { ...data.skills, inh: isNone ? "-" : "99" },
                                         skillNames: { ...data.skillNames, inh: v },
                                         bps: { ...data.bps, inh: newBp },
-                                        userDefBps: { ...data.userDefBps, inh: null }
+                                        userDefBps: { ...data.userDefBps, inh: null },
+                                        skillChecks: { ...data.skillChecks, inh: isNone ? false : data.skillChecks.inh }
                                     });
                                 }} 
                                 placeholder="継承技・術 (なし)" 
