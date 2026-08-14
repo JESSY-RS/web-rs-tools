@@ -282,12 +282,6 @@
                         setExpandedItem(parentOpt.label);
                     }
                 }
-                setTimeout(() => {
-                    if (wrapperRef.current) {
-                        const el = wrapperRef.current.querySelector('[data-selected="true"]');
-                        if (el) el.scrollIntoView({ block: 'center' });
-                    }
-                }, 50);
             }
         }, [isOpen, value, options]);
 
@@ -377,7 +371,7 @@
                                                 }
                                             }}
                                             data-selected={isMainSelected ? "true" : "false"}
-                                            className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isMainSelected ? 'bg-[#0284c7] text-white font-bold hover:bg-[#1D9BF0]' : (expandedItem === opt.label ? 'bg-[#333] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]')}`}
+                                            className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isMainSelected ? 'bg-[#1D9BF0] text-white font-bold' : (expandedItem === opt.label ? 'bg-[#333] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]')}`}
                                         >
                                             <span className="truncate">{opt.label}</span>
                                             <div className="flex items-center">
@@ -444,9 +438,9 @@
                                                         setSearchTerm("");
                                                     }}
                                                     data-selected={isCurrentSubSelected ? "true" : "false"}
-                                                    className={`px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer ${isCurrentSubSelected ? 'bg-[#0284c7] text-white font-bold hover:bg-[#1D9BF0]' : 'bg-[#111] text-gray-300 hover:bg-[#1D9BF0]'}`}
+                                                    className={`px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer ${isCurrentSubSelected ? 'bg-[#1D9BF0] text-white font-bold' : 'bg-[#111] text-gray-300 hover:bg-[#1D9BF0]'}`}
                                                 >
-                                                    <span className={`${isCurrentSubSelected ? 'text-gray-300' : 'text-gray-500'} mr-2`}>└</span> {sub}
+                                                    <span className={`${isCurrentSubSelected ? 'text-white' : 'text-gray-500'} mr-2`}>└</span> {sub}
                                                 </div>
                                             );
                                         })}
@@ -1039,7 +1033,7 @@
         );
     };
 
-    const FavoriteMenu = ({ index, themeColor, onApply, title, titlePopup, onDoubleClick }) => {
+    const FavoriteMenu = ({ index, themeColor, onApply, title, titlePopup, onDoubleClick, currentSelection }) => {
         const [isOpen, setIsOpen] = useState(false);
         const [searchTerm, setSearchTerm] = useState("");
         const menuRef = useRef(null);
@@ -1093,7 +1087,7 @@
                                 <div 
                                     key={idx} 
                                     onClick={() => { onApply(item); setIsOpen(false); setSearchTerm(""); }}
-                                    className="px-2 py-1.5 text-[13px] text-gray-200 hover:bg-[#1D9BF0] cursor-pointer border-b border-gray-700 flex justify-between items-center"
+                                    className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${item['登録名'] === currentSelection ? 'bg-[#1D9BF0] text-white font-bold' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
                                 >
                                     <span className="truncate">{item['登録名']}</span>
                                 </div>
@@ -1115,15 +1109,6 @@
             document.addEventListener("mousedown", handleClickOutside, true);
             return () => document.removeEventListener("mousedown", handleClickOutside, true);
         }, []);
-
-        useEffect(() => {
-            if (isOpen && wrapperRef.current) {
-                setTimeout(() => {
-                    const el = wrapperRef.current.querySelector('[data-selected="true"]');
-                    if (el) el.scrollIntoView({ block: 'center' });
-                }, 50);
-            }
-        }, [isOpen]);
 
         const styleList = useMemo(() => {
             if (!charName) return [];
@@ -1189,7 +1174,7 @@
                                         key={idx} 
                                         onClick={() => { onApply(item); setIsOpen(false); setSearchTerm(""); }}
                                         data-selected={isSelected ? "true" : "false"}
-                                        className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isSelected ? 'bg-[#0284c7] text-white font-bold hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
+                                        className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isSelected ? 'bg-[#1D9BF0] text-white font-bold' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
                                     >
                                         <span className="truncate">{displayStyleName}</span>
                                     </div>
@@ -1534,6 +1519,7 @@
                         title="属性耐性"
                         titlePopup="クリックで耐性リストを開く / ダブルクリックで非表示"
                         onDoubleClick={() => onHideSection('resist')}
+                        currentSelection={getDisplayCharName(data.name)}
                         onApply={(item) => {
                             const mainItem = getBaseEquipItem(MAIN_DB, data.equipments.main);
                             const subItem = getBaseEquipItem(SUB_DB, data.equipments.sub);
