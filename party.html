@@ -1680,6 +1680,13 @@
                                 }
                                 const newDecoAbs = [...data.decoAbilities];
                                 newDecoAbs[i] = newValue;
+                                
+                                // ▼ 追加: 装飾品が◆付きの場合、1枠目を変更したら2枠目・3枠目も同期する
+                                if (data.equipments.deco && data.equipments.deco.startsWith('◆') && i === 0) {
+                                    newDecoAbs[1] = newValue;
+                                    newDecoAbs[2] = newValue;
+                                }
+
                                 updateSlot(index, { ...data, decoAbilities: newDecoAbs });
                             }} 
                             placeholder="" 
