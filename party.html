@@ -1550,7 +1550,7 @@
                                         skills: { ...data.skills, inh: isNone ? "-" : "99" },
                                         skillNames: { ...data.skillNames, inh: v },
                                         bps: { ...data.bps, inh: newBp },
-                                        userDefBps: { ...data.userDefBps, inh: null } // ←ココを追加
+                                        userDefBps: { ...data.userDefBps, inh: null }
                                     });
                                 }} 
                                 placeholder="継承技・術 (なし)" 
@@ -1563,12 +1563,12 @@
                                 const curBpStr = data.bps[k];
                                 let bpColor = 'text-white';
 
-                                // 基準となるBP（CSVのデフォルト値、なければユーザーの初回入力値）
-                                const baseBpStr = defaultBpStr !== "-" ? defaultBpStr : (data.userDefBps && data.userDefBps[k]);
+                                const defBpNum = parseInt(defaultBpStr, 10);
+                                const curBpNum = parseInt(curBpStr, 10);
 
-                                // 基準BPが存在し、現在のBPが "-" でなく、かつ基準から変わっていれば赤色にする
-                                if (baseBpStr && curBpStr !== "-" && curBpStr !== baseBpStr) {
-                                    bpColor = 'text-red-500';
+                                if (!isNaN(defBpNum) && !isNaN(curBpNum)) {
+                                    if (curBpNum < defBpNum) bpColor = 'text-red-500';
+                                    else if (curBpNum > defBpNum) bpColor = 'text-[#00DC00]';
                                 }
 
                                 const opts = k === 'inh' ? inhOptionsList : charAllSkillOptions;
@@ -1665,7 +1665,6 @@
                                             value={curBpStr !== undefined ? curBpStr : "-"}
                                             onChange={e => updateSlot(index, { ...data, bps: { ...data.bps, [k]: e.target.value } })}
                                             onFocus={e => e.target.select()}
-                                            {/* ▼ 修正: onBlur時に初回入力値を基準BPとしてロックする */}
                                             onBlur={e => { 
                                                 const val = e.target.value;
                                                 let newData = { ...data };
