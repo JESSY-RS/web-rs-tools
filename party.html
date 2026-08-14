@@ -198,7 +198,6 @@
         }
     }
 
-    // ▼ 同一キャラ判定ロジックを強化 (ターミン・ネシハマルカー(ターミン) などにも対応)
     function getDisplayCharName(selectedName) {
         if (!selectedName) return "";
         if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
@@ -432,6 +431,7 @@
             return () => document.removeEventListener("mousedown", handleClickOutside, true);
         }, []);
 
+        const baseManagerChar = getDisplayCharName(managerChar);
         const charPresets = presets[charName] || {};
         
         const handleSave = () => {
@@ -468,15 +468,15 @@
         const handleRenamePreset = (oldName) => {
             const newName = prompt("新しいプリセット名を入力:", oldName);
             if (newName && newName !== oldName) {
-                if (presets[managerChar]?.[newName]) {
+                if (presets[baseManagerChar]?.[newName]) {
                     alert("その名前はすでに存在します");
                     return;
                 }
                 setPresets(prev => {
-                    const charData = { ...prev[managerChar] };
+                    const charData = { ...prev[baseManagerChar] };
                     charData[newName] = charData[oldName];
                     delete charData[oldName];
-                    return { ...prev, [managerChar]: charData };
+                    return { ...prev, [baseManagerChar]: charData };
                 });
                 if (managerMode === oldName) {
                     setManagerMode(newName);
@@ -544,8 +544,8 @@
             setIsOpen(false);
         };
 
-        const managerPresets = presets[managerChar] || {};
-        const managerLearned = learnedAbilities[managerChar] || [];
+        const managerPresets = presets[baseManagerChar] || {};
+        const managerLearned = learnedAbilities[baseManagerChar] || [];
 
         const filteredAbilities = useMemo(() => {
             const term = hiraganaToKatakana(abilitySearch.toLowerCase());
@@ -565,7 +565,7 @@
         }, [abilitySearch, ABILITY_DB, managerMode, showLearnedOnly, managerLearned]);
 
         const handleAddAbility = (abilityStr) => {
-            if (!managerChar) return;
+            if (!baseManagerChar) return;
             let finalAbility = abilityStr;
             if (abilityStr === "手動入力") {
                 const userInput = prompt("名称を入力してください:", "");
@@ -579,18 +579,18 @@
 
             if (managerMode === "history") {
                 setLearnedAbilities(prev => {
-                    const charLearned = prev[managerChar] || [];
+                    const charLearned = prev[baseManagerChar] || [];
                     if (!charLearned.includes(finalAbility)) {
-                        return { ...prev, [managerChar]: [...charLearned, finalAbility] };
+                        return { ...prev, [baseManagerChar]: [...charLearned, finalAbility] };
                     }
                     return prev;
                 });
             } else {
-                const currentLv = managerPresets[managerMode]?.level || charLevels[managerChar] || "100";
+                const currentLv = managerPresets[managerMode]?.level || charLevels[baseManagerChar] || "100";
                 const limit = getAbilityLimit(currentLv);
 
                 setPresets(prev => {
-                    const charData = prev[managerChar] || {};
+                    const charData = prev[baseManagerChar] || {};
                     const pData = charData[managerMode] || { abilities: [], level: currentLv };
                     const currentAbs = pData.abilities || [];
 
@@ -604,25 +604,25 @@
                     }
 
                     const newAbilities = [...currentAbs, finalAbility];
-                    return { ...prev, [managerChar]: { ...charData, [managerMode]: { ...pData, abilities: newAbilities } } };
+                    return { ...prev, [baseManagerChar]: { ...charData, [managerMode]: { ...pData, abilities: newAbilities } } };
                 });
             }
         };
 
         const handleRemoveFromHistory = (abilityStr) => {
             setLearnedAbilities(prev => {
-                const charLearned = prev[managerChar] || [];
-                return { ...prev, [managerChar]: charLearned.filter(a => a !== abilityStr) };
+                const charLearned = prev[baseManagerChar] || [];
+                return { ...prev, [baseManagerChar]: charLearned.filter(a => a !== abilityStr) };
             });
         };
 
         const handleRemoveFromPreset = (idxToRemove) => {
             setPresets(prev => {
-                const charData = prev[managerChar] || {};
+                const charData = prev[baseManagerChar] || {};
                 const pData = charData[managerMode];
                 if (!pData) return prev;
                 const newAbilities = (pData.abilities || []).filter((_, i) => i !== idxToRemove);
-                return { ...prev, [managerChar]: { ...charData, [managerMode]: { ...pData, abilities: newAbilities } } };
+                return { ...prev, [baseManagerChar]: { ...charData, [managerMode]: { ...pData, abilities: newAbilities } } };
             });
         };
 
@@ -645,10 +645,10 @@
                 return;
             }
             setLearnedAbilities(prev => {
-                const list = [...(prev[managerChar] || [])];
+                const list = [...(prev[baseManagerChar] || [])];
                 const [moved] = list.splice(fromIndex, 1);
                 list.splice(toIndex, 0, moved);
-                return { ...prev, [managerChar]: list };
+                return { ...prev, [baseManagerChar]: list };
             });
             setDraggedItemIndex(null);
         };
@@ -661,13 +661,13 @@
                 return;
             }
             setPresets(prev => {
-                const charData = prev[managerChar] || {};
+                const charData = prev[baseManagerChar] || {};
                 const pData = charData[managerMode];
                 if (!pData) return prev;
                 const newAbilities = [...(pData.abilities || [])];
                 const [moved] = newAbilities.splice(fromIndex, 1);
                 newAbilities.splice(toIndex, 0, moved);
-                return { ...prev, [managerChar]: { ...charData, [managerMode]: { ...pData, abilities: newAbilities } } };
+                return { ...prev, [baseManagerChar]: { ...charData, [managerMode]: { ...pData, abilities: newAbilities } } };
             });
             setDraggedItemIndex(null);
         };
@@ -687,7 +687,7 @@
             if (!sourcePName || sourcePName === targetPName) return;
 
             setPresets(prev => {
-                const charData = { ...prev[managerChar] };
+                const charData = { ...prev[baseManagerChar] };
                 const keys = Object.keys(charData);
                 const sourceIndex = keys.indexOf(sourcePName);
                 const targetIndex = keys.indexOf(targetPName);
@@ -702,37 +702,37 @@
                     newData[k] = charData[k];
                 });
 
-                return { ...prev, [managerChar]: newData };
+                return { ...prev, [baseManagerChar]: newData };
             });
         };
 
         const handleSortHistory = (order) => {
-            if (!managerChar) return;
+            if (!baseManagerChar) return;
             setLearnedAbilities(prev => {
-                const charLearned = [...(prev[managerChar] || [])];
+                const charLearned = [...(prev[baseManagerChar] || [])];
                 charLearned.sort((a, b) => {
                     if (order === 'asc') return a.localeCompare(b, 'ja');
                     return b.localeCompare(a, 'ja');
                 });
-                return { ...prev, [managerChar]: charLearned };
+                return { ...prev, [baseManagerChar]: charLearned };
             });
         };
 
         const handleCreateManagerPreset = (e) => {
             e.stopPropagation();
-            if (!managerChar) return;
+            if (!baseManagerChar) return;
             const pName = prompt("新しい構成の名前を入力してください:", "新規構成");
             if (pName) {
-                if (presets[managerChar]?.[pName]) {
+                if (presets[baseManagerChar]?.[pName]) {
                     alert("その名前はすでに存在します");
                     return;
                 }
-                const currentLv = charLevels[managerChar] || "100";
+                const currentLv = charLevels[baseManagerChar] || "100";
                 setPresets(prev => {
-                    const charData = prev[managerChar] || {};
+                    const charData = prev[baseManagerChar] || {};
                     return {
                         ...prev,
-                        [managerChar]: {
+                        [baseManagerChar]: {
                             ...charData,
                             [pName]: { abilities: [], level: currentLv }
                         }
@@ -743,8 +743,8 @@
         };
         
         const displaySoulLevel = managerMode === "history" 
-            ? (charLevels[managerChar] || "100") 
-            : (managerPresets[managerMode]?.level || charLevels[managerChar] || "100");
+            ? (charLevels[baseManagerChar] || "100") 
+            : (managerPresets[managerMode]?.level || charLevels[baseManagerChar] || "100");
 
         return (
             <div className={`relative w-full ${isOpen ? 'z-50' : 'z-10'}`} ref={menuRef}>
@@ -772,7 +772,7 @@
                             {Object.keys(charPresets).length > 0 ? Object.keys(charPresets).map(pName => (
                                 <div key={pName} className="flex justify-between items-center text-[13px] text-gray-200 hover:bg-[#1D9BF0] cursor-pointer px-2 py-1.5 border-b border-gray-700" onClick={() => { onLoad(charPresets[pName]); setIsOpen(false); }}>
                                     <span className="truncate">{pName}</span>
-                                    <span onClick={(e) => handleDelete(e, charName, pName)} className="text-gray-500 hover:text-[#FF0000] px-1 text-[15px]">×</span>
+                                    <span onClick={(e) => handleDelete(e, baseManagerChar, pName)} className="text-gray-500 hover:text-[#FF0000] px-1 text-[15px]">×</span>
                                 </div>
                             )) : <div className="text-[13px] text-gray-500 p-2 text-center">登録なし</div>}
                         </div>
@@ -794,13 +794,12 @@
                                             value={managerChar} 
                                             options={CHAR_DB.filter(c => c.label !== "手動入力")}
                                             onChange={val => {
-                                                setManagerChar(getDisplayCharName(val));
+                                                setManagerChar(val);
                                                 setManagerMode("history");
                                                 setLimitMessage("");
                                                 setShowLearnedOnly(false);
                                             }}
                                             placeholder="キャラを選択..."
-                                            formatDisplay={getDisplayCharName}
                                         />
                                     </div>
                                     {managerChar && (
@@ -813,17 +812,17 @@
                                                     const val = e.target.value;
                                                     if (managerMode === "history") {
                                                         setCharLevels(prev => {
-                                                            const newState = { ...prev, [managerChar]: val };
+                                                            const newState = { ...prev, [baseManagerChar]: val };
                                                             localStorage.setItem('char_levels', JSON.stringify(newState));
                                                             return newState;
                                                         });
                                                     } else {
                                                         setPresets(prev => {
-                                                            const charData = prev[managerChar] || {};
+                                                            const charData = prev[baseManagerChar] || {};
                                                             const pData = charData[managerMode] || { abilities: [] };
                                                             return { 
                                                                 ...prev, 
-                                                                [managerChar]: { 
+                                                                [baseManagerChar]: { 
                                                                     ...charData, 
                                                                     [managerMode]: { ...pData, level: val } 
                                                                 } 
@@ -874,7 +873,7 @@
                                                 key={pName}
                                                 draggable
                                                 onDragStart={(e) => handleManagerPresetDragStart(e, pName)}
-                                                onDragOver={handleManagerPresetDrop(e, pName)}
+                                                onDragOver={handleManagerDragOver}
                                                 onDrop={(e) => handleManagerPresetDrop(e, pName)}
                                                 className={`flex justify-between items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 transition-colors ${managerMode === pName ? 'bg-[#1D9BF0] text-white font-bold' : 'bg-[#222] text-gray-200 hover:bg-[#333]'}`}
                                                 onClick={() => setManagerMode(pName)}
@@ -882,7 +881,7 @@
                                                 <span className="truncate flex-1">{pName}</span>
                                                 <div className="flex items-center gap-1 ml-2">
                                                     <button onClick={(e) => { e.stopPropagation(); handleRenamePreset(pName); }} className={`${managerMode === pName ? 'text-blue-100 hover:text-white' : 'text-gray-400 hover:text-gray-200'} px-1 font-normal text-[14px] leading-none`} title="名前変更">✎</button>
-                                                    <button onClick={(e) => handleDelete(e, managerChar, pName)} className={`${managerMode === pName ? 'text-blue-100 hover:text-[#FF0000]' : 'text-gray-400 hover:text-[#FF0000]'} px-1 font-normal text-[14px] leading-none`} title="削除">✕</button>
+                                                    <button onClick={(e) => handleDelete(e, baseManagerChar, pName)} className={`${managerMode === pName ? 'text-blue-100 hover:text-[#FF0000]' : 'text-gray-400 hover:text-[#FF0000]'} px-1 font-normal text-[14px] leading-none`} title="削除">✕</button>
                                                 </div>
                                             </div>
                                         ))}
@@ -1443,7 +1442,6 @@
                         updateSlot(index, newData);
                     }} 
                     placeholder="キャラ名" 
-                    formatDisplay={getDisplayCharName}
                 />
 
                 {!hiddenSections.equip && (
@@ -1583,8 +1581,7 @@
                                         skills: { ...data.skills, inh: isNone ? "-" : "99" },
                                         skillNames: { ...data.skillNames, inh: v },
                                         bps: { ...data.bps, inh: newBp },
-                                        userDefBps: { ...data.userDefBps, inh: null },
-                                        skillChecks: { ...data.skillChecks, inh: isNone ? false : data.skillChecks.inh }
+                                        userDefBps: { ...data.userDefBps, inh: null }
                                     });
                                 }} 
                                 placeholder="継承技・術 (なし)" 
@@ -1692,7 +1689,7 @@
                                         </div>
                                         <input 
                                             type="checkbox" 
-                                            className={`w-[15px] h-[15px] flex-shrink-0 ${disableCheckbox ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            className={`w-[15px] h-[15px] flex-shrink-0 ${disableCheckbox ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                                             checked={disableCheckbox ? false : (data.skillChecks[k] || false)} 
                                             disabled={disableCheckbox}
                                             onChange={e => updateSlot(index, { ...data, skillChecks: { ...data.skillChecks, [k]: e.target.checked } })}
