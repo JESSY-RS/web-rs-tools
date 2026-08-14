@@ -1540,10 +1540,13 @@
                                 options={charAllSkillOptions} 
                                 onChange={(v) => {
                                     const isNone = !v || v === "なし";
+                                    const newBp = getSkillBP(v);
                                     updateSlot(index, { 
                                         ...data, 
                                         inheritedSkill: v,
-                                        skills: { ...data.skills, inh: isNone ? "-" : "99" } 
+                                        skills: { ...data.skills, inh: isNone ? "-" : "99" },
+                                        skillNames: { ...data.skillNames, inh: v },
+                                        bps: { ...data.bps, inh: newBp }
                                     });
                                 }} 
                                 placeholder="継承技・術 (なし)" 
@@ -1612,12 +1615,22 @@
                                                     onChange={(v) => {
                                                         const newBp = getSkillBP(v);
                                                         const isSkillSelected = v && v !== "なし" && v !== "手動入力";
-                                                        updateSlot(index, {
+                                                        
+                                                        // ベースとなる新しいデータ
+                                                        let newData = {
                                                             ...data,
                                                             skillNames: { ...data.skillNames, [k]: v },
                                                             bps: { ...data.bps, [k]: newBp },
                                                             skillChecks: { ...data.skillChecks, [k]: isSkillSelected ? true : data.skillChecks[k] }
-                                                        });
+                                                        };
+                                                        
+                                                        if (k === 'inh') {
+                                                            newData.inheritedSkill = v;
+                                                            const isNone = !v || v === "なし";
+                                                            newData.skills = { ...data.skills, inh: isNone ? "-" : "99" };
+                                                        }
+                                                        
+                                                        updateSlot(index, newData);
                                                     }}
                                                     placeholder={pLabel}
                                                     hideClear={k !== 'inh' && !!data.name}
