@@ -198,11 +198,13 @@
         }
     }
 
+    // ▼ 同一キャラ判定ロジックを強化 (ターミン・ネシハマルカー(ターミン) などにも対応)
     function getDisplayCharName(selectedName) {
         if (!selectedName) return "";
         if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
         for (const baseName of STYLE_CHAR_DB) {
             if (selectedName.startsWith(baseName + '(') || selectedName.startsWith(baseName + '（')) return baseName;
+            if (selectedName.endsWith('(' + baseName + ')') || selectedName.endsWith('（' + baseName + '）')) return baseName;
         }
         return selectedName;
     }
@@ -872,7 +874,7 @@
                                                 key={pName}
                                                 draggable
                                                 onDragStart={(e) => handleManagerPresetDragStart(e, pName)}
-                                                onDragOver={handleManagerDragOver}
+                                                onDragOver={handleManagerPresetDrop(e, pName)}
                                                 onDrop={(e) => handleManagerPresetDrop(e, pName)}
                                                 className={`flex justify-between items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 transition-colors ${managerMode === pName ? 'bg-[#1D9BF0] text-white font-bold' : 'bg-[#222] text-gray-200 hover:bg-[#333]'}`}
                                                 onClick={() => setManagerMode(pName)}
@@ -1581,7 +1583,8 @@
                                         skills: { ...data.skills, inh: isNone ? "-" : "99" },
                                         skillNames: { ...data.skillNames, inh: v },
                                         bps: { ...data.bps, inh: newBp },
-                                        userDefBps: { ...data.userDefBps, inh: null }
+                                        userDefBps: { ...data.userDefBps, inh: null },
+                                        skillChecks: { ...data.skillChecks, inh: isNone ? false : data.skillChecks.inh }
                                     });
                                 }} 
                                 placeholder="継承技・術 (なし)" 
@@ -1592,16 +1595,22 @@
                             {['s1', 's2', 's3', 'inh'].map(k => {
                                 const defaultBpStr = getSkillBP(data.skillNames[k]);
                                 const curBpStr = data.bps[k];
+                                const isSkillSelected = data.skillNames[k] && data.skillNames[k] !== "なし" && data.skillNames[k] !== "手動入力";
+
                                 let bpColor = 'text-white';
-
-                                const baseBpStr = defaultBpStr !== "-" ? defaultBpStr : (data.userDefBps && data.userDefBps[k]);
-
-                                if (baseBpStr && curBpStr !== "-" && curBpStr !== baseBpStr) {
-                                    bpColor = 'text-red-500';
+                                if (!isSkillSelected) {
+                                    bpColor = 'text-gray-600';
+                                } else {
+                                    const baseBpStr = defaultBpStr !== "-" ? defaultBpStr : (data.userDefBps && data.userDefBps[k]);
+                                    if (baseBpStr && curBpStr !== "-" && curBpStr !== baseBpStr) {
+                                        bpColor = 'text-red-500';
+                                    }
                                 }
 
                                 const opts = k === 'inh' ? inhOptionsList : charAllSkillOptions;
                                 const pLabel = k === 'inh' ? '継承技・術' : `技・術${k.replace('s','')}`;
+                                
+                                const disableCheckbox = k === 'inh' && !isSkillSelected;
 
                                 return (
                                     <div key={k} className="flex items-center gap-1">
@@ -1656,19 +1665,20 @@
                                                     options={opts}
                                                     onChange={(v) => {
                                                         const newBp = getSkillBP(v);
-                                                        const isSkillSelected = v && v !== "なし" && v !== "手動入力";
+                                                        const isSelected = v && v !== "なし" && v !== "手動入力";
                                                         
                                                         let newData = {
                                                             ...data,
                                                             skillNames: { ...data.skillNames, [k]: v },
                                                             bps: { ...data.bps, [k]: newBp },
-                                                            skillChecks: { ...data.skillChecks, [k]: isSkillSelected ? true : data.skillChecks[k] }
+                                                            skillChecks: { ...data.skillChecks, [k]: isSelected ? true : data.skillChecks[k] }
                                                         };
                                                         
                                                         if (k === 'inh') {
                                                             newData.inheritedSkill = v;
                                                             const isNone = !v || v === "なし";
                                                             newData.skills = { ...data.skills, inh: isNone ? "-" : "99" };
+                                                            if (isNone) newData.skillChecks.inh = false;
                                                         }
                                                         
                                                         newData.userDefBps = { ...(data.userDefBps || {}), [k]: null };
@@ -1682,8 +1692,9 @@
                                         </div>
                                         <input 
                                             type="checkbox" 
-                                            className="w-[15px] h-[15px] cursor-pointer flex-shrink-0"
-                                            checked={data.skillChecks[k] || false} 
+                                            className={`w-[15px] h-[15px] flex-shrink-0 ${disableCheckbox ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            checked={disableCheckbox ? false : (data.skillChecks[k] || false)} 
+                                            disabled={disableCheckbox}
                                             onChange={e => updateSlot(index, { ...data, skillChecks: { ...data.skillChecks, [k]: e.target.checked } })}
                                         />
                                         <input 
@@ -1898,7 +1909,6 @@
             return localStorage.getItem('PartyDefaultSkillMode') === 'true';
         });
 
-        // 保存用に最新のモード状態を追跡するref
         const globalModeRef = useRef(globalSkillManageMode);
         useEffect(() => {
             globalModeRef.current = globalSkillManageMode;
@@ -2067,8 +2077,7 @@
             partyRef.current = party;
         }, [party]);
 
-        // ▼ クラウド・ドライブ同期システムの組み込み (オートセーブ・オートロード)
-        // party_data.json のみ同期させる
+        // ▼ クラウド・ドライブ同期システムの組み込み
         useEffect(() => {
             if (window.setupSyncSystem && isSyncEnabled) {
                 window.setupSyncSystem({
@@ -2093,7 +2102,6 @@
             }
         }, [isSyncEnabled]);
 
-        // ▼ 同期マネージャーのログイン状態を監視する
         useEffect(() => {
             if (!isSyncEnabled) return;
             const timer = setInterval(() => {
@@ -2104,14 +2112,12 @@
             return () => clearInterval(timer);
         }, [isSyncEnabled]);
 
-        // ▼ 【追加】データが更新されたらクラウドへ自動保存するトリガー
         useEffect(() => {
             if (isSyncLoggedIn && window.triggerSyncSave) {
                 window.triggerSyncSave();
             }
         }, [party, soulPresets, learnedAbilities, charLevels, isSyncLoggedIn, globalSkillManageMode]);
 
-        // ▼ 現在のモード表示の動的切り替え
         let displayModeLabel = "Normal";
         if (isCloudMode) {
             displayModeLabel = "Cloud";
@@ -2119,7 +2125,6 @@
             displayModeLabel = isSyncLoggedIn ? "Drive" : "Admin";
         }
 
-        // ローカルスロット用: ファイルリストの更新
         const updateSavedFiles = useCallback(() => {
             if (!isSyncEnabled) return;
             const files = [];
@@ -2136,14 +2141,12 @@
             updateSavedFiles();
         }, [updateSavedFiles]);
 
-        // ▼ ローカルセーブ・ロード・削除
         const handleLocalSave = useCallback(() => {
             if (!fileName) { alert("ファイル名を入力してください。"); return; }
             localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setSelectedLoadFile(""); 
             
-            // フィードバック表示
             setSaveMessage("保存しました");
             setIsFlashing(true);
             setTimeout(() => setIsFlashing(false), 200);
@@ -2191,7 +2194,6 @@
             }
         }, [selectedLoadFile, updateSavedFiles]);
 
-        // ▼ エクスポート (JSONファイル出力)
         const handleExport = useCallback(() => {
             const exportData = { party: partyRef.current, skillManageMode: globalSkillManageMode };
             const partyJsonString = JSON.stringify(exportData, null, 2);
