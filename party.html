@@ -1368,6 +1368,17 @@
                             inheritedSkill: "",
                             skills: { ...data.skills, inh: "-" }
                         };
+
+                        // ▼ 追加: マスターデータ(charLevels)から該当キャラの魂Lvを取得し反映する
+                        const newSoulLevel = charLevels[val] || "100";
+                        const limit = getAbilityLimit(newSoulLevel);
+                        let newAbs = [...newData.soulAbilities];
+                        if (newAbs.length > limit) newAbs = newAbs.slice(0, limit);
+                        
+                        newData.soulLevel = newSoulLevel;
+                        newData.soulAbilities = newAbs;
+                        // ▲ 追加ここまで
+
                         const baseCharItem = FAVORITE_DB.find(f => f['登録名'] === val);
                         const mainItem = getBaseEquipItem(MAIN_DB, newData.equipments.main);
                         const subItem = getBaseEquipItem(SUB_DB, newData.equipments.sub);
