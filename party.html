@@ -1431,7 +1431,7 @@
                         }} 
                     />
                     <div className="grid grid-cols-4 gap-1">
-                        {Object.keys(data.resistances).map((k) => (
+                        {['斬', '打', '突', '熱', '冷', '雷', '陽', '陰'].map((k) => (
                             <div key={k} className="flex items-stretch h-[26px]">
                                 <span className={`w-[40%] flex items-center justify-center text-[13px] font-bold ${ATTR_COLORS[k]} bg-black`}>{k}</span>
                                 <input type="text" className={`w-[60%] bg-[#333] rounded-sm text-right px-1 text-[12px] font-bold focus:outline-none focus:bg-[#444] ${getValueColor(data.resistances[k])}`} value={data.resistances[k]} onChange={e => handleAttrChange('resistances', k, e.target.value)} onBlur={e => handleResistBlur('resistances', k, e.target.value)} onFocus={e => e.target.select()} />
@@ -1451,7 +1451,7 @@
                         <span className="text-[17px] leading-none mr-[1px]">●</span>状態異常耐性
                     </div>
                     <div className="grid grid-cols-4 gap-1">
-                        {Object.keys(data.statusResists).map((k) => (
+                        {['毒', '暗', 'ス', 'マ', '眠', '石', '混', '魅', '狂', '気'].map((k) => (
                             <div key={k} className="flex items-stretch h-[26px]">
                                 <span className={`w-[40%] flex items-center justify-center text-[13px] font-bold ${STATUS_COLORS[k]} bg-black`}>{k}</span>
                                 <input type="text" className={`w-[60%] bg-[#333] rounded-sm text-right px-1 text-[12px] font-bold focus:outline-none focus:bg-[#444] ${getValueColor(data.statusResists[k])}`} value={data.statusResists[k]} onChange={e => handleAttrChange('statusResists', k, e.target.value)} onBlur={e => handleResistBlur('statusResists', k, e.target.value)} onFocus={e => e.target.select()} />
@@ -1512,7 +1512,7 @@
                     {!globalSkillManageMode ? (
                         <>
                             <div className="grid grid-cols-4 gap-1">
-                                {Object.keys(data.skills).map((k) => (
+                                {['s1', 's2', 's3', 'inh'].map((k) => (
                                     <div key={k} className="flex items-stretch h-[26px]">
                                         <span className="w-[45%] flex items-center justify-center text-[13px] font-bold text-gray-400 bg-black whitespace-nowrap">{SKILL_LABELS[k]}</span>
                                         <input type="text" className="w-[55%] bg-[#333] rounded-sm text-right px-1 text-white text-[13px] font-bold focus:outline-none focus:bg-[#444]" value={data.skills[k]} onChange={e=>handleAttrChange('skills',k,e.target.value)} onFocus={e => e.target.select()}/>
