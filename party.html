@@ -842,12 +842,12 @@
                                     <h2 className="text-[15px] font-bold text-[rgb(217,70,239)] flex items-center">
                                         <span className="text-[20px] leading-none mr-[1px]">●</span>魂アビリティ管理
                                     </h2>
-                                    <div className="w-[250px]">
+                                    <div className="w-[300px]">
                                         <CustomSelect 
                                             value={managerChar} 
                                             options={CHAR_DB.filter(c => c.label !== "手動入力")}
                                             onChange={val => {
-                                                setManagerChar(getDisplayCharName(val));
+                                                setManagerChar(val);
                                                 setManagerMode("history");
                                                 setLimitMessage("");
                                                 setShowLearnedOnly(false);
@@ -1127,8 +1127,7 @@
 
         const styleList = useMemo(() => {
             if (!charName) return [];
-            const baseName = getDisplayCharName(charName);
-            const styles = STYLE_FULL_DB.filter(s => s['キャラ名'] === baseName);
+            const styles = STYLE_FULL_DB.filter(s => s['キャラ名'] === charName);
             styles.sort((a, b) => {
                 const dateA = a['実装時期'] || '';
                 const dateB = b['実装時期'] || '';
