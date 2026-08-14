@@ -1366,7 +1366,8 @@
                                 s1: !!s1,
                                 s2: !!s2,
                                 s3: !!s3
-                            }
+                            },
+                            userDefBps: { ...data.userDefBps, s1: null, s2: null, s3: null }
                         });
                     }}
                 />
@@ -1383,7 +1384,8 @@
                             bps: { s1: "-", s2: "-", s3: "-", inh: "-" },
                             skillChecks: { s1: false, s2: false, s3: false, inh: false },
                             inheritedSkill: "",
-                            skills: { ...data.skills, inh: "-" }
+                            skills: { ...data.skills, inh: "-" },
+                            userDefBps: { s1: null, s2: null, s3: null, inh: null }
                         };
 
                         // ▼ 追加: マスターデータ(charLevels)から該当キャラの魂Lvを取得し反映する
@@ -1547,7 +1549,8 @@
                                         inheritedSkill: v,
                                         skills: { ...data.skills, inh: isNone ? "-" : "99" },
                                         skillNames: { ...data.skillNames, inh: v },
-                                        bps: { ...data.bps, inh: newBp }
+                                        bps: { ...data.bps, inh: newBp },
+                                        userDefBps: { ...data.userDefBps, inh: null } // ←ココを追加
                                     });
                                 }} 
                                 placeholder="継承技・術 (なし)" 
@@ -1560,12 +1563,12 @@
                                 const curBpStr = data.bps[k];
                                 let bpColor = 'text-white';
 
-                                const defBpNum = parseInt(defaultBpStr, 10);
-                                const curBpNum = parseInt(curBpStr, 10);
+                                // 基準となるBP（CSVのデフォルト値、なければユーザーの初回入力値）
+                                const baseBpStr = defaultBpStr !== "-" ? defaultBpStr : (data.userDefBps && data.userDefBps[k]);
 
-                                if (!isNaN(defBpNum) && !isNaN(curBpNum)) {
-                                    if (curBpNum < defBpNum) bpColor = 'text-red-500';
-                                    else if (curBpNum > defBpNum) bpColor = 'text-[#00DC00]';
+                                // 基準BPが存在し、現在のBPが "-" でなく、かつ基準から変わっていれば赤色にする
+                                if (baseBpStr && curBpStr !== "-" && curBpStr !== baseBpStr) {
+                                    bpColor = 'text-red-500';
                                 }
 
                                 const opts = k === 'inh' ? inhOptionsList : charAllSkillOptions;
@@ -1641,6 +1644,8 @@
                                                             newData.skills = { ...data.skills, inh: isNone ? "-" : "99" };
                                                         }
                                                         
+                                                        newData.userDefBps = { ...(data.userDefBps || {}), [k]: null };
+
                                                         updateSlot(index, newData);
                                                     }}
                                                     placeholder={pLabel}
@@ -1660,7 +1665,26 @@
                                             value={curBpStr !== undefined ? curBpStr : "-"}
                                             onChange={e => updateSlot(index, { ...data, bps: { ...data.bps, [k]: e.target.value } })}
                                             onFocus={e => e.target.select()}
-                                            onBlur={e => { if (e.target.value === "") updateSlot(index, { ...data, bps: { ...data.bps, [k]: "-" } }) }}
+                                            {/* ▼ 修正: onBlur時に初回入力値を基準BPとしてロックする */}
+                                            onBlur={e => { 
+                                                const val = e.target.value;
+                                                let newData = { ...data };
+                                                let changed = false;
+                                                
+                                                if (val === "") {
+                                                    newData.bps = { ...data.bps, [k]: "-" };
+                                                    changed = true;
+                                                }
+                                                
+                                                if (val !== "" && val !== "-" && defaultBpStr === "-" && (!data.userDefBps || !data.userDefBps[k])) {
+                                                    newData.userDefBps = { ...(data.userDefBps || {}), [k]: val };
+                                                    changed = true;
+                                                }
+                                                
+                                                if (changed) {
+                                                    updateSlot(index, newData);
+                                                }
+                                            }}
                                         />
                                     </div>
                                 )
@@ -1824,7 +1848,8 @@
             soulLevel: "100", skills: { s1: "99", s2: "99", s3: "99", inh: "-" }, inheritedSkill: "",
             renmaAbilities: ["", ""], decoAbilities: ["", "", ""], soulAbilities: [], remarks: "",
             styleName: "", skillNames: { s1: "", s2: "", s3: "", inh: "" }, bps: { s1: "-", s2: "-", s3: "-", inh: "-" },
-            skillChecks: { s1: false, s2: false, s3: false, inh: false }, overDrive: false
+            skillChecks: { s1: false, s2: false, s3: false, inh: false }, overDrive: false,
+            userDefBps: { s1: null, s2: null, s3: null, inh: null } // ←追加
         });
         
         const initParty = Array.from({ length: 5 }, createEmptyChar);
@@ -1844,10 +1869,20 @@
         const [saveMessage, setSaveMessage] = useState("");
         const [isFlashing, setIsFlashing] = useState(false);
 
-        const [globalSkillManageMode, setGlobalSkillManageMode] = useState(false);
+        const [globalSkillManageMode, setGlobalSkillManageMode] = useState(() => {
+            return localStorage.getItem('PartyDefaultSkillMode') === 'true';
+        });
+
+        // 保存用に最新のモード状態を追跡するref
+        const globalModeRef = useRef(globalSkillManageMode);
+        useEffect(() => {
+            globalModeRef.current = globalSkillManageMode;
+        }, [globalSkillManageMode]);
+
         const handleToggleSkillManageMode = useCallback(() => {
             setGlobalSkillManageMode(prev => {
                 const nextMode = !prev;
+                localStorage.setItem('PartyDefaultSkillMode', String(nextMode));
                 if (nextMode) {
                     setParty(curr => curr.map(p => ({ ...p, overDrive: true })));
                 }
@@ -1942,7 +1977,8 @@
                     skillNames: newData.skillNames || { s1: "", s2: "", s3: "", inh: "" },
                     bps: newData.bps || { s1: "-", s2: "-", s3: "-", inh: "-" },
                     skillChecks: newData.skillChecks || { s1: false, s2: false, s3: false, inh: false },
-                    overDrive: newData.overDrive || false
+                    overDrive: newData.overDrive || false,
+                    userDefBps: newData.userDefBps || { s1: null, s2: null, s3: null, inh: null } // ←追加
                 }; 
                 return newP; 
             });
@@ -2013,12 +2049,18 @@
                     fileName: 'party_data.json',
                     firestoreDoc: 'party-data',
                     onLoad: (loadedData) => {
-                        if (loadedData && Array.isArray(loadedData) && loadedData.length === 5) {
-                            setParty(loadedData);
+                        if (loadedData) {
+                            if (Array.isArray(loadedData) && loadedData.length === 5) {
+                                setParty(loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}})));
+                            } else if (loadedData.party && Array.isArray(loadedData.party) && loadedData.party.length === 5) {
+                                setParty(loadedData.party.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}})));
+                                setGlobalSkillManageMode(!!loadedData.skillManageMode);
+                                localStorage.setItem('PartyDefaultSkillMode', String(!!loadedData.skillManageMode));
+                            }
                         }
                     },
                     onSave: () => {
-                        return partyRef.current;
+                        return { party: partyRef.current, skillManageMode: globalModeRef.current };
                     }
                 });
             }
@@ -2040,7 +2082,8 @@
             if (isSyncLoggedIn && window.triggerSyncSave) {
                 window.triggerSyncSave();
             }
-        }, [party, soulPresets, learnedAbilities, charLevels, isSyncLoggedIn]);
+        // ▼ 末尾に globalSkillManageMode を追加
+        }, [party, soulPresets, learnedAbilities, charLevels, isSyncLoggedIn, globalSkillManageMode]);
 
         // ▼ 現在のモード表示の動的切り替え
         let displayModeLabel = "Normal";
@@ -2070,7 +2113,8 @@
         // ▼ ローカルセーブ・ロード・削除
         const handleLocalSave = useCallback(() => {
             if (!fileName) { alert("ファイル名を入力してください。"); return; }
-            localStorage.setItem('PartySave_' + fileName, JSON.stringify(partyRef.current));
+            // ▼ partyRef.current を { party: ..., skillManageMode: ... } に変更
+            localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setSelectedLoadFile(""); 
             
@@ -2087,8 +2131,22 @@
             if (savedStr) {
                 try {
                     const data = JSON.parse(savedStr);
+                    let loadedParty = null;
+                    let loadedMode = null;
+
                     if (Array.isArray(data) && data.length === 5) {
-                        setParty(data);
+                        loadedParty = data;
+                    } else if (data.party && Array.isArray(data.party) && data.party.length === 5) {
+                        loadedParty = data.party;
+                        loadedMode = !!data.skillManageMode;
+                    }
+
+                    if (loadedParty) {
+                        setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}})));
+                        if (loadedMode !== null) {
+                            setGlobalSkillManageMode(loadedMode);
+                            localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
+                        }
                         setFileName(selectedLoadFile);
                         setSelectedLoadFile(""); 
                         setCustomMenu(prev => ({ ...prev, show: false }));
@@ -2110,8 +2168,9 @@
 
         // ▼ エクスポート (JSONファイル出力)
         const handleExport = useCallback(() => {
-            const partyData = partyRef.current;
-            const partyJsonString = JSON.stringify(partyData, null, 2);
+            // ▼ partyData を exportData に変更し、モード情報を含める
+            const exportData = { party: partyRef.current, skillManageMode: globalSkillManageMode };
+            const partyJsonString = JSON.stringify(exportData, null, 2);
             const partyBlob = new Blob([partyJsonString], { type: 'application/json' });
             const partyUrl = URL.createObjectURL(partyBlob);
             const partyAnchor = document.createElement('a');
@@ -2148,12 +2207,16 @@
         }, [fileName, isSyncLoggedIn, includeSoulData, soulPresets, learnedAbilities, charLevels]);
 
         const processImportedFile = useCallback((data) => {
+            let loadedParty = null;
+            let loadedMode = null;
+
             if (Array.isArray(data) && data.length === 5) {
-                setParty(data);
-                if (isSyncLoggedIn && window.triggerSyncSave) {
-                    setTimeout(() => { window.triggerSyncSave(); }, 100);
-                }
+                loadedParty = data;
+            } else if (data.party && Array.isArray(data.party) && data.party.length === 5) {
+                loadedParty = data.party;
+                loadedMode = !!data.skillManageMode;
             } else if (data.presets || data.learnedAbilities || data.charLevels) {
+                // ▼ 省略されていた魂アビリティの処理を復元
                 if (data.presets) {
                     setSoulPresets(data.presets);
                     localStorage.setItem('soul_presets', JSON.stringify(data.presets));
@@ -2165,6 +2228,18 @@
                 if (data.charLevels) {
                     setCharLevels(data.charLevels);
                     localStorage.setItem('char_levels', JSON.stringify(data.charLevels));
+                }
+                return;
+            }
+
+            if (loadedParty) {
+                setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}})));
+                if (loadedMode !== null) {
+                    setGlobalSkillManageMode(loadedMode);
+                    localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
+                }
+                if (isSyncLoggedIn && window.triggerSyncSave) {
+                    setTimeout(() => { window.triggerSyncSave(); }, 100);
                 }
             } else {
                 alert("無効なデータ形式が含まれています。");
