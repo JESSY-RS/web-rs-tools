@@ -71,6 +71,21 @@
         'バトルヴァンブレイス': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US・ES・IS','SSG','SaGaRS','SaGaEB']
     };
 
+    const SHORT_NAMES = {
+        'バトルヴァンブレイス': 'ﾊﾞﾄﾙｳﾞｧﾝﾌﾞﾚｲｽ'
+    };
+
+    const getShortArmorName = (name) => {
+        if (!name) return name;
+        let shortName = name;
+        Object.entries(SHORT_NAMES).forEach(([full, short]) => {
+            if (shortName.includes(full)) {
+                shortName = shortName.replace(full, short);
+            }
+        });
+        return shortName;
+    };
+
     const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
 
     async function loadSimpleCSV(filePath) {
@@ -1165,7 +1180,8 @@
                 const targetType = equipType;
                 const targetIndex = equipType === 'main' ? 0 : 1;
                 
-                const match = renmaData.find(d => d.armorType === targetType && d.armorName === val);
+                const shortVal = getShortArmorName(val);
+                const match = renmaData.find(d => d.armorType === targetType && d.armorName === shortVal);
                 if (match) {
                     newRenma[targetIndex] = `${match.abilityName} ${match.value}%`;
                 } else {
@@ -1935,10 +1951,13 @@
 
                     setParty(prev => prev.map(charData => {
                         let newRenma = [...charData.renmaAbilities];
-                        const mainMatch = data.find(d => d.armorType === 'main' && d.armorName === charData.equipments.main);
+                        
+                        const shortMain = getShortArmorName(charData.equipments.main);
+                        const mainMatch = data.find(d => d.armorType === 'main' && d.armorName === shortMain);
                         if (mainMatch) newRenma[0] = `${mainMatch.abilityName} ${mainMatch.value}%`;
                         
-                        const subMatch = data.find(d => d.armorType === 'sub' && d.armorName === charData.equipments.sub);
+                        const shortSub = getShortArmorName(charData.equipments.sub);
+                        const subMatch = data.find(d => d.armorType === 'sub' && d.armorName === shortSub);
                         if (subMatch) newRenma[1] = `${subMatch.abilityName} ${subMatch.value}%`;
                         
                         return { ...charData, renmaAbilities: newRenma };
