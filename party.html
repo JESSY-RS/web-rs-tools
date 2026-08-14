@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="icon/favicon.ico">
+  <title>リユニ編成エディタ</title>
+  
+  <script src="script/tailwindcss.js"></script>
+  <script src="script/react.development.js"></script>
+  <script src="script/react-dom.development.js"></script>
+  <script src="script/babel.min.js"></script>
+
+  <!-- ▼ クラウド・ドライブ同期用のスクリプト -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+  
+  <style>
+    body { font-family: 'Meiryo', sans-serif; background-color: #000; color: #eee; margin: 10px 10px !important; padding: 0 !important; overflow-x: auto; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #111; }
+    ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #777; }
+    input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+    // --- モード判定 ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramMode = urlParams.get('mode');
+    
+    if (paramMode === 'secret_admin_on') {
+        localStorage.setItem('party_mode', 'admin');
+        localStorage.removeItem('RenmaArmorCloudMode');
+    } else if (paramMode === 'secret_cloud_on') {
+        localStorage.setItem('party_mode', 'cloud');
+        localStorage.setItem('RenmaArmorCloudMode', 'true');
+    } else if (paramMode === 'secret_normal_on' || paramMode === 'secret_debug_on') {
+        localStorage.setItem('party_mode', 'normal');
+        localStorage.removeItem('RenmaArmorCloudMode');
+    }
+
+    const partyMode = localStorage.getItem('party_mode') || 'normal';
+    const isAdminMode = partyMode === 'admin' || localStorage.getItem('index_mode') === 'admin';
+    const isCloudMode = localStorage.getItem('RenmaArmorCloudMode') === 'true';
+    const isSyncEnabled = isAdminMode || isCloudMode;
+
+    // --- 各種DB ---
+    let ABILITY_DB = [];
+    let RENMA_DB = [];
+    let CHAR_DB = [];
+    let SKILL_DB = ["なし"];
+    let MAIN_DB = [];
+    let SUB_DB = [];
+    let DECO_DB = [];
+    let STYLE_CHAR_DB = new Set();
+    let STYLE_FULL_DB = [];
+    let FAVORITE_DB = [];
+    let DECO_ABILITY_MAP = {}; 
+    let DECO_ABILITY_OPTIONS = [];
+    let SKILL_FULL_DB = [];
+
+    const SPECIAL_SERIES_ARMORS = {
+        '名将の鎧': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'],
+        '英傑の足甲': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'],
+        'バトルヴァンブレイス': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US・ES・IS','SSG','SaGaRS','SaGaEB']
+    };
+
+    const hiraganaToKatakana = (str) => str ? str.replace(/[\u3041-\u3096]/g, match => String.fromCharCode(match.charCodeAt(0) + 0x60)) : '';
+
+    async function loadSimpleCSV(filePath) {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) return [];
+            const text = await response.text();
+            const rows = text.trim().split(/\r\n|\n/);
+            if (rows.length <= 1) return [];
+            const header = rows.shift().split(',');
+            
+            return rows.map(row => {
+                const values = row.split(',');
+                let obj = {};
+                header.forEach((key, i) => { obj[key.trim()] = values[i] ? values[i].trim() : ''; });
+                const symbol = obj['記号'] || ''; 
+                const name = obj['キャラ名'] || obj['名称'] || values[0] || ''; 
+                const furigana = obj['フリガナ'] || '';
+                return { ...obj, label: symbol + name, furigana: furigana };
+            }).filter(item => item.label);
+        } catch (error) {
+            console.error(`CSV読み込みエラー (${filePath}):`, error);
+            return [];
+        }
+    }
+
+    async function loadStyleCSV(filePath) {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) return new Set();
+            const text = await response.text();
+            const rows = text.trim().split(/\r\n|\n/);
+            if (rows.length <= 1) return new Set();
+            const header = rows.shift().split(',');
+            
+            const charNames = new Set();
+            const fullData = [];
+            rows.forEach(row => {
+                const values = row.split(',');
+                let obj = {};
+                header.forEach((key, i) => { obj[key.trim()] = values[i] ? values[i].trim() : ''; });
+                if (obj['キャラ名']) charNames.add(obj['キャラ名']);
+                fullData.push(obj);
+            });
+            STYLE_FULL_DB = fullData;
+            return charNames;
+        } catch (error) {
+            return new Set();
+        }
+    }
+
+    async function loadFavoriteCSV(filePath) {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) return [];
+            const text = await response.text();
+            const rows = text.trim().split(/\r\n|\n/);
+            if (rows.length <= 1) return [];
+            const header = rows.shift().split(',');
+            return rows.map(row => {
+                const values = row.split(',');
+                let obj = {};
+                header.forEach((key, i) => { obj[key.trim()] = values[i] ? values[i].trim() : ''; });
+                return obj;
+            });
+        } catch (error) {
+            return [];
+        }
+    }
+
+    async function loadDecoAbilityCSV(filePath) {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) return;
+            const text = await response.text();
+            const rows = text.trim().split(/\r\n|\n/);
+            if (rows.length <= 1) return;
+            const header = rows.shift().split(',');
+
+            const optionsSet = new Set();
+            DECO_ABILITY_MAP = {};
+            DECO_ABILITY_OPTIONS = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }];
+            
+            rows.forEach(row => {
+                const values = row.split(',');
+                let obj = {};
+                header.forEach((key, i) => { obj[key.trim()] = values[i] ? values[i].trim() : ''; });
+                
+                const name = obj['名称'];
+                const ability = obj['アビリティ'];
+                let valueStr = obj['効果値'];
+                
+                if (!name || !ability) return;
+
+                if (name === '◆ステラ・刻印・特殊系') valueStr = '20';
+
+                const value = valueStr ? ` ${valueStr}%` : '';
+
+                if (!DECO_ABILITY_MAP[name]) DECO_ABILITY_MAP[name] = [];
+                const abilityStr = `${ability}${value}`;
+                DECO_ABILITY_MAP[name].push(abilityStr);
+
+                if (!optionsSet.has(abilityStr)) {
+                    optionsSet.add(abilityStr);
+                    DECO_ABILITY_OPTIONS.push({ label: abilityStr, furigana: '' });
+                }
+            });
+        } catch (error) {
+            console.error(`CSV読み込みエラー (${filePath}):`, error);
+        }
+    }
+
+    function getDisplayCharName(selectedName) {
+        if (!selectedName) return "";
+        if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
+        for (const baseName of STYLE_CHAR_DB) {
+            if (selectedName.startsWith(baseName + '(') || selectedName.startsWith(baseName + '（')) return baseName;
+        }
+        return selectedName;
+    }
+
+    const getSkillBP = (skillName) => {
+        if (!skillName || skillName === "なし" || skillName === "手動入力") return "-";
+        const skill = SKILL_FULL_DB.find(s => s['名称'] === skillName || s['スキル名'] === skillName);
+        if (skill) {
+            return skill['BP'] || skill['消費BP'] || skill['覚醒後BP'] || skill['最大BP'] || skill['最小BP'] || "-";
+        }
+        return "-";
+    };
+
+    const THEME_COLORS = ['text-red-500', 'text-orange-500', 'text-[#00DC00]', 'text-blue-500', 'text-fuchsia-500'];
+
+    const ATTR_COLORS = {
+        斬: 'text-gray-400', 打: 'text-gray-400', 突: 'text-gray-400', 熱: 'text-red-500', 
+        冷: 'text-cyan-300', 雷: 'text-yellow-400', 陽: 'text-orange-400', 陰: 'text-purple-500'
+    };
+    const STATUS_COLORS = {
+        毒: 'text-purple-500', 暗: 'text-green-400', ス: 'text-cyan-300', マ: 'text-yellow-400',
+        眠: 'text-blue-400', 石: 'text-gray-400', 混: 'text-gray-100', 魅: 'text-pink-400',
+        狂: 'text-red-500', 気: 'text-cyan-200'
+    };
+    const SKILL_LABELS = { s1: '技1', s2: '技2', s3: '技3', inh: '継承' };
+
+    const getAbilityLimit = (level) => {
+        const lv = parseInt(level, 10);
+        if (isNaN(lv) || lv < 150) return 2;
+        if (lv < 200) return 3;
+        if (lv < 300) return 4;
+        if (lv < 500) return 5;
+        if (lv < 700) return 6;
+        if (lv < 900) return 7;
+        return 8;
+    };
+
+    const getValueColor = (valStr) => {
+        const val = parseInt(valStr, 10);
+        if (isNaN(val) || val === 0) return 'text-white';
+        if (val < 0) return 'text-red-500';
+        return 'text-cyan-300';
+    };
+
+    const CustomSelect = ({ value, options, onChange, placeholder, learnedOptions = [], onRemoveHistory, className = "", formatDisplay, hideClear }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const [searchTerm, setSearchTerm] = useState("");
+        const [expandedItem, setExpandedItem] = useState(null);
+        const wrapperRef = useRef(null);
+
+        useEffect(() => {
+            const handleClickOutside = (e) => {
+                if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setIsOpen(false);
+            };
+            document.addEventListener("mousedown", handleClickOutside, true);
+            return () => document.removeEventListener("mousedown", handleClickOutside, true);
+        }, []);
+
+        const filtered = useMemo(() => {
+            const term = hiraganaToKatakana(searchTerm.toLowerCase());
+            const historyItems = learnedOptions.map(lo => ({ label: lo, searchStr: hiraganaToKatakana(lo.toLowerCase()), isHistory: true }));
+            const mergedList = [];
+            const seenLabels = new Set();
+
+            historyItems.forEach(item => {
+                const originalOpt = options.find(o => (typeof o === 'string' ? o : o.label) === item.label);
+                if (originalOpt && typeof originalOpt !== 'string' && originalOpt.furigana) {
+                    item.searchStr = hiraganaToKatakana((item.label + originalOpt.furigana).toLowerCase());
+                }
+                mergedList.push(item);
+                seenLabels.add(item.label);
+            });
+
+            options.forEach(opt => {
+                const label = typeof opt === 'string' ? opt : opt.label;
+                if (!seenLabels.has(label)) {
+                    const searchStr = typeof opt === 'string' 
+                        ? hiraganaToKatakana(opt.toLowerCase()) 
+                        : hiraganaToKatakana((opt.label + (opt.furigana || '')).toLowerCase());
+                    mergedList.push({ label, searchStr, subOptions: opt.subOptions, exactSub: opt.exactSub });
+                    seenLabels.add(label);
+                }
+            });
+
+            if (!term) return mergedList;
+            return mergedList.filter(o => o.searchStr.includes(term));
+        }, [options, learnedOptions, searchTerm]);
+
+        return (
+            <div className={`relative w-full ${isOpen ? 'z-50' : 'z-0'} ${className}`} ref={wrapperRef}>
+                <div 
+                    className="w-full h-[28px] bg-[#333] px-2 flex justify-between items-center cursor-pointer hover:bg-[#444] rounded-sm"
+                    onClick={() => { setIsOpen(!isOpen); setExpandedItem(null); }}
+                >
+                    <span className={`text-[13px] truncate ${value ? 'text-gray-200' : 'text-gray-500'}`}>
+                        {value ? (formatDisplay ? formatDisplay(value) : value) : placeholder}
+                    </span>
+                    {value && !hideClear && (
+                        <span className="text-gray-500 hover:text-[#FF0000] px-1" onClick={(e) => { e.stopPropagation(); onChange(""); }}>×</span>
+                    )}
+                </div>
+
+                {isOpen && (
+                    <div className="absolute left-0 top-full mt-[1px] w-full bg-[#2a2a2a] border border-gray-600 flex flex-col rounded-sm">
+                        <input 
+                            type="text" 
+                            autoFocus
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="bg-[#111] text-white text-[13px] px-2 py-1.5 border-b border-gray-600 focus:outline-none"
+                            placeholder="検索..."
+                        />
+                        <div className="overflow-y-auto max-h-64">
+                            {filtered.length > 0 ? filtered.map((opt, idx) => (
+                                <React.Fragment key={idx}>
+                                    <div 
+                                        onClick={(e) => { 
+                                            if (opt.subOptions) {
+                                                e.stopPropagation();
+                                                setExpandedItem(expandedItem === opt.label ? null : opt.label);
+                                            } else if (opt.label === "手動入力") {
+                                                e.stopPropagation();
+                                                const userInput = prompt("名称を入力してください:", "");
+                                                if (userInput) {
+                                                    onChange(userInput);
+                                                }
+                                                setIsOpen(false);
+                                                setSearchTerm("");
+                                            } else {
+                                                onChange(opt.label); setIsOpen(false); setSearchTerm(""); 
+                                            }
+                                        }}
+                                        className={`px-2 py-1.5 text-[13px] text-gray-200 hover:bg-[#1D9BF0] cursor-pointer border-b border-gray-700 flex justify-between items-center ${expandedItem === opt.label ? 'bg-[#333]' : ''}`}
+                                    >
+                                        <span className="truncate">{opt.label}</span>
+                                        <div className="flex items-center">
+                                            {opt.isHistory && !searchTerm && (
+                                                <div className="flex items-center">
+                                                    <span className="text-[10px] text-fuchsia-400 whitespace-nowrap mr-1">習得</span>
+                                                    {onRemoveHistory && (
+                                                        <span 
+                                                            className="text-[11px] text-gray-400 hover:text-[#FF0000] px-1"
+                                                            title="この履歴を削除"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onRemoveHistory(opt.label);
+                                                            }}
+                                                        >×</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {opt.subOptions && <span className="text-[10px] text-gray-400 ml-1">{expandedItem === opt.label ? '▼' : '▶'}</span>}
+                                        </div>
+                                    </div>
+                                    {opt.subOptions && expandedItem === opt.label && opt.subOptions.map((sub, sIdx) => (
+                                        <div
+                                            key={`${idx}-${sIdx}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                let finalVal;
+                                                if (opt.exactSub) {
+                                                    finalVal = sub;
+                                                    if (finalVal.includes('●')) {
+                                                        const userInput = prompt(`「${sub}」の部分を入力してください:`, "");
+                                                        if (!userInput) return; 
+                                                        finalVal = finalVal.replace(/●+/g, userInput);
+                                                    }
+                                                } else {
+                                                    let finalSub = sub;
+                                                    if (sub.includes('●')) {
+                                                        const userInput = prompt(`「${sub}」の部分を入力してください:`, "");
+                                                        if (!userInput) return; 
+                                                        finalSub = userInput;
+                                                    }
+                                                    finalVal = `${opt.label}(${finalSub})`;
+                                                }
+                                                onChange(finalVal);
+                                                setIsOpen(false);
+                                                setSearchTerm("");
+                                            }}
+                                            className="px-4 py-1.5 text-[13px] text-gray-300 bg-[#111] hover:bg-[#1D9BF0] cursor-pointer border-b border-gray-800 flex items-center"
+                                        >
+                                            <span className="text-gray-500 mr-2">└</span> {sub}
+                                        </div>
+                                    ))}
+                                </React.Fragment>
+                            )) : <div className="px-2 py-2 text-[13px] text-gray-500">候補なし</div>}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // --- 魂アビリティ プリセットメニュー ---
+    const PresetMenu = ({ charName, currentAbilities, currentLevel, onLoad, themeColor, onDoubleClickTitle, presets, setPresets, learnedAbilities, setLearnedAbilities, charLevels, setCharLevels }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const [isManagerOpen, setIsManagerOpen] = useState(false);
+        const [managerChar, setManagerChar] = useState("");
+        const [managerMode, setManagerMode] = useState("history"); // "history" | presetName
+        const [abilitySearch, setAbilitySearch] = useState("");
+        const [showLearnedOnly, setShowLearnedOnly] = useState(false);
+        
+        const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+        const [limitMessage, setLimitMessage] = useState("");
+        const limitMessageTimerRef = useRef(null);
+
+        const menuRef = useRef(null);
+        const importFileRef = useRef(null);
+
+        useEffect(() => {
+            const handleClickOutside = (e) => { 
+                if (menuRef.current && !menuRef.current.contains(e.target)) setIsOpen(false); 
+            };
+            document.addEventListener("mousedown", handleClickOutside, true);
+            return () => document.removeEventListener("mousedown", handleClickOutside, true);
+        }, []);
+
+        const charPresets = presets[charName] || {};
+        
+        const handleSave = () => {
+            if (!charName) { alert("キャラ名を入力してください"); return; }
+            const pName = prompt("プリセット名を入力:", "基本構成");
+            if (pName) {
+                setPresets(prev => ({ 
+                    ...prev, 
+                    [charName]: { 
+                        ...prev[charName], 
+                        [pName]: { abilities: currentAbilities.filter(Boolean), level: currentLevel } 
+                    } 
+                }));
+                setCharLevels(prev => {
+                    const newState = { ...prev, [charName]: currentLevel };
+                    localStorage.setItem('char_levels', JSON.stringify(newState));
+                    return newState;
+                });
+            }
+        };
+
+        const handleDelete = (e, targetChar, pName) => {
+            e.stopPropagation();
+            if (confirm(`「${pName}」を削除しますか？`)) {
+                setPresets(prev => { 
+                    const newP = { ...prev[targetChar] }; 
+                    delete newP[pName]; 
+                    return { ...prev, [targetChar]: newP }; 
+                });
+                if (managerMode === pName) setManagerMode("history");
+            }
+        };
+
+        const handleRenamePreset = (oldName) => {
+            const newName = prompt("新しいプリセット名を入力:", oldName);
+            if (newName && newName !== oldName) {
+                if (presets[managerChar]?.[newName]) {
+                    alert("その名前はすでに存在します");
+                    return;
+                }
+                setPresets(prev => {
+                    const charData = { ...prev[managerChar] };
+                    charData[newName] = charData[oldName];
+                    delete charData[oldName];
+                    return { ...prev, [managerChar]: charData };
+                });
+                if (managerMode === oldName) {
+                    setManagerMode(newName);
+                }
+            }
+        };
+
+        const handleExport = (e) => {
+            e.stopPropagation();
+            const exportData = { presets, learnedAbilities, charLevels };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "soul_data.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        };
+
+        const handleImportClick = (e) => {
+            e.stopPropagation();
+            if (importFileRef.current) importFileRef.current.click();
+        };
+
+        const handleFileChange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (data.presets || data.learnedAbilities || data.charLevels) {
+                        if (data.presets) {
+                            setPresets(data.presets);
+                            localStorage.setItem('soul_presets', JSON.stringify(data.presets));
+                        }
+                        if (data.learnedAbilities) {
+                            setLearnedAbilities(data.learnedAbilities);
+                            localStorage.setItem('learned_abilities', JSON.stringify(data.learnedAbilities));
+                        }
+                        if (data.charLevels) {
+                            setCharLevels(data.charLevels);
+                            localStorage.setItem('char_levels', JSON.stringify(data.charLevels));
+                        }
+                        alert("魂アビリティのデータを読み込みました。");
+                    } else {
+                        alert("無効なデータ形式です。(soul_data形式ではありません)");
+                    }
+                } catch(err) {
+                    console.error("ファイルの読み込みに失敗しました:", err);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        };
+
+        const openManager = (e) => {
+            e.stopPropagation();
+            setManagerChar(""); 
+            setManagerMode("history");
+            setAbilitySearch("");
+            setLimitMessage("");
+            setShowLearnedOnly(false);
+            setIsManagerOpen(true);
+            setIsOpen(false);
+        };
+
+        const managerPresets = presets[managerChar] || {};
+        const managerLearned = learnedAbilities[managerChar] || [];
+
+        const filteredAbilities = useMemo(() => {
+            const term = hiraganaToKatakana(abilitySearch.toLowerCase());
+            let baseList = [];
+            
+            if (managerMode !== "history" && showLearnedOnly) {
+                baseList = managerLearned.map(ab => ({ label: ab, furigana: '' }));
+            } else {
+                baseList = ABILITY_DB;
+            }
+
+            if (!term) return baseList;
+            return baseList.filter(ab => {
+                const searchStr = hiraganaToKatakana((ab.label + (ab.furigana || '')).toLowerCase());
+                return searchStr.includes(term);
+            });
+        }, [abilitySearch, ABILITY_DB, managerMode, showLearnedOnly, managerLearned]);
+
+        const handleAddAbility = (abilityStr) => {
+            if (!managerChar) return;
+            let finalAbility = abilityStr;
+            if (abilityStr === "手動入力") {
+                const userInput = prompt("名称を入力してください:", "");
+                if (userInput) finalAbility = userInput;
+                else return;
+            } else if (abilityStr === "回避の極意(●●)") {
+                const userInput = prompt("回避対象のスキル名などを入力してください", "");
+                if (userInput) finalAbility = `回避の極意(${userInput})`;
+                else return;
+            }
+
+            if (managerMode === "history") {
+                setLearnedAbilities(prev => {
+                    const charLearned = prev[managerChar] || [];
+                    if (!charLearned.includes(finalAbility)) {
+                        return { ...prev, [managerChar]: [...charLearned, finalAbility] };
+                    }
+                    return prev;
+                });
+            } else {
+                const currentLv = managerPresets[managerMode]?.level || charLevels[managerChar] || "100";
+                const limit = getAbilityLimit(currentLv);
+
+                setPresets(prev => {
+                    const charData = prev[managerChar] || {};
+                    const pData = charData[managerMode] || { abilities: [], level: currentLv };
+                    const currentAbs = pData.abilities || [];
+
+                    if (currentAbs.includes(finalAbility)) return prev;
+
+                    if (currentAbs.length >= limit) {
+                        setLimitMessage(`上限${limit}枠まで(追加不可)`);
+                        if (limitMessageTimerRef.current) clearTimeout(limitMessageTimerRef.current);
+                        limitMessageTimerRef.current = setTimeout(() => setLimitMessage(""), 3000);
+                        return prev;
+                    }
+
+                    const newAbilities = [...currentAbs, finalAbility];
+                    return { ...prev, [managerChar]: { ...charData, [managerMode]: { ...pData, abilities: newAbilities } } };
+                });
+            }
+        };
+
+        const handleRemoveFromHistory = (abilityStr) => {
+            setLearnedAbilities(prev => {
+                const charLearned = prev[managerChar] || [];
+                return { ...prev, [managerChar]: charLearned.filter(a => a !== abilityStr) };
+            });
+        };
+
+        const handleRemoveFromPreset = (idxToRemove) => {
+            setPresets(prev => {
+                const charData = prev[managerChar] || {};
+                const pData = charData[managerMode];
+                if (!pData) return prev;
+                const newAbilities = (pData.abilities || []).filter((_, i) => i !== idxToRemove);
+                return { ...prev, [managerChar]: { ...charData, [managerMode]: { ...pData, abilities: newAbilities } } };
+            });
+        };
+
+        const handleManagerDragStart = (e, idx) => {
+            setDraggedItemIndex(idx);
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", idx);
+        };
+
+        const handleManagerDragOver = (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+        };
+
+        const handleManagerDropHistory = (e, toIndex) => {
+            e.preventDefault();
+            const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+            if (isNaN(fromIndex) || fromIndex === toIndex) {
+                setDraggedItemIndex(null);
+                return;
+            }
+            setLearnedAbilities(prev => {
+                const list = [...(prev[managerChar] || [])];
+                const [moved] = list.splice(fromIndex, 1);
+                list.splice(toIndex, 0, moved);
+                return { ...prev, [managerChar]: list };
+            });
+            setDraggedItemIndex(null);
+        };
+
+        const handleManagerDropPreset = (e, toIndex) => {
+            e.preventDefault();
+            const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+            if (isNaN(fromIndex) || fromIndex === toIndex) {
+                setDraggedItemIndex(null);
+                return;
+            }
+            setPresets(prev => {
+                const charData = prev[managerChar] || {};
+                const pData = charData[managerMode];
+                if (!pData) return prev;
+                const newAbilities = [...(pData.abilities || [])];
+                const [moved] = newAbilities.splice(fromIndex, 1);
+                newAbilities.splice(toIndex, 0, moved);
+                return { ...prev, [managerChar]: { ...charData, [managerMode]: { ...pData, abilities: newAbilities } } };
+            });
+            setDraggedItemIndex(null);
+        };
+
+        const handleManagerDragEnd = () => {
+            setDraggedItemIndex(null);
+        };
+        
+        const handleManagerPresetDragStart = (e, pName) => {
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/presetName", pName);
+        };
+
+        const handleManagerPresetDrop = (e, targetPName) => {
+            e.preventDefault();
+            const sourcePName = e.dataTransfer.getData("text/presetName");
+            if (!sourcePName || sourcePName === targetPName) return;
+
+            setPresets(prev => {
+                const charData = { ...prev[managerChar] };
+                const keys = Object.keys(charData);
+                const sourceIndex = keys.indexOf(sourcePName);
+                const targetIndex = keys.indexOf(targetPName);
+
+                if (sourceIndex === -1 || targetIndex === -1) return prev;
+
+                keys.splice(sourceIndex, 1);
+                keys.splice(targetIndex, 0, sourcePName);
+
+                const newData = {};
+                keys.forEach(k => {
+                    newData[k] = charData[k];
+                });
+
+                return { ...prev, [managerChar]: newData };
+            });
+        };
+
+        const handleSortHistory = (order) => {
+            if (!managerChar) return;
+            setLearnedAbilities(prev => {
+                const charLearned = [...(prev[managerChar] || [])];
+                charLearned.sort((a, b) => {
+                    if (order === 'asc') return a.localeCompare(b, 'ja');
+                    return b.localeCompare(a, 'ja');
+                });
+                return { ...prev, [managerChar]: charLearned };
+            });
+        };
+
+        const handleCreateManagerPreset = (e) => {
+            e.stopPropagation();
+            if (!managerChar) return;
+            const pName = prompt("新しい構成の名前を入力してください:", "新規構成");
+            if (pName) {
+                if (presets[managerChar]?.[pName]) {
+                    alert("その名前はすでに存在します");
+                    return;
+                }
+                const currentLv = charLevels[managerChar] || "100";
+                setPresets(prev => {
+                    const charData = prev[managerChar] || {};
+                    return {
+                        ...prev,
+                        [managerChar]: {
+                            ...charData,
+                            [pName]: { abilities: [], level: currentLv }
+                        }
+                    };
+                });
+                setManagerMode(pName);
+            }
+        };
+        
+        const displaySoulLevel = managerMode === "history" 
+            ? (charLevels[managerChar] || "100") 
+            : (managerPresets[managerMode]?.level || charLevels[managerChar] || "100");
+
+        return (
+            <div className={`relative w-full ${isOpen ? 'z-50' : 'z-10'}`} ref={menuRef}>
+                <input type="file" ref={importFileRef} accept=".json" style={{display:'none'}} onChange={handleFileChange} />
+                <div 
+                    onClick={() => setIsOpen(!isOpen)} 
+                    onDoubleClick={onDoubleClickTitle}
+                    className="text-fuchsia-500 font-bold text-[13px] mb-1 flex items-center cursor-pointer hover:opacity-80 w-fit select-none"
+                    title="クリックでメニューを開く / ダブルクリックで非表示"
+                >
+                    <span className="text-[17px] leading-none mr-[1px]">●</span>魂アビリティ
+                </div>
+                {isOpen && (
+                    <div className="absolute left-0 top-full mt-[1px] w-full bg-[#2a2a2a] border border-gray-600 rounded-sm">
+                        <div className="p-1 border-b border-gray-600 flex items-center justify-between gap-1">
+                            <button onClick={handleSave} className="flex-1 text-left text-[13px] text-[#1D9BF0] hover:bg-[#444] px-2 py-1">＋ 現在の構成を登録</button>
+                            <div className="flex items-center gap-1">
+                                {/* 魂データ専用 インポート・エクスポート */}
+                                <button onClick={handleImportClick} className="text-gray-300 hover:text-white px-2 py-0.5 text-[12px] bg-[#333] rounded hover:bg-[#444]" title="インポート">↥</button>
+                                <button onClick={handleExport} className="text-gray-300 hover:text-white px-2 py-0.5 text-[12px] bg-[#333] rounded hover:bg-[#444]" title="エクスポート">↧</button>
+                                <button onClick={openManager} className="text-gray-300 hover:text-white px-2 py-0.5 text-[12px] bg-[#333] rounded hover:bg-[#444]" title="管理(ポップアップ)">☰</button>
+                            </div>
+                        </div>
+                        <div className="max-h-64 overflow-y-auto">
+                            {Object.keys(charPresets).length > 0 ? Object.keys(charPresets).map(pName => (
+                                <div key={pName} className="flex justify-between items-center text-[13px] text-gray-200 hover:bg-[#1D9BF0] cursor-pointer px-2 py-1.5 border-b border-gray-700" onClick={() => { onLoad(charPresets[pName]); setIsOpen(false); }}>
+                                    <span className="truncate">{pName}</span>
+                                    <span onClick={(e) => handleDelete(e, charName, pName)} className="text-gray-500 hover:text-[#FF0000] px-1 text-[15px]">×</span>
+                                </div>
+                            )) : <div className="text-[13px] text-gray-500 p-2 text-center">登録なし</div>}
+                        </div>
+                    </div>
+                )}
+
+                {/* Manager Modal */}
+                {isManagerOpen && ReactDOM.createPortal(
+                    <div className="fixed inset-0 bg-black bg-opacity-80 z-[9999] flex items-center justify-center p-4" onMouseDown={(e) => e.stopPropagation()}>
+                        <div className="bg-[#222] border border-gray-500 rounded-md w-full max-w-4xl h-[80vh] max-h-[700px] flex flex-col shadow-2xl cursor-default" onClick={e => e.stopPropagation()}>
+                            {/* Header */}
+                            <div className="h-[48px] px-3 border-b border-gray-600 flex justify-between items-center bg-[#111] rounded-t-md">
+                                <div className="flex items-center gap-4">
+                                    <h2 className="text-[15px] font-bold text-[rgb(217,70,239)] flex items-center">
+                                        <span className="text-[20px] leading-none mr-[1px]">●</span>魂アビリティ管理
+                                    </h2>
+                                    <div className="w-[250px]">
+                                        <CustomSelect 
+                                            value={managerChar} 
+                                            options={CHAR_DB.filter(c => c.label !== "手動入力")}
+                                            onChange={val => {
+                                                setManagerChar(val);
+                                                setManagerMode("history");
+                                                setLimitMessage("");
+                                                setShowLearnedOnly(false);
+                                            }}
+                                            placeholder="キャラを選択..."
+                                            formatDisplay={getDisplayCharName}
+                                        />
+                                    </div>
+                                    {managerChar && (
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-fuchsia-500 font-bold text-[13px]">魂Lv</span>
+                                            <input 
+                                                type="text" 
+                                                value={displaySoulLevel} 
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (managerMode === "history") {
+                                                        setCharLevels(prev => {
+                                                            const newState = { ...prev, [managerChar]: val };
+                                                            localStorage.setItem('char_levels', JSON.stringify(newState));
+                                                            return newState;
+                                                        });
+                                                    } else {
+                                                        setPresets(prev => {
+                                                            const charData = prev[managerChar] || {};
+                                                            const pData = charData[managerMode] || { abilities: [] };
+                                                            return { 
+                                                                ...prev, 
+                                                                [managerChar]: { 
+                                                                    ...charData, 
+                                                                    [managerMode]: { ...pData, level: val } 
+                                                                } 
+                                                            };
+                                                        });
+                                                    }
+                                                }}
+                                                onFocus={e => e.target.select()}
+                                                className="bg-[#333] text-white text-[13px] px-1 h-[28px] rounded focus:outline-none w-[40px] text-center"
+                                            />
+                                            {limitMessage && (
+                                                <span className="text-red-500 text-[13px] ml-1 font-normal">{limitMessage}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {/* 魂データ専用 インポート・エクスポート */}
+                                    <button onClick={handleImportClick} className="text-gray-300 hover:text-white px-3 py-1 text-[16px] bg-[#333] rounded hover:bg-[#444] border border-gray-600" title="インポート">↥</button>
+                                    <button onClick={handleExport} className="text-gray-300 hover:text-white px-3 py-1 text-[16px] bg-[#333] rounded hover:bg-[#444] border border-gray-600" title="エクスポート">↧</button>
+                                    <div className="w-px h-5 bg-gray-600 mx-1"></div>
+                                    <button onClick={() => setIsManagerOpen(false)} className="text-gray-400 hover:text-[#FF0000] font-bold text-[18px] leading-none px-2 py-1" title="閉じる">✕</button>
+                                </div>
+                            </div>
+                            
+                            {/* Content (3 Columns - w-1/3 Each) */}
+                            <div className="flex-1 overflow-hidden flex flex-row">
+                                {/* Left: Menu (History + Presets) */}
+                                <div className="w-1/3 flex flex-col border-r border-gray-700 bg-[#1a1a1a]">
+                                    <div className="h-[36px] flex items-center justify-center bg-[#2a2a2a] border-b border-gray-700 text-[13px] font-bold text-gray-300">
+                                        メニュー
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto bg-[#111]">
+                                        <div 
+                                            className={`flex justify-between items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 transition-colors ${managerMode === "history" ? 'bg-purple-600 text-white font-bold' : 'bg-[#222] text-gray-200 hover:bg-[#333]'}`}
+                                            onClick={() => setManagerMode("history")}
+                                        >
+                                            <span className="truncate flex-1">習得済み</span>
+                                            {managerChar && (
+                                                <div className="flex items-center gap-[3px] ml-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); setManagerMode("history"); handleSortHistory('asc'); }} className={`${managerMode === "history" ? 'text-blue-100 hover:text-white' : 'text-gray-400 hover:text-gray-200'} px-1 font-normal text-[14px] leading-none`} title="昇順">↑</button>
+                                                    <button onClick={(e) => { e.stopPropagation(); setManagerMode("history"); handleSortHistory('desc'); }} className={`${managerMode === "history" ? 'text-blue-100 hover:text-white' : 'text-gray-400 hover:text-gray-200'} pl-1 pr-[3px] font-normal text-[14px] leading-none`} title="降順">↓</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {Object.keys(managerPresets).map(pName => (
+                                            <div 
+                                                key={pName}
+                                                draggable
+                                                onDragStart={(e) => handleManagerPresetDragStart(e, pName)}
+                                                onDragOver={handleManagerDragOver}
+                                                onDrop={(e) => handleManagerPresetDrop(e, pName)}
+                                                className={`flex justify-between items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 transition-colors ${managerMode === pName ? 'bg-[#1D9BF0] text-white font-bold' : 'bg-[#222] text-gray-200 hover:bg-[#333]'}`}
+                                                onClick={() => setManagerMode(pName)}
+                                            >
+                                                <span className="truncate flex-1">{pName}</span>
+                                                <div className="flex items-center gap-1 ml-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); handleRenamePreset(pName); }} className={`${managerMode === pName ? 'text-blue-100 hover:text-white' : 'text-gray-400 hover:text-gray-200'} px-1 font-normal text-[14px] leading-none`} title="名前変更">✎</button>
+                                                    <button onClick={(e) => handleDelete(e, managerChar, pName)} className={`${managerMode === pName ? 'text-blue-100 hover:text-[#FF0000]' : 'text-gray-400 hover:text-[#FF0000]'} px-1 font-normal text-[14px] leading-none`} title="削除">✕</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {managerChar && (
+                                            <div 
+                                                className="flex justify-start items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 bg-[#222] text-[#1D9BF0] hover:bg-[#333] transition-colors"
+                                                onClick={handleCreateManagerPreset}
+                                            >
+                                                <span>＋ 新しい構成を登録</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Center: Editor Area */}
+                                <div className="w-1/3 flex flex-col border-r border-gray-700 bg-[#111]">
+                                    <div className="h-[36px] flex items-center justify-center px-3 bg-[#2a2a2a] border-b border-gray-700 text-[13px] font-bold text-gray-300">
+                                        <span>{managerMode === "history" ? "習得済みの一覧" : managerMode}</span>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto bg-[#1a1a1a]">
+                                        {!managerChar ? (
+                                            <div className="text-gray-500 text-[13px] p-4 text-center mt-10">キャラを選択してください</div>
+                                        ) : managerMode === "history" ? (
+                                            managerLearned.length > 0 ? managerLearned.map((ab, idx) => (
+                                                <div 
+                                                    key={idx} 
+                                                    draggable
+                                                    onDragStart={(e) => handleManagerDragStart(e, idx)}
+                                                    onDragOver={handleManagerDragOver}
+                                                    onDrop={(e) => handleManagerDropHistory(e, idx)}
+                                                    onDragEnd={handleManagerDragEnd}
+                                                    className="flex justify-between items-center px-2 py-1.5 text-[13px] border-b border-gray-700 text-gray-200 hover:bg-[#222] transition-colors cursor-pointer"
+                                                >
+                                                    <span className="truncate">{ab}</span>
+                                                    <button onClick={() => handleRemoveFromHistory(ab)} className="text-gray-500 hover:text-[#FF0000] px-1 text-[14px] leading-none">✕</button>
+                                                </div>
+                                            )) : <div className="text-gray-500 text-[13px] p-4 text-center mt-4">習得済みはありません<br/>右のリストから追加できます</div>
+                                        ) : (
+                                            (managerPresets[managerMode]?.abilities || []).length > 0 ? (managerPresets[managerMode]?.abilities || []).map((ab, idx) => (
+                                                <div 
+                                                    key={idx} 
+                                                    draggable
+                                                    onDragStart={(e) => handleManagerDragStart(e, idx)}
+                                                    onDragOver={handleManagerDragOver}
+                                                    onDrop={(e) => handleManagerDropPreset(e, idx)}
+                                                    onDragEnd={handleManagerDragEnd}
+                                                    className="flex justify-between items-center px-2 py-1.5 text-[13px] border-b border-gray-700 text-gray-200 hover:bg-[#222] transition-colors cursor-pointer"
+                                                >
+                                                    <span className="truncate">{ab}</span>
+                                                    <button onClick={(e) => { e.stopPropagation(); handleRemoveFromPreset(idx); }} className="text-gray-500 hover:text-[#FF0000] px-1 text-[14px] leading-none">✕</button>
+                                                </div>
+                                            )) : <div className="text-gray-500 text-[13px] p-4 text-center mt-4">アビリティがありません<br/>右のリストから追加できます</div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Right: Ability DB */}
+                                <div className="w-1/3 flex flex-col bg-[#1a1a1a]">
+                                    <div className="h-[36px] flex items-center pl-[7px] pr-[7px] bg-[#2a2a2a] border-b border-gray-700 gap-[3px]">
+                                        <input 
+                                            type="text" 
+                                            value={abilitySearch} 
+                                            onChange={e => setAbilitySearch(e.target.value)} 
+                                            placeholder="アビリティ検索..." 
+                                            className="flex-1 min-w-0 bg-[#111] text-[12px] text-white px-2 h-[26px] rounded border border-gray-600 focus:outline-none" 
+                                        />
+                                        {managerMode !== "history" && (
+                                            <button 
+                                                onClick={() => setShowLearnedOnly(!showLearnedOnly)}
+                                                className={`flex-shrink-0 px-2 h-[26px] flex items-center justify-center text-[14px] leading-none rounded border border-gray-600 transition-colors ${showLearnedOnly ? 'bg-purple-600 text-white border-purple-500' : 'bg-[#333] text-gray-300 hover:bg-[#444]'}`}
+                                                title={showLearnedOnly ? "全一覧を表示" : "習得済みから選択"}
+                                            >
+                                                ⇌
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto bg-[#111]">
+                                        {filteredAbilities.map((ab, idx) => (
+                                            <div key={idx} onClick={() => handleAddAbility(ab.label)} className="px-2 py-1.5 cursor-pointer text-[13px] text-gray-200 border-b border-gray-700 hover:bg-[#1D9BF0] truncate transition-colors" title="クリックで追加">
+                                                {ab.label}
+                                            </div>
+                                        ))}
+                                        {filteredAbilities.length === 0 && (
+                                            <div className="text-gray-500 text-[13px] p-4 text-center">候補なし</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>,
+                    document.body
+                )}
+            </div>
+        );
+    };
+
+    const FavoriteMenu = ({ index, themeColor, onApply, title, titlePopup, onDoubleClick }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const [searchTerm, setSearchTerm] = useState("");
+        const menuRef = useRef(null);
+
+        useEffect(() => {
+            const handleClickOutside = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setIsOpen(false); };
+            document.addEventListener("mousedown", handleClickOutside, true);
+            return () => document.removeEventListener("mousedown", handleClickOutside, true);
+        }, []);
+
+        const filtered = useMemo(() => {
+            const term = hiraganaToKatakana(searchTerm.toLowerCase());
+            return FAVORITE_DB.filter(item => {
+                const name = item['登録名'] || '';
+                const furigana = item['フリガナ'] || '';
+                const searchStr = hiraganaToKatakana((name + furigana).toLowerCase());
+                return searchStr.includes(term);
+            });
+        }, [searchTerm]);
+
+        return (
+            <div className={`relative w-full ${isOpen ? 'z-50' : 'z-10'}`} ref={menuRef}>
+                <div 
+                    onClick={() => setIsOpen(!isOpen)} 
+                    onDoubleClick={onDoubleClick}
+                    className={`${themeColor} font-bold text-[13px] flex items-center mb-0.5 cursor-pointer select-none w-fit hover:opacity-80`}
+                    title={titlePopup}
+                >
+                    <span className="text-[17px] leading-none mr-[1px]">●</span>{title || `キャラ${index + 1}`}
+                </div>
+                {isOpen && (
+                    <div className="absolute left-0 top-full mt-[1px] w-full bg-[#2a2a2a] border border-gray-600 flex flex-col rounded-sm">
+                        <input 
+                            type="text" 
+                            autoFocus
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="bg-[#111] text-white text-[13px] px-2 py-1.5 border-b border-gray-600 focus:outline-none"
+                            placeholder="検索..."
+                        />
+                        <div className="overflow-y-auto max-h-64">
+                            {filtered.length > 0 ? filtered.map((item, idx) => (
+                                <div 
+                                    key={idx} 
+                                    onClick={() => { onApply(item); setIsOpen(false); setSearchTerm(""); }}
+                                    className="px-2 py-1.5 text-[13px] text-gray-200 hover:bg-[#1D9BF0] cursor-pointer border-b border-gray-700 flex justify-between items-center"
+                                >
+                                    <span className="truncate">{item['登録名']}</span>
+                                </div>
+                            )) : <div className="px-2 py-2 text-[13px] text-gray-500">候補なし</div>}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const StyleMenu = ({ index, themeColor, charName, onApply }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        const [searchTerm, setSearchTerm] = useState("");
+        const menuRef = useRef(null);
+
+        useEffect(() => {
+            const handleClickOutside = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setIsOpen(false); };
+            document.addEventListener("mousedown", handleClickOutside, true);
+            return () => document.removeEventListener("mousedown", handleClickOutside, true);
+        }, []);
+
+        const styleList = useMemo(() => {
+            if (!charName) return [];
+            const baseName = getDisplayCharName(charName);
+            const styles = STYLE_FULL_DB.filter(s => s['キャラ名'] === baseName);
+            styles.sort((a, b) => {
+                const dateA = a['実装時期'] || '';
+                const dateB = b['実装時期'] || '';
+                if (dateA > dateB) return -1;
+                if (dateA < dateB) return 1;
+                return 0;
+            });
+            return styles;
+        }, [charName]);
+
+        const filtered = useMemo(() => {
+            const term = hiraganaToKatakana(searchTerm.toLowerCase());
+            return styleList.filter(item => {
+                const name = item['スタイル名'] || item['名称'] || '';
+                const furigana = item['フリガナ'] || '';
+                const searchStr = hiraganaToKatakana((name + furigana).toLowerCase());
+                return searchStr.includes(term);
+            });
+        }, [searchTerm, styleList]);
+
+        return (
+            <div className={`relative w-full ${isOpen ? 'z-50' : 'z-10'}`} ref={menuRef}>
+                <div 
+                    onClick={() => setIsOpen(!isOpen)} 
+                    className={`${themeColor} font-bold text-[16px] flex items-center mb-0.5 cursor-pointer select-none w-fit hover:opacity-80`}
+                    title="クリックでスタイル一覧を開く"
+                >
+                    <span className="text-[17px] leading-none mr-[1px]">●</span>キャラ{index + 1}
+                </div>
+                {isOpen && (
+                    <div className="absolute left-0 top-full mt-[1px] w-full bg-[#2a2a2a] border border-gray-600 flex flex-col rounded-sm">
+                        <input 
+                            type="text" 
+                            autoFocus
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="bg-[#111] text-white text-[13px] px-2 py-1.5 border-b border-gray-600 focus:outline-none"
+                            placeholder="検索..."
+                        />
+                        <div className="overflow-y-auto max-h-64">
+                            {filtered.length > 0 ? filtered.map((item, idx) => {
+                                const displayStyleName = item['実装時期'] 
+                                    ? `[${item['グレード']}] ${item['スタイル名'] || item['名称']} (${item['実装時期']})` 
+                                    : `[${item['グレード']}] ${item['スタイル名'] || item['名称']}`;
+                                return (
+                                    <div 
+                                        key={idx} 
+                                        onClick={() => { onApply(item); setIsOpen(false); setSearchTerm(""); }}
+                                        className="px-2 py-1.5 text-[13px] text-gray-200 hover:bg-[#1D9BF0] cursor-pointer border-b border-gray-700 flex justify-between items-center"
+                                    >
+                                        <span className="truncate">{displayStyleName}</span>
+                                    </div>
+                                );
+                            }) : <div className="px-2 py-2 text-[13px] text-gray-500">
+                                {charName ? "候補なし" : "キャラを選択してください"}
+                            </div>}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const CharacterColumn = ({ index, data, updateSlot, learnedData, setLearnedData, soulPresets, setSoulPresets, onRemoveLearned, charLevels, setCharLevels, maxSoulLimit, hiddenSections, onHideSection, renmaOptions, renmaData, onImportRenmaClick, globalSkillManageMode, onToggleSkillManageMode }) => {
+        const themeColor = THEME_COLORS[index % 5];
+        const soulLimit = getAbilityLimit(data.soulLevel);
+        const textareaRef = useRef(null);
+
+        useEffect(() => {
+            if (textareaRef.current) {
+                textareaRef.current.style.minHeight = '0px';
+                textareaRef.current.style.minHeight = textareaRef.current.scrollHeight + 'px';
+            }
+        }, [data.remarks]);
+
+        const handleAttrChange = (type, key, val) => updateSlot(index, { ...data, [type]: { ...data[type], [key]: val } });
+        const handleArrayChange = (key, idx, val) => {
+            const arr = [...data[key]]; arr[idx] = val;
+            updateSlot(index, { ...data, [key]: arr }, key === 'soulAbilities' ? val : null);
+        };
+
+        const handleResistBlur = (type, k, valStr) => {
+            const val = parseInt(valStr, 10);
+            if (!isNaN(val)) handleAttrChange(type, k, val > 0 ? `+${val}` : String(val));
+        };
+
+        const recalcResistances = (baseCharItem, mainItem, subItem, decoItem) => {
+            let res = { 斬: 0, 打: 0, 突: 0, 熱: 0, 冷: 0, 雷: 0, 陽: 0, 陰: 0 };
+            let status = { 毒: 0, 暗: 0, ス: 0, マ: 0, 眠: 0, 石: 0, 混: 0, 魅: 0, 狂: 0, 気: 0 };
+
+            const addValues = (source) => {
+                if (!source) return;
+                Object.keys(res).forEach(k => { res[k] += parseInt(source[k] || '0', 10) || 0; });
+                const statusMap = { 毒: '毒', 暗: '暗闇', ス: 'スタン', マ: 'マヒ', 眠: '眠り', 石: '石化', 混: '混乱', 魅: '魅了', 狂: '狂戦士', 気: '気絶' };
+                Object.keys(status).forEach(k => { status[k] += parseInt(source[statusMap[k]] || '0', 10) || 0; });
+            };
+
+            addValues(baseCharItem);
+            addValues(mainItem);
+            addValues(subItem);
+            addValues(decoItem);
+
+            const formatValue = (v) => v > 0 ? `+${v}` : String(v);
+
+            Object.keys(res).forEach(k => res[k] = formatValue(res[k]));
+            Object.keys(status).forEach(k => status[k] = formatValue(status[k]));
+
+            return { resistances: res, statusResists: status };
+        };
+
+        const getBaseEquipItem = (db, val) => {
+            if (!val) return null;
+            let match = db.find(m => m.label === val);
+            if (match) return match;
+            const baseMatch = val.match(/^(.+?)\(/);
+            if (baseMatch) {
+                return db.find(m => m.label === baseMatch[1]);
+            }
+            return null;
+        };
+
+        const handleEquipChange = (equipType, val) => {
+            const newEquipments = { ...data.equipments, [equipType]: val };
+            let newData = { ...data, equipments: newEquipments };
+
+            const baseCharItem = FAVORITE_DB.find(f => f['登録名'] === data.name);
+            const mainItem = getBaseEquipItem(MAIN_DB, newEquipments.main);
+            const subItem = getBaseEquipItem(SUB_DB, newEquipments.sub);
+            const decoItem = getBaseEquipItem(DECO_DB, newEquipments.deco);
+
+            const calculated = recalcResistances(baseCharItem, mainItem, subItem, decoItem);
+            newData.resistances = calculated.resistances;
+            newData.statusResists = calculated.statusResists;
+
+            if (equipType === 'main' || equipType === 'sub') {
+                let newRenma = [...newData.renmaAbilities];
+                const targetType = equipType;
+                const targetIndex = equipType === 'main' ? 0 : 1;
+                
+                const match = renmaData.find(d => d.armorType === targetType && d.armorName === val);
+                if (match) {
+                    newRenma[targetIndex] = `${match.abilityName} ${match.value}%`;
+                } else {
+                    newRenma[targetIndex] = "";
+                }
+                newData.renmaAbilities = newRenma;
+            }
+
+            if (equipType === 'deco') {
+                let newDecoAbs = [...newData.decoAbilities];
+                
+                const baseMatch = val.match(/^(.+?)\((.+?)\)$/);
+                let baseName = val;
+                let subName = "";
+                if (baseMatch && val.startsWith('◆')) {
+                    baseName = baseMatch[1];
+                    subName = baseMatch[2];
+                }
+
+                const decoAbsList = DECO_ABILITY_MAP[baseName];
+                if (decoAbsList && decoAbsList.length > 0) {
+                    if (subName) {
+                        let matchedAbility = "";
+                        const exactMatch = decoAbsList.find(a => a.includes(`(${subName})`));
+                        if (exactMatch) {
+                            matchedAbility = exactMatch;
+                        } else {
+                            const templateMatch = decoAbsList.find(a => a.includes('●'));
+                            if (templateMatch) {
+                                matchedAbility = templateMatch.replace(/●+/, subName);
+                            }
+                        }
+                        if (matchedAbility) {
+                            newDecoAbs[0] = matchedAbility;
+                            newDecoAbs[1] = matchedAbility;
+                            newDecoAbs[2] = matchedAbility;
+                        } else {
+                            newDecoAbs = ["", "", ""];
+                        }
+                    } else if (baseName.startsWith('◆')) {
+                        let topAbility = decoAbsList.find(a => a.includes('●')) || decoAbsList[0] || "";
+                        newDecoAbs[0] = topAbility;
+                        newDecoAbs[1] = topAbility;
+                        newDecoAbs[2] = topAbility;
+                    } else {
+                        newDecoAbs[0] = decoAbsList[0] || "";
+                        newDecoAbs[1] = decoAbsList[1] || "";
+                        newDecoAbs[2] = decoAbsList[2] || "";
+                    }
+                } else {
+                    newDecoAbs = ["", "", ""];
+                }
+                newData.decoAbilities = newDecoAbs;
+            }
+
+            updateSlot(index, newData);
+        };
+
+        const charAllSkillOptions = useMemo(() => {
+            const skills = new Set();
+            if (data.name) {
+                const targetCharName = getDisplayCharName(data.name);
+                const addSkill = (skill) => {
+                    if (!skill) return;
+                    skills.add(skill);
+                    if (skill.endsWith('+') || skill.endsWith('＋')) {
+                        skills.add(skill.slice(0, -1));
+                    }
+                };
+                STYLE_FULL_DB.forEach(style => {
+                    if (style['キャラ名'] === targetCharName) {
+                        addSkill(style['スキル1']);
+                        addSkill(style['スキル2']);
+                        addSkill(style['スキル3']);
+                    }
+                });
+            }
+            return ["なし", "手動入力", ...Array.from(skills).sort()];
+        }, [data.name]);
+
+        const inhOptionsList = useMemo(() => {
+            const allSkills = new Set();
+            const currentStyleSkills = new Set();
+            
+            if (data.name) {
+                const targetCharName = getDisplayCharName(data.name);
+                const addSkillToSet = (set, skill) => {
+                    if (!skill) return;
+                    set.add(skill);
+                    if (skill.endsWith('+') || skill.endsWith('＋')) {
+                        set.add(skill.slice(0, -1));
+                    }
+                };
+                
+                STYLE_FULL_DB.forEach(style => {
+                    if (style['キャラ名'] === targetCharName) {
+                        const styleName = style['スタイル名'] || style['名称'];
+                        const isCurrentStyle = data.styleName && (styleName === data.styleName);
+                        
+                        if (isCurrentStyle) {
+                            addSkillToSet(currentStyleSkills, style['スキル1']);
+                            addSkillToSet(currentStyleSkills, style['スキル2']);
+                            addSkillToSet(currentStyleSkills, style['スキル3']);
+                        }
+                        
+                        addSkillToSet(allSkills, style['スキル1']);
+                        addSkillToSet(allSkills, style['スキル2']);
+                        addSkillToSet(allSkills, style['スキル3']);
+                    }
+                });
+            }
+            
+            const filteredSkills = Array.from(allSkills).filter(s => !currentStyleSkills.has(s));
+            return ["なし", "手動入力", ...filteredSkills.sort()];
+        }, [data.name, data.styleName]);
+
+        const currentDeco = data.equipments.deco;
+        const decoAbsOptions = useMemo(() => {
+            if (currentDeco) {
+                const baseName = currentDeco.replace(/\(.*?\)$/, ''); 
+                if (DECO_ABILITY_MAP[baseName]) {
+                    return [
+                        { label: "手動入力", furigana: "しゅどうにゅうりょく" },
+                        ...DECO_ABILITY_MAP[baseName]
+                            .filter(a => !a.includes('●'))
+                            .map(a => ({ label: a, furigana: '' }))
+                    ];
+                }
+            }
+            return DECO_ABILITY_OPTIONS.filter(opt => !opt.label.includes('●'));
+        }, [currentDeco]);
+
+        const handleDragStart = (e, i) => {
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", i);
+        };
+
+        const handleDragOver = (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+        };
+
+        const handleDrop = (e, toIndex) => {
+            e.preventDefault();
+            const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+            if (isNaN(fromIndex) || fromIndex === toIndex) {
+                return;
+            }
+
+            const paddedAbs = Array.from({ length: soulLimit }, (_, idx) => data.soulAbilities[idx] || "");
+            const [movedItem] = paddedAbs.splice(fromIndex, 1);
+            paddedAbs.splice(toIndex, 0, movedItem);
+
+            updateSlot(index, { ...data, soulAbilities: paddedAbs.filter(Boolean) });
+        };
+
+        return (
+            <div className="flex-1 min-w-[210px] w-1/5 flex flex-col gap-[10px]">
+                <StyleMenu 
+                    index={index} 
+                    themeColor={themeColor} 
+                    charName={data.name}
+                    onApply={(style) => {
+                        const s1 = style['スキル1'] || "";
+                        const s2 = style['スキル2'] || "";
+                        const s3 = style['スキル3'] || "";
+                        const bps = {
+                            s1: getSkillBP(s1),
+                            s2: getSkillBP(s2),
+                            s3: getSkillBP(s3),
+                            inh: data.bps?.inh || "-"
+                        };
+                        const styleLabel = style['スタイル名'] || style['名称'] || data.name;
+                        updateSlot(index, {
+                            ...data,
+                            styleName: styleLabel,
+                            skillNames: { ...data.skillNames, s1, s2, s3 },
+                            bps,
+                            skillChecks: {
+                                ...data.skillChecks,
+                                s1: !!s1,
+                                s2: !!s2,
+                                s3: !!s3
+                            }
+                        });
+                    }}
+                />
+                
+                <CustomSelect 
+                    value={data.name} 
+                    options={CHAR_DB} 
+                    onChange={(val) => {
+                        let newData = { 
+                            ...data, 
+                            name: val, 
+                            styleName: val,
+                            skillNames: { s1: "", s2: "", s3: "", inh: "" },
+                            bps: { s1: "-", s2: "-", s3: "-", inh: "-" },
+                            skillChecks: { s1: false, s2: false, s3: false, inh: false },
+                            inheritedSkill: "",
+                            skills: { ...data.skills, inh: "-" }
+                        };
+                        const baseCharItem = FAVORITE_DB.find(f => f['登録名'] === val);
+                        const mainItem = getBaseEquipItem(MAIN_DB, newData.equipments.main);
+                        const subItem = getBaseEquipItem(SUB_DB, newData.equipments.sub);
+                        const decoItem = getBaseEquipItem(DECO_DB, newData.equipments.deco);
+
+                        const calculated = recalcResistances(baseCharItem, mainItem, subItem, decoItem);
+                        newData.resistances = calculated.resistances;
+                        newData.statusResists = calculated.statusResists;
+
+                        updateSlot(index, newData);
+                    }} 
+                    placeholder="キャラ名" 
+                    formatDisplay={getDisplayCharName}
+                />
+
+                {!hiddenSections.equip && (
+                <div className="flex flex-col gap-1">
+                    <div 
+                        className="text-orange-500 font-bold text-[13px] mb-0.5 flex items-center cursor-pointer select-none w-fit hover:opacity-80"
+                        onDoubleClick={() => onHideSection('equip')}
+                        title="ダブルクリックで非表示"
+                    >
+                        <span className="text-[17px] leading-none mr-[1px]">●</span>装備
+                    </div>
+                    <CustomSelect value={data.equipments.main} options={MAIN_DB} onChange={(v) => handleEquipChange('main', v)} placeholder="主防具" />
+                    <CustomSelect value={data.equipments.sub} options={SUB_DB} onChange={(v) => handleEquipChange('sub', v)} placeholder="副防具" />
+                    <CustomSelect value={data.equipments.deco} options={DECO_DB} onChange={(v) => handleEquipChange('deco', v)} placeholder="装飾品" />
+                </div>
+                )}
+
+                {!hiddenSections.resist && (
+                <div>
+                    <FavoriteMenu 
+                        index={index} 
+                        themeColor="text-blue-500"
+                        title="属性耐性"
+                        titlePopup="クリックで耐性リストを開く / ダブルクリックで非表示"
+                        onDoubleClick={() => onHideSection('resist')}
+                        onApply={(item) => {
+                            const mainItem = getBaseEquipItem(MAIN_DB, data.equipments.main);
+                            const subItem = getBaseEquipItem(SUB_DB, data.equipments.sub);
+                            const decoItem = getBaseEquipItem(DECO_DB, data.equipments.deco);
+
+                            const calculated = recalcResistances(item, mainItem, subItem, decoItem);
+                            updateSlot(index, { 
+                                ...data, 
+                                resistances: calculated.resistances,
+                                statusResists: calculated.statusResists
+                            });
+                        }} 
+                    />
+                    <div className="grid grid-cols-4 gap-1">
+                        {Object.keys(data.resistances).map((k) => (
+                            <div key={k} className="flex items-stretch h-[26px]">
+                                <span className={`w-[40%] flex items-center justify-center text-[13px] font-bold ${ATTR_COLORS[k]} bg-black`}>{k}</span>
+                                <input type="text" className={`w-[60%] bg-[#333] rounded-sm text-right px-1 text-[12px] font-bold focus:outline-none focus:bg-[#444] ${getValueColor(data.resistances[k])}`} value={data.resistances[k]} onChange={e => handleAttrChange('resistances', k, e.target.value)} onBlur={e => handleResistBlur('resistances', k, e.target.value)} onFocus={e => e.target.select()} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                )}
+
+                {!hiddenSections.statusResist && (
+                <div>
+                    <div 
+                        className="text-[#28BE28] font-bold text-[13px] mb-1 flex items-center cursor-pointer select-none w-fit hover:opacity-80"
+                        onDoubleClick={() => onHideSection('statusResist')}
+                        title="ダブルクリックで非表示"
+                    >
+                        <span className="text-[17px] leading-none mr-[1px]">●</span>状態異常耐性
+                    </div>
+                    <div className="grid grid-cols-4 gap-1">
+                        {Object.keys(data.statusResists).map((k) => (
+                            <div key={k} className="flex items-stretch h-[26px]">
+                                <span className={`w-[40%] flex items-center justify-center text-[13px] font-bold ${STATUS_COLORS[k]} bg-black`}>{k}</span>
+                                <input type="text" className={`w-[60%] bg-[#333] rounded-sm text-right px-1 text-[12px] font-bold focus:outline-none focus:bg-[#444] ${getValueColor(data.statusResists[k])}`} value={data.statusResists[k]} onChange={e => handleAttrChange('statusResists', k, e.target.value)} onBlur={e => handleResistBlur('statusResists', k, e.target.value)} onFocus={e => e.target.select()} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                )}
+
+                {!hiddenSections.soulLevel && (
+                <div>
+                    <div 
+                        className="text-fuchsia-500 font-bold text-[13px] mb-1 flex items-center cursor-pointer select-none w-fit hover:opacity-80"
+                        onDoubleClick={() => onHideSection('soulLevel')}
+                        title="ダブルクリックで非表示"
+                    >
+                        <span className="text-[17px] leading-none mr-[1px]">●</span>魂Lv
+                    </div>
+                    <input 
+                        type="text"
+                        className="w-full h-[28px] bg-[#333] rounded-sm text-gray-200 text-left px-2 text-[13px] font-bold focus:outline-none focus:bg-[#444]" 
+                        value={data.soulLevel} 
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            let newAbs = [...data.soulAbilities];
+                            if (newAbs.length > getAbilityLimit(val)) newAbs = newAbs.slice(0, getAbilityLimit(val));
+                            updateSlot(index, { ...data, soulLevel: val, soulAbilities: newAbs });
+                        }} 
+                        onFocus={e => e.target.select()}
+                    />
+                </div>
+                )}
+
+                {!hiddenSections.skills && (
+                <div className="flex flex-col gap-1">
+                    <div className="flex justify-between items-center h-[24px]">
+                        <div 
+                            className="text-yellow-500 font-bold text-[13px] flex items-center cursor-pointer select-none w-fit hover:opacity-80"
+                            onClick={onToggleSkillManageMode}
+                            onDoubleClick={() => onHideSection('skills')}
+                            title="クリックでモード切替 / ダブルクリックで非表示"
+                        >
+                            <span className="text-[17px] leading-none mr-[1px]">●</span>{globalSkillManageMode ? '技・術管理' : '技・術Rank/継承'}
+                        </div>
+                        {globalSkillManageMode && (
+                            <div className="flex items-center gap-1">
+                                <span className="text-[11px] font-bold italic text-yellow-500">OverDrive</span>
+                                <input type="checkbox" className="w-[15px] h-[15px] cursor-pointer" checked={data.overDrive || false} onChange={e => updateSlot(index, { ...data, overDrive: e.target.checked })} />
+                            </div>
+                        )}
+                    </div>
+
+                    {!globalSkillManageMode ? (
+                        <>
+                            <div className="grid grid-cols-4 gap-1">
+                                {Object.keys(data.skills).map((k) => (
+                                    <div key={k} className="flex items-stretch h-[26px]">
+                                        <span className="w-[45%] flex items-center justify-center text-[13px] font-bold text-gray-400 bg-black whitespace-nowrap">{SKILL_LABELS[k]}</span>
+                                        <input type="text" className="w-[55%] bg-[#333] rounded-sm text-right px-1 text-white text-[13px] font-bold focus:outline-none focus:bg-[#444]" value={data.skills[k]} onChange={e=>handleAttrChange('skills',k,e.target.value)} onFocus={e => e.target.select()}/>
+                                    </div>
+                                ))}
+                            </div>
+                            <CustomSelect 
+                                value={data.inheritedSkill} 
+                                options={charAllSkillOptions} 
+                                onChange={(v) => {
+                                    const isNone = !v || v === "なし";
+                                    updateSlot(index, { 
+                                        ...data, 
+                                        inheritedSkill: v,
+                                        skills: { ...data.skills, inh: isNone ? "-" : "99" } 
+                                    });
+                                }} 
+                                placeholder="継承技・術 (なし)" 
+                            />
+                        </>
+                    ) : (
+                        <div className="flex flex-col gap-1">
+                            {['s1', 's2', 's3', 'inh'].map(k => {
+                                const defaultBp = getSkillBP(data.skillNames[k]);
+                                const isBpChanged = data.bps[k] !== defaultBp && data.bps[k] !== "-";
+                                const bpColor = isBpChanged ? 'text-red-500' : 'text-white';
+                                const opts = k === 'inh' ? inhOptionsList : charAllSkillOptions;
+                                const pLabel = k === 'inh' ? '継承技・術' : `技・術${k.replace('s','')}`;
+
+                                return (
+                                    <div key={k} className="flex items-center gap-1">
+                                        <div className="flex-1 min-w-0">
+                                            {k !== 'inh' && !!data.name && data.skillNames[k] ? (
+                                                (() => {
+                                                    const currentSkill = data.skillNames[k];
+                                                    let canToggle = false;
+                                                    if (currentSkill && currentSkill !== "なし" && currentSkill !== "手動入力") {
+                                                        if (currentSkill.endsWith('+') || currentSkill.endsWith('＋')) {
+                                                            canToggle = true;
+                                                        } else {
+                                                            canToggle = SKILL_FULL_DB.some(s => s['名称'] === currentSkill + '＋' || s['スキル名'] === currentSkill + '＋' || s['名称'] === currentSkill + '+' || s['スキル名'] === currentSkill + '+');
+                                                        }
+                                                    }
+                                                    return (
+                                                        <div 
+                                                            className={`w-full h-[28px] bg-[#333] px-2 flex justify-between items-center rounded-sm ${canToggle ? 'cursor-pointer hover:bg-[#444]' : 'cursor-default'}`}
+                                                            onClick={() => {
+                                                                if (!canToggle) return;
+                                                                
+                                                                let newSkill = currentSkill;
+                                                                if (currentSkill.endsWith('+') || currentSkill.endsWith('＋')) {
+                                                                    newSkill = currentSkill.slice(0, -1);
+                                                                } else {
+                                                                    const hasFullPlus = SKILL_FULL_DB.some(s => s['名称'] === currentSkill + '＋' || s['スキル名'] === currentSkill + '＋');
+                                                                    const hasHalfPlus = SKILL_FULL_DB.some(s => s['名称'] === currentSkill + '+' || s['スキル名'] === currentSkill + '+');
+                                                                    if (hasFullPlus) newSkill = currentSkill + '＋';
+                                                                    else if (hasHalfPlus) newSkill = currentSkill + '+';
+                                                                }
+                                                                
+                                                                if (newSkill !== currentSkill) {
+                                                                    const newBp = getSkillBP(newSkill);
+                                                                    updateSlot(index, {
+                                                                        ...data,
+                                                                        skillNames: { ...data.skillNames, [k]: newSkill },
+                                                                        bps: { ...data.bps, [k]: newBp }
+                                                                    });
+                                                                }
+                                                            }}
+                                                            title={canToggle ? "クリックで＋/＋なしを切り替え" : ""}
+                                                        >
+                                                            <span className="text-[13px] truncate text-gray-200">
+                                                                {data.skillNames[k]}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })()
+                                            ) : (
+                                                <CustomSelect 
+                                                    value={data.skillNames[k] || ""} 
+                                                    options={opts}
+                                                    onChange={(v) => {
+                                                        const newBp = getSkillBP(v);
+                                                        const isSkillSelected = v && v !== "なし" && v !== "手動入力";
+                                                        updateSlot(index, {
+                                                            ...data,
+                                                            skillNames: { ...data.skillNames, [k]: v },
+                                                            bps: { ...data.bps, [k]: newBp },
+                                                            skillChecks: { ...data.skillChecks, [k]: isSkillSelected ? true : data.skillChecks[k] }
+                                                        });
+                                                    }}
+                                                    placeholder={pLabel}
+                                                    hideClear={k !== 'inh' && !!data.name}
+                                                />
+                                            )}
+                                        </div>
+                                        <input 
+                                            type="checkbox" 
+                                            className="w-[15px] h-[15px] cursor-pointer flex-shrink-0"
+                                            checked={data.skillChecks[k] || false} 
+                                            onChange={e => updateSlot(index, { ...data, skillChecks: { ...data.skillChecks, [k]: e.target.checked } })}
+                                        />
+                                        <input 
+                                            type="text"
+                                            className={`w-[32px] h-[28px] bg-[#333] rounded-sm text-right px-1 text-[13px] font-bold focus:outline-none focus:bg-[#444] flex-shrink-0 ${bpColor}`}
+                                            value={data.bps[k] || "-"}
+                                            onChange={e => updateSlot(index, { ...data, bps: { ...data.bps, [k]: e.target.value } })}
+                                            onFocus={e => e.target.select()}
+                                        />
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+                )}
+
+                {!hiddenSections.renma && (
+                <div className="flex flex-col gap-1">
+                    <div 
+                        className="text-[#00DC00] font-bold text-[13px] mb-1 flex items-center cursor-pointer select-none hover:opacity-80 w-fit"
+                        onClick={(e) => {
+                            if (e.detail === 1) {
+                                window.renmaClickTimer = setTimeout(() => {
+                                    onImportRenmaClick();
+                                }, 250);
+                            } else if (e.detail === 2) {
+                                clearTimeout(window.renmaClickTimer);
+                                onHideSection('renma');
+                            }
+                        }}
+                        title="クリックでJSONから練磨アビリティを読み込む / ダブルクリックで非表示"
+                    >
+                        <span className="text-[17px] leading-none mr-[1px]">●</span>練磨アビリティ
+                    </div>
+                    {[0, 1].map(i => (
+                        <CustomSelect key={`renma-${i}`} value={data.renmaAbilities[i] || ""} options={renmaOptions} onChange={(v) => handleArrayChange('renmaAbilities', i, v)} placeholder="" />
+                    ))}
+                </div>
+                )}
+
+                {!hiddenSections.decoAbility && (
+                <div className="flex flex-col gap-1">
+                    <div 
+                        className="text-cyan-500 font-bold text-[13px] mb-1 flex items-center cursor-pointer select-none w-fit hover:opacity-80"
+                        onDoubleClick={() => onHideSection('decoAbility')}
+                        title="ダブルクリックで非表示"
+                    >
+                        <span className="text-[17px] leading-none mr-[1px]">●</span>装飾品アビリティ
+                    </div>
+                    {[0, 1, 2].map(i => (
+                        <CustomSelect 
+                            key={`deco-${i}`} 
+                            value={data.decoAbilities[i] || ""} 
+                            options={decoAbsOptions} 
+                            onChange={(v) => {
+                                let newValue = v;
+                                if (v.includes("●●")) {
+                                    const userInput = prompt("●●の部分（種族など）を入力してください", "");
+                                    if (userInput) newValue = v.replace("●●", userInput);
+                                    else newValue = "";
+                                } else if (v.includes("●")) {
+                                    const userInput = prompt("●の部分（属性など）を入力してください", "");
+                                    if (userInput) newValue = v.replace("●属性", userInput + "属性").replace("●", userInput);
+                                    else newValue = "";
+                                }
+                                const newDecoAbs = [...data.decoAbilities];
+                                newDecoAbs[i] = newValue;
+                                updateSlot(index, { ...data, decoAbilities: newDecoAbs });
+                            }} 
+                            placeholder="" 
+                        />
+                    ))}
+                </div>
+                )}
+
+                {!hiddenSections.soulAbility && (
+                <div className="flex flex-col gap-1">
+                    <PresetMenu 
+                        charName={data.name} 
+                        currentAbilities={data.soulAbilities} 
+                        currentLevel={data.soulLevel}
+                        onLoad={(presetData) => {
+                            const abilities = presetData.abilities || [];
+                            const loadedLevel = presetData.level || data.soulLevel;
+                            const limit = getAbilityLimit(loadedLevel);
+                            updateSlot(index, { ...data, soulLevel: loadedLevel, soulAbilities: abilities.slice(0, limit) });
+                        }} 
+                        themeColor={themeColor} 
+                        onDoubleClickTitle={() => onHideSection('soulAbility')}
+                        presets={soulPresets}
+                        setPresets={setSoulPresets}
+                        learnedAbilities={learnedData}
+                        setLearnedAbilities={setLearnedData}
+                        charLevels={charLevels}
+                        setCharLevels={setCharLevels}
+                    />
+                    
+                    {Array.from({ length: soulLimit }).map((_, i) => (
+                        <div 
+                            key={`soul-${i}`}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, i)}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, i)}
+                            className="rounded-sm"
+                        >
+                            <CustomSelect 
+                                value={data.soulAbilities[i] || ""} 
+                                options={ABILITY_DB} 
+                                learnedOptions={learnedData[data.name] || []}
+                                onRemoveHistory={(abilityName) => onRemoveLearned(data.name, abilityName)}
+                                onChange={(v) => {
+                                    let newValue = v;
+                                    if (v === "回避の極意(●●)") {
+                                        const userInput = prompt("回避対象のスキル名などを入力してください", "");
+                                        if (userInput) newValue = `回避の極意(${userInput})`;
+                                        else newValue = "";
+                                    }
+                                    const arr = [...data.soulAbilities];
+                                    if(newValue) arr[i] = newValue; else arr.splice(i, 1);
+                                    updateSlot(index, { ...data, soulAbilities: arr.filter(Boolean) }, newValue);
+                                }} 
+                                placeholder="" 
+                            />
+                        </div>
+                    ))}
+
+                    {Array.from({ length: maxSoulLimit - soulLimit }).map((_, i) => (
+                        <div key={`spacer-${i}`} className="h-[28px]"></div>
+                    ))}
+                </div>
+                )}
+
+                {!hiddenSections.remarks && (
+                <div className="flex flex-col gap-1 flex-1">
+                    <div 
+                        className="text-gray-400 font-bold text-[13px] mb-1 flex items-center cursor-pointer select-none w-fit hover:opacity-80"
+                        onDoubleClick={() => onHideSection('remarks')}
+                        title="ダブルクリックで非表示"
+                    >
+                        <span className="text-[17px] leading-none mr-[1px]">●</span>備考
+                    </div>
+                    <textarea 
+                        ref={textareaRef}
+                        className="w-full flex-1 bg-[#333] rounded-sm text-gray-200 text-left px-2 py-1 text-[13px] focus:outline-none focus:bg-[#444] resize-none overflow-hidden" 
+                        value={data.remarks} 
+                        onChange={(e) => updateSlot(index, { ...data, remarks: e.target.value })}
+                        rows={1}
+                    />
+                </div>
+                )}
+            </div>
+        );
+    };
+
+    const App = () => {
+        const createEmptyChar = () => ({
+            name: "", equipments: { main: "", sub: "", deco: "" },
+            resistances: { 斬: "0", 打: "0", 突: "0", 熱: "0", 冷: "0", 雷: "0", 陽: "0", 陰: "0" },
+            statusResists: { 毒: "0", 暗: "0", ス: "0", マ: "0", 眠: "0", 石: "0", 混: "0", 魅: "0", 狂: "0", 気: "0" },
+            soulLevel: "100", skills: { s1: "99", s2: "99", s3: "99", inh: "-" }, inheritedSkill: "",
+            renmaAbilities: ["", ""], decoAbilities: ["", "", ""], soulAbilities: [], remarks: "",
+            styleName: "", skillNames: { s1: "", s2: "", s3: "", inh: "" }, bps: { s1: "-", s2: "-", s3: "-", inh: "-" },
+            skillChecks: { s1: false, s2: false, s3: false, inh: false }, overDrive: false
+        });
+        
+        const initParty = Array.from({ length: 5 }, createEmptyChar);
+
+        const [party, setParty] = useState(() => {
+            return initParty;
+        });
+
+        // ▼ メニュー・UI状態管理
+        const [customMenu, setCustomMenu] = useState({ show: false, x: 0, y: 0 });
+        const fileInputRef = useRef(null);
+        const [fileName, setFileName] = useState("party_data");
+        const [includeSoulData, setIncludeSoulData] = useState(false);
+        const [savedFiles, setSavedFiles] = useState([]);
+        const [selectedLoadFile, setSelectedLoadFile] = useState("");
+        const [isSyncLoggedIn, setIsSyncLoggedIn] = useState(false);
+        const [saveMessage, setSaveMessage] = useState("");
+        const [isFlashing, setIsFlashing] = useState(false);
+
+        const [globalSkillManageMode, setGlobalSkillManageMode] = useState(false);
+        const handleToggleSkillManageMode = useCallback(() => {
+            setGlobalSkillManageMode(prev => {
+                const nextMode = !prev;
+                if (nextMode) {
+                    setParty(curr => curr.map(p => ({ ...p, overDrive: true })));
+                }
+                return nextMode;
+            });
+        }, []);
+
+        const [learnedAbilities, setLearnedAbilities] = useState(() => {
+            try { return JSON.parse(localStorage.getItem('learned_abilities')) || {}; } catch(e) { return {}; }
+        });
+        
+        const [soulPresets, setSoulPresets] = useState(() => {
+            try { return JSON.parse(localStorage.getItem('soul_presets')) || {}; } catch(e) { return {}; }
+        });
+
+        const [charLevels, setCharLevels] = useState(() => {
+            try { return JSON.parse(localStorage.getItem('char_levels')) || {}; } catch(e) { return {}; }
+        });
+
+        useEffect(() => {
+            localStorage.setItem('char_levels', JSON.stringify(charLevels));
+        }, [charLevels]);
+
+        // ▼ charLevels（マスター魂Lv）が更新された時、現在のパーティの魂Lvにも即座に同期させる
+        useEffect(() => {
+            setParty(prev => {
+                let changed = false;
+                const newParty = prev.map(p => {
+                    if (p.name && charLevels[p.name] && p.soulLevel !== charLevels[p.name]) {
+                        changed = true;
+                        const newLevel = charLevels[p.name];
+                        const limit = getAbilityLimit(newLevel);
+                        let newAbs = [...p.soulAbilities];
+                        if (newAbs.length > limit) newAbs = newAbs.slice(0, limit);
+                        return { ...p, soulLevel: newLevel, soulAbilities: newAbs };
+                    }
+                    return p;
+                });
+                return changed ? newParty : prev;
+            });
+        }, [charLevels]);
+        
+        const [renmaOptions, setRenmaOptions] = useState([{ label: "手動入力", furigana: "しゅどうにゅうりょく" }]);
+        const [renmaData, setRenmaData] = useState([]);
+
+        // ▼ ローカル保存されている練磨データを自動でオプションに展開
+        const processRenmaData = useCallback((data) => {
+            if (!Array.isArray(data)) return;
+            setRenmaData(data);
+            const options = data.map(item => {
+                let labelStr = '';
+                if (item.armorName && item.abilityName) {
+                    labelStr = `${item.abilityName} ${item.value}%`;
+                } else if (item.name) {
+                    labelStr = item.name;
+                } else {
+                    labelStr = JSON.stringify(item);
+                }
+                return { label: labelStr, furigana: '' };
+            });
+            setRenmaOptions([{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...options]);
+        }, []);
+
+        useEffect(() => {
+            const adminRenmaStr = localStorage.getItem('RenmaArmorAdminData') || localStorage.getItem('RenmaArmorUnsavedData');
+            if (adminRenmaStr) {
+                try {
+                    const data = JSON.parse(adminRenmaStr);
+                    processRenmaData(data);
+                } catch(e) {}
+            }
+        }, [processRenmaData]);
+
+        const [hiddenSections, setHiddenSections] = useState({});
+        const handleHideSection = useCallback((section) => {
+            setHiddenSections(prev => ({ ...prev, [section]: true }));
+        }, []);
+
+        const updateSlot = useCallback((index, newData, newAbilityToLearn = null) => {
+            setParty(prev => { 
+                const newP = [...prev]; 
+                newP[index] = { 
+                    ...newData, 
+                    skillNames: newData.skillNames || { s1: "", s2: "", s3: "", inh: "" },
+                    bps: newData.bps || { s1: "-", s2: "-", s3: "-", inh: "-" },
+                    skillChecks: newData.skillChecks || { s1: false, s2: false, s3: false, inh: false },
+                    overDrive: newData.overDrive || false
+                }; 
+                return newP; 
+            });
+            if (newData.name && newAbilityToLearn) {
+                setLearnedAbilities(prev => {
+                    const charLearned = prev[newData.name] || [];
+                    if (!charLearned.includes(newAbilityToLearn)) {
+                        return { ...prev, [newData.name]: [...charLearned, newAbilityToLearn] };
+                    }
+                    return prev;
+                });
+            }
+        }, []);
+
+        const handleRemoveLearned = useCallback((charName, abilityName) => {
+            setLearnedAbilities(prev => {
+                const charLearned = prev[charName] || [];
+                const updated = charLearned.filter(a => a !== abilityName);
+                return { ...prev, [charName]: updated };
+            });
+        }, []);
+
+        const handleImportRenmaJson = useCallback((e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    processRenmaData(data);
+
+                    setParty(prev => prev.map(charData => {
+                        let newRenma = [...charData.renmaAbilities];
+                        const mainMatch = data.find(d => d.armorType === 'main' && d.armorName === charData.equipments.main);
+                        if (mainMatch) newRenma[0] = `${mainMatch.abilityName} ${mainMatch.value}%`;
+                        
+                        const subMatch = data.find(d => d.armorType === 'sub' && d.armorName === charData.equipments.sub);
+                        if (subMatch) newRenma[1] = `${subMatch.abilityName} ${subMatch.value}%`;
+                        
+                        return { ...charData, renmaAbilities: newRenma };
+                    }));
+                } catch (error) {
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }, [processRenmaData]);
+
+        const onImportRenmaClick = useCallback(() => {
+            document.getElementById('renma-json-input').click();
+        }, []);
+
+        const partyRef = useRef(party);
+        useEffect(() => {
+            partyRef.current = party;
+        }, [party]);
+
+        // ▼ クラウド・ドライブ同期システムの組み込み (オートセーブ・オートロード)
+        // party_data.json のみ同期させる
+        useEffect(() => {
+            if (window.setupSyncSystem && isSyncEnabled) {
+                window.setupSyncSystem({
+                    loginTriggerId: '', 
+                    fileName: 'party_data.json',
+                    firestoreDoc: 'party-data',
+                    onLoad: (loadedData) => {
+                        if (loadedData && Array.isArray(loadedData) && loadedData.length === 5) {
+                            setParty(loadedData);
+                        }
+                    },
+                    onSave: () => {
+                        return partyRef.current;
+                    }
+                });
+            }
+        }, [isSyncEnabled]);
+
+        // ▼ 同期マネージャーのログイン状態を監視する
+        useEffect(() => {
+            if (!isSyncEnabled) return;
+            const timer = setInterval(() => {
+                if (window.syncManager) {
+                    setIsSyncLoggedIn(window.syncManager.isLoggedIn);
+                }
+            }, 1000);
+            return () => clearInterval(timer);
+        }, [isSyncEnabled]);
+
+        // ▼ 【追加】データが更新されたらクラウドへ自動保存するトリガー
+        useEffect(() => {
+            if (isSyncLoggedIn && window.triggerSyncSave) {
+                window.triggerSyncSave();
+            }
+        }, [party, soulPresets, learnedAbilities, charLevels, isSyncLoggedIn]);
+
+        // ▼ 現在のモード表示の動的切り替え
+        let displayModeLabel = "Normal";
+        if (isCloudMode) {
+            displayModeLabel = "Cloud";
+        } else if (isAdminMode) {
+            displayModeLabel = isSyncLoggedIn ? "Drive" : "Admin";
+        }
+
+        // ローカルスロット用: ファイルリストの更新
+        const updateSavedFiles = useCallback(() => {
+            if (!isSyncEnabled) return;
+            const files = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('PartySave_')) {
+                    files.push(key.replace('PartySave_', ''));
+                }
+            }
+            setSavedFiles(files.sort());
+        }, [isSyncEnabled]);
+
+        useEffect(() => {
+            updateSavedFiles();
+        }, [updateSavedFiles]);
+
+        // ▼ ローカルセーブ・ロード・削除
+        const handleLocalSave = useCallback(() => {
+            if (!fileName) { alert("ファイル名を入力してください。"); return; }
+            localStorage.setItem('PartySave_' + fileName, JSON.stringify(partyRef.current));
+            updateSavedFiles();
+            setSelectedLoadFile(""); 
+            
+            // フィードバック表示
+            setSaveMessage("保存しました");
+            setIsFlashing(true);
+            setTimeout(() => setIsFlashing(false), 200);
+            setTimeout(() => setSaveMessage(""), 3000);
+        }, [fileName, updateSavedFiles]);
+
+        const handleLocalLoad = useCallback(() => {
+            if (!selectedLoadFile) return;
+            const savedStr = localStorage.getItem('PartySave_' + selectedLoadFile);
+            if (savedStr) {
+                try {
+                    const data = JSON.parse(savedStr);
+                    if (Array.isArray(data) && data.length === 5) {
+                        setParty(data);
+                        setFileName(selectedLoadFile);
+                        setSelectedLoadFile(""); 
+                        setCustomMenu(prev => ({ ...prev, show: false }));
+                    } else {
+                        alert("無効な編成データです。");
+                    }
+                } catch(e) { alert("読み込みエラー"); }
+            }
+        }, [selectedLoadFile]);
+
+        const handleLocalDelete = useCallback(() => {
+            if (!selectedLoadFile) return;
+            if (confirm(`「${selectedLoadFile}」を削除しますか？`)) {
+                localStorage.removeItem('PartySave_' + selectedLoadFile);
+                updateSavedFiles();
+                setSelectedLoadFile(""); 
+            }
+        }, [selectedLoadFile, updateSavedFiles]);
+
+        // ▼ エクスポート (JSONファイル出力)
+        const handleExport = useCallback(() => {
+            const partyData = partyRef.current;
+            const partyJsonString = JSON.stringify(partyData, null, 2);
+            const partyBlob = new Blob([partyJsonString], { type: 'application/json' });
+            const partyUrl = URL.createObjectURL(partyBlob);
+            const partyAnchor = document.createElement('a');
+            partyAnchor.href = partyUrl;
+            partyAnchor.download = `${fileName || 'party_data'}.json`;
+            document.body.appendChild(partyAnchor);
+            partyAnchor.click();
+            document.body.removeChild(partyAnchor);
+            URL.revokeObjectURL(partyUrl);
+
+            if (includeSoulData) {
+                const soulData = {
+                    presets: soulPresets,
+                    learnedAbilities: learnedAbilities,
+                    charLevels: charLevels
+                };
+                const soulJsonString = JSON.stringify(soulData, null, 2);
+                const soulBlob = new Blob([soulJsonString], { type: 'application/json' });
+                const soulUrl = URL.createObjectURL(soulBlob);
+                const soulAnchor = document.createElement('a');
+                soulAnchor.href = soulUrl;
+                soulAnchor.download = 'soul_data.json';
+                setTimeout(() => {
+                    document.body.appendChild(soulAnchor);
+                    soulAnchor.click();
+                    document.body.removeChild(soulAnchor);
+                    URL.revokeObjectURL(soulUrl);
+                }, 150);
+            }
+            
+            if (isSyncLoggedIn && window.triggerSyncSave) window.triggerSyncSave();
+            
+            setCustomMenu(prev => ({ ...prev, show: false }));
+        }, [fileName, isSyncLoggedIn, includeSoulData, soulPresets, learnedAbilities, charLevels]);
+
+        const processImportedFile = useCallback((data) => {
+            if (Array.isArray(data) && data.length === 5) {
+                setParty(data);
+                if (isSyncLoggedIn && window.triggerSyncSave) {
+                    setTimeout(() => { window.triggerSyncSave(); }, 100);
+                }
+            } else if (data.presets || data.learnedAbilities || data.charLevels) {
+                if (data.presets) {
+                    setSoulPresets(data.presets);
+                    localStorage.setItem('soul_presets', JSON.stringify(data.presets));
+                }
+                if (data.learnedAbilities) {
+                    setLearnedAbilities(data.learnedAbilities);
+                    localStorage.setItem('learned_abilities', JSON.stringify(data.learnedAbilities));
+                }
+                if (data.charLevels) {
+                    setCharLevels(data.charLevels);
+                    localStorage.setItem('char_levels', JSON.stringify(data.charLevels));
+                }
+            } else {
+                alert("無効なデータ形式が含まれています。");
+            }
+        }, [isSyncLoggedIn]);
+
+        const handleImport = useCallback((e) => {
+            const files = e.target.files ? Array.from(e.target.files) : (e.dataTransfer ? Array.from(e.dataTransfer.files) : []);
+            if (!files || files.length === 0) return;
+
+            files.forEach(file => {
+                if (!file.name.endsWith('.json')) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        processImportedFile(data);
+                    } catch(err) {
+                        console.error("読み込みエラー:", err);
+                        alert(`${file.name} の読み込みに失敗しました。`);
+                    }
+                };
+                reader.readAsText(file);
+            });
+
+            if (e.target.value !== undefined) e.target.value = '';
+            setCustomMenu(prev => ({ ...prev, show: false }));
+        }, [processImportedFile]);
+
+        const handleMenuMouseDown = useCallback((e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.tagName === 'LABEL') return;
+            e.preventDefault(); 
+            
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const initialX = customMenu.x;
+            const initialY = customMenu.y;
+
+            const handleMouseMove = (moveEvent) => {
+                setCustomMenu(prev => ({
+                    ...prev,
+                    x: initialX + (moveEvent.clientX - startX),
+                    y: initialY + (moveEvent.clientY - startY)
+                }));
+            };
+
+            const handleMouseUp = () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            };
+
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }, [customMenu.x, customMenu.y]);
+
+        useEffect(() => {
+            const handleClick = (e) => {
+                if (e.altKey) {
+                    e.preventDefault(); 
+                    setSelectedLoadFile(""); 
+                    setCustomMenu({ show: true, x: e.clientX, y: e.clientY });
+                } else {
+                    setCustomMenu(prev => prev.show ? { ...prev, show: false } : prev);
+                }
+            };
+
+            const handleDrop = (e) => {
+                e.preventDefault();
+                handleImport({ dataTransfer: { files: e.dataTransfer.files } });
+            };
+            const handleDragOver = (e) => e.preventDefault();
+
+            window.addEventListener('click', handleClick);
+            window.addEventListener('drop', handleDrop);
+            window.addEventListener('dragover', handleDragOver);
+
+            return () => {
+                window.removeEventListener('click', handleClick);
+                window.removeEventListener('drop', handleDrop);
+                window.removeEventListener('dragover', handleDragOver);
+            };
+        }, [handleImport]);
+
+        const maxSoulLimit = useMemo(() => {
+            return Math.max(...party.map(d => getAbilityLimit(d.soulLevel)));
+        }, [party]);
+
+        return (
+            <div className="w-full flex justify-center pb-3">
+                <input type="file" id="renma-json-input" accept=".json" style={{ display: 'none' }} onChange={handleImportRenmaJson} />
+                <input type="file" ref={fileInputRef} accept=".json" multiple style={{ display: 'none' }} onChange={handleImport} />
+
+                {/* ▼ カスタムメニュー */}
+                {customMenu.show && (
+                    <div 
+                        // ▼ 変更: 上下余白(p-[20px]をpx-[20px] py-[12px]に変更して「編成データ管理」の上と「規約」の下を詰める)
+                        className="fixed z-[99999] bg-[#2a2a2a] px-[20px] py-[12px] w-[280px] rounded border border-[#666] shadow-[0_8px_30px_rgba(0,0,0,0.8)] box-border font-sans"
+                        style={{ top: customMenu.y, left: customMenu.x }}
+                        onClick={(e) => e.stopPropagation()} 
+                    >
+                        {/* ヘッダー領域 (ドラッグ可能) */}
+                        <div 
+                            className="m-0 mb-3 text-[16px] text-[#1D9BF0] border-b border-[#444] pb-2 font-bold flex justify-between items-center cursor-move"
+                            onMouseDown={handleMenuMouseDown}
+                            title="ドラッグで移動"
+                        >
+                            <span className="pointer-events-none">編成データ管理</span>
+                            <span className="pointer-events-none text-[12px] text-gray-300 bg-[#111] px-2 py-0.5 rounded border border-[#555] font-normal">{displayModeLabel}</span>
+                        </div>
+                        
+                        {/* ログイン・ログアウトボタン */}
+                        {/* ▼ 変更: 下の余白(mb-4 pb-4 -> mb-3 pb-3)を減らして「ファイル名」の上を詰める */}
+                        <div className="mb-3 pb-3 border-b border-[#444]">
+                            {!isSyncLoggedIn ? (
+                                <button 
+                                    className="w-full p-[10px] bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-[14px] font-bold rounded shadow transition-colors flex items-center justify-center"
+                                    onClick={(e) => { e.stopPropagation(); window.triggerSyncLogin && window.triggerSyncLogin(); }}
+                                >
+                                    Googleログインして同期
+                                </button>
+                            ) : (
+                                <button 
+                                    className="w-full p-[8px] bg-[#dc3545] hover:bg-[#a71d2a] text-white text-[12px] font-bold rounded shadow transition-colors flex items-center justify-center mb-2"
+                                    onClick={(e) => { e.stopPropagation(); window.triggerSyncLogout && window.triggerSyncLogout(); }}
+                                >
+                                    ログアウト
+                                </button>
+                            )}
+                        </div>
+
+                        {/* ▼ 変更: 下の余白(mb-5 -> mb-2)を減らして保存ボタンに近づける */}
+                        <div className="mb-2 text-left">
+                            <label className="text-[12px] text-gray-400 flex items-center mb-1">
+                                ファイル名 / 保存名:
+                                {saveMessage && <span className="text-red-500 ml-2 font-bold transition-opacity">{saveMessage}</span>}
+                            </label>
+                            <input type="text" value={fileName} onChange={e => setFileName(e.target.value)} placeholder="party_data" className="w-full bg-[#111] border border-[#555] text-white text-[14px] px-3 py-1.5 rounded focus:outline-none focus:border-[#1D9BF0] box-border" />
+                        </div>
+                        
+                        {/* ローカルセーブスロット (Normalモード以外で表示) */}
+                        {/* ▼ 変更: 下の余白(mb-4 pb-4 -> mb-3 pb-3)を減らして「魂アビリティ...」の上を詰める */}
+                        {(isAdminMode || isCloudMode || isSyncLoggedIn) && (
+                            <div className="mb-3 pb-3 border-b border-[#444]">
+                                {/* ▼ 変更: mt-[5px] をなくし、上入力欄のグループに近づける。下はリスト読込と分けるため少し開ける */}
+                                <button 
+                                    onClick={handleLocalSave} 
+                                    className={`w-full p-[10px] mt-0 mb-[15px] rounded cursor-pointer text-[14px] font-bold text-white shadow transition-all duration-200 flex items-center justify-center ${isFlashing ? 'bg-white text-black' : 'bg-[#a855f7] hover:bg-[#9333ea]'}`}
+                                >
+                                    現在の編成情報を保存
+                                </button>
+                                <div className="flex flex-col gap-2">
+                                    <select value={selectedLoadFile} onChange={e => setSelectedLoadFile(e.target.value)} className="w-full bg-[#111] text-white text-[13px] border border-[#555] rounded px-2 py-2 focus:outline-none box-border">
+                                        <option value="">リストから選択...</option>
+                                        {savedFiles.map(f => <option key={f} value={f}>{f}</option>)}
+                                    </select>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={handleLocalLoad} 
+                                            className={`flex-1 text-white text-[13px] font-bold py-1.5 rounded shadow transition-colors ${selectedLoadFile ? 'bg-[#00DC00] hover:bg-[#00b300] border-none' : 'bg-[#333] text-gray-400 border-none cursor-not-allowed'}`}
+                                            disabled={!selectedLoadFile}
+                                        >
+                                            読込
+                                        </button>
+                                        <button 
+                                            onClick={handleLocalDelete} 
+                                            className={`flex-1 text-white text-[13px] font-bold py-1.5 rounded shadow transition-colors ${selectedLoadFile ? 'bg-red-500 hover:bg-red-600 border-none' : 'bg-[#333] text-gray-400 border-none cursor-not-allowed'}`}
+                                            disabled={!selectedLoadFile}
+                                        >
+                                            削除
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 魂アビリティ出力オプション */}
+                        {/* ▼ 変更: 下の余白(mb-4 -> mb-3)を減らしてインポートボタンの上を詰める */}
+                        <div className="mb-3 text-left">
+                            <label className="flex items-center gap-2 text-[13px] text-gray-200 cursor-pointer select-none">
+                                <input type="checkbox" checked={includeSoulData} onChange={e => setIncludeSoulData(e.target.checked)} className="w-[14px] h-[14px] cursor-pointer" />
+                                魂アビリティの情報も含める
+                            </label>
+                        </div>
+
+                        {/* ファイル入出力 */}
+                        <button 
+                            className="w-full p-[10px] mb-[8px] border-none rounded cursor-pointer text-[15px] font-bold text-white bg-[hotpink] hover:opacity-80 transition-opacity flex items-center justify-center shadow"
+                            onClick={(e) => { e.stopPropagation(); fileInputRef.current && fileInputRef.current.click(); }}
+                        >
+                            インポート
+                        </button>
+                        
+                        <button 
+                            className="w-full p-[10px] m-0 border-none rounded cursor-pointer text-[15px] font-bold text-white bg-[orange] hover:opacity-80 transition-opacity flex items-center justify-center shadow"
+                            onClick={(e) => { e.stopPropagation(); handleExport(); }}
+                        >
+                            エクスポート
+                        </button>
+
+                        {/* ▼ 変更: 上の余白(mt-4 pt-3 -> mt-3 pt-2)を減らしてインポート・エクスポートとの間を詰める */}
+                        <div className="mt-3 pt-2 border-t border-[#444] text-center flex justify-center gap-4 text-[12px]">
+                            <a href="terms.html" target="_blank" className="text-[#1D9BF0] hover:text-[#0CFF57] no-underline">利用規約</a>
+                            <a href="privacy.html" target="_blank" className="text-[#1D9BF0] hover:text-[#0CFF57] no-underline">プライバシーポリシー</a>
+                        </div>
+                    </div>
+                )}
+
+                <div className="w-full flex flex-nowrap gap-3 items-stretch">
+                    {party.map((data, idx) => (
+                        <CharacterColumn 
+                            key={idx} 
+                            index={idx} 
+                            data={data} 
+                            updateSlot={updateSlot} 
+                            learnedData={learnedAbilities} 
+                            setLearnedData={setLearnedAbilities}
+                            soulPresets={soulPresets}
+                            setSoulPresets={setSoulPresets}
+                            onRemoveLearned={handleRemoveLearned}
+                            charLevels={charLevels}
+                            setCharLevels={setCharLevels}
+                            maxSoulLimit={maxSoulLimit}
+                            hiddenSections={hiddenSections}
+                            onHideSection={handleHideSection}
+                            renmaOptions={renmaOptions}
+                            renmaData={renmaData}
+                            onImportRenmaClick={onImportRenmaClick}
+                            globalSkillManageMode={globalSkillManageMode}
+                            onToggleSkillManageMode={handleToggleSkillManageMode}
+                        />
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    async function initApp() {
+        const [charData, mainData, subData, decoData, styleCharData, favoriteData, soulData, skillData] = await Promise.all([
+            loadSimpleCSV('data/character.csv'),
+            loadSimpleCSV('data/armor-main.csv'),
+            loadSimpleCSV('data/armor-sub.csv'),
+            loadSimpleCSV('data/decoration.csv'),
+            loadStyleCSV('data/style.csv'),
+            loadFavoriteCSV('data/favorite.csv'),
+            loadSimpleCSV('data/soul-ability.csv'),
+            loadSimpleCSV('data/skill.csv')
+        ]);
+        
+        const processArmorDB = (db) => {
+            return db.map(opt => {
+                const norm = opt.label.normalize('NFKC');
+                for (const [key, subList] of Object.entries(SPECIAL_SERIES_ARMORS)) {
+                    if (norm.includes(key)) return { ...opt, subOptions: subList };
+                }
+                return opt;
+            });
+        };
+
+        const processDecoDB = (db) => {
+            const specialDecoOptions = [];
+            Object.keys(DECO_ABILITY_MAP).forEach(name => {
+                if (name.startsWith('◆')) {
+                    specialDecoOptions.push(name);
+                }
+            });
+
+            return db.map(opt => {
+                if (opt.label.includes('◆') && opt.label.includes('ステラ・刻印・特殊')) {
+                    return { ...opt, subOptions: specialDecoOptions, exactSub: true };
+                }
+                return opt;
+            });
+        };
+
+        CHAR_DB = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...charData];
+        MAIN_DB = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...processArmorDB(mainData)];
+        SUB_DB = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...processArmorDB(subData)];
+        ABILITY_DB = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...soulData];
+        STYLE_CHAR_DB = styleCharData;
+        FAVORITE_DB = favoriteData;
+        SKILL_FULL_DB = skillData;
+
+        await loadDecoAbilityCSV('data/deco-ability.csv');
+        DECO_DB = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...processDecoDB(decoData)];
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    }
+
+    initApp();
+
+  </script>
+</body>
+</html>
