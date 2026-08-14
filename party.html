@@ -211,7 +211,8 @@
         if (!skillName || skillName === "なし" || skillName === "手動入力") return "-";
         const skill = SKILL_FULL_DB.find(s => s['名称'] === skillName || s['スキル名'] === skillName);
         if (skill) {
-            return skill['BP'] || skill['消費BP'] || skill['覚醒後BP'] || skill['最大BP'] || skill['最小BP'] || "-";
+            const bp = skill['BP'] || skill['消費BP'] || skill['覚醒後BP'] || skill['最大BP'] || skill['最小BP'];
+            return (bp === "不明" || !bp) ? "-" : bp;
         }
         return "-";
     };
@@ -1554,15 +1555,6 @@
                         </>
                     ) : (
                         <div className="flex flex-col gap-1">
-                            {['s1', 's2', 's3', 'inh'].map(k => {
-                                const defaultBp = getSkillBP(data.skillNames[k]);
-                                const isBpChanged = data.bps[k] !== defaultBp && data.bps[k] !== "-";
-                                const bpColor = isBpChanged ? 'text-red-500' : 'text-white';
-                                const opts = k === 'inh' ? inhOptionsList : charAllSkillOptions;
-                                const pLabel = k === 'inh' ? '継承技・術' : `技・術${k.replace('s','')}`;
-
-                                return (
-                                    <div className="flex flex-col gap-1">
                             {['s1', 's2', 's3', 'inh'].map(k => {
                                 const defaultBpStr = getSkillBP(data.skillNames[k]);
                                 const curBpStr = data.bps[k];
