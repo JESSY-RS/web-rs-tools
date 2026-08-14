@@ -1479,6 +1479,11 @@
                             let newAbs = [...data.soulAbilities];
                             if (newAbs.length > getAbilityLimit(val)) newAbs = newAbs.slice(0, getAbilityLimit(val));
                             updateSlot(index, { ...data, soulLevel: val, soulAbilities: newAbs });
+                            
+                            // ▼ 追加: マスターデータの魂Lvも同時に更新する
+                            if (data.name) {
+                                setCharLevels(prev => ({ ...prev, [data.name]: val }));
+                            }
                         }} 
                         onFocus={e => e.target.select()}
                     />
@@ -1817,6 +1822,14 @@
         useEffect(() => {
             localStorage.setItem('char_levels', JSON.stringify(charLevels));
         }, [charLevels]);
+
+        useEffect(() => {
+            localStorage.setItem('learned_abilities', JSON.stringify(learnedAbilities));
+        }, [learnedAbilities]);
+
+        useEffect(() => {
+            localStorage.setItem('soul_presets', JSON.stringify(soulPresets));
+        }, [soulPresets]);
 
         // ▼ charLevels（マスター魂Lv）が更新された時、現在のパーティの魂Lvにも即座に同期させる
         useEffect(() => {
