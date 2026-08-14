@@ -1388,7 +1388,6 @@
                             userDefBps: { s1: null, s2: null, s3: null, inh: null }
                         };
 
-                        // ▼ 追加: マスターデータ(charLevels)から該当キャラの魂Lvを取得し反映する
                         const newSoulLevel = charLevels[val] || "100";
                         const limit = getAbilityLimit(newSoulLevel);
                         let newAbs = [...newData.soulAbilities];
@@ -1396,7 +1395,6 @@
                         
                         newData.soulLevel = newSoulLevel;
                         newData.soulAbilities = newAbs;
-                        // ▲ 追加ここまで
 
                         const baseCharItem = FAVORITE_DB.find(f => f['登録名'] === val);
                         const mainItem = getBaseEquipItem(MAIN_DB, newData.equipments.main);
@@ -1499,7 +1497,6 @@
                             if (newAbs.length > getAbilityLimit(val)) newAbs = newAbs.slice(0, getAbilityLimit(val));
                             updateSlot(index, { ...data, soulLevel: val, soulAbilities: newAbs });
                             
-                            // ▼ 追加: マスターデータの魂Lvも同時に更新する
                             if (data.name) {
                                 setCharLevels(prev => ({ ...prev, [data.name]: val }));
                             }
@@ -1563,12 +1560,10 @@
                                 const curBpStr = data.bps[k];
                                 let bpColor = 'text-white';
 
-                                const defBpNum = parseInt(defaultBpStr, 10);
-                                const curBpNum = parseInt(curBpStr, 10);
+                                const baseBpStr = defaultBpStr !== "-" ? defaultBpStr : (data.userDefBps && data.userDefBps[k]);
 
-                                if (!isNaN(defBpNum) && !isNaN(curBpNum)) {
-                                    if (curBpNum < defBpNum) bpColor = 'text-red-500';
-                                    else if (curBpNum > defBpNum) bpColor = 'text-[#00DC00]';
+                                if (baseBpStr && curBpStr !== "-" && curBpStr !== baseBpStr) {
+                                    bpColor = 'text-red-500';
                                 }
 
                                 const opts = k === 'inh' ? inhOptionsList : charAllSkillOptions;
@@ -1629,7 +1624,6 @@
                                                         const newBp = getSkillBP(v);
                                                         const isSkillSelected = v && v !== "なし" && v !== "手動入力";
                                                         
-                                                        // ベースとなる新しいデータ
                                                         let newData = {
                                                             ...data,
                                                             skillNames: { ...data.skillNames, [k]: v },
@@ -1637,7 +1631,6 @@
                                                             skillChecks: { ...data.skillChecks, [k]: isSkillSelected ? true : data.skillChecks[k] }
                                                         };
                                                         
-                                                        // もし変更したのが継承(inh)なら、通常モード側の変数も更新
                                                         if (k === 'inh') {
                                                             newData.inheritedSkill = v;
                                                             const isNone = !v || v === "なし";
@@ -1745,7 +1738,6 @@
                                 const newDecoAbs = [...data.decoAbilities];
                                 newDecoAbs[i] = newValue;
                                 
-                                // ▼ 追加: 装飾品が◆付きの場合、1枠目を変更したら2枠目・3枠目も同期する
                                 if (data.equipments.deco && data.equipments.deco.startsWith('◆') && i === 0) {
                                     newDecoAbs[1] = newValue;
                                     newDecoAbs[2] = newValue;
@@ -1848,7 +1840,7 @@
             renmaAbilities: ["", ""], decoAbilities: ["", "", ""], soulAbilities: [], remarks: "",
             styleName: "", skillNames: { s1: "", s2: "", s3: "", inh: "" }, bps: { s1: "-", s2: "-", s3: "-", inh: "-" },
             skillChecks: { s1: false, s2: false, s3: false, inh: false }, overDrive: false,
-            userDefBps: { s1: null, s2: null, s3: null, inh: null } // ←追加
+            userDefBps: { s1: null, s2: null, s3: null, inh: null }
         });
         
         const initParty = Array.from({ length: 5 }, createEmptyChar);
@@ -1977,7 +1969,7 @@
                     bps: newData.bps || { s1: "-", s2: "-", s3: "-", inh: "-" },
                     skillChecks: newData.skillChecks || { s1: false, s2: false, s3: false, inh: false },
                     overDrive: newData.overDrive || false,
-                    userDefBps: newData.userDefBps || { s1: null, s2: null, s3: null, inh: null } // ←追加
+                    userDefBps: newData.userDefBps || { s1: null, s2: null, s3: null, inh: null }
                 }; 
                 return newP; 
             });
@@ -2081,7 +2073,6 @@
             if (isSyncLoggedIn && window.triggerSyncSave) {
                 window.triggerSyncSave();
             }
-        // ▼ 末尾に globalSkillManageMode を追加
         }, [party, soulPresets, learnedAbilities, charLevels, isSyncLoggedIn, globalSkillManageMode]);
 
         // ▼ 現在のモード表示の動的切り替え
@@ -2112,7 +2103,6 @@
         // ▼ ローカルセーブ・ロード・削除
         const handleLocalSave = useCallback(() => {
             if (!fileName) { alert("ファイル名を入力してください。"); return; }
-            // ▼ partyRef.current を { party: ..., skillManageMode: ... } に変更
             localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setSelectedLoadFile(""); 
@@ -2167,7 +2157,6 @@
 
         // ▼ エクスポート (JSONファイル出力)
         const handleExport = useCallback(() => {
-            // ▼ partyData を exportData に変更し、モード情報を含める
             const exportData = { party: partyRef.current, skillManageMode: globalSkillManageMode };
             const partyJsonString = JSON.stringify(exportData, null, 2);
             const partyBlob = new Blob([partyJsonString], { type: 'application/json' });
@@ -2215,7 +2204,6 @@
                 loadedParty = data.party;
                 loadedMode = !!data.skillManageMode;
             } else if (data.presets || data.learnedAbilities || data.charLevels) {
-                // ▼ 省略されていた魂アビリティの処理を復元
                 if (data.presets) {
                     setSoulPresets(data.presets);
                     localStorage.setItem('soul_presets', JSON.stringify(data.presets));
@@ -2334,7 +2322,6 @@
                 {/* ▼ カスタムメニュー */}
                 {customMenu.show && (
                     <div 
-                        // ▼ 変更: 上下余白(p-[20px]をpx-[20px] py-[12px]に変更して「編成データ管理」の上と「規約」の下を詰める)
                         className="fixed z-[99999] bg-[#2a2a2a] px-[20px] py-[12px] w-[280px] rounded border border-[#666] shadow-[0_8px_30px_rgba(0,0,0,0.8)] box-border font-sans"
                         style={{ top: customMenu.y, left: customMenu.x }}
                         onClick={(e) => e.stopPropagation()} 
@@ -2350,7 +2337,6 @@
                         </div>
                         
                         {/* ログイン・ログアウトボタン */}
-                        {/* ▼ 変更: 下の余白(mb-4 pb-4 -> mb-3 pb-3)を減らして「ファイル名」の上を詰める */}
                         <div className="mb-3 pb-3 border-b border-[#444]">
                             {!isSyncLoggedIn ? (
                                 <button 
@@ -2369,7 +2355,6 @@
                             )}
                         </div>
 
-                        {/* ▼ 変更: 下の余白(mb-5 -> mb-2)を減らして保存ボタンに近づける */}
                         <div className="mb-2 text-left">
                             <label className="text-[12px] text-gray-400 flex items-center mb-1">
                                 ファイル名 / 保存名:
@@ -2379,10 +2364,8 @@
                         </div>
                         
                         {/* ローカルセーブスロット (Normalモード以外で表示) */}
-                        {/* ▼ 変更: 下の余白(mb-4 pb-4 -> mb-3 pb-3)を減らして「魂アビリティ...」の上を詰める */}
                         {(isAdminMode || isCloudMode || isSyncLoggedIn) && (
                             <div className="mb-3 pb-3 border-b border-[#444]">
-                                {/* ▼ 変更: mt-[5px] をなくし、上入力欄のグループに近づける。下はリスト読込と分けるため少し開ける */}
                                 <button 
                                     onClick={handleLocalSave} 
                                     className={`w-full p-[10px] mt-0 mb-[15px] rounded cursor-pointer text-[14px] font-bold text-white shadow transition-all duration-200 flex items-center justify-center ${isFlashing ? 'bg-white text-black' : 'bg-[#a855f7] hover:bg-[#9333ea]'}`}
@@ -2415,7 +2398,6 @@
                         )}
 
                         {/* 魂アビリティ出力オプション */}
-                        {/* ▼ 変更: 下の余白(mb-4 -> mb-3)を減らしてインポートボタンの上を詰める */}
                         <div className="mb-3 text-left">
                             <label className="flex items-center gap-2 text-[13px] text-gray-200 cursor-pointer select-none">
                                 <input type="checkbox" checked={includeSoulData} onChange={e => setIncludeSoulData(e.target.checked)} className="w-[14px] h-[14px] cursor-pointer" />
@@ -2438,7 +2420,6 @@
                             エクスポート
                         </button>
 
-                        {/* ▼ 変更: 上の余白(mt-4 pt-3 -> mt-3 pt-2)を減らしてインポート・エクスポートとの間を詰める */}
                         <div className="mt-3 pt-2 border-t border-[#444] text-center flex justify-center gap-4 text-[12px]">
                             <a href="terms.html" target="_blank" className="text-[#1D9BF0] hover:text-[#0CFF57] no-underline">利用規約</a>
                             <a href="privacy.html" target="_blank" className="text-[#1D9BF0] hover:text-[#0CFF57] no-underline">プライバシーポリシー</a>
