@@ -47,11 +47,11 @@
     }
     .hamburger {
       cursor: pointer;
-      margin-right: 0; 
+      margin-right: 0; /* 余白を0にする */
       user-select: none;
       color: #eee;
       display: inline-block;
-      font-weight: bold; 
+      font-weight: bold; /* ☰を太字にする */
     }
     .hamburger:hover {
       color: #2A99E6;
@@ -152,8 +152,10 @@
     }
     .zoom-buttons button:hover { background-color: #ddd; }
     
+    /* タイトル部分の余白を0に */
     .header-section { margin-bottom: 10px; padding-top: 0; padding-left: 0; }
     
+    /* タイトルのみフォントと太字を適用し、サイズを1.6emに変更 */
     .header-section h1 { 
       font-size: 1.6em; 
       margin: 0; 
@@ -2670,6 +2672,7 @@
                             setFileName(lastLoaded);
                             setLoadedTitle(lastLoaded);
                             setAutoSave(true);
+                            setSelectedLoadFile(lastLoaded);
                         }
                     } catch(e) {}
                 }
@@ -2751,9 +2754,10 @@
             localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setLoadedTitle(fileName);
-            // 自動保存フラグはそのまま（trueならtrue、falseならfalseを維持）
+            // リストが選択されている（保存された）ら自動保存チェックをオンにする
+            setAutoSave(true);
             localStorage.setItem('LastLoadedParty', fileName);
-            setSelectedLoadFile(fileName); // リスト選択を維持
+            setSelectedLoadFile(fileName); 
             
             setSaveMessage("保存しました");
             setIsFlashing(true);
@@ -2785,10 +2789,9 @@
                         }
                         setFileName(selectedLoadFile);
                         setLoadedTitle(selectedLoadFile); 
-                        setAutoSave(true); // 読込時は自動保存をオンにする
+                        setAutoSave(true); 
                         localStorage.setItem('LastLoadedParty', selectedLoadFile);
-                        // setSelectedLoadFile("") を削除して選択状態を維持
-                        setCustomMenu(prev => ({ ...prev, show: false }));
+                        // setCustomMenu(prev => ({ ...prev, show: false })); // ← これをコメントアウトまたは削除し、メニューを維持
                     } else {
                         alert("無効な編成データです。");
                     }
@@ -2880,6 +2883,7 @@
                     setGlobalSkillManageMode(loadedMode);
                     localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                 }
+                // 追加：インポートされたファイル名があればタイトルにもセットする
                 if (importedFileName) {
                     setFileName(importedFileName);
                     setLoadedTitle(importedFileName);
@@ -2947,7 +2951,6 @@
             const handleClick = (e) => {
                 if (e.altKey) {
                     e.preventDefault(); 
-                    setSelectedLoadFile(""); 
                     setCustomMenu({ show: true, x: e.clientX, y: e.clientY });
                 } else {
                     setCustomMenu(prev => prev.show ? { ...prev, show: false } : prev);
@@ -3025,7 +3028,7 @@
                                 type="text" 
                                 value={fileName} 
                                 onChange={e => setFileName(e.target.value)} 
-                                placeholder="ファイル名を入力..." 
+                                placeholder="編成名を入力..." 
                                 disabled={autoSave}
                                 onFocus={e => e.target.select()}
                                 className={`w-full bg-[#111] border border-[#555] text-white text-[14px] px-3 py-1.5 rounded focus:outline-none focus:border-[#1D9BF0] box-border ${autoSave ? 'opacity-50 cursor-not-allowed' : ''}`} 
@@ -3066,7 +3069,7 @@
                                                     setAutoSave(false);
                                                     setSelectedLoadFile("");
                                                     localStorage.removeItem('LastLoadedParty');
-                                                    setCustomMenu(prev => ({ ...prev, show: false }));
+                                                    // setCustomMenu(prev => ({ ...prev, show: false })); // 新規作成時も閉じないようにする場合はコメントアウト
                                                 }
                                             } else {
                                                 setSelectedLoadFile(val);
