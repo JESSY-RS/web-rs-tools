@@ -368,7 +368,6 @@
     const partyMode = localStorage.getItem('party_mode') || 'normal';
     const isAdminMode = partyMode === 'admin' || localStorage.getItem('index_mode') === 'admin';
     const isCloudMode = localStorage.getItem('RenmaArmorCloudMode') === 'true';
-    const isSyncEnabled = isAdminMode || isCloudMode;
 
     // --- 各種DB ---
     let ABILITY_DB = [];
@@ -2706,7 +2705,7 @@
         }, [party, globalSkillManageMode, autoSave, loadedTitle]);
 
         useEffect(() => {
-            if (window.setupSyncSystem && isSyncEnabled) {
+            if (window.setupSyncSystem) {
                 window.setupSyncSystem({
                     loginTriggerId: 'page-title',
                     fileName: 'party_data.json',
@@ -2727,17 +2726,16 @@
                     }
                 });
             }
-        }, [isSyncEnabled]);
+        }, []);
 
         useEffect(() => {
-            if (!isSyncEnabled) return;
             const timer = setInterval(() => {
                 if (window.syncManager) {
                     setIsSyncLoggedIn(window.syncManager.isLoggedIn);
                 }
             }, 1000);
             return () => clearInterval(timer);
-        }, [isSyncEnabled]);
+        }, []);
 
         useEffect(() => {
             if (isSyncLoggedIn && window.triggerSyncSave) {
@@ -2753,7 +2751,6 @@
         }
 
         const updateSavedFiles = useCallback(() => {
-            if (!isSyncEnabled) return;
             const files = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
@@ -2762,7 +2759,7 @@
                 }
             }
             setSavedFiles(files.sort());
-        }, [isSyncEnabled]);
+        }, []);
 
         useEffect(() => {
             updateSavedFiles();
