@@ -181,12 +181,7 @@
     <a class="menu-item" href="raidcalc.html">レイド報酬効率比較ツール</a><br>
     <br>
     <a class="menu-item" href="renma-armor.html">練磨(防具)統合ツール</a><br>
-    <span class="toggle-button" data-target="linkList">練磨(防具)個別ページ</span>
-    <div id="linkList">
-      ├ <a class="menu-item" href="armor-renma.html">練磨(防具)リスト</a><br>
-      ├ <a class="menu-item" href="armor-top5.html">練磨(防具)TOP5確認</a><br>
-      └ <a class="menu-item" href="armor-calc.html">練磨(防具)自動選定ツール</a><br>
-    </div>
+    <a class="menu-item" href="party.html">編成エディタ</a><br>
     <br>
     <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
     <div id="linkList1">
@@ -1339,7 +1334,7 @@
                                                 key={pName}
                                                 draggable
                                                 onDragStart={(e) => handleManagerPresetDragStart(e, pName)}
-                                                onDragOver={handleManagerPresetDrop}
+                                                onDragOver={handleManagerDragOver}
                                                 onDrop={(e) => handleManagerPresetDrop(e, pName)}
                                                 className={`flex justify-between items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 transition-colors ${managerMode === pName ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-[#222] text-gray-200 hover:bg-[#333]'}`}
                                                 onClick={() => setManagerMode(pName)}
@@ -2778,8 +2773,7 @@
             localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setLoadedTitle(fileName);
-            // リストが選択されている（保存された）ら自動保存チェックをオンにする
-            setAutoSave(true);
+            // 自動保存フラグはそのまま（trueならtrue、falseならfalseを維持）
             localStorage.setItem('LastLoadedParty', fileName);
             setSelectedLoadFile(fileName); 
             
