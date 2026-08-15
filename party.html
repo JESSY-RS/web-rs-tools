@@ -1261,7 +1261,7 @@
                                     <div className="w-[250px]">
                                         <CustomSelect 
                                             value={managerChar} 
-                                            options={CHAR_DB.filter(c => c.label !== "手動入力")}
+                                            options={CHAR_DB}
                                             onChange={val => {
                                                 setManagerChar(getDisplayCharName(val));
                                                 setManagerMode("history");
