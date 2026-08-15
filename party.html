@@ -2462,6 +2462,13 @@
         const [autoSave, setAutoSave] = useState(false);
         const [loadedTitle, setLoadedTitle] = useState("");
 
+        // メニューを開いた時、リストを現在の編成名にリセット
+        useEffect(() => {
+            if (customMenu.show) {
+                setSelectedLoadFile(loadedTitle || "");
+            }
+        }, [customMenu.show, loadedTitle]);
+
         useEffect(() => {
             const titleEl = document.getElementById('page-title');
             if (titleEl) {
@@ -2750,7 +2757,7 @@
         }, [updateSavedFiles]);
 
         const handleLocalSave = useCallback(() => {
-            if (!fileName) { alert("ファイル名を入力してください。"); return; }
+            if (!fileName) { alert("編成名を入力してください。"); return; }
             localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setLoadedTitle(fileName);
@@ -2789,9 +2796,9 @@
                         }
                         setFileName(selectedLoadFile);
                         setLoadedTitle(selectedLoadFile); 
-                        setAutoSave(true); 
+                        setAutoSave(true); // 読込時は自動保存をオンにする
                         localStorage.setItem('LastLoadedParty', selectedLoadFile);
-                        // setCustomMenu(prev => ({ ...prev, show: false })); // ← これをコメントアウトまたは削除し、メニューを維持
+                        // setCustomMenu(prev => ({ ...prev, show: false })); // メニューを閉じない
                     } else {
                         alert("無効な編成データです。");
                     }
@@ -2951,6 +2958,7 @@
             const handleClick = (e) => {
                 if (e.altKey) {
                     e.preventDefault(); 
+                    setSelectedLoadFile(loadedTitle || ""); 
                     setCustomMenu({ show: true, x: e.clientX, y: e.clientY });
                 } else {
                     setCustomMenu(prev => prev.show ? { ...prev, show: false } : prev);
@@ -2972,7 +2980,7 @@
                 window.removeEventListener('drop', handleDrop);
                 window.removeEventListener('dragover', handleDragOver);
             };
-        }, [handleImport]);
+        }, [handleImport, loadedTitle]);
 
         const maxSoulLimit = useMemo(() => {
             return Math.max(...party.map(d => getAbilityLimit(d.soulLevel)));
@@ -3069,7 +3077,6 @@
                                                     setAutoSave(false);
                                                     setSelectedLoadFile("");
                                                     localStorage.removeItem('LastLoadedParty');
-                                                    // setCustomMenu(prev => ({ ...prev, show: false })); // 新規作成時も閉じないようにする場合はコメントアウト
                                                 }
                                             } else {
                                                 setSelectedLoadFile(val);
