@@ -246,7 +246,6 @@
           ※Alt+左クリックで管理メニューが開きます。<br>
           ※各項目のタイトル部分をダブルクリックで、その項目を非表示にできます。<br>
           ※一部のタイトルはクリックでリスト展開やファイル読込、専用の管理画面を開くなどの機能が使えます。<br>
-          ※魂アビリティ欄はドラッグ＆ドロップで任意の順番に変更可能です。<br>
       </div>
   </footer>
 
@@ -1181,33 +1180,9 @@
             if (!baseManagerChar) return;
             setLearnedAbilities(prev => {
                 const charLearned = [...(prev[baseManagerChar] || [])];
-                
-                const getAbilityBaseIndex = (name) => {
-                    let idx = ABILITY_DB.findIndex(item => item.label === name);
-                    if (idx !== -1) return idx;
-                    if (name.startsWith('回避の極意(')) {
-                        return ABILITY_DB.findIndex(item => item.label === '回避の極意(●●)');
-                    }
-                    return 999999;
-                };
-
                 charLearned.sort((a, b) => {
-                    const idxA = getAbilityBaseIndex(a);
-                    const idxB = getAbilityBaseIndex(b);
-
-                    if (idxA !== idxB) {
-                        return order === 'asc' ? idxA - idxB : idxB - idxA;
-                    }
-
-                    if (a.startsWith('回避の極意(') && b.startsWith('回避の極意(')) {
-                        const contentA = a.slice(6, -1);
-                        const contentB = b.slice(6, -1);
-                        if (contentA < contentB) return order === 'asc' ? -1 : 1;
-                        if (contentA > contentB) return order === 'asc' ? 1 : -1;
-                        return 0;
-                    }
-
-                    return order === 'asc' ? a.localeCompare(b, 'ja') : b.localeCompare(a, 'ja');
+                    if (order === 'asc') return a.localeCompare(b, 'ja');
+                    return b.localeCompare(a, 'ja');
                 });
                 return { ...prev, [baseManagerChar]: charLearned };
             });
@@ -2638,35 +2613,14 @@
         }, []);
 
         useEffect(() => {
-            const loadRenmaData = async () => {
-                let data = null;
-                if (activeMode === 'admin') {
-                    const adminStr = localStorage.getItem('RenmaArmorAdminData') || localStorage.getItem('RenmaArmorUnsavedData');
-                    if (adminStr) {
-                        try { data = JSON.parse(adminStr); } catch(e) {}
-                    }
-                } else if (activeMode === 'cloud' || (activeMode === 'drive' && isSyncLoggedIn)) {
-                    if (window.syncManager) {
-                        try {
-                            data = await window.syncManager.loadData('renma-armor.json', 'renma-armor');
-                        } catch (e) {
-                            console.error("RenmaData load failed:", e);
-                        }
-                    }
-                } else if (activeMode === 'normal') {
-                    const unsavedStr = localStorage.getItem('RenmaArmorUnsavedData');
-                    if (unsavedStr) {
-                        try { data = JSON.parse(unsavedStr); } catch(e) {}
-                    }
-                }
-
-                if (data) {
+            const adminRenmaStr = localStorage.getItem('RenmaArmorAdminData') || localStorage.getItem('RenmaArmorUnsavedData');
+            if (adminRenmaStr) {
+                try {
+                    const data = JSON.parse(adminRenmaStr);
                     processRenmaData(data);
-                }
-            };
-
-            loadRenmaData();
-        }, [activeMode, isSyncLoggedIn, processRenmaData]);
+                } catch(e) {}
+            }
+        }, [processRenmaData]);
 
         const [hiddenSections, setHiddenSections] = useState({});
         const handleHideSection = useCallback((section) => {
