@@ -104,7 +104,7 @@
                 const symbol = obj['記号'] || ''; 
                 const name = obj['キャラ名'] || obj['名称'] || values[0] || ''; 
                 const furigana = obj['フリガナ'] || '';
-                return { ...obj, label: symbol + name, furigana: furigana };
+                return { ...obj, label: symbol + name, nameWithoutSymbol: name, furigana: furigana };
             }).filter(item => item.label);
         } catch (error) {
             console.error(`CSV読み込みエラー (${filePath}):`, error);
@@ -198,9 +198,8 @@
         }
     }
 
-    // --- ▼ 追加: キャラ名の判定用関数を3つに分離 ---
-
-    // 1. キャラ名ボックスの表示用 (括弧をそのまま表示する等)
+    // 1. キャラ名欄の表示とスタイルのリンク用 (例：ターミン・ネシハマルカー(ターミン) -> ターミン・ネシハマルカー)
+    // ただし、最終皇帝(男)などはそのまま返す
     function getDisplayCharName(selectedName) {
         if (!selectedName) return "";
         if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
@@ -210,22 +209,7 @@
         return selectedName;
     }
 
-    // 2. スタイル一覧の検索用 (ターミン・ネシハマルカー(ターミン) から ターミン・ネシハマルカー を抽出)
-    function getStyleSearchName(selectedName) {
-        if (!selectedName) return "";
-        if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
-        for (const baseName of STYLE_CHAR_DB) {
-            if (selectedName.startsWith(baseName + '(') || selectedName.startsWith(baseName + '（')) return baseName;
-        }
-        const match = selectedName.match(/^(.+?)[(（](.+?)[)）]$/);
-        if (match) {
-            const beforeParen = match[1];
-            if (STYLE_CHAR_DB.has(beforeParen)) return beforeParen;
-        }
-        return selectedName;
-    }
-
-    // 3. 魂データ共有用 (ターミン・ネシハマルカー(ターミン) から ターミン を抽出)
+    // 2. 魂レベル・魂アビリティの共有用 (例：ターミン・ネシハマルカー(ターミン) -> ターミン)
     function getSoulBaseName(selectedName) {
         if (!selectedName) return "";
         const match = selectedName.match(/^(.+?)[(（](.+?)[)）]$/);
@@ -238,13 +222,32 @@
             if (!isBase && STYLE_CHAR_DB.has(insideParen)) isBase = true;
             if (isBase) return insideParen;
         }
-        if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
-        for (const baseName of STYLE_CHAR_DB) {
-            if (selectedName.startsWith(baseName + '(') || selectedName.startsWith(baseName + '（')) return baseName;
-        }
-        return selectedName;
+        return getDisplayCharName(selectedName);
     }
-    // --- ▲ 追加ここまで ---
+
+    // 3. 装備品の表示用 (記号を除外して表示)
+    function getDisplayEquipName(val, dbArray) {
+        if (!val) return "";
+        if (val === "手動入力") return val;
+        
+        const exactMatch = dbArray.find(d => d.label === val);
+        if (exactMatch) {
+            return exactMatch.nameWithoutSymbol || exactMatch['名称'] || val;
+        }
+
+        const match = val.match(/^(.+?)\((.+?)\)$/);
+        if (match) {
+            const baseName = match[1];
+            const subName = match[2];
+            const baseMatch = dbArray.find(d => d.label === baseName);
+            if (baseMatch) {
+                const baseWithoutSymbol = baseMatch.nameWithoutSymbol || baseMatch['名称'] || baseName;
+                return `${baseWithoutSymbol}(${subName})`;
+            }
+        }
+        
+        return val;
+    }
 
     const getSkillBP = (skillName) => {
         if (!skillName || skillName === "なし" || skillName === "手動入力") return "-";
@@ -302,23 +305,21 @@
         }, []);
 
         useEffect(() => {
-            if (isOpen) {
-                if (value) {
-                    const parentOpt = options.find(o => {
-                        if (typeof o === 'string') return false;
-                        if (!o.subOptions) return false;
-                        if (o.exactSub) {
-                            return o.subOptions.some(sub => {
-                                if (sub.includes('●')) return value.startsWith(sub.split('●')[0]);
-                                return value === sub;
-                            });
-                        } else {
-                            return value.startsWith(o.label + '(');
-                        }
-                    });
-                    if (parentOpt) {
-                        setExpandedItem(parentOpt.label);
+            if (isOpen && value) {
+                const parentOpt = options.find(o => {
+                    if (typeof o === 'string') return false;
+                    if (!o.subOptions) return false;
+                    if (o.exactSub) {
+                        return o.subOptions.some(sub => {
+                            if (sub.includes('●')) return value.startsWith(sub.split('●')[0]);
+                            return value === sub;
+                        });
+                    } else {
+                        return value.startsWith(o.label + '(');
                     }
+                });
+                if (parentOpt) {
+                    setExpandedItem(parentOpt.label);
                 }
             }
         }, [isOpen, value, options]);
@@ -409,7 +410,7 @@
                                                 }
                                             }}
                                             data-selected={isMainSelected ? "true" : "false"}
-                                            className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isMainSelected ? 'bg-[#1D9BF0] text-gray-200' : (expandedItem === opt.label ? 'bg-[#333] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]')}`}
+                                            className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isMainSelected ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : (expandedItem === opt.label ? 'bg-[#333] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]')}`}
                                         >
                                             <span className="truncate">{opt.label}</span>
                                             <div className="flex items-center">
@@ -476,7 +477,7 @@
                                                         setSearchTerm("");
                                                     }}
                                                     data-selected={isCurrentSubSelected ? "true" : "false"}
-                                                    className={`px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer ${isCurrentSubSelected ? 'bg-[#1D9BF0] text-gray-200' : 'bg-[#111] text-gray-300 hover:bg-[#1D9BF0]'}`}
+                                                    className={`px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer ${isCurrentSubSelected ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-[#111] text-gray-300 hover:bg-[#1D9BF0]'}`}
                                                 >
                                                     <span className={`${isCurrentSubSelected ? 'text-gray-200' : 'text-gray-500'} mr-2`}>└</span> {sub}
                                                 </div>
@@ -847,7 +848,6 @@
                         <div className="p-1 border-b border-gray-600 flex items-center justify-between gap-1">
                             <button onClick={handleSave} className="flex-1 text-left text-[13px] text-[#1D9BF0] hover:bg-[#444] px-2 py-1">＋ 現在の構成を登録</button>
                             <div className="flex items-center gap-1">
-                                {/* 魂データ専用 インポート・エクスポート */}
                                 <button onClick={handleImportClick} className="text-gray-300 hover:text-white px-2 py-0.5 text-[12px] bg-[#333] rounded hover:bg-[#444]" title="インポート">↥</button>
                                 <button onClick={handleExport} className="text-gray-300 hover:text-white px-2 py-0.5 text-[12px] bg-[#333] rounded hover:bg-[#444]" title="エクスポート">↧</button>
                                 <button onClick={openManager} className="text-gray-300 hover:text-white px-2 py-0.5 text-[12px] bg-[#333] rounded hover:bg-[#444]" title="管理(ポップアップ)">☰</button>
@@ -926,7 +926,6 @@
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {/* 魂データ専用 インポート・エクスポート */}
                                     <button onClick={handleImportClick} className="text-gray-300 hover:text-white px-3 py-1 text-[16px] bg-[#333] rounded hover:bg-[#444] border border-gray-600" title="インポート">↥</button>
                                     <button onClick={handleExport} className="text-gray-300 hover:text-white px-3 py-1 text-[16px] bg-[#333] rounded hover:bg-[#444] border border-gray-600" title="エクスポート">↧</button>
                                     <div className="w-px h-5 bg-gray-600 mx-1"></div>
@@ -943,7 +942,7 @@
                                     </div>
                                     <div className="flex-1 overflow-y-auto bg-[#111]">
                                         <div 
-                                            className={`flex justify-between items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 transition-colors ${managerMode === "history" ? 'bg-purple-600 text-white font-bold' : 'bg-[#222] text-gray-200 hover:bg-[#333]'}`}
+                                            className={`flex justify-between items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 transition-colors ${managerMode === "history" ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-[#222] text-gray-200 hover:bg-[#333]'}`}
                                             onClick={() => setManagerMode("history")}
                                         >
                                             <span className="truncate flex-1">習得済み</span>
@@ -961,7 +960,7 @@
                                                 onDragStart={(e) => handleManagerPresetDragStart(e, pName)}
                                                 onDragOver={handleManagerDragOver}
                                                 onDrop={(e) => handleManagerPresetDrop(e, pName)}
-                                                className={`flex justify-between items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 transition-colors ${managerMode === pName ? 'bg-[#1D9BF0] text-white font-bold' : 'bg-[#222] text-gray-200 hover:bg-[#333]'}`}
+                                                className={`flex justify-between items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 transition-colors ${managerMode === pName ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-[#222] text-gray-200 hover:bg-[#333]'}`}
                                                 onClick={() => setManagerMode(pName)}
                                             >
                                                 <span className="truncate flex-1">{pName}</span>
@@ -1126,7 +1125,7 @@
                                 <div 
                                     key={idx} 
                                     onClick={() => { onApply(item); setIsOpen(false); setSearchTerm(""); }}
-                                    className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${item['登録名'] === currentSelection ? 'bg-[#1D9BF0] text-gray-200' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
+                                    className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${item['登録名'] === currentSelection ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
                                 >
                                     <span className="truncate">{item['登録名']}</span>
                                 </div>
@@ -1214,7 +1213,7 @@
                                         key={idx} 
                                         onClick={() => { onApply(item); setIsOpen(false); setSearchTerm(""); }}
                                         data-selected={isSelected ? "true" : "false"}
-                                        className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isSelected ? 'bg-[#1D9BF0] text-gray-200' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
+                                        className={`px-2 py-1.5 text-[13px] cursor-pointer border-b border-gray-700 flex justify-between items-center ${isSelected ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-200 hover:bg-[#1D9BF0]'}`}
                                     >
                                         <span className="truncate">{displayStyleName}</span>
                                     </div>
@@ -1291,7 +1290,7 @@
             const newEquipments = { ...data.equipments, [equipType]: val };
             let newData = { ...data, equipments: newEquipments };
 
-            const baseCharItem = FAVORITE_DB.find(f => f['登録名'] === data.name);
+            const baseCharItem = FAVORITE_DB.find(f => f['登録名'] === data.selectedResist || f['登録名'] === getDisplayCharName(data.name));
             const mainItem = getBaseEquipItem(MAIN_DB, newEquipments.main);
             const subItem = getBaseEquipItem(SUB_DB, newEquipments.sub);
             const decoItem = getBaseEquipItem(DECO_DB, newEquipments.deco);
@@ -1510,7 +1509,8 @@
                             skillChecks: { s1: false, s2: false, s3: false, inh: false },
                             inheritedSkill: "",
                             skills: { ...data.skills, inh: "-" },
-                            userDefBps: { s1: null, s2: null, s3: null, inh: null }
+                            userDefBps: { s1: null, s2: null, s3: null, inh: null },
+                            selectedResist: val
                         };
 
                         const baseName = getSoulBaseName(val);
@@ -1546,9 +1546,27 @@
                     >
                         <span className="text-[17px] leading-none mr-[1px]">●</span>装備
                     </div>
-                    <CustomSelect value={data.equipments.main} options={MAIN_DB} onChange={(v) => handleEquipChange('main', v)} placeholder="主防具" />
-                    <CustomSelect value={data.equipments.sub} options={SUB_DB} onChange={(v) => handleEquipChange('sub', v)} placeholder="副防具" />
-                    <CustomSelect value={data.equipments.deco} options={DECO_DB} onChange={(v) => handleEquipChange('deco', v)} placeholder="装飾品" />
+                    <CustomSelect 
+                        value={data.equipments.main} 
+                        options={MAIN_DB} 
+                        onChange={(v) => handleEquipChange('main', v)} 
+                        placeholder="主防具" 
+                        formatDisplay={(val) => getDisplayEquipName(val, MAIN_DB)}
+                    />
+                    <CustomSelect 
+                        value={data.equipments.sub} 
+                        options={SUB_DB} 
+                        onChange={(v) => handleEquipChange('sub', v)} 
+                        placeholder="副防具" 
+                        formatDisplay={(val) => getDisplayEquipName(val, SUB_DB)}
+                    />
+                    <CustomSelect 
+                        value={data.equipments.deco} 
+                        options={DECO_DB} 
+                        onChange={(v) => handleEquipChange('deco', v)} 
+                        placeholder="装飾品" 
+                        formatDisplay={(val) => getDisplayEquipName(val, DECO_DB)}
+                    />
                 </div>
                 )}
 
@@ -1560,7 +1578,7 @@
                         title="属性耐性"
                         titlePopup="クリックで耐性リストを開く / ダブルクリックで非表示"
                         onDoubleClick={() => onHideSection('resist')}
-                        currentSelection={getDisplayCharName(data.name)}
+                        currentSelection={data.selectedResist || getDisplayCharName(data.name)}
                         onApply={(item) => {
                             const mainItem = getBaseEquipItem(MAIN_DB, data.equipments.main);
                             const subItem = getBaseEquipItem(SUB_DB, data.equipments.sub);
@@ -1570,7 +1588,8 @@
                             updateSlot(index, { 
                                 ...data, 
                                 resistances: calculated.resistances,
-                                statusResists: calculated.statusResists
+                                statusResists: calculated.statusResists,
+                                selectedResist: item['登録名']
                             });
                         }} 
                     />
@@ -1977,7 +1996,8 @@
             renmaAbilities: ["", ""], decoAbilities: ["", "", ""], soulAbilities: [], remarks: "",
             styleName: "", skillNames: { s1: "", s2: "", s3: "", inh: "" }, bps: { s1: "-", s2: "-", s3: "-", inh: "-" },
             skillChecks: { s1: false, s2: false, s3: false, inh: false }, overDrive: false,
-            userDefBps: { s1: null, s2: null, s3: null, inh: null }
+            userDefBps: { s1: null, s2: null, s3: null, inh: null },
+            selectedResist: ""
         });
         
         const initParty = Array.from({ length: 5 }, createEmptyChar);
@@ -2106,7 +2126,8 @@
                     bps: newData.bps || { s1: "-", s2: "-", s3: "-", inh: "-" },
                     skillChecks: newData.skillChecks || { s1: false, s2: false, s3: false, inh: false },
                     overDrive: newData.overDrive || false,
-                    userDefBps: newData.userDefBps || { s1: null, s2: null, s3: null, inh: null }
+                    userDefBps: newData.userDefBps || { s1: null, s2: null, s3: null, inh: null },
+                    selectedResist: newData.selectedResist || ""
                 }; 
                 return newP; 
             });
@@ -2179,9 +2200,9 @@
                     onLoad: (loadedData) => {
                         if (loadedData) {
                             if (Array.isArray(loadedData) && loadedData.length === 5) {
-                                setParty(loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}})));
+                                setParty(loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
                             } else if (loadedData.party && Array.isArray(loadedData.party) && loadedData.party.length === 5) {
-                                setParty(loadedData.party.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}})));
+                                setParty(loadedData.party.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
                                 setGlobalSkillManageMode(!!loadedData.skillManageMode);
                                 localStorage.setItem('PartyDefaultSkillMode', String(!!loadedData.skillManageMode));
                             }
@@ -2262,7 +2283,7 @@
                     }
 
                     if (loadedParty) {
-                        setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}})));
+                        setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
                         if (loadedMode !== null) {
                             setGlobalSkillManageMode(loadedMode);
                             localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
@@ -2350,7 +2371,7 @@
             }
 
             if (loadedParty) {
-                setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}})));
+                setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
                 if (loadedMode !== null) {
                     setGlobalSkillManageMode(loadedMode);
                     localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
