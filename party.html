@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="shortcut icon" href="icon/favicon.ico">
+  
+  <!-- タイトル用のフォント読み込み -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  
   <title>リユニ編成エディタ</title>
   
   <script src="script/tailwindcss.js"></script>
@@ -16,17 +22,319 @@
   <script type="module" src="script/sync-manager.js"></script>
   
   <style>
+    /* 全体のフォントは元に戻す */
     body { font-family: 'Meiryo', sans-serif; background-color: #000; color: #eee; margin: 10px 10px !important; padding: 0 !important; overflow-x: auto; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #111; }
     ::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #777; }
     input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    /* リンク色 */
+    a:link { color: #1D9BF0; text-decoration: underline; }
+    a:visited { color: #7755FF; text-decoration: underline; }
+    a:hover { color: #0CFF57; }
+    a:active { color: #FF0000; text-decoration: underline; }
+
+    /* ハンバーガーメニュー・サイドメニュー・ズーム・ヘッダー・フッター用のスタイル */
+    .hamburger::before {
+      content: '☰'; 
+    }
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; 
+      }
+    }
+    .hamburger {
+      cursor: pointer;
+      margin-right: 0; /* 余白を0にする */
+      user-select: none;
+      color: #eee;
+      display: inline-block;
+      font-weight: bold; /* ☰を太字にする */
+    }
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -360px;
+      width: 360px;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 10001;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .side-menu.open {
+      left: 0;
+    }
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .menu-title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: #FF6E3D;
+    }
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: inline-block;
+      padding: 6px 0;
+      color: #eee;
+      text-decoration: underline;
+    }
+    .menu-item:hover {
+      color: #0CFF57;
+    }
+    .toggle-button {
+      cursor: pointer;
+      color: #7755FF;
+      text-decoration: underline;
+      font-size: 18px;
+      text-align: left;
+      display: block;
+      padding: 6px 0;
+      user-select: none;
+    }
+    .toggle-button:hover {
+      color: #0CFF57;
+      text-decoration: underline;
+    }
+    #linkList, #linkList1, #linkList2, #linkList3 {
+      font-size: 18px;
+      text-align: left;
+      display: none;
+      color: #7755FF;
+    }
+    .zoom-buttons { 
+      position: absolute; 
+      top: 15px; 
+      right: 20px; 
+      display: flex; 
+      flex-direction: row; 
+      gap: 5px; 
+      z-index: 1000; 
+    }
+    .zoom-buttons button { 
+      color: #000; 
+      background-color: #eee; 
+      padding: 5px 10px; 
+      font-size: 16px; 
+      cursor: pointer; 
+      border-radius: 5px; 
+      border: 1px solid #888;
+    }
+    .zoom-buttons button:hover { background-color: #ddd; }
+    
+    /* タイトル部分の余白を0に */
+    .header-section { margin-bottom: 10px; padding-top: 0; padding-left: 0; }
+    
+    /* タイトルのみフォントと太字を適用し、サイズを1.6emに変更 */
+    .header-section h1 { 
+      font-size: 1.6em; 
+      margin: 0; 
+      display: inline-block; 
+      font-family: 'Noto Sans JP', sans-serif;
+      font-weight: bold;
+    }
+    
+    .footer-section { margin-top: 20px; padding: 10px; border-top: 1px solid #555; color: #eee; font-size: 14px; line-height: 1.6; }
   </style>
 </head>
 <body>
+
+  <!-- サイドメニューとオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a class="menu-item" href="kiokucalc.html">記憶再戦時間計算</a><br>
+    <a class="menu-item" href="kiokucalc2.html">記憶再戦回数計算</a><br>
+    <br>
+    <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
+    <a class="menu-item" href="raidcalc.html">レイド報酬効率比較ツール</a><br>
+    <br>
+    <a class="menu-item" href="renma-armor.html">練磨(防具)統合ツール</a><br>
+    <span class="toggle-button" data-target="linkList">練磨(防具)個別ページ</span>
+    <div id="linkList">
+      ├ <a class="menu-item" href="armor-renma.html">練磨(防具)リスト</a><br>
+      ├ <a class="menu-item" href="armor-top5.html">練磨(防具)TOP5確認</a><br>
+      └ <a class="menu-item" href="armor-calc.html">練磨(防具)自動選定ツール</a><br>
+    </div>
+    <br>
+    <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
+    <div id="linkList1">
+      ├ <a class="menu-item" href="checker-astral.html">アストラルレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-chaos.html">カオスレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-relic.html">ファンタズムレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-4gen.html">四元像ピアスチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-stella.html">ステライヤリングチェッカー</a><br>
+      └ <a class="menu-item" href="checker-niji.html">虹瑠璃の腕輪チェッカー</a><br>
+    </div>
+    <span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span>
+    <div id="linkList2">
+      ├ <a class="menu-item" href="report-astral.html">アストラルレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-chaos.html">カオスレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-relic.html">ファンタズムレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-4gen.html">四元像ピアス報告用</a><br>
+      ├ <a class="menu-item" href="report-stella.html">ステライヤリング報告用</a><br>
+      └ <a class="menu-item" href="report-niji.html">虹瑠璃の腕輪報告用</a><br>
+    </div>
+    <br>
+    <a class="menu-item" href="soul-piece.html">ソウルピース必要数確認</a><br>
+    <span class="toggle-button" data-target="linkList3">その他いろいろ</span>
+    <div id="linkList3">
+      ├ <a class="menu-item" href="clear.html">クリア目安計算ツール</a><br>
+      ├ <a class="menu-item" href="expcalc.html">EXPスタンプ必要数計算</a><br>
+      ├ <a class="menu-item" href="simu-relic.html">練成シミュレーター</a><br>
+      ├ <a class="menu-item" href="gate.html">動画の関門</a><br>
+      └ <a class="menu-item" href="https://jessy-rs.github.io/Multi-Stage-Slash/">多段斬りアプリ</a><br>
+    </div>
+    <br>
+    <a class="menu-item" href="armor.html">装備候補検索ツール</a><br>
+    <a class="menu-item" href="style-info.html">スタイル情報ビューア</a><br>
+    <br>
+    <a class="menu-item" href="repeat.html">周回編成まとめ</a><br>
+    <br>
+    <a class="menu-item" href="index.html">インデックスページ</a><br>
+    <br>
+  </div>
+
+  <!-- ズームボタンとヘッダー -->
+  <div class="zoom-buttons" id="zoomButtons">
+    <button onclick="changeZoom(-0.1)">－</button>
+    <button onclick="changeZoom(0.1)">＋</button>
+  </div>
+
+  <div class="header-section" id="headerSection">
+    <h1>
+        <span class="hamburger" onclick="toggleMenu()"></span>
+        <span id="page-title" style="cursor: pointer;" title="クリックでログイン / ダブルクリックでUI非表示" ondblclick="hideUIElements()">リユニ編成エディタ</span>
+    </h1>
+  </div>
+
+  <!-- Reactアプリのルート -->
   <div id="root"></div>
 
+  <!-- フッター -->
+  <footer class="footer-section" id="pageFooter">
+      ※使用は自己責任にて。<br>
+      ※このページはPCでの操作を前提として作られています。<br>
+      ※Alt+左クリックで管理メニューが開きます。<br>
+  </footer>
+
+  <!-- DOM操作スクリプト -->
+  <script>
+    function toggleMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        sideMenu.classList.toggle('open');
+        menuOverlay.classList.toggle('open');
+    }
+
+    function closeMenu() {
+        document.getElementById('sideMenu').classList.remove('open');
+        document.getElementById('menuOverlay').classList.remove('open');
+    }
+
+    // フリックでメニュー開閉
+    let startX = 0, startY = 0, endX = 0, endY = 0;
+    document.addEventListener('touchstart', e => { 
+        startX = e.changedTouches[0].screenX; 
+        startY = e.changedTouches[0].screenY; 
+    }, {passive: true});
+    document.addEventListener('touchend', e => {
+        endX = e.changedTouches[0].screenX; 
+        endY = e.changedTouches[0].screenY;
+        const diffX = endX - startX, diffY = endY - startY;
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX > 50 && startX < 30) toggleMenu();
+            else if (diffX < -50) closeMenu();
+        }
+    }, {passive: true});
+
+    // メニュー内のアコーディオン
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".toggle-button").forEach(button => {
+            const targetId = button.getAttribute("data-target");
+            const list = document.getElementById(targetId);
+            if(list) list.style.display = "none";
+            button.addEventListener("click", () => {
+                if(list) list.style.display = (list.style.display === "block") ? "none" : "block";
+            });
+        });
+        loadPageSettings();
+    });
+
+    // ズーム機能
+    let pageSettings = { 'party_zoom': 1.0 };
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem('PageSettings');
+            if (savedSettings) {
+                const parsed = JSON.parse(savedSettings);
+                if (parsed['party_zoom']) pageSettings['party_zoom'] = parsed['party_zoom'];
+            }
+        } catch (e) {}
+        document.body.style.zoom = pageSettings['party_zoom'];
+    }
+    function savePageSettings() {
+        try {
+            let savedSettings = {};
+            const existing = localStorage.getItem('PageSettings');
+            if (existing) savedSettings = JSON.parse(existing);
+            savedSettings['party_zoom'] = pageSettings['party_zoom'];
+            localStorage.setItem('PageSettings', JSON.stringify(savedSettings));
+        } catch (e) {}
+    }
+    function changeZoom(delta) {
+        let currentZoom = pageSettings['party_zoom'];
+        currentZoom += delta;
+        currentZoom = Math.round(currentZoom * 10) / 10;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        document.body.style.zoom = currentZoom;
+        pageSettings['party_zoom'] = currentZoom;
+        savePageSettings();
+    }
+
+    // UI非表示 (ダブルクリック時)
+    function hideUIElements() {
+        const header = document.getElementById('headerSection');
+        const footer = document.getElementById('pageFooter');
+        const zoomBtn = document.getElementById('zoomButtons');
+        if(header) header.style.display = 'none';
+        if(footer) footer.style.display = 'none';
+        if(zoomBtn) zoomBtn.style.display = 'none';
+    }
+  </script>
+
+  <!-- Reactアプリの処理 -->
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
@@ -198,8 +506,7 @@
         }
     }
 
-    // 1. キャラ名欄の表示とスタイルリンク用 (例：ターミン・ネシハマルカー(ターミン) -> ターミン・ネシハマルカー)
-    // ただし、最終皇帝(男)などはそのまま返す
+    // 1. キャラ名欄の表示とスタイルリンク用
     function getDisplayCharName(selectedName) {
         if (!selectedName) return "";
         if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
@@ -209,7 +516,7 @@
         return selectedName;
     }
 
-    // 2. 魂レベル・魂アビリティの共有用 (例：ターミン・ネシハマルカー(ターミン) -> ターミン)
+    // 2. 魂レベル・魂アビリティの共有用
     function getSoulBaseName(selectedName) {
         if (!selectedName) return "";
         const match = selectedName.match(/^(.+?)[(（](.+?)[)）]$/);
@@ -294,6 +601,7 @@
         const [isOpen, setIsOpen] = useState(false);
         const [searchTerm, setSearchTerm] = useState("");
         const [expandedItem, setExpandedItem] = useState(null);
+        const [subSearchTerm, setSubSearchTerm] = useState("");
         const wrapperRef = useRef(null);
 
         useEffect(() => {
@@ -309,6 +617,10 @@
                 const parentOpt = options.find(o => {
                     if (typeof o === 'string') return false;
                     if (!o.subOptions) return false;
+                    if (o.template) {
+                        const prefix = o.template.split('●')[0];
+                        return value.startsWith(prefix);
+                    }
                     if (o.exactSub) {
                         return o.subOptions.some(sub => {
                             if (sub.includes('●')) return value.startsWith(sub.split('●')[0]);
@@ -345,7 +657,7 @@
                     const searchStr = typeof opt === 'string' 
                         ? hiraganaToKatakana(opt.toLowerCase()) 
                         : hiraganaToKatakana((opt.label + (opt.furigana || '')).toLowerCase());
-                    mergedList.push({ label, searchStr, subOptions: opt.subOptions, exactSub: opt.exactSub });
+                    mergedList.push({ label, searchStr, subOptions: opt.subOptions, exactSub: opt.exactSub, hasSubSearch: opt.hasSubSearch, template: opt.template });
                     seenLabels.add(label);
                 }
             });
@@ -397,6 +709,7 @@
                                                 if (opt.subOptions) {
                                                     e.stopPropagation();
                                                     setExpandedItem(expandedItem === opt.label ? null : opt.label);
+                                                    setSubSearchTerm("");
                                                 } else if (opt.label === "手動入力") {
                                                     e.stopPropagation();
                                                     const userInput = prompt("名称を入力してください:", "");
@@ -432,57 +745,99 @@
                                                 {opt.subOptions && <span className="text-[10px] text-gray-400 ml-1">{expandedItem === opt.label ? '▼' : '▶'}</span>}
                                             </div>
                                         </div>
-                                        {opt.subOptions && expandedItem === opt.label && opt.subOptions.map((sub, sIdx) => {
-                                            let isCurrentSubSelected = false;
-                                            if (opt.exactSub) {
-                                                if (sub.includes('●')) {
-                                                    const prefix = sub.split('●')[0];
-                                                    isCurrentSubSelected = !!value && value.startsWith(prefix);
-                                                } else {
-                                                    isCurrentSubSelected = value === sub;
-                                                }
-                                            } else {
-                                                if (sub.includes('●')) {
-                                                    const prefix = `${opt.label}(`;
-                                                    isCurrentSubSelected = !!value && value.startsWith(prefix);
-                                                } else {
-                                                    isCurrentSubSelected = value === `${opt.label}(${sub})`;
-                                                }
-                                            }
-                                            return (
-                                                <div
-                                                    key={`${idx}-${sIdx}`}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        let finalVal;
-                                                        if (opt.exactSub) {
-                                                            if (sub.includes('●')) {
-                                                                const userInput = prompt(`「${sub}」の部分を入力してください:`, "");
-                                                                if (!userInput) return; 
-                                                                finalVal = finalVal.replace(/●+/g, userInput);
+                                        {opt.subOptions && expandedItem === opt.label && (
+                                            <div className="bg-[#111]">
+                                                {opt.hasSubSearch && (
+                                                    <div className="relative w-full border-b border-gray-600 bg-[#111]">
+                                                        <input 
+                                                            type="text" 
+                                                            value={subSearchTerm}
+                                                            onChange={(e) => setSubSearchTerm(e.target.value)}
+                                                            className="w-full bg-transparent text-white text-[13px] px-2 py-1.5 pr-6 focus:outline-none"
+                                                            placeholder="リスト内検索..."
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                        {subSearchTerm && (
+                                                            <span 
+                                                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#FF0000] cursor-pointer text-[14px]"
+                                                                onClick={(e) => { e.stopPropagation(); setSubSearchTerm(""); }}
+                                                            >×</span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                <div className="max-h-48 overflow-y-auto">
+                                                    {opt.subOptions
+                                                        .filter(sub => !subSearchTerm || hiraganaToKatakana(sub.toLowerCase()).includes(hiraganaToKatakana(subSearchTerm.toLowerCase())))
+                                                        .map((sub, sIdx) => {
+                                                        let isCurrentSubSelected = false;
+                                                        if (opt.template) {
+                                                            if (sub === "手動入力" || sub.includes('●')) {
+                                                                const prefix = opt.template.split('●')[0];
+                                                                isCurrentSubSelected = !!value && value.startsWith(prefix);
                                                             } else {
-                                                                finalVal = sub;
+                                                                isCurrentSubSelected = value === opt.template.replace(/●+/g, sub);
+                                                            }
+                                                        } else if (opt.exactSub) {
+                                                            if (sub === "手動入力" || sub.includes('●')) {
+                                                                const prefix = sub.split('●')[0];
+                                                                isCurrentSubSelected = !!value && value.startsWith(prefix);
+                                                            } else {
+                                                                isCurrentSubSelected = value === sub;
                                                             }
                                                         } else {
-                                                            let finalSub = sub;
-                                                            if (sub.includes('●')) {
-                                                                const userInput = prompt(`「${sub}」の部分を入力してください:`, "");
-                                                                if (!userInput) return; 
-                                                                finalSub = userInput;
+                                                            if (sub === "手動入力" || sub.includes('●')) {
+                                                                const prefix = `${opt.label}(`;
+                                                                isCurrentSubSelected = !!value && value.startsWith(prefix);
+                                                            } else {
+                                                                isCurrentSubSelected = value === `${opt.label}(${sub})`;
                                                             }
-                                                            finalVal = `${opt.label}(${finalSub})`;
                                                         }
-                                                        onChange(finalVal);
-                                                        setIsOpen(false);
-                                                        setSearchTerm("");
-                                                    }}
-                                                    data-selected={isCurrentSubSelected ? "true" : "false"}
-                                                    className={`px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer ${isCurrentSubSelected ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-[#111] text-gray-300 hover:bg-[#1D9BF0]'}`}
-                                                >
-                                                    <span className={`${isCurrentSubSelected ? 'text-gray-200' : 'text-gray-500'} mr-2`}>└</span> {sub}
+                                                        return (
+                                                            <div
+                                                                key={`${idx}-${sIdx}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    let finalVal;
+                                                                    if (opt.template) {
+                                                                        let finalSub = sub;
+                                                                        if (sub === "手動入力" || sub.includes('●')) {
+                                                                            const userInput = prompt(`名称を入力してください:`, "");
+                                                                            if (!userInput) return;
+                                                                            finalSub = userInput;
+                                                                        }
+                                                                        finalVal = opt.template.replace(/●+/g, finalSub);
+                                                                    } else if (opt.exactSub) {
+                                                                        if (sub === "手動入力" || sub.includes('●')) {
+                                                                            const userInput = prompt(`名称を入力してください:`, "");
+                                                                            if (!userInput) return; 
+                                                                            finalVal = sub.replace(/●+/g, userInput);
+                                                                        } else {
+                                                                            finalVal = sub;
+                                                                        }
+                                                                    } else {
+                                                                        let finalSub = sub;
+                                                                        if (sub === "手動入力" || sub.includes('●')) {
+                                                                            const userInput = prompt(`名称を入力してください:`, "");
+                                                                            if (!userInput) return; 
+                                                                            finalSub = userInput;
+                                                                        }
+                                                                        finalVal = `${opt.label}(${finalSub})`;
+                                                                    }
+                                                                    onChange(finalVal);
+                                                                    setIsOpen(false);
+                                                                    setSearchTerm("");
+                                                                    setSubSearchTerm("");
+                                                                }}
+                                                                data-selected={isCurrentSubSelected ? "true" : "false"}
+                                                                className={`px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer ${isCurrentSubSelected ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-300 hover:bg-[#1D9BF0]'}`}
+                                                            >
+                                                                {sub}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
-                                            );
-                                        })}
+                                            </div>
+                                        )}
                                     </React.Fragment>
                                 );
                             }) : <div className="px-2 py-2 text-[13px] text-gray-500">候補なし</div>}
@@ -501,6 +856,9 @@
         const [managerMode, setManagerMode] = useState("history");
         const [abilitySearch, setAbilitySearch] = useState("");
         const [showLearnedOnly, setShowLearnedOnly] = useState(false);
+        
+        const [managerExpandedItem, setManagerExpandedItem] = useState(null);
+        const [managerSubSearchTerm, setManagerSubSearchTerm] = useState("");
         
         const [draggedItemIndex, setDraggedItemIndex] = useState(null);
         const [limitMessage, setLimitMessage] = useState("");
@@ -626,6 +984,8 @@
             setAbilitySearch("");
             setLimitMessage("");
             setShowLearnedOnly(false);
+            setManagerExpandedItem(null);
+            setManagerSubSearchTerm("");
             setIsManagerOpen(true);
             setIsOpen(false);
         };
@@ -650,17 +1010,19 @@
             });
         }, [abilitySearch, ABILITY_DB, managerMode, showLearnedOnly, managerLearned]);
 
-        const handleAddAbility = (abilityStr) => {
+        const handleAddAbility = (abilityStr, isFinalized = false) => {
             if (!baseManagerChar) return;
             let finalAbility = abilityStr;
-            if (abilityStr === "手動入力") {
-                const userInput = prompt("名称を入力してください:", "");
-                if (userInput) finalAbility = userInput;
-                else return;
-            } else if (abilityStr === "回避の極意(●●)") {
-                const userInput = prompt("回避対象のスキル名などを入力してください", "");
-                if (userInput) finalAbility = `回避の極意(${userInput})`;
-                else return;
+            if (!isFinalized) {
+                if (abilityStr === "手動入力") {
+                    const userInput = prompt("名称を入力してください:", "");
+                    if (userInput) finalAbility = userInput;
+                    else return;
+                } else if (abilityStr.includes("●●")) {
+                    const userInput = prompt("回避対象のスキル名などを入力してください", "");
+                    if (userInput) finalAbility = abilityStr.replace(/●+/g, userInput);
+                    else return;
+                }
             }
 
             if (managerMode === "history") {
@@ -883,6 +1245,8 @@
                                                 setManagerMode("history");
                                                 setLimitMessage("");
                                                 setShowLearnedOnly(false);
+                                                setManagerExpandedItem(null);
+                                                setManagerSubSearchTerm("");
                                             }}
                                             placeholder="キャラを選択..."
                                             formatDisplay={getDisplayCharName}
@@ -1045,9 +1409,87 @@
                                     </div>
                                     <div className="flex-1 overflow-y-auto bg-[#111]">
                                         {filteredAbilities.map((ab, idx) => (
-                                            <div key={idx} onClick={() => handleAddAbility(ab.label)} className="px-2 py-1.5 cursor-pointer text-[13px] text-gray-200 border-b border-gray-700 hover:bg-[#1D9BF0] truncate transition-colors" title="クリックで追加">
-                                                {ab.label}
-                                            </div>
+                                            <React.Fragment key={idx}>
+                                                <div 
+                                                    onClick={() => {
+                                                        if (ab.subOptions) {
+                                                            setManagerExpandedItem(managerExpandedItem === ab.label ? null : ab.label);
+                                                            setManagerSubSearchTerm("");
+                                                        } else {
+                                                            handleAddAbility(ab.label, false);
+                                                        }
+                                                    }} 
+                                                    className={`px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 flex justify-between items-center transition-colors ${managerExpandedItem === ab.label ? 'bg-[#333] text-gray-200 hover:bg-[#1D9BF0]' : 'text-gray-200 hover:bg-[#1D9BF0]'}`} 
+                                                    title="クリックで追加"
+                                                >
+                                                    <span className="truncate">{ab.label}</span>
+                                                    {ab.subOptions && <span className="text-[10px] text-gray-400 ml-1">{managerExpandedItem === ab.label ? '▼' : '▶'}</span>}
+                                                </div>
+                                                {ab.subOptions && managerExpandedItem === ab.label && (
+                                                    <div className="bg-[#111]">
+                                                        {ab.hasSubSearch && (
+                                                            <div className="relative w-full border-b border-gray-600 bg-[#111]">
+                                                                <input 
+                                                                    type="text" 
+                                                                    value={managerSubSearchTerm}
+                                                                    onChange={(e) => setManagerSubSearchTerm(e.target.value)}
+                                                                    className="w-full bg-transparent text-white text-[13px] px-2 py-1.5 pr-6 focus:outline-none"
+                                                                    placeholder="リスト内検索..."
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                />
+                                                                {managerSubSearchTerm && (
+                                                                    <span 
+                                                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#FF0000] cursor-pointer text-[14px]"
+                                                                        onClick={(e) => { e.stopPropagation(); setManagerSubSearchTerm(""); }}
+                                                                    >×</span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        <div className="max-h-48 overflow-y-auto">
+                                                            {ab.subOptions
+                                                                .filter(sub => !managerSubSearchTerm || hiraganaToKatakana(sub.toLowerCase()).includes(hiraganaToKatakana(managerSubSearchTerm.toLowerCase())))
+                                                                .map((sub, sIdx) => (
+                                                                <div
+                                                                    key={`${idx}-${sIdx}`}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        let finalVal;
+                                                                        if (ab.template) {
+                                                                            let finalSub = sub;
+                                                                            if (sub === "手動入力" || sub.includes('●')) {
+                                                                                const userInput = prompt(`名称を入力してください:`, "");
+                                                                                if (!userInput) return;
+                                                                                finalSub = userInput;
+                                                                            }
+                                                                            finalVal = ab.template.replace(/●+/g, finalSub);
+                                                                        } else if (ab.exactSub) {
+                                                                            if (sub === "手動入力" || sub.includes('●')) {
+                                                                                const userInput = prompt(`名称を入力してください:`, "");
+                                                                                if (!userInput) return;
+                                                                                finalVal = sub.replace(/●+/g, userInput);
+                                                                            } else {
+                                                                                finalVal = sub;
+                                                                            }
+                                                                        } else {
+                                                                            let finalSub = sub;
+                                                                            if (sub === "手動入力" || sub.includes('●')) {
+                                                                                const userInput = prompt(`名称を入力してください:`, "");
+                                                                                if (!userInput) return;
+                                                                                finalSub = userInput;
+                                                                            }
+                                                                            finalVal = `${ab.label}(${finalSub})`;
+                                                                        }
+                                                                        handleAddAbility(finalVal, true);
+                                                                    }}
+                                                                    className="px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer bg-transparent text-gray-300 hover:bg-[#1D9BF0]"
+                                                                >
+                                                                    {sub}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </React.Fragment>
                                         ))}
                                         {filteredAbilities.length === 0 && (
                                             <div className="text-gray-500 text-[13px] p-4 text-center">候補なし</div>
@@ -1168,10 +1610,10 @@
             <div className={`relative w-full ${isOpen ? 'z-50' : 'z-10'}`} ref={wrapperRef}>
                 <div 
                     onClick={() => setIsOpen(!isOpen)} 
-                    className={`${themeColor} font-bold text-[16px] flex items-center mb-0.5 cursor-pointer select-none w-fit hover:opacity-80`}
+                    className={`${themeColor} font-bold text-[18px] flex items-center mb-0.5 cursor-pointer select-none w-fit hover:opacity-80`}
                     title="クリックでスタイル一覧を開く"
                 >
-                    <span className="text-[17px] leading-none mr-[1px]">●</span>キャラ{index + 1}
+                    <span className="text-[22px] leading-none mr-[2px]">●</span>キャラ{index + 1}
                 </div>
                 {isOpen && (
                     <div className="absolute left-0 top-full mt-[1px] w-full bg-[#2a2a2a] border border-gray-600 flex flex-col rounded-sm">
@@ -1935,10 +2377,13 @@
                                 onRemoveHistory={(abilityName) => onRemoveLearned(getSoulBaseName(data.name), abilityName)}
                                 onChange={(v) => {
                                     let newValue = v;
-                                    if (v === "回避の極意(●●)") {
-                                        const userInput = prompt("回避対象のスキル名 গেলোなどを入力してください", "");
-                                        if (userInput) newValue = `回避の極意(${userInput})`;
-                                        else newValue = "";
+                                    if (newValue && newValue.includes("●●")) {
+                                        const userInput = prompt("回避対象のスキル名などを入力してください", "");
+                                        if (userInput) {
+                                            newValue = newValue.replace(/●+/g, userInput);
+                                        } else {
+                                            newValue = "";
+                                        }
                                     }
                                     const arr = [...data.soulAbilities];
                                     if(newValue) arr[i] = newValue; else arr.splice(i, 1);
@@ -2006,6 +2451,21 @@
         const [isSyncLoggedIn, setIsSyncLoggedIn] = useState(false);
         const [saveMessage, setSaveMessage] = useState("");
         const [isFlashing, setIsFlashing] = useState(false);
+
+        // 追加：表示するタイトルの管理
+        const [loadedTitle, setLoadedTitle] = useState("");
+
+        // タイトルが変更されたら、DOM上のページタイトル要素を書き換える
+        useEffect(() => {
+            const titleEl = document.getElementById('page-title');
+            if (titleEl) {
+                if (loadedTitle) {
+                    titleEl.textContent = `${loadedTitle} 編成詳細`;
+                } else {
+                    titleEl.textContent = "リユニ編成エディタ";
+                }
+            }
+        }, [loadedTitle]);
 
         const [globalSkillManageMode, setGlobalSkillManageMode] = useState(() => {
             return localStorage.getItem('PartyDefaultSkillMode') === 'true';
@@ -2184,7 +2644,7 @@
         useEffect(() => {
             if (window.setupSyncSystem && isSyncEnabled) {
                 window.setupSyncSystem({
-                    loginTriggerId: '', 
+                    loginTriggerId: 'page-title',
                     fileName: 'party_data.json',
                     firestoreDoc: 'party-data',
                     onLoad: (loadedData) => {
@@ -2279,6 +2739,7 @@
                             localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                         }
                         setFileName(selectedLoadFile);
+                        setLoadedTitle(selectedLoadFile); // 追加：ファイル名または保存名をタイトルにセット
                         setSelectedLoadFile(""); 
                         setCustomMenu(prev => ({ ...prev, show: false }));
                     } else {
@@ -2335,7 +2796,7 @@
             setCustomMenu(prev => ({ ...prev, show: false }));
         }, [fileName, isSyncLoggedIn, includeSoulData, soulPresets, learnedAbilities, charLevels]);
 
-        const processImportedFile = useCallback((data) => {
+        const processImportedFile = useCallback((data, importedFileName = null) => {
             let loadedParty = null;
             let loadedMode = null;
 
@@ -2366,6 +2827,11 @@
                     setGlobalSkillManageMode(loadedMode);
                     localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                 }
+                // 追加：インポートされたファイル名があればタイトルにもセットする
+                if (importedFileName) {
+                    setFileName(importedFileName);
+                    setLoadedTitle(importedFileName);
+                }
                 if (isSyncLoggedIn && window.triggerSyncSave) {
                     setTimeout(() => { window.triggerSyncSave(); }, 100);
                 }
@@ -2384,7 +2850,8 @@
                 reader.onload = (event) => {
                     try {
                         const data = JSON.parse(event.target.result);
-                        processImportedFile(data);
+                        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+                        processImportedFile(data, nameWithoutExt);
                     } catch(err) {
                         console.error("読み込みエラー:", err);
                         alert(`${file.name} の読み込みに失敗しました。`);
@@ -2433,7 +2900,7 @@
                     setCustomMenu(prev => prev.show ? { ...prev, show: false } : prev);
                 }
             };
-
+            
             const handleDrop = (e) => {
                 e.preventDefault();
                 handleImport({ dataTransfer: { files: e.dataTransfer.files } });
@@ -2598,7 +3065,7 @@
     };
 
     async function initApp() {
-        const [charData, mainData, subData, decoData, styleCharData, favoriteData, soulData, skillData] = await Promise.all([
+        const [charData, mainData, subData, decoData, styleCharData, favoriteData, soulData, skillData, mikiriData] = await Promise.all([
             loadSimpleCSV('data/character.csv'),
             loadSimpleCSV('data/armor-main.csv'),
             loadSimpleCSV('data/armor-sub.csv'),
@@ -2606,7 +3073,8 @@
             loadStyleCSV('data/style.csv'),
             loadFavoriteCSV('data/favorite.csv'),
             loadSimpleCSV('data/soul-ability.csv'),
-            loadSimpleCSV('data/skill.csv')
+            loadSimpleCSV('data/skill.csv'),
+            loadSimpleCSV('data/mikiri.csv')
         ]);
         
         const processArmorDB = (db) => {
@@ -2635,10 +3103,32 @@
             });
         };
 
+        // mikiri.csvから＋付きを除外して重複をなくしたリストを作成
+        const allMikiriSkills = [...new Set(mikiriData.map(s => s['名称'] || s['スキル名']).filter(s => s && !s.includes('+') && !s.includes('＋')))].sort();
+
         CHAR_DB = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...charData];
         MAIN_DB = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...processArmorDB(mainData)];
         SUB_DB = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...processArmorDB(subData)];
-        ABILITY_DB = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...soulData];
+        
+        // 回避の極意をアコーディオン化し、mikiriリストと検索枠を適用（データが空の場合はフォールバック）
+        ABILITY_DB = [{ label: "手動入力", furigana: "しゅどうにゅうりょく" }, ...soulData.map(opt => {
+            if (opt.label === "回避の極意(●●)") {
+                if (allMikiriSkills.length > 0) {
+                    return { 
+                        ...opt, 
+                        label: "回避の極意(●●)", 
+                        template: "回避の極意(●●)",
+                        subOptions: ["手動入力", ...allMikiriSkills], 
+                        exactSub: false,
+                        hasSubSearch: true
+                    };
+                } else {
+                    return opt;
+                }
+            }
+            return opt;
+        })];
+        
         STYLE_CHAR_DB = styleCharData;
         FAVORITE_DB = favoriteData;
         SKILL_FULL_DB = skillData;
