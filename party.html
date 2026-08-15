@@ -198,8 +198,7 @@
         }
     }
 
-    // 1. キャラ名欄の表示とスタイルのリンク用 (例：ターミン・ネシハマルカー(ターミン) -> ターミン・ネシハマルカー)
-    // ただし、最終皇帝(男)などはそのまま返す
+    // 1. キャラ名欄の表示とスタイルリンク用 (括弧以降の省略を行いつつ、最終皇帝などに対応するparty_6.htmlの仕様)
     function getDisplayCharName(selectedName) {
         if (!selectedName) return "";
         if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
@@ -877,7 +876,7 @@
                                     <div className="w-[250px]">
                                         <CustomSelect 
                                             value={managerChar} 
-                                            options={CHAR_DB.filter(c => c.label !== "手動入力")}
+                                            options={CHAR_DB.filter(c => c.label !== "手 মোহ動入力")}
                                             onChange={val => {
                                                 setManagerChar(val);
                                                 setManagerMode("history");
@@ -1150,8 +1149,8 @@
 
         const styleList = useMemo(() => {
             if (!charName) return [];
-            const searchName = getStyleSearchName(charName);
-            const styles = STYLE_FULL_DB.filter(s => s['キャラ名'] === searchName);
+            const baseName = getDisplayCharName(charName);
+            const styles = STYLE_FULL_DB.filter(s => s['キャラ名'] === baseName);
             styles.sort((a, b) => {
                 const dateA = a['実装時期'] || '';
                 const dateB = b['実装時期'] || '';
@@ -1367,7 +1366,7 @@
         const charAllSkillOptions = useMemo(() => {
             const skills = new Set();
             if (data.name) {
-                const targetCharName = getStyleSearchName(data.name);
+                const targetCharName = getDisplayCharName(data.name);
                 const addSkill = (skill) => {
                     if (!skill) return;
                     skills.add(skill);
@@ -1391,7 +1390,7 @@
             const currentStyleSkills = new Set();
             
             if (data.name) {
-                const targetCharName = getStyleSearchName(data.name);
+                const targetCharName = getDisplayCharName(data.name);
                 const addSkillToSet = (set, skill) => {
                     if (!skill) return;
                     set.add(skill);
