@@ -246,6 +246,7 @@
           ※Alt+左クリックで管理メニューが開きます。<br>
           ※各項目のタイトル部分をダブルクリックで、その項目を非表示にできます。<br>
           ※一部のタイトルはクリックでリスト展開やファイル読込、専用の管理画面を開くなどの機能が使えます。<br>
+          ※魂アビリティ欄はドラッグ＆ドロップで任意の順番に変更可能です。<br>
       </div>
   </footer>
 
@@ -369,9 +370,9 @@
     const isAdminMode = partyMode === 'admin' || localStorage.getItem('index_mode') === 'admin';
     const isCloudMode = localStorage.getItem('RenmaArmorCloudMode') === 'true';
 
-    // モードの状態を動的に判別する関数（手動ログアウトされるまではDriveモードを維持）
+    // モードの状態を動的に判別する関数
     const getActiveMode = (admin, cloud, loggedIn) => {
-        if (cloud) return 'cloud';
+        if (cloud) return 'cloud'; // Cloudモードフラグがあれば維持
         const intendedDrive = localStorage.getItem('intended_drive_mode') === 'true';
         if (loggedIn || intendedDrive) return 'drive';
         if (admin) return 'admin';
@@ -1180,9 +1181,33 @@
             if (!baseManagerChar) return;
             setLearnedAbilities(prev => {
                 const charLearned = [...(prev[baseManagerChar] || [])];
+                
+                const getAbilityBaseIndex = (name) => {
+                    let idx = ABILITY_DB.findIndex(item => item.label === name);
+                    if (idx !== -1) return idx;
+                    if (name.startsWith('回避の極意(')) {
+                        return ABILITY_DB.findIndex(item => item.label === '回避の極意(●●)');
+                    }
+                    return 999999;
+                };
+
                 charLearned.sort((a, b) => {
-                    if (order === 'asc') return a.localeCompare(b, 'ja');
-                    return b.localeCompare(a, 'ja');
+                    const idxA = getAbilityBaseIndex(a);
+                    const idxB = getAbilityBaseIndex(b);
+
+                    if (idxA !== idxB) {
+                        return order === 'asc' ? idxA - idxB : idxB - idxA;
+                    }
+
+                    if (a.startsWith('回避の極意(') && b.startsWith('回避の極意(')) {
+                        const contentA = a.slice(6, -1);
+                        const contentB = b.slice(6, -1);
+                        if (contentA < contentB) return order === 'asc' ? -1 : 1;
+                        if (contentA > contentB) return order === 'asc' ? 1 : -1;
+                        return 0;
+                    }
+
+                    return order === 'asc' ? a.localeCompare(b, 'ja') : b.localeCompare(a, 'ja');
                 });
                 return { ...prev, [baseManagerChar]: charLearned };
             });
@@ -2613,14 +2638,40 @@
         }, []);
 
         useEffect(() => {
-            const adminRenmaStr = localStorage.getItem('RenmaArmorAdminData') || localStorage.getItem('RenmaArmorUnsavedData');
-            if (adminRenmaStr) {
-                try {
-                    const data = JSON.parse(adminRenmaStr);
+            let isMounted = true;
+            const loadRenmaData = async () => {
+                let data = null;
+                if (activeMode === 'admin') {
+                    const adminStr = localStorage.getItem('RenmaArmorAdminData') || localStorage.getItem('RenmaArmorUnsavedData');
+                    if (adminStr) {
+                        try { data = JSON.parse(adminStr); } catch(e) {}
+                    }
+                } else if (activeMode === 'cloud' || activeMode === 'drive') {
+                    // 非同期読み込みされる syncManager のロード完了・認証完了をリトライ待機（最大5秒）
+                    let attempts = 0;
+                    while ((!window.syncManager || !window.syncManager.isLoggedIn) && attempts < 50) {
+                        await new Promise(res => setTimeout(res, 100));
+                        attempts++;
+                    }
+
+                    if (window.syncManager && window.syncManager.isLoggedIn && typeof window.syncManager.loadSecondaryData === 'function') {
+                        data = await window.syncManager.loadSecondaryData('renma-armor.json', 'renma-armor');
+                    }
+                } else if (activeMode === 'normal') {
+                    const unsavedStr = localStorage.getItem('RenmaArmorUnsavedData');
+                    if (unsavedStr) {
+                        try { data = JSON.parse(unsavedStr); } catch(e) {}
+                    }
+                }
+
+                if (data && isMounted) {
                     processRenmaData(data);
-                } catch(e) {}
-            }
-        }, [processRenmaData]);
+                }
+            };
+
+            loadRenmaData();
+            return () => { isMounted = false; };
+        }, [activeMode, isSyncLoggedIn, processRenmaData]);
 
         const [hiddenSections, setHiddenSections] = useState({});
         const handleHideSection = useCallback((section) => {
@@ -3180,6 +3231,14 @@
                                     onClick={(e) => { 
                                         e.stopPropagation(); 
                                         localStorage.removeItem('intended_drive_mode');
+                                        localStorage.removeItem('party_mode');
+                                        localStorage.removeItem('RenmaArmorCloudMode');
+                                        // URLパラメータ(secret_cloud_on等)があれば削除してリロード時の再適用を防ぐ
+                                        if (window.history.replaceState) {
+                                            const url = new URL(window.location.href);
+                                            url.searchParams.delete('mode');
+                                            window.history.replaceState(null, '', url.toString());
+                                        }
                                         window.triggerSyncLogout && window.triggerSyncLogout(); 
                                     }}
                                 >
