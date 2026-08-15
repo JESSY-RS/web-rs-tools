@@ -379,6 +379,32 @@
         return 'normal';
     };
 
+    // --- 古いデータのマイグレーション用関数 ---
+    const migrateLegacyPartySaves = (targetMode) => {
+        if (targetMode === 'normal') return;
+        const prefix = `PartySave_${targetMode}_`;
+        let hasMigrated = false;
+        for (let i = 0; i < localStorage.length; i++) {
+            if (localStorage.key(i) && localStorage.key(i).startsWith(prefix)) {
+                hasMigrated = true;
+                break;
+            }
+        }
+        if (!hasMigrated) {
+            const keysToMigrate = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('PartySave_') && !key.includes('_admin_') && !key.includes('_cloud_') && !key.includes('_drive_') && !key.includes('_normal_')) {
+                    keysToMigrate.push(key);
+                }
+            }
+            keysToMigrate.forEach(key => {
+                const name = key.replace('PartySave_', '');
+                localStorage.setItem(prefix + name, localStorage.getItem(key));
+            });
+        }
+    };
+
     // --- 各種DB ---
     let ABILITY_DB = [];
     let RENMA_DB = [];
@@ -2495,9 +2521,9 @@
         const initialMode = useMemo(() => {
             const intendedDrive = localStorage.getItem('intended_drive_mode') === 'true';
             const mode = getActiveMode(isAdminMode, isCloudMode, intendedDrive || false);
-            
-            // 過去バージョンからのデータ移行
             if (mode !== 'normal') {
+                migrateLegacyPartySaves(mode);
+                // 過去バージョンからのデータ移行
                 const legacyLearned = localStorage.getItem('learned_abilities');
                 if (legacyLearned && !localStorage.getItem(`learned_abilities_${mode}`)) localStorage.setItem(`learned_abilities_${mode}`, legacyLearned);
                 
@@ -2509,28 +2535,15 @@
                 
                 const legacyLoaded = localStorage.getItem('LastLoadedParty');
                 if (legacyLoaded && !localStorage.getItem(`LastLoadedParty_${mode}`)) localStorage.setItem(`LastLoadedParty_${mode}`, legacyLoaded);
-
-                const keys = Object.keys(localStorage);
-                keys.forEach(key => {
-                    if (key.startsWith('PartySave_') && 
-                        !key.startsWith('PartySave_normal_') && 
-                        !key.startsWith('PartySave_admin_') && 
-                        !key.startsWith('PartySave_cloud_') && 
-                        !key.startsWith('PartySave_drive_')) {
-                        
-                        const legacyName = key.replace('PartySave_', '');
-                        const newKey = `PartySave_${mode}_${legacyName}`;
-                        if (!localStorage.getItem(newKey)) {
-                            localStorage.setItem(newKey, localStorage.getItem(key));
-                        }
-                    }
-                });
             }
-
             return mode;
         }, []);
 
         const [activeMode, setActiveMode] = useState(initialMode);
+        const activeModeRef = useRef(activeMode);
+        useEffect(() => {
+            activeModeRef.current = activeMode;
+        }, [activeMode]);
 
         const [party, setParty] = useState(() => {
             return initParty;
@@ -2548,6 +2561,23 @@
         const [isFlashing, setIsFlashing] = useState(false);
         const [autoSave, setAutoSave] = useState(false);
         const [loadedTitle, setLoadedTitle] = useState("");
+
+        const updateSavedFiles = useCallback(() => {
+            const files = [];
+            const prefix = `PartySave_${activeMode}_`;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(prefix)) {
+                    files.push(key.replace(prefix, ''));
+                }
+            }
+            setSavedFiles(files.sort());
+        }, [activeMode]);
+
+        useEffect(() => {
+            window.forceUpdateSavedFiles = updateSavedFiles;
+            return () => { delete window.forceUpdateSavedFiles; };
+        }, [updateSavedFiles]);
 
         // メニューを開いた時、リストを現在の編成名にリセット
         useEffect(() => {
@@ -2587,7 +2617,7 @@
             });
         }, []);
 
-        // 魂データの独立管理（ノーマルモードではローカルストレージを使わない）
+        // 魂データの独立管理
         const [learnedAbilities, setLearnedAbilities] = useState(() => {
             if (initialMode === 'normal') return {};
             try { return JSON.parse(localStorage.getItem(`learned_abilities_${initialMode}`)) || {}; } catch(e) { return {}; }
@@ -2784,7 +2814,7 @@
                 setActiveMode(newMode);
                 
                 if (newMode === 'normal') {
-                    // Normalモードになった時は全てをブランク状態へリセットし、ローカルから読み込まない
+                    // Normalモードになった時は全てをブランク状態へリセット
                     setParty(Array.from({ length: 5 }, createEmptyChar));
                     setFileName("");
                     setLoadedTitle("");
@@ -2795,6 +2825,8 @@
                     setSoulPresets({});
                     setCharLevels({});
                 } else {
+                    migrateLegacyPartySaves(newMode);
+                    
                     // 古いデータのマイグレーション（未実行の場合のみ）
                     const legacyLearned = localStorage.getItem('learned_abilities');
                     if (legacyLearned && !localStorage.getItem(`learned_abilities_${newMode}`)) localStorage.setItem(`learned_abilities_${newMode}`, legacyLearned);
@@ -2808,29 +2840,13 @@
                     const legacyLoaded = localStorage.getItem('LastLoadedParty');
                     if (legacyLoaded && !localStorage.getItem(`LastLoadedParty_${newMode}`)) localStorage.setItem(`LastLoadedParty_${newMode}`, legacyLoaded);
 
-                    const keys = Object.keys(localStorage);
-                    keys.forEach(key => {
-                        if (key.startsWith('PartySave_') && 
-                            !key.startsWith('PartySave_normal_') && 
-                            !key.startsWith('PartySave_admin_') && 
-                            !key.startsWith('PartySave_cloud_') && 
-                            !key.startsWith('PartySave_drive_')) {
-                            
-                            const legacyName = key.replace('PartySave_', '');
-                            const newKey = `PartySave_${newMode}_${legacyName}`;
-                            if (!localStorage.getItem(newKey)) {
-                                localStorage.setItem(newKey, localStorage.getItem(key));
-                            }
-                        }
-                    });
-
                     // データのロード
                     const lastLoaded = localStorage.getItem(`LastLoadedParty_${newMode}`);
                     let loadedParty = null;
                     let loadedMode = null;
                     
                     if (lastLoaded) {
-                        const savedStr = localStorage.getItem(`PartySave_${newMode}_${lastLoaded}`);
+                        const savedStr = localStorage.getItem(`PartySave_${newMode}_` + lastLoaded);
                         if (savedStr) {
                             try {
                                 const data = JSON.parse(savedStr);
@@ -2878,7 +2894,7 @@
 
             const lastLoaded = localStorage.getItem(`LastLoadedParty_${initialMode}`);
             if (lastLoaded) {
-                const savedStr = localStorage.getItem(`PartySave_${initialMode}_${lastLoaded}`);
+                const savedStr = localStorage.getItem(`PartySave_${initialMode}_` + lastLoaded);
                 if (savedStr) {
                     try {
                         const data = JSON.parse(savedStr);
@@ -2913,7 +2929,7 @@
             if (activeMode === 'normal') return; 
 
             if (autoSave && loadedTitle) {
-                localStorage.setItem(`PartySave_${activeMode}_${loadedTitle}`, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
+                localStorage.setItem(`PartySave_${activeMode}_` + loadedTitle, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             }
         }, [party, globalSkillManageMode, autoSave, loadedTitle, activeMode]);
 
@@ -2925,17 +2941,50 @@
                     firestoreDoc: 'party-data',
                     onLoad: (loadedData) => {
                         if (loadedData) {
-                            if (Array.isArray(loadedData) && loadedData.length === 5) {
-                                setParty(loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
-                            } else if (loadedData.party && Array.isArray(loadedData.party) && loadedData.party.length === 5) {
+                            if (loadedData.party && Array.isArray(loadedData.party) && loadedData.party.length === 5) {
                                 setParty(loadedData.party.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
                                 setGlobalSkillManageMode(!!loadedData.skillManageMode);
                                 localStorage.setItem('PartyDefaultSkillMode', String(!!loadedData.skillManageMode));
+                            } else if (Array.isArray(loadedData) && loadedData.length === 5) {
+                                setParty(loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                            }
+                            
+                            // 保存された編成リストを展開
+                            if (loadedData.savedParties) {
+                                const currentMode = activeModeRef.current;
+                                const prefix = `PartySave_${currentMode}_`;
+                                const keysToRemove = [];
+                                for (let i = 0; i < localStorage.length; i++) {
+                                    const key = localStorage.key(i);
+                                    if (key && key.startsWith(prefix)) keysToRemove.push(key);
+                                }
+                                keysToRemove.forEach(k => localStorage.removeItem(k));
+                                
+                                Object.keys(loadedData.savedParties).forEach(name => {
+                                    localStorage.setItem(prefix + name, JSON.stringify(loadedData.savedParties[name]));
+                                });
+                                
+                                if (window.forceUpdateSavedFiles) window.forceUpdateSavedFiles();
                             }
                         }
                     },
                     onSave: () => {
-                        return { party: partyRef.current, skillManageMode: globalModeRef.current };
+                        const currentMode = activeModeRef.current;
+                        const savedParties = {};
+                        const prefix = `PartySave_${currentMode}_`;
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            if (key && key.startsWith(prefix)) {
+                                try {
+                                    savedParties[key.replace(prefix, '')] = JSON.parse(localStorage.getItem(key));
+                                } catch(e) {}
+                            }
+                        }
+                        return { 
+                            party: partyRef.current, 
+                            skillManageMode: globalModeRef.current,
+                            savedParties: savedParties
+                        };
                     }
                 });
             }
@@ -2972,40 +3021,32 @@
             displayModeLabel = "Admin";
         }
 
-        const updateSavedFiles = useCallback(() => {
-            const files = [];
-            const prefix = `PartySave_${activeMode}_`;
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith(prefix)) {
-                    files.push(key.replace(prefix, ''));
-                }
-            }
-            setSavedFiles(files.sort());
-        }, [activeMode]);
-
         useEffect(() => {
             updateSavedFiles();
         }, [updateSavedFiles]);
 
         const handleLocalSave = useCallback(() => {
             if (!fileName) { alert("編成名を入力してください。"); return; }
-            localStorage.setItem(`PartySave_${activeMode}_${fileName}`, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
+            localStorage.setItem(`PartySave_${activeMode}_` + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setLoadedTitle(fileName);
             
-            localStorage.setItem(`LastLoadedParty_${activeMode}`, fileName);
+            if (activeMode !== 'normal') {
+                localStorage.setItem(`LastLoadedParty_${activeMode}`, fileName);
+            }
             setSelectedLoadFile(fileName); 
             
             setSaveMessage("保存しました");
             setIsFlashing(true);
             setTimeout(() => setIsFlashing(false), 200);
             setTimeout(() => setSaveMessage(""), 3000);
-        }, [fileName, updateSavedFiles, globalSkillManageMode, activeMode]);
+            
+            if (isSyncLoggedIn && window.triggerSyncSave) window.triggerSyncSave();
+        }, [fileName, updateSavedFiles, globalSkillManageMode, activeMode, isSyncLoggedIn]);
 
         const handleLocalLoad = useCallback(() => {
             if (!selectedLoadFile || selectedLoadFile === 'NEW_CREATE') return;
-            const savedStr = localStorage.getItem(`PartySave_${activeMode}_${selectedLoadFile}`);
+            const savedStr = localStorage.getItem(`PartySave_${activeMode}_` + selectedLoadFile);
             if (savedStr) {
                 try {
                     const data = JSON.parse(savedStr);
@@ -3029,7 +3070,9 @@
                         setLoadedTitle(selectedLoadFile); 
                         setAutoSave(true); 
                         
-                        localStorage.setItem(`LastLoadedParty_${activeMode}`, selectedLoadFile);
+                        if (activeMode !== 'normal') {
+                            localStorage.setItem(`LastLoadedParty_${activeMode}`, selectedLoadFile);
+                        }
                     } else {
                         alert("無効な編成データです。");
                     }
@@ -3040,17 +3083,20 @@
         const handleLocalDelete = useCallback(() => {
             if (!selectedLoadFile) return;
             if (confirm(`「${selectedLoadFile}」を削除しますか？`)) {
-                localStorage.removeItem(`PartySave_${activeMode}_${selectedLoadFile}`);
+                localStorage.removeItem(`PartySave_${activeMode}_` + selectedLoadFile);
                 updateSavedFiles();
                 if (selectedLoadFile === loadedTitle) {
                     setLoadedTitle("");
                     setFileName("");
                     setAutoSave(false);
-                    localStorage.removeItem(`LastLoadedParty_${activeMode}`);
+                    if (activeMode !== 'normal') {
+                        localStorage.removeItem(`LastLoadedParty_${activeMode}`);
+                    }
                 }
                 setSelectedLoadFile(""); 
+                if (isSyncLoggedIn && window.triggerSyncSave) window.triggerSyncSave();
             }
-        }, [selectedLoadFile, updateSavedFiles, loadedTitle, activeMode]);
+        }, [selectedLoadFile, updateSavedFiles, loadedTitle, activeMode, isSyncLoggedIn]);
 
         const handleExport = useCallback(() => {
             const exportData = { party: partyRef.current, skillManageMode: globalSkillManageMode };
@@ -3119,10 +3165,12 @@
                     localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                 }
                 
-                if (importedFileName && activeMode !== 'normal') {
+                if (importedFileName) {
                     setFileName(importedFileName);
                     setLoadedTitle(importedFileName);
-                    localStorage.setItem(`LastLoadedParty_${activeMode}`, importedFileName);
+                    if (activeMode !== 'normal') {
+                        localStorage.setItem(`LastLoadedParty_${activeMode}`, importedFileName);
+                    }
                 }
                 if (isSyncLoggedIn && window.triggerSyncSave) {
                     setTimeout(() => { window.triggerSyncSave(); }, 100);
@@ -3261,6 +3309,7 @@
                                         localStorage.removeItem('party_mode');
                                         localStorage.removeItem('RenmaArmorCloudMode');
                                         localStorage.removeItem('index_mode');
+                                        localStorage.setItem('party_mode', 'normal');
                                         // URLパラメータ(secret_cloud_on等)があれば削除してリロード時の再適用を防ぐ
                                         if (window.history.replaceState) {
                                             const url = new URL(window.location.href);
@@ -3277,14 +3326,14 @@
 
                         <div className="mb-2 text-left">
                             <label className="text-[12px] text-gray-400 flex items-center mb-1">
-                                ファイル名 (エクスポート/保存用):
+                                ファイル名 / 保存名:
                                 {saveMessage && <span className="text-red-500 ml-2 font-bold transition-opacity">{saveMessage}</span>}
                             </label>
                             <input 
                                 type="text" 
                                 value={fileName} 
                                 onChange={e => setFileName(e.target.value)} 
-                                placeholder="ファイル名を入力..." 
+                                placeholder="編成名を入力..." 
                                 disabled={autoSave}
                                 onFocus={e => e.target.select()}
                                 className={`w-full bg-[#111] border border-[#555] text-white text-[14px] px-3 py-1.5 rounded focus:outline-none focus:border-[#1D9BF0] box-border ${autoSave ? 'opacity-50 cursor-not-allowed' : ''}`} 
