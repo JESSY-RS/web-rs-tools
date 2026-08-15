@@ -47,11 +47,11 @@
     }
     .hamburger {
       cursor: pointer;
-      margin-right: 0; /* 余白を0にする */
+      margin-right: 0; 
       user-select: none;
       color: #eee;
       display: inline-block;
-      font-weight: bold; /* ☰を太字にする */
+      font-weight: bold; 
     }
     .hamburger:hover {
       color: #2A99E6;
@@ -152,10 +152,8 @@
     }
     .zoom-buttons button:hover { background-color: #ddd; }
     
-    /* タイトル部分の余白を0に */
     .header-section { margin-bottom: 10px; padding-top: 0; padding-left: 0; }
     
-    /* タイトルのみフォントと太字を適用し、サイズを1.6emに変更 */
     .header-section h1 { 
       font-size: 1.6em; 
       margin: 0; 
@@ -2517,6 +2515,7 @@
             localStorage.setItem('soul_presets', JSON.stringify(soulPresets));
         }, [soulPresets]);
 
+        // ▼ charLevels（マスター魂Lv）が更新された時、現在のパーティの魂Lvにも即座に同期させる
         useEffect(() => {
             setParty(prev => {
                 let changed = false;
@@ -2752,9 +2751,9 @@
             localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setLoadedTitle(fileName);
-            setAutoSave(true);
+            // 自動保存フラグはそのまま（trueならtrue、falseならfalseを維持）
             localStorage.setItem('LastLoadedParty', fileName);
-            setSelectedLoadFile(""); 
+            setSelectedLoadFile(fileName); // リスト選択を維持
             
             setSaveMessage("保存しました");
             setIsFlashing(true);
@@ -2786,9 +2785,9 @@
                         }
                         setFileName(selectedLoadFile);
                         setLoadedTitle(selectedLoadFile); 
-                        setAutoSave(true);
+                        setAutoSave(true); // 読込時は自動保存をオンにする
                         localStorage.setItem('LastLoadedParty', selectedLoadFile);
-                        setSelectedLoadFile(""); 
+                        // setSelectedLoadFile("") を削除して選択状態を維持
                         setCustomMenu(prev => ({ ...prev, show: false }));
                     } else {
                         alert("無効な編成データです。");
@@ -3026,8 +3025,9 @@
                                 type="text" 
                                 value={fileName} 
                                 onChange={e => setFileName(e.target.value)} 
-                                placeholder="" 
+                                placeholder="ファイル名を入力..." 
                                 disabled={autoSave}
+                                onFocus={e => e.target.select()}
                                 className={`w-full bg-[#111] border border-[#555] text-white text-[14px] px-3 py-1.5 rounded focus:outline-none focus:border-[#1D9BF0] box-border ${autoSave ? 'opacity-50 cursor-not-allowed' : ''}`} 
                             />
                         </div>
@@ -3075,7 +3075,7 @@
                                         className="w-full bg-[#111] text-white text-[13px] border border-[#555] rounded px-2 py-2 focus:outline-none box-border"
                                     >
                                         <option value="">リストから選択...</option>
-                                        <option value="NEW_CREATE" className="text-[#0CFF57]">＋ 新規作成</option>
+                                        <option value="NEW_CREATE" className="text-[#1D9BF0]">＋ 新規作成</option>
                                         {savedFiles.map(f => <option key={f} value={f}>{f}</option>)}
                                     </select>
                                     <div className="flex gap-2">
