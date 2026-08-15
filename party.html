@@ -1339,7 +1339,7 @@
                                                 key={pName}
                                                 draggable
                                                 onDragStart={(e) => handleManagerPresetDragStart(e, pName)}
-                                                onDragOver={handleManagerDragOver}
+                                                onDragOver={handleManagerPresetDrop}
                                                 onDrop={(e) => handleManagerPresetDrop(e, pName)}
                                                 className={`flex justify-between items-center px-2 py-1.5 cursor-pointer text-[13px] border-b border-gray-700 transition-colors ${managerMode === pName ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-[#222] text-gray-200 hover:bg-[#333]'}`}
                                                 onClick={() => setManagerMode(pName)}
@@ -2778,7 +2778,8 @@
             localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setLoadedTitle(fileName);
-            // 自動保存フラグはそのまま（trueならtrue、falseならfalseを維持）
+            // リストが選択されている（保存された）ら自動保存チェックをオンにする
+            setAutoSave(true);
             localStorage.setItem('LastLoadedParty', fileName);
             setSelectedLoadFile(fileName); 
             
