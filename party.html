@@ -164,7 +164,8 @@
       font-weight: bold;
     }
     
-    .footer-section { margin-top: 20px; padding: 10px; border-top: 1px solid #555; color: #eee; font-size: 14px; line-height: 1.6; }
+    /* 左右の余白を0に設定 */
+    .footer-section { margin-top: 20px; padding: 10px 0; border-top: 1px solid #555; color: #eee; font-size: 14px; line-height: 1.6; }
   </style>
 </head>
 <body>
@@ -243,9 +244,14 @@
 
   <!-- フッター -->
   <footer class="footer-section" id="pageFooter">
-      ※使用は自己責任にて。<br>
+      <span ondblclick="document.getElementById('pageFooter').style.display='none'" style="cursor: pointer;" title="ダブルクリックでフッターを非表示">※使用は自己責任にて。</span><br>
       ※このページはPCでの操作を前提として作られています。<br>
-      ※Alt+左クリックで管理メニューが開きます。<br>
+      <span id="toggle-help" style="cursor: pointer; color: dodgerblue; text-decoration: underline;" onclick="toggleHelpText()">▼簡易使用説明文を表示</span>
+      <div id="help-text" style="display: none;">
+          ※Alt+左クリックで管理メニューが開きます。<br>
+          ※各項目のタイトル部分をダブルクリックで、その項目を非表示にできます。<br>
+          ※一部のタイトルはクリックでリスト展開やファイル読込、専用の管理画面を開くなどの機能が使えます。<br>
+      </div>
   </footer>
 
   <!-- DOM操作スクリプト -->
@@ -323,13 +329,24 @@
         savePageSettings();
     }
 
+    // 簡易使用説明文のトグル
+    function toggleHelpText() {
+        const helpText = document.getElementById('help-text');
+        const toggleBtn = document.getElementById('toggle-help');
+        if (helpText.style.display === 'none') {
+            helpText.style.display = 'block';
+            toggleBtn.textContent = '▲簡易使用説明文を非表示';
+        } else {
+            helpText.style.display = 'none';
+            toggleBtn.textContent = '▼簡易使用説明文を表示';
+        }
+    }
+
     // UI非表示 (ダブルクリック時)
     function hideUIElements() {
         const header = document.getElementById('headerSection');
-        const footer = document.getElementById('pageFooter');
         const zoomBtn = document.getElementById('zoomButtons');
         if(header) header.style.display = 'none';
-        if(footer) footer.style.display = 'none';
         if(zoomBtn) zoomBtn.style.display = 'none';
     }
   </script>
@@ -2761,8 +2778,7 @@
             localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setLoadedTitle(fileName);
-            // リストが選択されている（保存された）ら自動保存チェックをオンにする
-            setAutoSave(true);
+            // 自動保存フラグはそのまま（trueならtrue、falseならfalseを維持）
             localStorage.setItem('LastLoadedParty', fileName);
             setSelectedLoadFile(fileName); 
             
@@ -2798,7 +2814,6 @@
                         setLoadedTitle(selectedLoadFile); 
                         setAutoSave(true); // 読込時は自動保存をオンにする
                         localStorage.setItem('LastLoadedParty', selectedLoadFile);
-                        // setCustomMenu(prev => ({ ...prev, show: false })); // メニューを閉じない
                     } else {
                         alert("無効な編成データです。");
                     }
