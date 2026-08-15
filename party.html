@@ -1250,7 +1250,7 @@
                                     <div className="w-[250px]">
                                         <CustomSelect 
                                             value={managerChar} 
-                                            options={CHAR_DB.filter(c => c.label !== "手動入力")}
+                                            options={CHAR_DB.filter(c => c.label !== "手手動入力")}
                                             onChange={val => {
                                                 setManagerChar(getDisplayCharName(val));
                                                 setManagerMode("history");
@@ -1459,7 +1459,7 @@
                                                                 {managerSubSearchTerm && (
                                                                     <span 
                                                                         className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#FF0000] cursor-pointer text-[14px]"
-                                                                        onClick={(e) => { e.stopPropagation(); setManagerSubSearchTerm(""); }}
+                                                                        onClick={(e) => { e.stopPropagation(); setSubSearchTerm(""); }}
                                                                     >×</span>
                                                                 )}
                                                             </div>
@@ -2663,9 +2663,14 @@
             partyRef.current = party;
         }, [party]);
 
-        // 次回ページ表示時の復元処理
+        const currentModePrefix = isAdminMode ? 'admin' : (isCloudMode ? 'cloud' : 'normal');
+
+        // ▼ 次回ページ表示時の復元処理
+        // Normalモードはローカルの復元を一切行わず、常にブランクから開始する
         useEffect(() => {
-            const lastLoaded = localStorage.getItem('LastLoadedParty');
+            if (currentModePrefix === 'normal') return; 
+
+            const lastLoaded = localStorage.getItem('LastLoadedParty_' + currentModePrefix);
             if (lastLoaded) {
                 const savedStr = localStorage.getItem('PartySave_' + lastLoaded);
                 if (savedStr) {
@@ -2695,14 +2700,17 @@
                     } catch(e) {}
                 }
             }
-        }, []);
+        }, [currentModePrefix]);
 
         // ▼ 自動保存処理
         useEffect(() => {
+            // Normalモードでかつ同期していない場合は自動保存しない
+            if (currentModePrefix === 'normal' && !isSyncLoggedIn) return; 
+            
             if (autoSave && loadedTitle) {
                 localStorage.setItem('PartySave_' + loadedTitle, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             }
-        }, [party, globalSkillManageMode, autoSave, loadedTitle]);
+        }, [party, globalSkillManageMode, autoSave, loadedTitle, currentModePrefix, isSyncLoggedIn]);
 
         useEffect(() => {
             if (window.setupSyncSystem) {
@@ -2743,11 +2751,78 @@
             }
         }, [party, soulPresets, learnedAbilities, charLevels, isSyncLoggedIn, globalSkillManageMode]);
 
+        // ▼ ログアウト時の状態更新（Normalモード時はブランクに戻る）
+        const prevSyncRef = useRef(isSyncLoggedIn);
+        useEffect(() => {
+            if (prevSyncRef.current && !isSyncLoggedIn) {
+                // ログアウトを検知
+                if (currentModePrefix === 'normal') {
+                    setParty(Array.from({ length: 5 }, createEmptyChar));
+                    setFileName("");
+                    setLoadedTitle("");
+                    setAutoSave(false);
+                    setSelectedLoadFile("");
+                    setGlobalSkillManageMode(localStorage.getItem('PartyDefaultSkillMode') === 'true');
+                } else {
+                    const lastLoaded = localStorage.getItem('LastLoadedParty_' + currentModePrefix);
+                    if (lastLoaded) {
+                        const savedStr = localStorage.getItem('PartySave_' + lastLoaded);
+                        if (savedStr) {
+                            try {
+                                const data = JSON.parse(savedStr);
+                                let loadedParty = null;
+                                let loadedMode = null;
+                                if (Array.isArray(data) && data.length === 5) {
+                                    loadedParty = data;
+                                } else if (data.party && Array.isArray(data.party) && data.party.length === 5) {
+                                    loadedParty = data.party;
+                                    loadedMode = !!data.skillManageMode;
+                                }
+                                if (loadedParty) {
+                                    setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                                    if (loadedMode !== null) {
+                                        setGlobalSkillManageMode(loadedMode);
+                                    }
+                                    setFileName(lastLoaded);
+                                    setLoadedTitle(lastLoaded);
+                                    setAutoSave(true);
+                                    setSelectedLoadFile(lastLoaded);
+                                } else {
+                                    throw new Error();
+                                }
+                            } catch(e) {
+                                setParty(Array.from({ length: 5 }, createEmptyChar));
+                                setFileName("");
+                                setLoadedTitle("");
+                                setAutoSave(false);
+                                setSelectedLoadFile("");
+                            }
+                        } else {
+                            setParty(Array.from({ length: 5 }, createEmptyChar));
+                            setFileName("");
+                            setLoadedTitle("");
+                            setAutoSave(false);
+                            setSelectedLoadFile("");
+                        }
+                    } else {
+                        setParty(Array.from({ length: 5 }, createEmptyChar));
+                        setFileName("");
+                        setLoadedTitle("");
+                        setAutoSave(false);
+                        setSelectedLoadFile("");
+                    }
+                }
+            }
+            prevSyncRef.current = isSyncLoggedIn;
+        }, [isSyncLoggedIn, currentModePrefix]);
+
         let displayModeLabel = "Normal";
         if (isCloudMode) {
             displayModeLabel = "Cloud";
+        } else if (isSyncLoggedIn) {
+            displayModeLabel = "Drive";
         } else if (isAdminMode) {
-            displayModeLabel = isSyncLoggedIn ? "Drive" : "Admin";
+            displayModeLabel = "Admin";
         }
 
         const updateSavedFiles = useCallback(() => {
@@ -2770,15 +2845,19 @@
             localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
             setLoadedTitle(fileName);
-            // 自動保存フラグはそのまま（trueならtrue、falseならfalseを維持）
-            localStorage.setItem('LastLoadedParty', fileName);
+            
+            // 保存時、Normalモード以外であればそれをLastLoadedPartyとして記録する
+            if (currentModePrefix !== 'normal') {
+                localStorage.setItem('LastLoadedParty_' + currentModePrefix, fileName);
+            }
+            
             setSelectedLoadFile(fileName); 
             
             setSaveMessage("保存しました");
             setIsFlashing(true);
             setTimeout(() => setIsFlashing(false), 200);
             setTimeout(() => setSaveMessage(""), 3000);
-        }, [fileName, updateSavedFiles, globalSkillManageMode]);
+        }, [fileName, updateSavedFiles, globalSkillManageMode, currentModePrefix]);
 
         const handleLocalLoad = useCallback(() => {
             if (!selectedLoadFile || selectedLoadFile === 'NEW_CREATE') return;
@@ -2804,14 +2883,17 @@
                         }
                         setFileName(selectedLoadFile);
                         setLoadedTitle(selectedLoadFile); 
-                        setAutoSave(true); // 読込時は自動保存をオンにする
-                        localStorage.setItem('LastLoadedParty', selectedLoadFile);
+                        setAutoSave(true); 
+                        
+                        if (currentModePrefix !== 'normal') {
+                            localStorage.setItem('LastLoadedParty_' + currentModePrefix, selectedLoadFile);
+                        }
                     } else {
                         alert("無効な編成データです。");
                     }
                 } catch(e) { alert("読み込みエラー"); }
             }
-        }, [selectedLoadFile]);
+        }, [selectedLoadFile, currentModePrefix]);
 
         const handleLocalDelete = useCallback(() => {
             if (!selectedLoadFile) return;
@@ -2822,11 +2904,13 @@
                     setLoadedTitle("");
                     setFileName("");
                     setAutoSave(false);
-                    localStorage.removeItem('LastLoadedParty');
+                    if (currentModePrefix !== 'normal') {
+                        localStorage.removeItem('LastLoadedParty_' + currentModePrefix);
+                    }
                 }
                 setSelectedLoadFile(""); 
             }
-        }, [selectedLoadFile, updateSavedFiles, loadedTitle]);
+        }, [selectedLoadFile, updateSavedFiles, loadedTitle, currentModePrefix]);
 
         const handleExport = useCallback(() => {
             const exportData = { party: partyRef.current, skillManageMode: globalSkillManageMode };
@@ -2897,11 +2981,13 @@
                     setGlobalSkillManageMode(loadedMode);
                     localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                 }
-                // 追加：インポートされたファイル名があればタイトルにもセットする
+                
                 if (importedFileName) {
                     setFileName(importedFileName);
                     setLoadedTitle(importedFileName);
-                    localStorage.setItem('LastLoadedParty', importedFileName);
+                    if (currentModePrefix !== 'normal') {
+                        localStorage.setItem('LastLoadedParty_' + currentModePrefix, importedFileName);
+                    }
                 }
                 if (isSyncLoggedIn && window.triggerSyncSave) {
                     setTimeout(() => { window.triggerSyncSave(); }, 100);
@@ -2909,7 +2995,7 @@
             } else {
                 alert("無効なデータ形式が含まれています。");
             }
-        }, [isSyncLoggedIn]);
+        }, [isSyncLoggedIn, currentModePrefix]);
 
         const handleImport = useCallback((e) => {
             const files = e.target.files ? Array.from(e.target.files) : (e.dataTransfer ? Array.from(e.dataTransfer.files) : []);
@@ -3083,7 +3169,9 @@
                                                     setFileName("");
                                                     setAutoSave(false);
                                                     setSelectedLoadFile("");
-                                                    localStorage.removeItem('LastLoadedParty');
+                                                    if (currentModePrefix !== 'normal') {
+                                                        localStorage.removeItem('LastLoadedParty_' + currentModePrefix);
+                                                    }
                                                 }
                                             } else {
                                                 setSelectedLoadFile(val);
