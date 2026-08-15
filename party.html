@@ -198,7 +198,8 @@
         }
     }
 
-    // 1. キャラ名欄の表示とスタイルリンク用 (括弧以降の省略を行いつつ、最終皇帝などに対応するparty_6.htmlの仕様)
+    // 1. キャラ名欄の表示とスタイルリンク用 (例：ターミン・ネシハマルカー(ターミン) -> ターミン・ネシハマルカー)
+    // ただし、最終皇帝(男)などはそのまま返す
     function getDisplayCharName(selectedName) {
         if (!selectedName) return "";
         if (STYLE_CHAR_DB.has(selectedName)) return selectedName;
@@ -497,7 +498,7 @@
         const [isOpen, setIsOpen] = useState(false);
         const [isManagerOpen, setIsManagerOpen] = useState(false);
         const [managerChar, setManagerChar] = useState("");
-        const [managerMode, setManagerMode] = useState("history"); // "history" | presetName
+        const [managerMode, setManagerMode] = useState("history");
         const [abilitySearch, setAbilitySearch] = useState("");
         const [showLearnedOnly, setShowLearnedOnly] = useState(false);
         
@@ -876,9 +877,9 @@
                                     <div className="w-[250px]">
                                         <CustomSelect 
                                             value={managerChar} 
-                                            options={CHAR_DB.filter(c => c.label !== "手 মোহ動入力")}
+                                            options={CHAR_DB.filter(c => c.label !== "手動入力")}
                                             onChange={val => {
-                                                setManagerChar(val);
+                                                setManagerChar(getDisplayCharName(val));
                                                 setManagerMode("history");
                                                 setLimitMessage("");
                                                 setShowLearnedOnly(false);
@@ -1025,21 +1026,13 @@
                                 {/* Right: Ability DB */}
                                 <div className="w-1/3 flex flex-col bg-[#1a1a1a]">
                                     <div className="h-[36px] flex items-center pl-[7px] pr-[7px] bg-[#2a2a2a] border-b border-gray-700 gap-[3px]">
-                                        <div className="flex-1 relative bg-[#111] rounded border border-gray-600 h-[26px] flex items-center">
-                                            <input 
-                                                type="text" 
-                                                value={abilitySearch} 
-                                                onChange={e => setAbilitySearch(e.target.value)} 
-                                                placeholder="アビリティ検索..." 
-                                                className="w-full bg-transparent text-[12px] text-white px-2 pr-6 focus:outline-none" 
-                                            />
-                                            {abilitySearch && (
-                                                <span 
-                                                    className="absolute right-1 text-gray-500 hover:text-[#FF0000] cursor-pointer font-bold text-[14px] leading-none"
-                                                    onClick={() => setAbilitySearch("")}
-                                                >✕</span>
-                                            )}
-                                        </div>
+                                        <input 
+                                            type="text" 
+                                            value={abilitySearch} 
+                                            onChange={e => setAbilitySearch(e.target.value)} 
+                                            placeholder="アビリティ検索..." 
+                                            className="flex-1 min-w-0 bg-[#111] text-[12px] text-white px-2 h-[26px] rounded border border-gray-600 focus:outline-none" 
+                                        />
                                         {managerMode !== "history" && (
                                             <button 
                                                 onClick={() => setShowLearnedOnly(!showLearnedOnly)}
@@ -1149,8 +1142,8 @@
 
         const styleList = useMemo(() => {
             if (!charName) return [];
-            const baseName = getDisplayCharName(charName);
-            const styles = STYLE_FULL_DB.filter(s => s['キャラ名'] === baseName);
+            const searchName = getDisplayCharName(charName);
+            const styles = STYLE_FULL_DB.filter(s => s['キャラ名'] === searchName);
             styles.sort((a, b) => {
                 const dateA = a['実装時期'] || '';
                 const dateB = b['実装時期'] || '';
@@ -1366,7 +1359,7 @@
         const charAllSkillOptions = useMemo(() => {
             const skills = new Set();
             if (data.name) {
-                const targetCharName = getDisplayCharName(data.name);
+                const targetCharName = getStyleSearchName(data.name);
                 const addSkill = (skill) => {
                     if (!skill) return;
                     skills.add(skill);
@@ -1390,7 +1383,7 @@
             const currentStyleSkills = new Set();
             
             if (data.name) {
-                const targetCharName = getDisplayCharName(data.name);
+                const targetCharName = getStyleSearchName(data.name);
                 const addSkillToSet = (set, skill) => {
                     if (!skill) return;
                     set.add(skill);
@@ -1509,17 +1502,15 @@
                             inheritedSkill: "",
                             skills: { ...data.skills, inh: "-" },
                             userDefBps: { s1: null, s2: null, s3: null, inh: null },
-                            selectedResist: val
+                            selectedResist: val,
+                            overDrive: true
                         };
 
                         const baseName = getSoulBaseName(val);
                         const newSoulLevel = charLevels[baseName] || "100";
-                        const limit = getAbilityLimit(newSoulLevel);
-                        let newAbs = [...newData.soulAbilities];
-                        if (newAbs.length > limit) newAbs = newAbs.slice(0, limit);
                         
                         newData.soulLevel = newSoulLevel;
-                        newData.soulAbilities = newAbs;
+                        newData.soulAbilities = [];
 
                         const baseCharItem = FAVORITE_DB.find(f => f['登録名'] === val);
                         const mainItem = getBaseEquipItem(MAIN_DB, newData.equipments.main);
@@ -1945,7 +1936,7 @@
                                 onChange={(v) => {
                                     let newValue = v;
                                     if (v === "回避の極意(●●)") {
-                                        const userInput = prompt("回避対象のスキル名などを入力してください", "");
+                                        const userInput = prompt("回避対象のスキル名 গেলোなどを入力してください", "");
                                         if (userInput) newValue = `回避の極意(${userInput})`;
                                         else newValue = "";
                                     }
