@@ -1801,7 +1801,7 @@
         const charAllSkillOptions = useMemo(() => {
             const skills = new Set();
             if (data.name) {
-                const targetCharName = getStyleSearchName(data.name);
+                const targetCharName = getDisplayCharName(data.name); // 修正箇所
                 const addSkill = (skill) => {
                     if (!skill) return;
                     skills.add(skill);
@@ -1825,7 +1825,7 @@
             const currentStyleSkills = new Set();
             
             if (data.name) {
-                const targetCharName = getStyleSearchName(data.name);
+                const targetCharName = getDisplayCharName(data.name); // 修正箇所
                 const addSkillToSet = (set, skill) => {
                     if (!skill) return;
                     set.add(skill);
