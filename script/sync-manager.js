@@ -324,3 +324,40 @@ window.triggerSyncSave = function() {
         }
     }, 2000);
 };
+
+// =========================================================
+// 追加: 複数ファイル（練磨アビリティなど）を読み込むための汎用関数
+// =========================================================
+window.syncManager.loadSecondaryData = async function(fileName, firestoreDoc) {
+    if (!this.isLoggedIn) return null;
+    if (this.isCloudMode) {
+        try {
+            if (!this.currentUser) return null;
+            const docRef = this.doc(this.db, "users", this.currentUser.uid, "renma_data", firestoreDoc);
+            const docSnap = await this.getDoc(docRef);
+            return docSnap.exists() ? docSnap.data().data : null;
+        } catch (e) {
+            console.error("Secondary Cloud Load Error:", e);
+            return null;
+        }
+    } else {
+        try {
+            if (!this.accessToken) return null;
+            const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${fileName}'`, {
+                headers: { 'Authorization': `Bearer ${this.accessToken}` }
+            });
+            const searchData = await searchRes.json();
+            if (searchData.files && searchData.files.length > 0) {
+                const fileId = searchData.files[0].id;
+                const dlRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                    headers: { 'Authorization': `Bearer ${this.accessToken}` }
+                });
+                return await dlRes.json();
+            }
+            return null;
+        } catch (e) {
+            console.error("Secondary Drive Load Error:", e);
+            return null;
+        }
+    }
+};
