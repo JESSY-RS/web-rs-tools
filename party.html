@@ -370,9 +370,23 @@
     const isAdminMode = partyMode === 'admin' || localStorage.getItem('index_mode') === 'admin';
     const isCloudMode = localStorage.getItem('RenmaArmorCloudMode') === 'true';
 
-    // モードの状態を動的に判別する関数
+    // Reactの非同期ステートに依存せず、常に同期的に現在のモードを評価する関数
+    const getActiveModeSync = () => {
+        const cloud = localStorage.getItem('RenmaArmorCloudMode') === 'true';
+        const admin = localStorage.getItem('party_mode') === 'admin' || localStorage.getItem('index_mode') === 'admin';
+        const loggedIn = window.syncManager && window.syncManager.isLoggedIn;
+        const intendedDrive = localStorage.getItem('intended_drive_mode') === 'true';
+        
+        // クラウドモードの場合、未ログイン時は強制的にノーマル扱いにする
+        if (cloud) return loggedIn ? 'cloud' : 'normal';
+        if (loggedIn || intendedDrive) return 'drive';
+        if (admin) return 'admin';
+        return 'normal';
+    };
+
+    // Reactでのモード判定関数
     const getActiveMode = (admin, cloud, loggedIn) => {
-        if (cloud) return 'cloud'; // Cloudモードフラグがあれば維持
+        if (cloud) return loggedIn ? 'cloud' : 'normal';
         const intendedDrive = localStorage.getItem('intended_drive_mode') === 'true';
         if (loggedIn || intendedDrive) return 'drive';
         if (admin) return 'admin';
@@ -622,7 +636,7 @@
     const THEME_COLORS = ['text-red-500', 'text-orange-500', 'text-[#00DC00]', 'text-blue-500', 'text-fuchsia-500'];
 
     const ATTR_COLORS = {
-        斬: 'text-gray-400', 打: 'text-gray-400', 突: 'text-gray-400', 熱: 'text-red-500', 
+        斩: 'text-gray-400', 打: 'text-gray-400', 突: 'text-gray-400', 熱: 'text-red-500', 
         冷: 'text-cyan-300', 雷: 'text-yellow-400', 陽: 'text-orange-400', 陰: 'text-purple-500'
     };
     const STATUS_COLORS = {
@@ -2940,6 +2954,9 @@
                     fileName: 'party_data.json',
                     firestoreDoc: 'party-data',
                     onLoad: (loadedData) => {
+                        const currentMode = getActiveModeSync();
+                        if (currentMode === 'normal') return; 
+
                         if (loadedData) {
                             if (loadedData.party && Array.isArray(loadedData.party) && loadedData.party.length === 5) {
                                 setParty(loadedData.party.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
@@ -2951,7 +2968,6 @@
                             
                             // 保存された編成リストを展開
                             if (loadedData.savedParties) {
-                                const currentMode = activeModeRef.current;
                                 const prefix = `PartySave_${currentMode}_`;
                                 const keysToRemove = [];
                                 for (let i = 0; i < localStorage.length; i++) {
@@ -2969,7 +2985,9 @@
                         }
                     },
                     onSave: () => {
-                        const currentMode = activeModeRef.current;
+                        const currentMode = getActiveModeSync();
+                        if (currentMode === 'normal') return null;
+
                         const savedParties = {};
                         const prefix = `PartySave_${currentMode}_`;
                         for (let i = 0; i < localStorage.length; i++) {
@@ -2991,13 +3009,24 @@
         }, []);
 
         useEffect(() => {
+            const handleAuthChange = (loggedIn) => {
+                setIsSyncLoggedIn(loggedIn);
+            };
+            if (window.syncManager) {
+                setIsSyncLoggedIn(window.syncManager.isLoggedIn);
+                window.syncManager.onAuthChangeCallback = handleAuthChange;
+            }
+            
             const timer = setInterval(() => {
-                if (window.syncManager) {
+                if (window.syncManager && window.syncManager.isLoggedIn !== isSyncLoggedIn) {
                     setIsSyncLoggedIn(window.syncManager.isLoggedIn);
+                    if (!window.syncManager.onAuthChangeCallback) {
+                        window.syncManager.onAuthChangeCallback = handleAuthChange;
+                    }
                 }
-            }, 1000);
+            }, 500);
             return () => clearInterval(timer);
-        }, []);
+        }, [isSyncLoggedIn]);
 
         useEffect(() => {
             if (isSyncLoggedIn && window.triggerSyncSave) {
@@ -3295,7 +3324,7 @@
                                         Googleログインして同期
                                     </button>
                                     {activeMode === 'drive' && (
-                                        <p className="text-red-500 text-[11px] font-bold mt-2 text-center leading-tight">
+                                        <p className="text-red-500 text-[12px] font-bold mt-2 text-center leading-tight">
                                             セッションが切れています。<br/>同期させるには再度ログインしてください。
                                         </p>
                                     )}
@@ -3305,11 +3334,30 @@
                                     className="w-full p-[8px] bg-[#dc3545] hover:bg-[#a71d2a] text-white text-[12px] font-bold rounded shadow transition-colors flex items-center justify-center mb-2"
                                     onClick={(e) => { 
                                         e.stopPropagation(); 
+                                        
+                                        // 完全にローカルキャッシュをクリーンアップ
+                                        const modesToClear = ['drive', 'cloud'];
+                                        modesToClear.forEach(m => {
+                                            const prefix = `PartySave_${m}_`;
+                                            const keysToRemove = [];
+                                            for (let i = 0; i < localStorage.length; i++) {
+                                                const key = localStorage.key(i);
+                                                if (key && key.startsWith(prefix)) keysToRemove.push(key);
+                                            }
+                                            keysToRemove.forEach(k => localStorage.removeItem(k));
+                                            localStorage.removeItem(`LastLoadedParty_${m}`);
+                                            localStorage.removeItem(`learned_abilities_${m}`);
+                                            localStorage.removeItem(`soul_presets_${m}`);
+                                            localStorage.removeItem(`char_levels_${m}`);
+                                        });
+                                        localStorage.removeItem('PendingCloudSave_party_data.json');
+
                                         localStorage.removeItem('intended_drive_mode');
                                         localStorage.removeItem('party_mode');
                                         localStorage.removeItem('RenmaArmorCloudMode');
                                         localStorage.removeItem('index_mode');
                                         localStorage.setItem('party_mode', 'normal');
+                                        
                                         // URLパラメータ(secret_cloud_on等)があれば削除してリロード時の再適用を防ぐ
                                         if (window.history.replaceState) {
                                             const url = new URL(window.location.href);
