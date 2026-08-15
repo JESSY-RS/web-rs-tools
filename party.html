@@ -979,7 +979,7 @@
 
         const openManager = (e) => {
             e.stopPropagation();
-            setManagerChar(""); 
+            setManagerChar(charName || ""); 
             setManagerMode("history");
             setAbilitySearch("");
             setLimitMessage("");
@@ -1390,13 +1390,21 @@
                                 {/* Right: Ability DB */}
                                 <div className="w-1/3 flex flex-col bg-[#1a1a1a]">
                                     <div className="h-[36px] flex items-center pl-[7px] pr-[7px] bg-[#2a2a2a] border-b border-gray-700 gap-[3px]">
-                                        <input 
-                                            type="text" 
-                                            value={abilitySearch} 
-                                            onChange={e => setAbilitySearch(e.target.value)} 
-                                            placeholder="アビリティ検索..." 
-                                            className="flex-1 min-w-0 bg-[#111] text-[12px] text-white px-2 h-[26px] rounded border border-gray-600 focus:outline-none" 
-                                        />
+                                        <div className="relative flex-1 min-w-0">
+                                            <input 
+                                                type="text" 
+                                                value={abilitySearch} 
+                                                onChange={e => setAbilitySearch(e.target.value)} 
+                                                placeholder="アビリティ検索..." 
+                                                className="w-full bg-[#111] text-[12px] text-white px-2 pr-6 h-[26px] rounded border border-gray-600 focus:outline-none" 
+                                            />
+                                            {abilitySearch && (
+                                                <span 
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#FF0000] cursor-pointer text-[14px]"
+                                                    onClick={() => setAbilitySearch("")}
+                                                >×</span>
+                                            )}
+                                        </div>
                                         {managerMode !== "history" && (
                                             <button 
                                                 onClick={() => setShowLearnedOnly(!showLearnedOnly)}
@@ -1801,7 +1809,7 @@
         const charAllSkillOptions = useMemo(() => {
             const skills = new Set();
             if (data.name) {
-                const targetCharName = getDisplayCharName(data.name); // 修正箇所
+                const targetCharName = getDisplayCharName(data.name); 
                 const addSkill = (skill) => {
                     if (!skill) return;
                     skills.add(skill);
@@ -1825,7 +1833,7 @@
             const currentStyleSkills = new Set();
             
             if (data.name) {
-                const targetCharName = getDisplayCharName(data.name); // 修正箇所
+                const targetCharName = getDisplayCharName(data.name); 
                 const addSkillToSet = (set, skill) => {
                     if (!skill) return;
                     set.add(skill);
@@ -2444,18 +2452,16 @@
         // ▼ メニュー・UI状態管理
         const [customMenu, setCustomMenu] = useState({ show: false, x: 0, y: 0 });
         const fileInputRef = useRef(null);
-        const [fileName, setFileName] = useState("party_data");
-        const [includeSoulData, setIncludeSoulData] = useState(false);
+        const [fileName, setFileName] = useState("");
+        const [includeSoulData, setIncludeSoulData] = useState(true);
         const [savedFiles, setSavedFiles] = useState([]);
         const [selectedLoadFile, setSelectedLoadFile] = useState("");
         const [isSyncLoggedIn, setIsSyncLoggedIn] = useState(false);
         const [saveMessage, setSaveMessage] = useState("");
         const [isFlashing, setIsFlashing] = useState(false);
-
-        // 追加：表示するタイトルの管理
+        const [autoSave, setAutoSave] = useState(false);
         const [loadedTitle, setLoadedTitle] = useState("");
 
-        // タイトルが変更されたら、DOM上のページタイトル要素を書き換える
         useEffect(() => {
             const titleEl = document.getElementById('page-title');
             if (titleEl) {
@@ -2511,7 +2517,6 @@
             localStorage.setItem('soul_presets', JSON.stringify(soulPresets));
         }, [soulPresets]);
 
-        // ▼ charLevels（マスター魂Lv）が更新された時、現在のパーティの魂Lvにも即座に同期させる
         useEffect(() => {
             setParty(prev => {
                 let changed = false;
@@ -2534,7 +2539,6 @@
         const [renmaOptions, setRenmaOptions] = useState([{ label: "手動入力", furigana: "しゅどうにゅうりょく" }]);
         const [renmaData, setRenmaData] = useState([]);
 
-        // ▼ ローカル保存されている練磨データを自動でオプションに展開
         const processRenmaData = useCallback((data) => {
             if (!Array.isArray(data)) return;
             setRenmaData(data);
@@ -2640,7 +2644,46 @@
             partyRef.current = party;
         }, [party]);
 
-        // ▼ クラウド・ドライブ同期システムの組み込み
+        // 次回ページ表示時の復元処理
+        useEffect(() => {
+            const lastLoaded = localStorage.getItem('LastLoadedParty');
+            if (lastLoaded) {
+                const savedStr = localStorage.getItem('PartySave_' + lastLoaded);
+                if (savedStr) {
+                    try {
+                        const data = JSON.parse(savedStr);
+                        let loadedParty = null;
+                        let loadedMode = null;
+
+                        if (Array.isArray(data) && data.length === 5) {
+                            loadedParty = data;
+                        } else if (data.party && Array.isArray(data.party) && data.party.length === 5) {
+                            loadedParty = data.party;
+                            loadedMode = !!data.skillManageMode;
+                        }
+
+                        if (loadedParty) {
+                            setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                            if (loadedMode !== null) {
+                                setGlobalSkillManageMode(loadedMode);
+                                localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
+                            }
+                            setFileName(lastLoaded);
+                            setLoadedTitle(lastLoaded);
+                            setAutoSave(true);
+                        }
+                    } catch(e) {}
+                }
+            }
+        }, []);
+
+        // ▼ 自動保存処理
+        useEffect(() => {
+            if (autoSave && loadedTitle) {
+                localStorage.setItem('PartySave_' + loadedTitle, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
+            }
+        }, [party, globalSkillManageMode, autoSave, loadedTitle]);
+
         useEffect(() => {
             if (window.setupSyncSystem && isSyncEnabled) {
                 window.setupSyncSystem({
@@ -2708,16 +2751,19 @@
             if (!fileName) { alert("ファイル名を入力してください。"); return; }
             localStorage.setItem('PartySave_' + fileName, JSON.stringify({ party: partyRef.current, skillManageMode: globalSkillManageMode }));
             updateSavedFiles();
+            setLoadedTitle(fileName);
+            setAutoSave(true);
+            localStorage.setItem('LastLoadedParty', fileName);
             setSelectedLoadFile(""); 
             
             setSaveMessage("保存しました");
             setIsFlashing(true);
             setTimeout(() => setIsFlashing(false), 200);
             setTimeout(() => setSaveMessage(""), 3000);
-        }, [fileName, updateSavedFiles]);
+        }, [fileName, updateSavedFiles, globalSkillManageMode]);
 
         const handleLocalLoad = useCallback(() => {
-            if (!selectedLoadFile) return;
+            if (!selectedLoadFile || selectedLoadFile === 'NEW_CREATE') return;
             const savedStr = localStorage.getItem('PartySave_' + selectedLoadFile);
             if (savedStr) {
                 try {
@@ -2739,7 +2785,9 @@
                             localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                         }
                         setFileName(selectedLoadFile);
-                        setLoadedTitle(selectedLoadFile); // 追加：ファイル名または保存名をタイトルにセット
+                        setLoadedTitle(selectedLoadFile); 
+                        setAutoSave(true);
+                        localStorage.setItem('LastLoadedParty', selectedLoadFile);
                         setSelectedLoadFile(""); 
                         setCustomMenu(prev => ({ ...prev, show: false }));
                     } else {
@@ -2754,9 +2802,15 @@
             if (confirm(`「${selectedLoadFile}」を削除しますか？`)) {
                 localStorage.removeItem('PartySave_' + selectedLoadFile);
                 updateSavedFiles();
+                if (selectedLoadFile === loadedTitle) {
+                    setLoadedTitle("");
+                    setFileName("");
+                    setAutoSave(false);
+                    localStorage.removeItem('LastLoadedParty');
+                }
                 setSelectedLoadFile(""); 
             }
-        }, [selectedLoadFile, updateSavedFiles]);
+        }, [selectedLoadFile, updateSavedFiles, loadedTitle]);
 
         const handleExport = useCallback(() => {
             const exportData = { party: partyRef.current, skillManageMode: globalSkillManageMode };
@@ -2827,10 +2881,10 @@
                     setGlobalSkillManageMode(loadedMode);
                     localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                 }
-                // 追加：インポートされたファイル名があればタイトルにもセットする
                 if (importedFileName) {
                     setFileName(importedFileName);
                     setLoadedTitle(importedFileName);
+                    localStorage.setItem('LastLoadedParty', importedFileName);
                 }
                 if (isSyncLoggedIn && window.triggerSyncSave) {
                     setTimeout(() => { window.triggerSyncSave(); }, 100);
@@ -2968,21 +3022,60 @@
                                 ファイル名 / 保存名:
                                 {saveMessage && <span className="text-red-500 ml-2 font-bold transition-opacity">{saveMessage}</span>}
                             </label>
-                            <input type="text" value={fileName} onChange={e => setFileName(e.target.value)} placeholder="party_data" className="w-full bg-[#111] border border-[#555] text-white text-[14px] px-3 py-1.5 rounded focus:outline-none focus:border-[#1D9BF0] box-border" />
+                            <input 
+                                type="text" 
+                                value={fileName} 
+                                onChange={e => setFileName(e.target.value)} 
+                                placeholder="" 
+                                disabled={autoSave}
+                                className={`w-full bg-[#111] border border-[#555] text-white text-[14px] px-3 py-1.5 rounded focus:outline-none focus:border-[#1D9BF0] box-border ${autoSave ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                            />
                         </div>
                         
                         {/* ローカルセーブスロット (Normalモード以外で表示) */}
                         {(isAdminMode || isCloudMode || isSyncLoggedIn) && (
                             <div className="mb-3 pb-3 border-b border-[#444]">
+                                <label className={`flex items-center gap-2 text-[13px] mb-2 select-none ${loadedTitle ? 'cursor-pointer text-gray-200' : 'cursor-not-allowed text-gray-600'}`}>
+                                    <input 
+                                        type="checkbox" 
+                                        className={`w-[14px] h-[14px] ${loadedTitle ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                                        checked={autoSave}
+                                        onChange={e => setAutoSave(e.target.checked)}
+                                        disabled={!loadedTitle}
+                                    />
+                                    自動的に保存する
+                                </label>
+                                
                                 <button 
                                     onClick={handleLocalSave} 
-                                    className={`w-full p-[10px] mt-0 mb-[15px] rounded cursor-pointer text-[14px] font-bold text-white shadow transition-all duration-200 flex items-center justify-center ${isFlashing ? 'bg-white text-black' : 'bg-[#a855f7] hover:bg-[#9333ea]'}`}
+                                    disabled={autoSave}
+                                    className={`w-full p-[10px] mt-0 mb-[15px] rounded text-[14px] font-bold text-white shadow transition-all duration-200 flex items-center justify-center ${autoSave ? 'bg-[#555] text-gray-400 cursor-not-allowed' : (isFlashing ? 'bg-white text-black' : 'bg-[#a855f7] hover:bg-[#9333ea] cursor-pointer')}`}
                                 >
                                     現在の編成情報を保存
                                 </button>
                                 <div className="flex flex-col gap-2">
-                                    <select value={selectedLoadFile} onChange={e => setSelectedLoadFile(e.target.value)} className="w-full bg-[#111] text-white text-[13px] border border-[#555] rounded px-2 py-2 focus:outline-none box-border">
+                                    <select 
+                                        value={selectedLoadFile} 
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            if (val === 'NEW_CREATE') {
+                                                if (confirm("現在の編集内容を破棄して新規作成しますか？")) {
+                                                    setParty(Array.from({ length: 5 }, createEmptyChar));
+                                                    setLoadedTitle("");
+                                                    setFileName("");
+                                                    setAutoSave(false);
+                                                    setSelectedLoadFile("");
+                                                    localStorage.removeItem('LastLoadedParty');
+                                                    setCustomMenu(prev => ({ ...prev, show: false }));
+                                                }
+                                            } else {
+                                                setSelectedLoadFile(val);
+                                            }
+                                        }} 
+                                        className="w-full bg-[#111] text-white text-[13px] border border-[#555] rounded px-2 py-2 focus:outline-none box-border"
+                                    >
                                         <option value="">リストから選択...</option>
+                                        <option value="NEW_CREATE" className="text-[#0CFF57]">＋ 新規作成</option>
                                         {savedFiles.map(f => <option key={f} value={f}>{f}</option>)}
                                     </select>
                                     <div className="flex gap-2">
