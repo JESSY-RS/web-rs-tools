@@ -952,22 +952,23 @@
             return () => document.removeEventListener("mousedown", handleClickOutside, true);
         }, []);
 
+        const baseCharName = getSoulBaseName(charName);
         const baseManagerChar = getSoulBaseName(managerChar);
-        const charPresets = presets[charName] || {};
+        const charPresets = presets[baseCharName] || {};
         
         const handleSave = () => {
-            if (!charName) { alert("キャラ名を入力してください"); return; }
+            if (!baseCharName) { alert("キャラ名を入力してください"); return; }
             const pName = prompt("プリセット名を入力:", "基本構成");
             if (pName) {
                 setPresets(prev => ({ 
                     ...prev, 
-                    [charName]: { 
-                        ...prev[charName], 
+                    [baseCharName]: { 
+                        ...prev[baseCharName], 
                         [pName]: { abilities: currentAbilities.filter(Boolean), level: currentLevel } 
                     } 
                 }));
                 setCharLevels(prev => {
-                    const newState = { ...prev, [charName]: currentLevel };
+                    const newState = { ...prev, [baseCharName]: currentLevel };
                     return newState;
                 });
             }
@@ -1316,7 +1317,7 @@
                             {Object.keys(charPresets).length > 0 ? Object.keys(charPresets).map(pName => (
                                 <div key={pName} className="flex justify-between items-center text-[13px] text-gray-200 hover:bg-[#1D9BF0] cursor-pointer px-2 py-1.5 border-b border-gray-700" onClick={() => { onLoad(charPresets[pName]); setIsOpen(false); }}>
                                     <span className="truncate">{pName}</span>
-                                    <span onClick={(e) => handleDelete(e, baseManagerChar, pName)} className="text-gray-500 hover:text-[#FF0000] px-1 text-[15px]">×</span>
+                                    <span onClick={(e) => handleDelete(e, baseCharName, pName)} className="text-gray-500 hover:text-[#FF0000] px-1 text-[15px]">×</span>
                                 </div>
                             )) : <div className="text-[13px] text-gray-500 p-2 text-center">登録なし</div>}
                         </div>
@@ -1338,7 +1339,7 @@
                                             value={managerChar} 
                                             options={CHAR_DB}
                                             onChange={val => {
-                                                setManagerChar(getDisplayCharName(val));
+                                                setManagerChar(val);
                                                 setManagerMode("history");
                                                 setLimitMessage("");
                                                 setShowLearnedOnly(false);
@@ -2446,7 +2447,7 @@
                 {!hiddenSections.soulAbility && (
                 <div className="flex flex-col gap-1">
                     <PresetMenu 
-                        charName={getSoulBaseName(data.name)} 
+                        charName={data.name} 
                         currentAbilities={data.soulAbilities} 
                         currentLevel={data.soulLevel}
                         onLoad={(presetData) => {
