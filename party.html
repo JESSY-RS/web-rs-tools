@@ -2517,7 +2517,7 @@
     };
 
     const App = () => {
-        const createEmptyChar = () => ({
+        const createEmptyChar = useCallback(() => ({
             name: "", equipments: { main: "", sub: "", deco: "" },
             resistances: { 斬: "0", 打: "0", 突: "0", 熱: "0", 冷: "0", 雷: "0", 陽: "0", 陰: "0" },
             statusResists: { 毒: "0", 暗: "0", ス: "0", マ: "0", 眠: "0", 石: "0", 混: "0", 魅: "0", 狂: "0", 気: "0" },
@@ -2527,7 +2527,7 @@
             skillChecks: { s1: false, s2: false, s3: false, inh: false }, overDrive: false,
             userDefBps: { s1: null, s2: null, s3: null, inh: null },
             selectedResist: ""
-        });
+        }), []);
         
         const initParty = Array.from({ length: 5 }, createEmptyChar);
 
@@ -2900,7 +2900,7 @@
                     try { setCharLevels(JSON.parse(localStorage.getItem(`char_levels_${newMode}`)) || {}); } catch(e) { setCharLevels({}); }
                 }
             }
-        }, [isSyncLoggedIn, activeMode]);
+        }, [isSyncLoggedIn, activeMode, createEmptyChar]);
 
         // ※初回ロード用（初期状態の展開）
         useEffect(() => {
@@ -3115,6 +3115,7 @@
                 localStorage.removeItem(`PartySave_${activeMode}_` + selectedLoadFile);
                 updateSavedFiles();
                 if (selectedLoadFile === loadedTitle) {
+                    setParty(Array.from({ length: 5 }, createEmptyChar));
                     setLoadedTitle("");
                     setFileName("");
                     setAutoSave(false);
@@ -3125,7 +3126,7 @@
                 setSelectedLoadFile(""); 
                 if (isSyncLoggedIn && window.triggerSyncSave) window.triggerSyncSave();
             }
-        }, [selectedLoadFile, updateSavedFiles, loadedTitle, activeMode, isSyncLoggedIn]);
+        }, [selectedLoadFile, updateSavedFiles, loadedTitle, activeMode, isSyncLoggedIn, createEmptyChar]);
 
         const handleExport = useCallback(() => {
             const exportData = { party: partyRef.current, skillManageMode: globalSkillManageMode };
@@ -3335,23 +3336,11 @@
                                     onClick={(e) => { 
                                         e.stopPropagation(); 
                                         
-                                        // 完全にローカルキャッシュをクリーンアップ
-                                        const modesToClear = ['drive', 'cloud'];
-                                        modesToClear.forEach(m => {
-                                            const prefix = `PartySave_${m}_`;
-                                            const keysToRemove = [];
-                                            for (let i = 0; i < localStorage.length; i++) {
-                                                const key = localStorage.key(i);
-                                                if (key && key.startsWith(prefix)) keysToRemove.push(key);
-                                            }
-                                            keysToRemove.forEach(k => localStorage.removeItem(k));
-                                            localStorage.removeItem(`LastLoadedParty_${m}`);
-                                            localStorage.removeItem(`learned_abilities_${m}`);
-                                            localStorage.removeItem(`soul_presets_${m}`);
-                                            localStorage.removeItem(`char_levels_${m}`);
-                                        });
+                                        // 同期バトン用のキャッシュは破棄
                                         localStorage.removeItem('PendingCloudSave_party_data.json');
 
+                                        // モード関連のフラグを解除してノーマルモードにリセットする
+                                        // ※ 各モードで保存されたローカルデータ自体は維持させるため削除しない
                                         localStorage.removeItem('intended_drive_mode');
                                         localStorage.removeItem('party_mode');
                                         localStorage.removeItem('RenmaArmorCloudMode');
