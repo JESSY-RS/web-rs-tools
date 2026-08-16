@@ -3072,19 +3072,42 @@
             }
         }, [applyCharLevelsToParty]);
 
+        const loginTimeRef = useRef(null);
+
         useEffect(() => {
             const handleAuthChange = (loggedIn) => {
                 setIsSyncLoggedIn(loggedIn);
+                if (loggedIn) {
+                    loginTimeRef.current = Date.now();
+                } else {
+                    loginTimeRef.current = null;
+                }
             };
+
             if (window.syncManager) {
                 setIsSyncLoggedIn(window.syncManager.isLoggedIn);
+                if (window.syncManager.isLoggedIn && !loginTimeRef.current) {
+                    loginTimeRef.current = Date.now();
+                }
                 window.syncManager.onAuthChangeCallback = handleAuthChange;
             }
             
             const timer = setInterval(() => {
-                if (window.syncManager && window.syncManager.isLoggedIn !== isSyncLoggedIn) {
-                    setIsSyncLoggedIn(window.syncManager.isLoggedIn);
-                    if (!window.syncManager.onAuthChangeCallback) {
+                let currentStatus = window.syncManager ? window.syncManager.isLoggedIn : false;
+
+                // ログイン時刻から 1時間 (3,600,000ミリ秒) 経過したらセッション切れとみなす
+                if (currentStatus && loginTimeRef.current) {
+                    if (Date.now() - loginTimeRef.current >= 3600000) {
+                        currentStatus = false;
+                        if (window.syncManager) {
+                            window.syncManager.isLoggedIn = false; // 内部的にもログアウト状態に上書き
+                        }
+                    }
+                }
+
+                if (currentStatus !== isSyncLoggedIn) {
+                    setIsSyncLoggedIn(currentStatus);
+                    if (window.syncManager && !window.syncManager.onAuthChangeCallback) {
                         window.syncManager.onAuthChangeCallback = handleAuthChange;
                     }
                 }
