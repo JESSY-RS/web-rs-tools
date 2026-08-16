@@ -397,7 +397,7 @@
     const migrateLegacyPartySaves = (targetMode) => {
         if (targetMode === 'normal') return;
         const migratedFlag = `PartyMigrated_${targetMode}`;
-        if (localStorage.getItem(migratedFlag) === 'true') return; // 既にマイグレーション済みならスキップ
+        if (localStorage.getItem(migratedFlag) === 'true') return;
 
         const prefix = `PartySave_${targetMode}_`;
         const keysToMigrate = [];
@@ -2618,32 +2618,45 @@
             globalModeRef.current = globalSkillManageMode;
         }, [globalSkillManageMode]);
 
-        const handleToggleSkillManageMode = useCallback(() => {
-            setGlobalSkillManageMode(prev => {
-                const nextMode = !prev;
-                localStorage.setItem('PartyDefaultSkillMode', String(nextMode));
-                if (nextMode) {
-                    setParty(curr => curr.map(p => ({ ...p, overDrive: true })));
-                }
-                return nextMode;
-            });
-        }, []);
-
         // 魂データの独立管理
         const [learnedAbilities, setLearnedAbilities] = useState(() => {
             if (initialMode === 'normal') return {};
             try { return JSON.parse(localStorage.getItem(`learned_abilities_${initialMode}`)) || {}; } catch(e) { return {}; }
         });
+        const learnedAbilitiesRef = useRef(learnedAbilities);
+        useEffect(() => { learnedAbilitiesRef.current = learnedAbilities; }, [learnedAbilities]);
         
         const [soulPresets, setSoulPresets] = useState(() => {
             if (initialMode === 'normal') return {};
             try { return JSON.parse(localStorage.getItem(`soul_presets_${initialMode}`)) || {}; } catch(e) { return {}; }
         });
+        const soulPresetsRef = useRef(soulPresets);
+        useEffect(() => { soulPresetsRef.current = soulPresets; }, [soulPresets]);
 
         const [charLevels, setCharLevels] = useState(() => {
             if (initialMode === 'normal') return {};
             try { return JSON.parse(localStorage.getItem(`char_levels_${initialMode}`)) || {}; } catch(e) { return {}; }
         });
+        const charLevelsRef = useRef(charLevels);
+        useEffect(() => { charLevelsRef.current = charLevels; }, [charLevels]);
+
+        // ▼ charLevelsの値を編成データに反映するヘルパー関数
+        const applyCharLevelsToParty = useCallback((partyData, levels) => {
+            let changed = false;
+            const newParty = partyData.map(p => {
+                const baseName = getSoulBaseName(p.name);
+                if (baseName && levels[baseName] && p.soulLevel !== levels[baseName]) {
+                    changed = true;
+                    const newLevel = levels[baseName];
+                    const limit = getAbilityLimit(newLevel);
+                    let newAbs = [...(p.soulAbilities || [])];
+                    if (newAbs.length > limit) newAbs = newAbs.slice(0, limit);
+                    return { ...p, soulLevel: newLevel, soulAbilities: newAbs };
+                }
+                return p;
+            });
+            return changed ? newParty : partyData;
+        }, []);
 
         useEffect(() => {
             if (activeMode !== 'normal') localStorage.setItem(`char_levels_${activeMode}`, JSON.stringify(charLevels));
@@ -2659,23 +2672,19 @@
 
         // ▼ charLevels（マスター魂Lv）が更新された時、現在のパーティの魂Lvにも即座に同期させる
         useEffect(() => {
-            setParty(prev => {
-                let changed = false;
-                const newParty = prev.map(p => {
-                    const baseName = getSoulBaseName(p.name);
-                    if (baseName && charLevels[baseName] && p.soulLevel !== charLevels[baseName]) {
-                        changed = true;
-                        const newLevel = charLevels[baseName];
-                        const limit = getAbilityLimit(newLevel);
-                        let newAbs = [...p.soulAbilities];
-                        if (newAbs.length > limit) newAbs = newAbs.slice(0, limit);
-                        return { ...p, soulLevel: newLevel, soulAbilities: newAbs };
-                    }
-                    return p;
-                });
-                return changed ? newParty : prev;
+            setParty(prev => applyCharLevelsToParty(prev, charLevels));
+        }, [charLevels, applyCharLevelsToParty]);
+        
+        const handleToggleSkillManageMode = useCallback(() => {
+            setGlobalSkillManageMode(prev => {
+                const nextMode = !prev;
+                localStorage.setItem('PartyDefaultSkillMode', String(nextMode));
+                if (nextMode) {
+                    setParty(curr => curr.map(p => ({ ...p, overDrive: true })));
+                }
+                return nextMode;
             });
-        }, [charLevels]);
+        }, []);
         
         const [renmaOptions, setRenmaOptions] = useState([{ label: "手動入力", furigana: "しゅどうにゅうりょく" }]);
         const [renmaData, setRenmaData] = useState([]);
@@ -2844,7 +2853,22 @@
                 } else {
                     migrateLegacyPartySaves(newMode);
                     
-                    // データのロード
+                    // 魂データのロード
+                    let loadedLevels = {};
+                    try { 
+                        setLearnedAbilities(JSON.parse(localStorage.getItem(`learned_abilities_${newMode}`)) || {}); 
+                    } catch(e) { setLearnedAbilities({}); }
+                    
+                    try { 
+                        setSoulPresets(JSON.parse(localStorage.getItem(`soul_presets_${newMode}`)) || {}); 
+                    } catch(e) { setSoulPresets({}); }
+                    
+                    try { 
+                        loadedLevels = JSON.parse(localStorage.getItem(`char_levels_${newMode}`)) || {};
+                        setCharLevels(loadedLevels); 
+                    } catch(e) { setCharLevels({}); }
+
+                    // 編成データのロード
                     const lastLoaded = localStorage.getItem(`LastLoadedParty_${newMode}`);
                     let loadedParty = null;
                     let loadedMode = null;
@@ -2865,11 +2889,14 @@
                     }
                     
                     if (loadedParty) {
-                        setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                        loadedParty = loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""}));
                         if (loadedMode !== null) {
                             setGlobalSkillManageMode(loadedMode);
                             localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                         }
+                        // マスター魂レベルを適用してセット
+                        setParty(applyCharLevelsToParty(loadedParty, loadedLevels));
+                        
                         setFileName(lastLoaded);
                         setLoadedTitle(lastLoaded);
                         setAutoSave(true);
@@ -2883,14 +2910,9 @@
                         setSelectedLoadFile("");
                         setGlobalSkillManageMode(localStorage.getItem('PartyDefaultSkillMode') === 'true');
                     }
-
-                    // 魂データのロード
-                    try { setLearnedAbilities(JSON.parse(localStorage.getItem(`learned_abilities_${newMode}`)) || {}); } catch(e) { setLearnedAbilities({}); }
-                    try { setSoulPresets(JSON.parse(localStorage.getItem(`soul_presets_${newMode}`)) || {}); } catch(e) { setSoulPresets({}); }
-                    try { setCharLevels(JSON.parse(localStorage.getItem(`char_levels_${newMode}`)) || {}); } catch(e) { setCharLevels({}); }
                 }
             }
-        }, [isSyncLoggedIn, activeMode]);
+        }, [isSyncLoggedIn, activeMode, applyCharLevelsToParty]);
 
         // ※初回ロード用（初期状態の展開）
         useEffect(() => {
@@ -2913,11 +2935,12 @@
                         }
 
                         if (loadedParty) {
-                            setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                            loadedParty = loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""}));
                             if (loadedMode !== null) {
                                 setGlobalSkillManageMode(loadedMode);
                                 localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                             }
+                            setParty(applyCharLevelsToParty(loadedParty, charLevelsRef.current));
                             setFileName(lastLoaded);
                             setLoadedTitle(lastLoaded);
                             setAutoSave(true);
@@ -2926,7 +2949,7 @@
                     } catch(e) {}
                 }
             }
-        }, []);
+        }, [initialMode, applyCharLevelsToParty]);
 
         // ▼ 自動保存処理
         useEffect(() => {
@@ -2948,15 +2971,25 @@
                         if (currentMode === 'normal') return; 
 
                         if (loadedData) {
+                            // 先に魂データを復元
+                            const loadedLevels = loadedData.charLevels || {};
+                            if (loadedData.learnedAbilities) setLearnedAbilities(loadedData.learnedAbilities);
+                            if (loadedData.soulPresets) setSoulPresets(loadedData.soulPresets);
+                            if (loadedData.charLevels) setCharLevels(loadedLevels);
+
+                            let newParty = null;
                             if (loadedData.party && Array.isArray(loadedData.party) && loadedData.party.length === 5) {
-                                setParty(loadedData.party.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                                newParty = loadedData.party.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""}));
                                 setGlobalSkillManageMode(!!loadedData.skillManageMode);
                                 localStorage.setItem('PartyDefaultSkillMode', String(!!loadedData.skillManageMode));
                             } else if (Array.isArray(loadedData) && loadedData.length === 5) {
-                                setParty(loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                                newParty = loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""}));
                             } else {
-                                setParty(Array.from({ length: 5 }, createEmptyChar));
+                                newParty = Array.from({ length: 5 }, createEmptyChar);
                             }
+                            
+                            // マスター魂レベルを適用
+                            setParty(applyCharLevelsToParty(newParty, loadedLevels));
                             
                             // 保存された編成リストを展開
                             const prefix = `PartySave_${currentMode}_`;
@@ -2996,6 +3029,9 @@
                             setLoadedTitle("");
                             setSelectedLoadFile("");
                             setAutoSave(false);
+                            setLearnedAbilities({});
+                            setSoulPresets({});
+                            setCharLevels({});
                             const prefix = `PartySave_${currentMode}_`;
                             const keysToRemove = [];
                             for (let i = 0; i < localStorage.length; i++) {
@@ -3025,12 +3061,15 @@
                             party: partyRef.current, 
                             skillManageMode: globalModeRef.current,
                             savedParties: savedParties,
-                            loadedTitle: loadedTitleRef.current
+                            loadedTitle: loadedTitleRef.current,
+                            learnedAbilities: learnedAbilitiesRef.current,
+                            soulPresets: soulPresetsRef.current,
+                            charLevels: charLevelsRef.current
                         };
                     }
                 });
             }
-        }, []);
+        }, [applyCharLevelsToParty]);
 
         useEffect(() => {
             const handleAuthChange = (loggedIn) => {
@@ -3114,11 +3153,15 @@
                     }
 
                     if (loadedParty) {
-                        setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                        loadedParty = loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""}));
                         if (loadedMode !== null) {
                             setGlobalSkillManageMode(loadedMode);
                             localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                         }
+                        
+                        // ロードした編成データに現在のマスター魂Lvを適用して上書き
+                        setParty(applyCharLevelsToParty(loadedParty, charLevelsRef.current));
+                        
                         setFileName(selectedLoadFile);
                         setLoadedTitle(selectedLoadFile); 
                         setAutoSave(true); 
@@ -3131,7 +3174,7 @@
                     }
                 } catch(e) { alert("読み込みエラー"); }
             }
-        }, [selectedLoadFile, activeMode]);
+        }, [selectedLoadFile, activeMode, applyCharLevelsToParty]);
 
         const handleLocalDelete = useCallback(() => {
             if (!selectedLoadFile) return;
@@ -3215,11 +3258,14 @@
             }
 
             if (loadedParty) {
-                setParty(loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                loadedParty = loadedParty.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""}));
                 if (loadedMode !== null) {
                     setGlobalSkillManageMode(loadedMode);
                     localStorage.setItem('PartyDefaultSkillMode', String(loadedMode));
                 }
+                
+                // インポートされたデータにも現在のマスター魂Lvを適用
+                setParty(applyCharLevelsToParty(loadedParty, charLevelsRef.current));
                 
                 if (importedFileName) {
                     setFileName(importedFileName);
@@ -3234,7 +3280,7 @@
             } else {
                 alert("無効なデータ形式が含まれています。");
             }
-        }, [isSyncLoggedIn, activeMode]);
+        }, [isSyncLoggedIn, activeMode, applyCharLevelsToParty]);
 
         const handleImport = useCallback((e) => {
             const files = e.target.files ? Array.from(e.target.files) : (e.dataTransfer ? Array.from(e.dataTransfer.files) : []);
