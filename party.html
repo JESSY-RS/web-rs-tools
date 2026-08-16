@@ -2610,6 +2610,18 @@
             }
         }, [loadedTitle]);
 
+        useEffect(() => {
+            const titleEl = document.getElementById('page-title');
+            if (titleEl) {
+                // Driveモードかつ未ログイン（セッション切れ）の場合
+                if (activeMode === 'drive' && !isSyncLoggedIn) {
+                    titleEl.style.color = '#ef4444'; // 赤色 (Tailwindの red-500)
+                } else {
+                    titleEl.style.color = ''; // デフォルトの色に戻す
+                }
+            }
+        }, [activeMode, isSyncLoggedIn]);
+
         const [globalSkillManageMode, setGlobalSkillManageMode] = useState(() => {
             return localStorage.getItem('PartyDefaultSkillMode') === 'true';
         });
