@@ -3333,6 +3333,38 @@
             document.addEventListener('mouseup', handleMouseUp);
         }, [customMenu.x, customMenu.y]);
 
+        const handleMenuTouchStart = useCallback((e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.tagName === 'LABEL') return;
+            
+            const touch = e.touches[0];
+            const startX = touch.clientX;
+            const startY = touch.clientY;
+            const initialX = customMenu.x;
+            const initialY = customMenu.y;
+
+            const handleTouchMove = (moveEvent) => {
+                // 指を動かしたときに画面自体がスクロールするのを防ぐ
+                if (moveEvent.cancelable) {
+                    moveEvent.preventDefault();
+                }
+                const moveTouch = moveEvent.touches[0];
+                setCustomMenu(prev => ({
+                    ...prev,
+                    x: initialX + (moveTouch.clientX - startX),
+                    y: initialY + (moveTouch.clientY - startY)
+                }));
+            };
+
+            const handleTouchEnd = () => {
+                document.removeEventListener('touchmove', handleTouchMove, { passive: false });
+                document.removeEventListener('touchend', handleTouchEnd);
+            };
+
+            // passive: false にすることで preventDefault が効くようにする
+            document.addEventListener('touchmove', handleTouchMove, { passive: false });
+            document.addEventListener('touchend', handleTouchEnd);
+        }, [customMenu.x, customMenu.y]);
+
         useEffect(() => {
             let pressTimer = null;
 
@@ -3412,6 +3444,7 @@
                         <div 
                             className="m-0 mb-3 text-[16px] text-[#1D9BF0] border-b border-[#444] pb-2 font-bold flex justify-between items-center cursor-move"
                             onMouseDown={handleMenuMouseDown}
+                            onTouchStart={handleMenuTouchStart}
                             title="ドラッグで移動"
                         >
                             <span className="pointer-events-none">編成データ管理</span>
