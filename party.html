@@ -396,27 +396,37 @@
     // --- 古いデータのマイグレーション用関数 ---
     const migrateLegacyPartySaves = (targetMode) => {
         if (targetMode === 'normal') return;
+        const migratedFlag = `PartyMigrated_${targetMode}`;
+        if (localStorage.getItem(migratedFlag) === 'true') return; // 既にマイグレーション済みならスキップ
+
         const prefix = `PartySave_${targetMode}_`;
-        let hasMigrated = false;
+        const keysToMigrate = [];
         for (let i = 0; i < localStorage.length; i++) {
-            if (localStorage.key(i) && localStorage.key(i).startsWith(prefix)) {
-                hasMigrated = true;
-                break;
+            const key = localStorage.key(i);
+            if (key && key.startsWith('PartySave_') && !key.includes('_admin_') && !key.includes('_cloud_') && !key.includes('_drive_') && !key.includes('_normal_')) {
+                keysToMigrate.push(key);
             }
         }
-        if (!hasMigrated) {
-            const keysToMigrate = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('PartySave_') && !key.includes('_admin_') && !key.includes('_cloud_') && !key.includes('_drive_') && !key.includes('_normal_')) {
-                    keysToMigrate.push(key);
-                }
-            }
-            keysToMigrate.forEach(key => {
-                const name = key.replace('PartySave_', '');
-                localStorage.setItem(prefix + name, localStorage.getItem(key));
-            });
-        }
+        keysToMigrate.forEach(key => {
+            const name = key.replace('PartySave_', '');
+            localStorage.setItem(prefix + name, localStorage.getItem(key));
+        });
+
+        // 過去バージョンからのデータ移行
+        const legacyLearned = localStorage.getItem('learned_abilities');
+        if (legacyLearned) localStorage.setItem(`learned_abilities_${targetMode}`, legacyLearned);
+        
+        const legacyPresets = localStorage.getItem('soul_presets');
+        if (legacyPresets) localStorage.setItem(`soul_presets_${targetMode}`, legacyPresets);
+        
+        const legacyLevels = localStorage.getItem('char_levels');
+        if (legacyLevels) localStorage.setItem(`char_levels_${targetMode}`, legacyLevels);
+        
+        const legacyLoaded = localStorage.getItem('LastLoadedParty');
+        if (legacyLoaded) localStorage.setItem(`LastLoadedParty_${targetMode}`, legacyLoaded);
+
+        // マイグレーション完了フラグをセット
+        localStorage.setItem(migratedFlag, 'true');
     };
 
     // --- 各種DB ---
@@ -2537,18 +2547,6 @@
             const mode = getActiveMode(isAdminMode, isCloudMode, intendedDrive || false);
             if (mode !== 'normal') {
                 migrateLegacyPartySaves(mode);
-                // 過去バージョンからのデータ移行
-                const legacyLearned = localStorage.getItem('learned_abilities');
-                if (legacyLearned && !localStorage.getItem(`learned_abilities_${mode}`)) localStorage.setItem(`learned_abilities_${mode}`, legacyLearned);
-                
-                const legacyPresets = localStorage.getItem('soul_presets');
-                if (legacyPresets && !localStorage.getItem(`soul_presets_${mode}`)) localStorage.setItem(`soul_presets_${mode}`, legacyPresets);
-                
-                const legacyLevels = localStorage.getItem('char_levels');
-                if (legacyLevels && !localStorage.getItem(`char_levels_${mode}`)) localStorage.setItem(`char_levels_${mode}`, legacyLevels);
-                
-                const legacyLoaded = localStorage.getItem('LastLoadedParty');
-                if (legacyLoaded && !localStorage.getItem(`LastLoadedParty_${mode}`)) localStorage.setItem(`LastLoadedParty_${mode}`, legacyLoaded);
             }
             return mode;
         }, []);
@@ -2846,19 +2844,6 @@
                 } else {
                     migrateLegacyPartySaves(newMode);
                     
-                    // 古いデータのマイグレーション（未実行の場合のみ）
-                    const legacyLearned = localStorage.getItem('learned_abilities');
-                    if (legacyLearned && !localStorage.getItem(`learned_abilities_${newMode}`)) localStorage.setItem(`learned_abilities_${newMode}`, legacyLearned);
-                    
-                    const legacyPresets = localStorage.getItem('soul_presets');
-                    if (legacyPresets && !localStorage.getItem(`soul_presets_${newMode}`)) localStorage.setItem(`soul_presets_${newMode}`, legacyPresets);
-                    
-                    const legacyLevels = localStorage.getItem('char_levels');
-                    if (legacyLevels && !localStorage.getItem(`char_levels_${newMode}`)) localStorage.setItem(`char_levels_${newMode}`, legacyLevels);
-                    
-                    const legacyLoaded = localStorage.getItem('LastLoadedParty');
-                    if (legacyLoaded && !localStorage.getItem(`LastLoadedParty_${newMode}`)) localStorage.setItem(`LastLoadedParty_${newMode}`, legacyLoaded);
-
                     // データのロード
                     const lastLoaded = localStorage.getItem(`LastLoadedParty_${newMode}`);
                     let loadedParty = null;
