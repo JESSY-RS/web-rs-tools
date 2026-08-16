@@ -243,7 +243,7 @@
       ※このページはPCでの操作を前提として作られています。<br>
       <span id="toggle-help" style="cursor: pointer; color: dodgerblue; text-decoration: underline;" onclick="toggleHelpText()">▼簡易使用説明文を表示</span>
       <div id="help-text" style="display: none;">
-          ※Alt+左クリックで管理メニューが開きます。<br>
+          ※Alt+左クリック、スマホ・タブレット端末ではロングタップで管理メニューが開きます。<br>
           ※各項目のタイトル部分をダブルクリックで、その項目を非表示にできます。<br>
           ※一部のタイトルはクリックでリスト展開やファイル読込、専用の管理画面を開くなどの機能が使えます。<br>
           ※魂アビリティ欄はドラッグ＆ドロップで任意の順番に変更可能です。<br>
@@ -3334,6 +3334,8 @@
         }, [customMenu.x, customMenu.y]);
 
         useEffect(() => {
+            let pressTimer = null;
+
             const handleClick = (e) => {
                 if (e.altKey) {
                     e.preventDefault(); 
@@ -3341,6 +3343,26 @@
                     setCustomMenu({ show: true, x: e.clientX, y: e.clientY });
                 } else {
                     setCustomMenu(prev => prev.show ? { ...prev, show: false } : prev);
+                }
+            };
+
+            const handleTouchStart = (e) => {
+                // 1本指でのタッチのみ判定
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    pressTimer = setTimeout(() => {
+                        setSelectedLoadFile(loadedTitle || "");
+                        // タッチした位置にメニューを表示
+                        setCustomMenu({ show: true, x: touch.clientX, y: touch.clientY });
+                    }, 800); // 800ミリ秒（0.8秒）長押しで発火。お好みで調整してください。
+                }
+            };
+
+            // 指が動いたり離れたりしたらタイマーをキャンセル
+            const handleTouchEndOrMove = () => {
+                if (pressTimer) {
+                    clearTimeout(pressTimer);
+                    pressTimer = null;
                 }
             };
             
@@ -3353,11 +3375,20 @@
             window.addEventListener('click', handleClick);
             window.addEventListener('drop', handleDrop);
             window.addEventListener('dragover', handleDragOver);
+            
+            // タッチイベントの登録
+            window.addEventListener('touchstart', handleTouchStart, { passive: true });
+            window.addEventListener('touchend', handleTouchEndOrMove);
+            window.addEventListener('touchmove', handleTouchEndOrMove, { passive: true });
 
             return () => {
                 window.removeEventListener('click', handleClick);
                 window.removeEventListener('drop', handleDrop);
                 window.removeEventListener('dragover', handleDragOver);
+                window.removeEventListener('touchstart', handleTouchStart);
+                window.removeEventListener('touchend', handleTouchEndOrMove);
+                window.removeEventListener('touchmove', handleTouchEndOrMove);
+                if (pressTimer) clearTimeout(pressTimer);
             };
         }, [handleImport, loadedTitle]);
 
