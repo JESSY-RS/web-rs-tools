@@ -2813,6 +2813,11 @@
             partyRef.current = party;
         }, [party]);
 
+        const loadedTitleRef = useRef(loadedTitle);
+        useEffect(() => {
+            loadedTitleRef.current = loadedTitle;
+        }, [loadedTitle]);
+
         // ログイン状態が確立されたらフラグを立てる
         useEffect(() => {
             if (isSyncLoggedIn) {
@@ -2964,24 +2969,57 @@
                                 localStorage.setItem('PartyDefaultSkillMode', String(!!loadedData.skillManageMode));
                             } else if (Array.isArray(loadedData) && loadedData.length === 5) {
                                 setParty(loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                            } else {
+                                setParty(Array.from({ length: 5 }, createEmptyChar));
                             }
                             
                             // 保存された編成リストを展開
+                            const prefix = `PartySave_${currentMode}_`;
+                            const keysToRemove = [];
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const key = localStorage.key(i);
+                                if (key && key.startsWith(prefix)) keysToRemove.push(key);
+                            }
+                            keysToRemove.forEach(k => localStorage.removeItem(k));
+
                             if (loadedData.savedParties) {
-                                const prefix = `PartySave_${currentMode}_`;
-                                const keysToRemove = [];
-                                for (let i = 0; i < localStorage.length; i++) {
-                                    const key = localStorage.key(i);
-                                    if (key && key.startsWith(prefix)) keysToRemove.push(key);
-                                }
-                                keysToRemove.forEach(k => localStorage.removeItem(k));
-                                
                                 Object.keys(loadedData.savedParties).forEach(name => {
                                     localStorage.setItem(prefix + name, JSON.stringify(loadedData.savedParties[name]));
                                 });
-                                
-                                if (window.forceUpdateSavedFiles) window.forceUpdateSavedFiles();
                             }
+                            
+                            // 最後にロードしたタイトルをクラウドから復元
+                            if (loadedData.loadedTitle) {
+                                setFileName(loadedData.loadedTitle);
+                                setLoadedTitle(loadedData.loadedTitle);
+                                setSelectedLoadFile(loadedData.loadedTitle);
+                                setAutoSave(true);
+                                localStorage.setItem(`LastLoadedParty_${currentMode}`, loadedData.loadedTitle);
+                            } else {
+                                setFileName("");
+                                setLoadedTitle("");
+                                setSelectedLoadFile("");
+                                setAutoSave(false);
+                                localStorage.removeItem(`LastLoadedParty_${currentMode}`);
+                            }
+
+                            if (window.forceUpdateSavedFiles) window.forceUpdateSavedFiles();
+                        } else {
+                            // クラウド側が空の場合は、ローカルのUI・ストレージも初期化する
+                            setParty(Array.from({ length: 5 }, createEmptyChar));
+                            setFileName("");
+                            setLoadedTitle("");
+                            setSelectedLoadFile("");
+                            setAutoSave(false);
+                            const prefix = `PartySave_${currentMode}_`;
+                            const keysToRemove = [];
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const key = localStorage.key(i);
+                                if (key && key.startsWith(prefix)) keysToRemove.push(key);
+                            }
+                            keysToRemove.forEach(k => localStorage.removeItem(k));
+                            localStorage.removeItem(`LastLoadedParty_${currentMode}`);
+                            if (window.forceUpdateSavedFiles) window.forceUpdateSavedFiles();
                         }
                     },
                     onSave: () => {
@@ -3001,7 +3039,8 @@
                         return { 
                             party: partyRef.current, 
                             skillManageMode: globalModeRef.current,
-                            savedParties: savedParties
+                            savedParties: savedParties,
+                            loadedTitle: loadedTitleRef.current
                         };
                     }
                 });
@@ -3115,6 +3154,7 @@
                 localStorage.removeItem(`PartySave_${activeMode}_` + selectedLoadFile);
                 updateSavedFiles();
                 if (selectedLoadFile === loadedTitle) {
+                    setParty(Array.from({ length: 5 }, createEmptyChar)); // UIもブランクにする
                     setLoadedTitle("");
                     setFileName("");
                     setAutoSave(false);
@@ -3123,7 +3163,9 @@
                     }
                 }
                 setSelectedLoadFile(""); 
-                if (isSyncLoggedIn && window.triggerSyncSave) window.triggerSyncSave();
+                if (isSyncLoggedIn && window.triggerSyncSave) {
+                    setTimeout(() => window.triggerSyncSave(), 100);
+                }
             }
         }, [selectedLoadFile, updateSavedFiles, loadedTitle, activeMode, isSyncLoggedIn]);
 
@@ -3351,13 +3393,10 @@
                                             localStorage.removeItem(`char_levels_${m}`);
                                         });
                                         localStorage.removeItem('PendingCloudSave_party_data.json');
-
                                         localStorage.removeItem('intended_drive_mode');
-                                        localStorage.removeItem('party_mode');
-                                        localStorage.removeItem('RenmaArmorCloudMode');
-                                        localStorage.removeItem('index_mode');
-                                        localStorage.setItem('party_mode', 'normal');
                                         
+                                        // ※ modes (cloud / admin等) のフラグはここでは削除せず維持する
+
                                         // URLパラメータ(secret_cloud_on等)があれば削除してリロード時の再適用を防ぐ
                                         if (window.history.replaceState) {
                                             const url = new URL(window.location.href);
