@@ -2962,19 +2962,27 @@
                         if (currentMode === 'normal') return; 
 
                         if (loadedData) {
-                            if (loadedData.party && Array.isArray(loadedData.party) && loadedData.party.length === 5) {
-                                setParty(loadedData.party.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
-                                setGlobalSkillManageMode(!!loadedData.skillManageMode);
-                                localStorage.setItem('PartyDefaultSkillMode', String(!!loadedData.skillManageMode));
-                            } else if (Array.isArray(loadedData) && loadedData.length === 5) {
-                                setParty(loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                            const incomingTitle = loadedData.currentTitle || "";
+                            
+                            // currentTitle に応じて表示データをセット
+                            if (incomingTitle) {
+                                if (loadedData.party && Array.isArray(loadedData.party) && loadedData.party.length === 5) {
+                                    setParty(loadedData.party.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                                    setGlobalSkillManageMode(!!loadedData.skillManageMode);
+                                    localStorage.setItem('PartyDefaultSkillMode', String(!!loadedData.skillManageMode));
+                                } else if (Array.isArray(loadedData) && loadedData.length === 5) {
+                                    setParty(loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
+                                }
+                            } else {
+                                // 何も開いていない状態ならエディタをブランクにする
+                                setParty(Array.from({ length: 5 }, createEmptyChar));
                             }
                             
-                            const incomingTitle = loadedData.currentTitle || "";
                             setFileName(incomingTitle);
                             setLoadedTitle(incomingTitle);
                             setSelectedLoadFile(incomingTitle);
                             setAutoSave(!!incomingTitle);
+                            
                             if (incomingTitle) {
                                 localStorage.setItem(`LastLoadedParty_${currentMode}`, incomingTitle);
                             } else {
@@ -3022,7 +3030,7 @@
                     }
                 });
             }
-        }, []);
+        }, [createEmptyChar]);
 
         useEffect(() => {
             const handleAuthChange = (loggedIn) => {
@@ -3352,11 +3360,25 @@
                                     onClick={(e) => { 
                                         e.stopPropagation(); 
                                         
-                                        // 同期バトン用のキャッシュは破棄
-                                        localStorage.removeItem('PendingCloudSave_party_data.json');
-
-                                        // ログイン意図フラグは解除
+                                        // ドライブモードの自動ログイン意図フラグは解除
                                         localStorage.removeItem('intended_drive_mode');
+
+                                        // URLパラメータがあれば削除してリロード時の再適用を防ぐ
+                                        if (window.history.replaceState) {
+                                            const url = new URL(window.location.href);
+                                            if (url.searchParams.has('mode')) {
+                                                url.searchParams.delete('mode');
+                                                window.history.replaceState(null, '', url.toString());
+                                            }
+                                        }
+
+                                        // UI をクリーンにする
+                                        setParty(Array.from({ length: 5 }, createEmptyChar));
+                                        setFileName("");
+                                        setLoadedTitle("");
+                                        setAutoSave(false);
+                                        setSelectedLoadFile("");
+                                        setGlobalSkillManageMode(localStorage.getItem('PartyDefaultSkillMode') === 'true');
 
                                         window.triggerSyncLogout && window.triggerSyncLogout(); 
                                     }}
