@@ -2575,6 +2575,10 @@
         const [isFlashing, setIsFlashing] = useState(false);
         const [autoSave, setAutoSave] = useState(false);
         const [loadedTitle, setLoadedTitle] = useState("");
+        const loadedTitleRef = useRef(loadedTitle);
+        useEffect(() => {
+            loadedTitleRef.current = loadedTitle;
+        }, [loadedTitle]);
 
         const updateSavedFiles = useCallback(() => {
             const files = [];
@@ -2966,6 +2970,17 @@
                                 setParty(loadedData.map(p => ({...p, userDefBps: p.userDefBps || {s1:null,s2:null,s3:null,inh:null}, selectedResist: p.selectedResist || ""})));
                             }
                             
+                            const incomingTitle = loadedData.currentTitle || "";
+                            setFileName(incomingTitle);
+                            setLoadedTitle(incomingTitle);
+                            setSelectedLoadFile(incomingTitle);
+                            setAutoSave(!!incomingTitle);
+                            if (incomingTitle) {
+                                localStorage.setItem(`LastLoadedParty_${currentMode}`, incomingTitle);
+                            } else {
+                                localStorage.removeItem(`LastLoadedParty_${currentMode}`);
+                            }
+                            
                             // 保存された編成リストを展開
                             if (loadedData.savedParties) {
                                 const prefix = `PartySave_${currentMode}_`;
@@ -3001,7 +3016,8 @@
                         return { 
                             party: partyRef.current, 
                             skillManageMode: globalModeRef.current,
-                            savedParties: savedParties
+                            savedParties: savedParties,
+                            currentTitle: loadedTitleRef.current
                         };
                     }
                 });
@@ -3339,20 +3355,9 @@
                                         // 同期バトン用のキャッシュは破棄
                                         localStorage.removeItem('PendingCloudSave_party_data.json');
 
-                                        // モード関連のフラグを解除してノーマルモードにリセットする
-                                        // ※ 各モードで保存されたローカルデータ自体は維持させるため削除しない
+                                        // ログイン意図フラグは解除
                                         localStorage.removeItem('intended_drive_mode');
-                                        localStorage.removeItem('party_mode');
-                                        localStorage.removeItem('RenmaArmorCloudMode');
-                                        localStorage.removeItem('index_mode');
-                                        localStorage.setItem('party_mode', 'normal');
-                                        
-                                        // URLパラメータ(secret_cloud_on等)があれば削除してリロード時の再適用を防ぐ
-                                        if (window.history.replaceState) {
-                                            const url = new URL(window.location.href);
-                                            url.searchParams.delete('mode');
-                                            window.history.replaceState(null, '', url.toString());
-                                        }
+
                                         window.triggerSyncLogout && window.triggerSyncLogout(); 
                                     }}
                                 >
