@@ -1541,59 +1541,82 @@
                                                         )}
                                                         <div className="max-h-48 overflow-y-auto">
                                                             {ab.subOptions
-                                                                .filter(sub => !managerSubSearchTerm || hiraganaToKatakana(sub.toLowerCase()).includes(hiraganaToKatakana(managerSubSearchTerm.toLowerCase())))
-                                                                .map((sub, sIdx) => (
-                                                                <div
-                                                                    key={`${idx}-${sIdx}`}
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        let finalVal;
-                                                                        if (ab.template) {
-                                                                            let finalSub = sub;
-                                                                            if (sub === "手動入力" || sub.includes('●')) {
-                                                                                const userInput = prompt(`名称を入力してください:`, "");
-                                                                                if (!userInput) return;
-                                                                                finalSub = userInput;
-                                                                            }
-                                                                            finalVal = ab.template.replace(/●+/g, finalSub);
-                                                                        } else if (ab.exactSub) {
-                                                                            if (sub === "手動入力" || sub.includes('●')) {
-                                                                                const userInput = prompt(`名称を入力してください:`, "");
-                                                                                if (!userInput) return;
-                                                                                finalVal = sub.replace(/●+/g, userInput);
-                                                                            } else {
-                                                                                finalVal = sub;
-                                                                            }
-                                                                        } else {
-                                                                            let finalSub = sub;
-                                                                            if (sub === "手動入力" || sub.includes('●')) {
-                                                                                const userInput = prompt(`名称を入力してください:`, "");
-                                                                                if (!userInput) return;
-                                                                                finalSub = userInput;
-                                                                            }
-                                                                            finalVal = `${ab.label}(${finalSub})`;
+                                                                .filter(sub => !managerSubSearchTerm || hiraganaToKatakana(sub.toLowerCase()).includes(hiraganaToKatakana(subSearchTerm.toLowerCase())))
+                                                                .map((sub, sIdx) => {
+                                                        let isCurrentSubSelected = false;
+                                                        if (opt.template) {
+                                                            if (sub === "手動入力" || sub.includes('●')) {
+                                                                const prefix = opt.template.split('●')[0];
+                                                                isCurrentSubSelected = !!value && value.startsWith(prefix);
+                                                            } else {
+                                                                isCurrentSubSelected = value === opt.template.replace(/●+/g, sub);
+                                                            }
+                                                        } else if (opt.exactSub) {
+                                                            if (sub === "手動入力" || sub.includes('●')) {
+                                                                const prefix = sub.split('●')[0];
+                                                                isCurrentSubSelected = !!value && value.startsWith(prefix);
+                                                            } else {
+                                                                isCurrentSubSelected = value === sub;
+                                                            }
+                                                        } else {
+                                                            if (sub === "手動入力" || sub.includes('●')) {
+                                                                const prefix = `${opt.label}(`;
+                                                                isCurrentSubSelected = !!value && value.startsWith(prefix);
+                                                            } else {
+                                                                isCurrentSubSelected = value === `${opt.label}(${sub})`;
+                                                            }
+                                                        }
+                                                        return (
+                                                            <div
+                                                                key={`${idx}-${sIdx}`}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    let finalVal;
+                                                                    if (opt.template) {
+                                                                        let finalSub = sub;
+                                                                        if (sub === "手動入力" || sub.includes('●')) {
+                                                                            const userInput = prompt(`名称を入力してください:`, "");
+                                                                            if (!userInput) return;
+                                                                            finalSub = userInput;
                                                                         }
-                                                                        handleAddAbility(finalVal, true);
-                                                                    }}
-                                                                    className="px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer bg-transparent text-gray-300 hover:bg-[#1D9BF0]"
-                                                                >
-                                                                    {sub}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </React.Fragment>
-                                        ))}
-                                        {filteredAbilities.length === 0 && (
-                                            <div className="text-gray-500 text-[13px] p-4 text-center">候補なし</div>
+                                                                        finalVal = opt.template.replace(/●+/g, finalSub);
+                                                                    } else if (opt.exactSub) {
+                                                                        if (sub === "手動入力" || sub.includes('●')) {
+                                                                            const userInput = prompt(`名称を入力してください:`, "");
+                                                                            if (!userInput) return; 
+                                                                            finalVal = sub.replace(/●+/g, userInput);
+                                                                        } else {
+                                                                            finalVal = sub;
+                                                                        }
+                                                                    } else {
+                                                                        let finalSub = sub;
+                                                                        if (sub === "手動入力" || sub.includes('●')) {
+                                                                            const userInput = prompt(`名称を入力してください:`, "");
+                                                                            if (!userInput) return; 
+                                                                            finalSub = userInput;
+                                                                        }
+                                                                        finalVal = `${opt.label}(${finalSub})`;
+                                                                    }
+                                                                    onChange(finalVal);
+                                                                    setIsOpen(false);
+                                                                    setSearchTerm("");
+                                                                    setSubSearchTerm("");
+                                                                }}
+                                                                data-selected={isCurrentSubSelected ? "true" : "false"}
+                                                                className={`px-4 py-1.5 text-[13px] border-b border-gray-800 flex items-center cursor-pointer ${isCurrentSubSelected ? 'bg-[#1D9BF0] text-gray-200 hover:bg-[#1D9BF0]' : 'bg-transparent text-gray-300 hover:bg-[#1D9BF0]'}`}
+                                                            >
+                                                                {sub}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
                                         )}
-                                    </div>
-                                </div>
-                            </div>
+                                    </React.Fragment>
+                                );
+                            }) : <div className="px-2 py-2 text-[13px] text-gray-500">候補なし</div>}
                         </div>
-                    </div>,
-                    document.body
+                    </div>
                 )}
             </div>
         );
@@ -3363,7 +3386,12 @@
                                         // ドライブモードの自動ログイン意図フラグは解除
                                         localStorage.removeItem('intended_drive_mode');
 
+                                        // ※バトン(PendingCloudSave)は破棄しない！
+                                        // これにより、削除直後にログアウトしても、次回のログイン時に
+                                        // 未完了の「削除状態（ブランク）」が正しくクラウドに反映されます。
+
                                         // URLパラメータがあれば削除してリロード時の再適用を防ぐ
+                                        // （localStorageのモードフラグは維持されるため、URLが通常に戻ってもモードは維持されます）
                                         if (window.history.replaceState) {
                                             const url = new URL(window.location.href);
                                             if (url.searchParams.has('mode')) {
