@@ -245,6 +245,7 @@
       <div id="help-text" style="display: none;">
           ※Alt+左クリック、スマホ・タブレット端末ではロングタップで管理メニューが開きます。<br>
           ※各項目のタイトル部分をダブルクリックで、その項目を非表示にできます。<br>
+          ※キャラ1～5の項目名（●キャラ1など）をドラッグ＆ドロップすると、キャラ編成の順番を入れ替える事ができます。<br>
           ※一部のタイトルはクリックでリスト展開やファイル読込、専用の管理画面を開くなどの機能が使えます。<br>
           ※魂アビリティ欄はドラッグ＆ドロップで任意の順番に入れ替える事ができます。<br>
       </div>
@@ -1714,9 +1715,14 @@
         return (
             <div className={`relative w-full ${isOpen ? 'z-50' : 'z-10'}`} ref={wrapperRef}>
                 <div 
+                    draggable
+                    onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/char-index", index.toString());
+                    }}
                     onClick={() => setIsOpen(!isOpen)} 
                     className={`${themeColor} font-bold text-[18px] flex items-center mb-0.5 cursor-pointer select-none w-fit hover:opacity-80`}
-                    title="クリックでスタイル一覧を開く"
+                    title="クリックでスタイル一覧を開く / ドラッグでキャラを入れ替え"
                 >
                     <span className="text-[22px] leading-none mr-[2px]">●</span>キャラ{index + 1}
                 </div>
@@ -1767,7 +1773,7 @@
         );
     };
 
-    const CharacterColumn = ({ index, data, updateSlot, learnedData, setLearnedData, soulPresets, setSoulPresets, onRemoveLearned, charLevels, setCharLevels, maxSoulLimit, hiddenSections, onHideSection, renmaOptions, renmaData, onImportRenmaClick, globalSkillManageMode, onToggleSkillManageMode }) => {
+    const CharacterColumn = ({ index, data, updateSlot, learnedData, setLearnedData, soulPresets, setSoulPresets, onRemoveLearned, charLevels, setCharLevels, maxSoulLimit, hiddenSections, onHideSection, renmaOptions, renmaData, onImportRenmaClick, globalSkillManageMode, onToggleSkillManageMode, onSwapChar }) => {
         const themeColor = THEME_COLORS[index % 5];
         const soulLimit = getAbilityLimit(data.soulLevel);
         const textareaRef = useRef(null);
@@ -1889,6 +1895,10 @@
                         newDecoAbs[0] = topAbility;
                         newDecoAbs[1] = topAbility;
                         newDecoAbs[2] = topAbility;
+                    } else if (baseName.startsWith('◎')) {
+                        newDecoAbs[0] = decoAbsList[0] || "";
+                        newDecoAbs[1] = "";
+                        newDecoAbs[2] = "";
                     } else {
                         newDecoAbs[0] = decoAbsList[0] || "";
                         newDecoAbs[1] = decoAbsList[1] || "";
@@ -1978,6 +1988,7 @@
         }, [currentDeco]);
 
         const handleDragStart = (e, i) => {
+            e.stopPropagation();
             e.dataTransfer.effectAllowed = "move";
             e.dataTransfer.setData("text/plain", i);
         };
@@ -2002,7 +2013,28 @@
         };
 
         return (
-            <div className="flex-1 min-w-[210px] w-1/5 flex flex-col gap-[10px]">
+            <div 
+                className="flex-1 min-w-[210px] w-1/5 flex flex-col gap-[10px]"
+                onDragOver={(e) => {
+                    const types = Array.from(e.dataTransfer.types);
+                    if (types.includes("text/char-index") || types.includes("text/charindex")) {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = "move";
+                    }
+                }}
+                onDrop={(e) => {
+                    const types = Array.from(e.dataTransfer.types);
+                    if (types.includes("text/char-index") || types.includes("text/charindex")) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const fromIndexStr = e.dataTransfer.getData("text/char-index") || e.dataTransfer.getData("text/charindex");
+                        if (fromIndexStr !== "") {
+                            const fromIndex = parseInt(fromIndexStr, 10);
+                            onSwapChar(fromIndex, index);
+                        }
+                    }
+                }}
+            >
                 <StyleMenu 
                     index={index} 
                     themeColor={themeColor} 
@@ -2826,6 +2858,17 @@
 
         const onImportRenmaClick = useCallback(() => {
             document.getElementById('renma-json-input').click();
+        }, []);
+
+        // ▼ キャラ列入れ替えハンドラ
+        const handleSwapChar = useCallback((fromIndex, toIndex) => {
+            if (fromIndex === toIndex) return;
+            setParty(prev => {
+                const newParty = [...prev];
+                const [moved] = newParty.splice(fromIndex, 1);
+                newParty.splice(toIndex, 0, moved);
+                return newParty;
+            });
         }, []);
 
         const partyRef = useRef(party);
@@ -3675,6 +3718,7 @@
                             onImportRenmaClick={onImportRenmaClick}
                             globalSkillManageMode={globalSkillManageMode}
                             onToggleSkillManageMode={handleToggleSkillManageMode}
+                            onSwapChar={handleSwapChar}
                         />
                     ))}
                 </div>
