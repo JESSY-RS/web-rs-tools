@@ -1890,7 +1890,7 @@
                         } else {
                             newDecoAbs = ["", "", ""];
                         }
-                    } else if (baseName.startsWith('◆') || baseName.startsWith('☆')) {
+                    } else if (baseName.startsWith('◆') || baseName.startsWith('☆虹瑠璃の腕輪')) {
                         let topAbility = decoAbsList.find(a => a.includes('●')) || decoAbsList[0] || "";
                         newDecoAbs[0] = topAbility;
                         newDecoAbs[1] = topAbility;
@@ -2463,7 +2463,7 @@
                                 const newDecoAbs = [...data.decoAbilities];
                                 newDecoAbs[i] = newValue;
                                 
-                                if (data.equipments.deco && (data.equipments.deco.startsWith('◆') || data.equipments.deco.startsWith('☆')) && i === 0) {
+                                if (data.equipments.deco && (data.equipments.deco.startsWith('◆') || data.equipments.deco.startsWith('☆虹瑠璃の腕輪')) && i === 0) {
                                     newDecoAbs[1] = newValue;
                                     newDecoAbs[2] = newValue;
                                 }
