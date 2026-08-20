@@ -239,7 +239,7 @@
 
   <!-- フッター -->
   <footer class="footer-section" id="pageFooter">
-      <span ondblclick="document.getElementById('pageFooter').style.display='none'" style="cursor: pointer;" title="ダブルクリックでフッターを非表示">※使用は自己責任にて。</span><br>
+      <span ondblclick="var f = document.getElementById('pageFooter'); f.style.display='none'; f.style.border='none'; f.style.marginTop='0';" style="cursor: pointer;" title="ダブルクリックでフッターを非表示">※使用は自己責任にて。</span><br>
       ※このページはPCでの操作を前提として作られています。<br>
       <span id="toggle-help" style="cursor: pointer; color: dodgerblue; text-decoration: underline;" onclick="toggleHelpText()">▼簡易使用説明文を表示</span>
       <div id="help-text" style="display: none;">
