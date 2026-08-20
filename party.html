@@ -1890,7 +1890,7 @@
                         } else {
                             newDecoAbs = ["", "", ""];
                         }
-                    } else if (baseName.startsWith('◆')) {
+                    } else if (baseName.startsWith('◆') || baseName.startsWith('☆')) {
                         let topAbility = decoAbsList.find(a => a.includes('●')) || decoAbsList[0] || "";
                         newDecoAbs[0] = topAbility;
                         newDecoAbs[1] = topAbility;
@@ -2463,7 +2463,7 @@
                                 const newDecoAbs = [...data.decoAbilities];
                                 newDecoAbs[i] = newValue;
                                 
-                                if (data.equipments.deco && data.equipments.deco.startsWith('◆') && i === 0) {
+                                if (data.equipments.deco && (data.equipments.deco.startsWith('◆') || data.equipments.deco.startsWith('☆')) && i === 0) {
                                     newDecoAbs[1] = newValue;
                                     newDecoAbs[2] = newValue;
                                 }
@@ -3440,7 +3440,7 @@
 
             // passive: false にすることで preventDefault が効くようにする
             document.addEventListener('touchmove', handleTouchMove, { passive: false });
-            document.addEventListener('touchend', handleTouchEnd);
+            document.addEventListener('touchmove', handleTouchEnd);
         }, [customMenu.x, customMenu.y]);
 
         useEffect(() => {
