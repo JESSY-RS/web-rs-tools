@@ -2288,7 +2288,9 @@
 
         const excludedTypesSet = new Set([...typesWeapon, ...typesAttr]);
 
-        const typesMultiAttr = [];    
+        const typesMultiAttr = [];
+        const typesCriticalComb = [];
+        const typesOdComb = [];
         const typesWeakComb = [];     
         const typesComplex = [];      
         const typesOtherOrdered = []; 
@@ -2304,7 +2306,11 @@
                     if (!excludedTypesSet.has(typeContent) && !seenTypes.has(typeContent)) {
                         seenTypes.add(typeContent);
                         
-                        if (typeContent.startsWith('Weak・')) {
+                        if (typeContent.startsWith('Critical・')) {
+                            typesCriticalComb.push(typeContent);
+                        } else if (typeContent.startsWith('OD・')) {
+                            typesOdComb.push(typeContent);
+                        } else if (typeContent.startsWith('Weak・')) {
                             typesWeakComb.push(typeContent);
                         } else if (typeContent.includes('・')) {
                             const parts = typeContent.split('・');
@@ -2378,7 +2384,9 @@
 
         createSection('武器種', typesWeapon, 'efType');
         createSection('属性', typesAttr, 'efType');
-        createSection('複属性', typesMultiAttr, 'efType'); 
+        createSection('複属性', typesMultiAttr, 'efType');
+        createSection('Critical兼', typesCriticalComb, 'efType');
+        createSection('OD兼', typesOdComb, 'efType');
         createSection('Weak兼', typesWeakComb, 'efType');  
         createSection('複合', typesComplex, 'efType');     
         createSection('その他', typesOtherOrdered, 'efType'); 
