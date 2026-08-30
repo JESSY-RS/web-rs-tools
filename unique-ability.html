@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>装備固有SSSアビリティ一覧</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+    <style>
+        :root {
+            --bg-base: #121212;
+            --bg-surface: #1e1e1e;
+            --bg-surface-header: #262626;
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaaaaa;
+            --accent-color: #f57c00; 
+            --border-color: #444444;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Noto Sans JP', sans-serif;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px; 
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* ヘッダー */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin: 0;
+            color: var(--accent-color);
+        }
+
+        #status-message {
+            color: #ffb74d;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* コントロール群 */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            padding: 8px 24px;
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background-color: #2c2c2c;
+        }
+
+        .tab-btn.active {
+            background-color: var(--accent-color);
+            color: #fff;
+            font-weight: bold;
+            border-color: var(--accent-color);
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px 15px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-surface);
+            color: var(--text-primary);
+            font-size: 1rem;
+            box-sizing: border-box; 
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        /* 装備カードのレイアウト (割合での列幅設定) */
+        .equipment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .equipment-card {
+            display: flex;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            width: 100%;
+        }
+
+        .equipment-name-col {
+            flex: 0 0 22%; /* 装備名を22%に設定 */
+            padding: 15px;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            background-color: var(--bg-surface-header);
+        }
+
+        .abilities-list {
+            flex: 1; /* 残りの78%を占有 */
+            display: flex;
+            flex-direction: column;
+            width: 78%;
+        }
+
+        .ability-row {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            width: 100%;
+        }
+
+        .ability-row:last-child {
+            border-bottom: none;
+        }
+
+        .ability-name-col {
+            flex: 0 0 32%; /* アビリティリスト領域のうち32%（全体比で約25%） */
+            padding: 12px 15px;
+            border-right: 1px solid var(--border-color);
+            font-weight: bold;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .ability-effect-col {
+            flex: 1; /* 残りを効果詳細に（全体比で約53%） */
+            padding: 12px 15px;
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+        }
+
+        /* グループ（シリーズ）の折りたたみスタイル */
+        .group-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .group-header {
+            background-color: var(--bg-surface-header);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #ffffff; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            user-select: none;
+        }
+
+        .group-header:hover {
+            background-color: #333;
+        }
+
+        .group-header .toggle-icon {
+            transition: transform 0.3s;
+            color: var(--text-secondary);
+        }
+
+        .group-header.open .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .group-children {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .group-children.open {
+            display: flex;
+        }
+
+        /* フッター・リンク色 */
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .bottom-links {
+            margin-top: 20px;
+            font-size: 16pt;
+            line-height: 2;
+        }
+
+        /* renma-armor.html と同様のリンク色設定 */
+        a.web-link:link { color: #1D9BF0; text-decoration: underline; }
+        a.web-link:visited { color: #7755FF; text-decoration: underline; }
+        a.web-link:hover { color: #0CFF57; }
+        a.web-link:active { color: #FF0000; text-decoration: underline; }
+
+        /* レスポンシブデザイン (スマホ幅) */
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-box {
+                max-width: 100%;
+            }
+
+            .equipment-card {
+                flex-direction: column;
+            }
+            .equipment-name-col {
+                flex: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .abilities-list {
+                width: 100%;
+            }
+            .ability-row {
+                flex-direction: column;
+            }
+            .ability-name-col {
+                flex: auto;
+                border-right: none;
+                border-bottom: 1px dashed var(--border-color);
+                padding-bottom: 8px;
+            }
+            .ability-effect-col {
+                padding-top: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>装備固有SSSアビリティ一覧</h1>
+        <span id="status-message">データを読み込み中...</span>
+    </div>
+
+    <div class="controls">
+        <div class="tabs">
+            <button class="tab-btn active" data-target="main">主防具</button>
+            <button class="tab-btn" data-target="sub">副防具</button>
+        </div>
+        <input type="text" id="search-input" class="search-box" placeholder="装備名で検索...">
+    </div>
+
+    <div id="equipment-list-container" class="equipment-list"></div>
+
+    <footer>
+        ※使用は自己責任にて。<br>
+        ※記載の情報が間違っている可能性もあります。気付かれた方は<a href="https://x.com/jessy_romasaga" target="_blank" rel="noopener noreferrer" class="web-link">@jessy_romasaga</a>までご一報いただけると助かります。
+    </footer>
+    <div class="bottom-links">
+        <a href="index.html" class="web-link">INDEXへ戻る</a>
+    </div>
+</div>
+
+<script>
+    // 定数群
+    const SPECIAL_SERIES_ARMORS = {
+        '名将の鎧': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'],
+        '英傑の足甲': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US','ES&IS','SSG','SaGaRS＆その他','SaGaEB'],
+        'バトルヴァンブレイス': ['GBSaGa','RS1','RS2','RS3','SF1','SF2','US・ES・IS','SSG','SaGaRS','SaGaEB']
+    };
+
+    // 変数の分類マスタ
+    const VAR_WEAPONS = ['剣','大剣','斧','棍棒','体術','銃','小剣','槍','弓','杖'];
+    const VAR_ELEMENTS = ['斬','打','突','熱','冷','雷','陽','陰'];
+    const VAR_STATS = ['力','器','速','知','体','精','愛','魅'];
+    const VAR_STATUSES = ['毒','暗闇','スタン','マヒ','眠り','石化','混乱','魅了','狂戦士','気絶'];
+
+    let abilityDict = {};      
+    let abilityBaseDict = {};  
+    let mainArmors = [];
+    let subArmors = [];
+    let currentTab = 'main'; 
+
+    // 先頭の1文字目を削除する
+    function removeStartingSymbol(name) {
+        if (!name || name.length <= 1) return name;
+        return name.substring(1);
+    }
+
+    // 抽出された値がどの変数カテゴリに属するかを判定
+    function getVarType(val) {
+        if (VAR_WEAPONS.includes(val)) return '{武器}';
+        if (VAR_ELEMENTS.includes(val)) return '{属性}';
+        if (VAR_STATS.includes(val)) return '{能力}';
+        if (VAR_STATUSES.includes(val)) return '{状態}';
+        return '{変数}'; // 上記以外
+    }
+
+    // CSVの上からの並びを維持しつつ、特殊シリーズはグループ化してまとめる
+    function processArmors(armors) {
+        let processed = [];
+        let groupIndexMap = {}; 
+
+        armors.forEach(item => {
+            let matchedBaseName = null;
+            for (const baseName in SPECIAL_SERIES_ARMORS) {
+                if (item.name && item.name.includes(baseName)) {
+                    matchedBaseName = baseName;
+                    break;
+                }
+            }
+
+            if (matchedBaseName) {
+                const seriesList = SPECIAL_SERIES_ARMORS[matchedBaseName];
+                let expandedItems = [];
+
+                // {作品1}＆{作品2} のテンプレートか {作品} のテンプレートかを判別して展開
+                if (item.name.includes('{作品1}')) {
+                    seriesList.forEach(s => {
+                        if (s.includes('&') || s.includes('＆')) {
+                            let newItem = {...item};
+                            newItem.name = `${matchedBaseName}(${s})`;
+                            newItem.series = s;
+                            expandedItems.push(newItem);
+                        }
+                    });
+                } else if (item.name.includes('{作品}')) {
+                    seriesList.forEach(s => {
+                        if (!s.includes('&') && !s.includes('＆')) {
+                            let newItem = {...item};
+                            newItem.name = `${matchedBaseName}(${s})`;
+                            newItem.series = s;
+                            expandedItems.push(newItem);
+                        }
+                    });
+                }
+
+                // グループにアイテムを格納する処理
+                if (groupIndexMap[matchedBaseName] !== undefined) {
+                    const idx = groupIndexMap[matchedBaseName];
+                    processed[idx].items = processed[idx].items.concat(expandedItems);
+                    // 最終的に SPECIAL_SERIES_ARMORS の並び順にソートし直す
+                    processed[idx].items.sort((a, b) => {
+                        return seriesList.indexOf(a.series) - seriesList.indexOf(b.series);
+                    });
+                } else {
+                    groupIndexMap[matchedBaseName] = processed.length;
+                    processed.push({ type: 'group', baseName: matchedBaseName, items: expandedItems });
+                }
+            } else {
+                item.name = removeStartingSymbol(item.name);
+                processed.push({ type: 'single', data: item });
+            }
+        });
+        return processed;
+    }
+
+    // 効果詳細の取得
+    function getEffectText(abilityNameRaw) {
+        let exactMatch = abilityDict[abilityNameRaw];
+        if (exactMatch) return exactMatch;
+
+        const match = abilityNameRaw.match(/^([^\(（]+)[\(（]([^）\)]+)[\)）]$/);
+        if (match) {
+            const baseName = match[1]; 
+            const varValue = match[2]; 
+            const varType = getVarType(varValue);
+
+            // 1. 変数カテゴリ化されたテンプレート（例: 〇〇ガード({属性})）
+            const searchKey = `${baseName}(${varType})`;
+            if (abilityDict[searchKey]) {
+                return abilityDict[searchKey].split(varType).join(varValue);
+            }
+
+            // 2. {変数}で登録されているテンプレート
+            const searchKeyVar = `${baseName}({変数})`;
+            if (abilityDict[searchKeyVar]) {
+                return abilityDict[searchKeyVar].split('{変数}').join(varValue);
+            }
+
+            // 3. 括弧なしのベース名のみで登録されているテンプレート
+            if (abilityBaseDict[baseName]) {
+                let effectText = abilityBaseDict[baseName];
+                effectText = effectText.replace(/\{(武器|属性|能力|状態|変数)\}/g, varValue);
+                return effectText;
+            }
+        }
+        return "（効果詳細が見つかりません）";
+    }
+
+    // テキストパース (シリーズ、＆展開、注記、変数のプレーンテキスト化)
+    function formatText(text, series) {
+        if (!text) return "";
+        let formatted = text;
+
+        if (series) {
+            let isAndSeries = series.includes('＆') || series.includes('&');
+            let seriesParts = series.split(/[＆&]/);
+
+            if (isAndSeries && seriesParts.length >= 2) {
+                formatted = formatted.replace(/\{作品1\}/g, seriesParts[0]);
+                formatted = formatted.replace(/\{作品2\}/g, seriesParts[1]);
+            } else {
+                formatted = formatted.replace(/\{作品\}/g, series);
+                if (formatted.includes('歴戦の銘印') || formatted.includes('ロバストガード')) {
+                    formatted = formatted.replace(/\{変数\}/g, series);
+                }
+            }
+        }
+
+        const noteText = "※シリーズ「その他」のキャラクターは対象外";
+        if (series && series.includes('その他')) {
+            formatted = formatted.replace(new RegExp(noteText, 'g'), '');
+        }
+
+        // 残った {xxx} をプレーンテキストとして括弧を外す (装飾なし)
+        formatted = formatted.replace(/\{([^}]+)\}/g, '$1');
+
+        return formatted.trim();
+    }
+
+    // カード生成
+    function createEquipmentCard(item) {
+        const card = document.createElement('div');
+        card.className = 'equipment-card';
+
+        const nameCol = document.createElement('div');
+        nameCol.className = 'equipment-name-col';
+        nameCol.innerHTML = item.name;
+        card.appendChild(nameCol);
+
+        const abilitiesList = document.createElement('div');
+        abilitiesList.className = 'abilities-list';
+
+        for (let i = 1; i <= 3; i++) {
+            let abilityNameRaw = item[`ability${i}`];
+            if (abilityNameRaw) {
+                // 展開したシリーズと一致するアビリティをパース
+                const formattedName = formatText(abilityNameRaw, item.series);
+                const rawEffectText = getEffectText(abilityNameRaw);
+                const formattedEffect = formatText(rawEffectText, item.series);
+
+                const row = document.createElement('div');
+                row.className = 'ability-row';
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'ability-name-col';
+                nameDiv.innerHTML = formattedName;
+                row.appendChild(nameDiv);
+
+                const effectDiv = document.createElement('div');
+                effectDiv.className = 'ability-effect-col';
+                effectDiv.innerHTML = formattedEffect;
+                row.appendChild(effectDiv);
+
+                abilitiesList.appendChild(row);
+            }
+        }
+
+        if (abilitiesList.childNodes.length === 0) return null;
+
+        card.appendChild(abilitiesList);
+        return card;
+    }
+
+    // アコーディオンカード生成
+    function createGroupCard(groupNode) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'group-wrapper';
+
+        const header = document.createElement('div');
+        header.className = 'group-header';
+        header.innerHTML = `<span>${groupNode.baseName} シリーズ</span><span class="toggle-icon">▼</span>`;
+        
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'group-children';
+        
+        if (groupNode.isOpen) {
+            childrenContainer.classList.add('open');
+            header.classList.add('open');
+        }
+
+        header.addEventListener('click', () => {
+            childrenContainer.classList.toggle('open');
+            header.classList.toggle('open');
+        });
+
+        groupNode.items.forEach(item => {
+            const card = createEquipmentCard(item);
+            if (card) {
+                childrenContainer.appendChild(card);
+            }
+        });
+
+        wrapper.appendChild(header);
+        wrapper.appendChild(childrenContainer);
+        return wrapper;
+    }
+
+    function renderList() {
+        const container = document.getElementById('equipment-list-container');
+        container.innerHTML = ''; 
+
+        const searchQuery = document.getElementById('search-input').value.trim();
+        const targetList = currentTab === 'main' ? mainArmors : subArmors;
+
+        const filtered = [];
+
+        targetList.forEach(node => {
+            if (node.type === 'single') {
+                if (node.data.name && node.data.name.includes(searchQuery)) {
+                    filtered.push(node);
+                }
+            } else if (node.type === 'group') {
+                const matchBase = node.baseName.includes(searchQuery);
+                const matchedItems = node.items.filter(item => item.name.includes(searchQuery));
+                
+                if (matchBase || matchedItems.length > 0) {
+                    filtered.push({
+                        type: 'group',
+                        baseName: node.baseName,
+                        items: matchBase ? node.items : matchedItems,
+                        isOpen: searchQuery !== '' 
+                    });
+                }
+            }
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div style="padding: 20px;">該当する装備が見つかりません。</div>';
+            return;
+        }
+
+        filtered.forEach(node => {
+            if (node.type === 'single') {
+                const card = createEquipmentCard(node.data);
+                if (card) container.appendChild(card);
+            } else if (node.type === 'group') {
+                const groupCard = createGroupCard(node);
+                container.appendChild(groupCard);
+            }
+        });
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentTab = e.target.getAttribute('data-target');
+            document.getElementById('search-input').value = ''; 
+            renderList();
+        });
+    });
+
+    document.getElementById('search-input').addEventListener('input', renderList);
+
+    async function init() {
+        const statusMsg = document.getElementById('status-message');
+        try {
+            const abilityRes = await fetch('data/unique-ability.csv');
+            if(!abilityRes.ok) throw new Error('data/unique-ability.csv の読み込みに失敗しました');
+            const abilityText = await abilityRes.text();
+            Papa.parse(abilityText, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    results.data.forEach(row => {
+                        if(row['アビリティ名'] && row['効果詳細']) {
+                            const abilityName = row['アビリティ名'];
+                            const effectDetail = row['効果詳細'];
+                            abilityDict[abilityName] = effectDetail;
+
+                            const match = abilityName.match(/^([^\(（]+)[\(（]([^）\)]+)[\)）]$/);
+                            if (match) {
+                                abilityBaseDict[match[1]] = effectDetail;
+                            }
+                        }
+                    });
+                }
+            });
+
+            const mainRes = await fetch('data/unique-main.csv');
+            const mainText = await mainRes.text();
+            Papa.parse(mainText, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    let rawMain = results.data.map(row => ({
+                        name: row['名称'],
+                        ability1: row['アビリティ1'],
+                        ability2: row['アビリティ2'],
+                        ability3: row['アビリティ3']
+                    }));
+                    mainArmors = processArmors(rawMain);
+                }
+            });
+
+            const subRes = await fetch('data/unique-sub.csv');
+            const subText = await subRes.text();
+            Papa.parse(subText, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    let rawSub = results.data.map(row => ({
+                        name: row['名称'],
+                        ability1: row['アビリティ1'],
+                        ability2: row['アビリティ2'],
+                        ability3: row['アビリティ3']
+                    }));
+                    subArmors = processArmors(rawSub);
+                }
+            });
+
+            renderList();
+            statusMsg.textContent = ''; 
+
+        } catch (error) {
+            console.error(error);
+            statusMsg.textContent = 'CSV読み込みエラー: ローカルサーバーで実行しているか確認してください。';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
