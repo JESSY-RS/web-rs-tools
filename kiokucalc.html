@@ -330,7 +330,12 @@
     <a class="menu-item" href="raidcalc.html">レイド報酬効率比較ツール</a><br>
     </br>
     <a class="menu-item" href="renma-armor.html">練磨(防具)統合ツール</a><br>
-    <a class="menu-item" href="party.html">編成エディタ</a><br>
+    <span class="toggle-button" data-target="linkList">練磨(防具)個別ページ</span>
+    <div id="linkList">
+      ├ <a class="menu-item" href="armor-renma.html">練磨(防具)リスト</a><br>
+      ├ <a class="menu-item" href="armor-top5.html">練磨(防具)TOP5確認</a><br>
+      └ <a class="menu-item" href="armor-calc.html">練磨(防具)自動選定ツール</a><br>
+    </div>
     </br>
     <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
     <div id="linkList1">
@@ -545,10 +550,26 @@
 
         // Calculate and display the end time
         const now = new Date();
-        now.setSeconds(now.getSeconds() + totalTime);
-        const endHours = String(now.getHours()).padStart(2, '0');
-        const endMinutes = String(now.getMinutes()).padStart(2, '0');
-        endTimeElement.innerText = `終了予定時刻：${endHours}時${endMinutes}分頃`;
+        const endDate = new Date(now.getTime() + totalTime * 1000);
+
+        // 日付の差分を正確に計算するため、時刻を切り捨てて日付のみで比較
+        const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const endTargetDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+        const diffDays = Math.round((endTargetDate - todayDate) / (1000 * 60 * 60 * 24));
+
+        // 日またぎの接頭辞を設定
+        let dayPrefix = "";
+        if (diffDays === 1) {
+            dayPrefix = "翌";
+        } else if (diffDays === 2) {
+            dayPrefix = "翌々";
+        } else if (diffDays > 2) {
+            dayPrefix = `${diffDays}日後 `;
+        }
+
+        const endHours = String(endDate.getHours()).padStart(2, '0');
+        const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
+        endTimeElement.innerText = `終了予定時刻：${dayPrefix}${endHours}時${endMinutes}分頃`;
 
         // コピー用ボタンを表示
         document.getElementById('copyButton').value = '結果コピー';
