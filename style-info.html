@@ -1217,7 +1217,7 @@
         }
     }
 
-    function openSearchView(fromHistory = false) {
+    function openSearchView(fromHistory = false, skipScroll = false) {
         const searchPanel = document.getElementById('searchTagContainer');
         const mainContainer = document.getElementById('mainContainer');
         const viewModeControls = document.getElementById('viewModeControls');
@@ -1240,7 +1240,8 @@
         document.title = newTitle;
         
         const targetElement = document.getElementById('search-controls-top');
-        if (targetElement) {
+        // skipScroll が true の場合はトップへのスクロールをキャンセルする
+        if (targetElement && !skipScroll) {
             setTimeout(() => { targetElement.scrollIntoView({ behavior: 'auto', block: 'start' }); }, 0); 
         }
     }
@@ -1265,6 +1266,18 @@
             try {
                 const hash = decodeURIComponent(window.location.hash.substring(1));
                 if (hash.startsWith('card-')) return;
+                
+                // ▼▼ 新規追加：URLが search? で始まる場合の処理 ▼▼
+                if (hash.startsWith('search?')) {
+                    const queryString = hash.substring(7); // "search?"の文字数をカット
+                    restoreSearchStateFromUrl(queryString);
+                    return;
+                } else if (hash === 'search') {
+                    openSearchView(true);
+                    return;
+                }
+                // ▲▲ 新規追加ここまで ▲▲
+                
                 if (hash === 'search-controls-top') {
                     openSearchView(true);
                     return;
@@ -2432,6 +2445,13 @@
         document.getElementById('keywordSearchBtn').addEventListener('click', performTagSearch);
         document.getElementById('keywordSearchInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') performTagSearch(); });
         
+        // ▼▼ 新規追加: コピーボタンのイベント ▼▼
+        const copySearchUrlBtn = document.getElementById('copySearchUrlBtn');
+        if (copySearchUrlBtn) {
+            copySearchUrlBtn.addEventListener('click', copySearchUrl);
+        }
+        // ▲▲ 新規追加ここまで ▲▲
+
         const charWeaponSearchContainer = document.getElementById('charWeaponSearchContainer');
         charWeaponSearchContainer.style.borderTop = '1px solid var(--controls-border)';
         charWeaponSearchContainer.style.paddingTop = '10px';
@@ -3210,7 +3230,7 @@
         const searchParts = [];
         
         const keywordString = document.getElementById('keywordSearchInput').value.trim();
-        const keywords = keywordString.split(/[\s　]+/).filter(k => k);
+        const keywords = keywordString.split(/[\s ]+/).filter(k => k);
         if (keywords.length > 0) {
             const keywordConjunction = searchLogic === 'or' ? orSpan : andSpan;
             const keywordsText = keywords.map(kw => `'${kw}'`).join(keywordConjunction);
@@ -3287,10 +3307,17 @@
         } else {
             searchText = otherConditionsText;
         }
-        
-        searchResultsContainer.innerHTML = flatResults.length === 0 
-            ? `<h2>「${searchText}」の検索結果: 0件</h2><p style="color: red;">該当するスキル・アビリティは見つかりませんでした。</p>` 
-            : `<h2>「${searchText}」の検索結果: ${flatResults.length}件</h2>` + flatResults.map(res => {
+
+        const resultHeaderHtml = flatResults.length === 0 
+            ? `<div id="search-results-top" style="display: flex; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: wrap;">
+                   <h2 style="margin: 0; font-size: 1.5em; line-height: 1.3; flex-grow: 1;">「${searchText}」の検索結果: 0件</h2>
+                   <button onclick="copySearchUrl(this)" style="background-color: #28a745; color: white; border: none; border-radius: 4px; padding: 8px 15px; cursor: pointer; font-size: 1em; white-space: nowrap; flex-shrink: 0; margin-left: auto;">検索URLコピー</button>
+               </div>
+               <p style="color: red;">該当するスキル・アビリティは見つかりませんでした。</p>` 
+            : `<div id="search-results-top" style="display: flex; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: wrap;">
+                   <h2 style="margin: 0; font-size: 1.5em; line-height: 1.3; flex-grow: 1;">「${searchText}」の検索結果: ${flatResults.length}件</h2>
+                   <button onclick="copySearchUrl(this)" style="background-color: #28a745; color: white; border: none; border-radius: 4px; padding: 8px 15px; cursor: pointer; font-size: 1em; white-space: nowrap; flex-shrink: 0; margin-left: auto;">検索URLコピー</button>
+               </div>` + flatResults.map(res => {
             
             let panelBgColor;
             if (res.type === 'skill') panelBgColor = 'var(--skill-col-bg)';
@@ -3319,6 +3346,7 @@
             return `<div class="column" style="background-color: ${panelBgColor};"><a href="#search-controls-top" class="jump-to-top-btn search-jump-link">▲</a><h3>${displayCharName}</h3><h4><a href="${googleSearchUrl}" target="_blank" rel="noopener noreferrer" class="web-link" title="Google画像検索で開く">${displayStyleName}</a></h4><div class="card">${cardHtml}</div></div>`;
         }).join('');
         
+        searchResultsContainer.innerHTML = resultHeaderHtml;
         searchResultsContainer.style.display = 'grid';
         document.getElementById('mainContainer').style.display = 'none';
     }
@@ -3709,6 +3737,199 @@
                 alert('画像の生成に失敗しました。コンソールでエラー内容を確認してください。');
             });
         }
+    }
+
+    function copySearchUrl(btn) {
+        const params = new URLSearchParams();
+
+        const keyword = document.getElementById('keywordSearchInput').value.trim();
+        if (keyword) params.set('kw', keyword);
+
+        const activeScopes = [...document.querySelectorAll('.search-scope-btn.active')].map(b => b.dataset.scope);
+        if (activeScopes.length > 0 && activeScopes.length < 3) {
+            params.set('scope', activeScopes.join(','));
+        }
+
+        const activeLogic = document.querySelector('#searchLogicCategory .logic-btn.active');
+        if (activeLogic && activeLogic.dataset.logic !== 'and') {
+            params.set('logic', activeLogic.dataset.logic);
+        }
+
+        const activeWeapons = [...document.querySelectorAll('#charWeaponSearchContainer .tag-btn.active')].map(b => b.dataset.value);
+        if (activeWeapons.length > 0) params.set('weapon', activeWeapons.join(','));
+
+        const activeSkillFilters = [...document.querySelectorAll('#skillSearchOptionsContainer .skill-filter-btn.active')];
+        if (activeSkillFilters.length > 0) {
+            const filterMap = {};
+            activeSkillFilters.forEach(b => {
+                const f = b.dataset.field;
+                const v = b.dataset.value;
+                if (!filterMap[f]) filterMap[f] = [];
+                filterMap[f].push(v);
+            });
+            Object.entries(filterMap).forEach(([f, vals]) => params.set(`sf_${f}`, vals.join(',')));
+        }
+        
+        const bpVal = document.getElementById('bpSearchInput').value;
+        const bpOp = document.querySelector('#skillSearchOptionsContainer .bp-op-btn.active');
+        if (bpVal && bpOp) params.set('bp', `${bpOp.dataset.op}:${bpVal}`);
+
+        const activeTags = [...document.querySelectorAll('#csvTagArea .tag-btn.active')].map(b => b.textContent);
+        if (activeTags.length > 0) params.set('tags', activeTags.join(','));
+
+        const getEfData = (selector, datasetKey) => [...document.querySelectorAll(selector)].map(b => b.dataset[datasetKey] || b.dataset.scope);
+        
+        const efT = getEfData('#extraForceSearchContainer .tag-btn[data-ef-type].active', 'efType');
+        if (efT.length > 0) params.set('efT', efT.join(','));
+        const efE = getEfData('#extraForceSearchContainer .tag-btn[data-ef-effect].active', 'efEffect');
+        if (efE.length > 0) params.set('efE', efE.join(','));
+        const efS = getEfData('#extraForceSearchContainer .extra-force-scope-btn.active', 'scope');
+        if (efS.length > 0) params.set('efS', efS.join(','));
+
+        const exEfT = getEfData('#extraForceSearchContainer .tag-btn[data-ef-type].excluded', 'efType');
+        if (exEfT.length > 0) params.set('exEfT', exEfT.join(','));
+        const exEfE = getEfData('#extraForceSearchContainer .tag-btn[data-ef-effect].excluded', 'efEffect');
+        if (exEfE.length > 0) params.set('exEfE', exEfE.join(','));
+        const exEfS = getEfData('#extraForceSearchContainer .extra-force-scope-btn.excluded', 'scope');
+        if (exEfS.length > 0) params.set('exEfS', exEfS.join(','));
+
+        const queryString = params.toString();
+        const url = `${window.location.origin}${window.location.pathname}${queryString ? '#search?' + queryString : '#search-controls-top'}`;
+
+        const successFeedback = () => {
+            const originalText = btn.textContent;
+            const originalBg = btn.style.backgroundColor;
+            btn.textContent = 'コピーしました!';
+            btn.style.backgroundColor = '#1D9BF0'; // ツイッターブルーに変更
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.backgroundColor = originalBg;
+            }, 2000);
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(url).then(successFeedback).catch(() => fallbackCopyTextToClipboard(url, successFeedback));
+        } else {
+            fallbackCopyTextToClipboard(url, successFeedback);
+        }
+    }
+
+    function fallbackCopyTextToClipboard(text, successCallback) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.width = "2em";
+        textArea.style.height = "2em";
+        textArea.style.padding = "0";
+        textArea.style.border = "none";
+        textArea.style.outline = "none";
+        textArea.style.boxShadow = "none";
+        textArea.style.background = "transparent";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) successCallback();
+        } catch (err) {
+            console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(textArea);
+    }
+
+    function restoreSearchStateFromUrl(queryString) {
+        const params = new URLSearchParams(queryString);
+
+        // 検索画面を開く（第2引数にtrueを渡し、上部へのスクロールをキャンセルする）
+        openSearchView(true, true);
+
+        // 状態を一度すべてリセット（初期化）する
+        document.querySelectorAll('#searchTagContainer .tag-btn').forEach(btn => btn.classList.remove('active', 'excluded'));
+        document.getElementById('keywordSearchInput').value = '';
+        document.getElementById('bpSearchInput').value = '';
+
+        // 1. キーワード復元
+        if (params.has('kw')) document.getElementById('keywordSearchInput').value = params.get('kw');
+
+        // 2. 検索範囲復元
+        if (params.has('scope')) {
+            const scopes = params.get('scope').split(',');
+            document.querySelectorAll('.search-scope-btn').forEach(btn => {
+                if (scopes.includes(btn.dataset.scope)) btn.classList.add('active');
+            });
+        } else {
+            // 指定がない場合はデフォルトで全てアクティブ
+            document.querySelectorAll('.search-scope-btn').forEach(btn => btn.classList.add('active'));
+        }
+
+        // 3. 検索ロジック復元
+        const logic = params.has('logic') ? params.get('logic') : 'and';
+        const logicBtn = document.querySelector(`#searchLogicCategory .logic-btn[data-logic="${logic}"]`);
+        if (logicBtn) logicBtn.classList.add('active');
+
+        // 4. キャラ指定 (武器種)復元
+        if (params.has('weapon')) {
+            const weapons = params.get('weapon').split(',');
+            document.querySelectorAll('#charWeaponSearchContainer .tag-btn').forEach(btn => {
+                if (weapons.includes(btn.dataset.value)) btn.classList.add('active');
+            });
+        }
+
+        // 5. スキルフィルター復元
+        document.querySelectorAll('#skillSearchOptionsContainer .skill-filter-btn').forEach(btn => {
+            const paramKey = `sf_${btn.dataset.field}`;
+            if (params.has(paramKey) && params.get(paramKey).split(',').includes(btn.dataset.value)) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // BP復元
+        if (params.has('bp')) {
+            const [op, val] = params.get('bp').split(':');
+            document.getElementById('bpSearchInput').value = val;
+            const opBtn = document.querySelector(`#skillSearchOptionsContainer .bp-op-btn[data-op="${op}"]`);
+            if (opBtn) opBtn.classList.add('active');
+        }
+
+        // 6. 共通項目 (CSVタグ)復元
+        if (params.has('tags')) {
+            const tags = params.get('tags').split(',');
+            document.querySelectorAll('#csvTagArea .tag-btn').forEach(btn => {
+                if (tags.includes(btn.textContent)) btn.classList.add('active');
+            });
+        }
+
+        // 7. エクストラフォース復元（activeとexcluded）
+        const setEfButtons = (paramKey, datasetKey, stateClass) => {
+            if (params.has(paramKey)) {
+                const vals = params.get(paramKey).split(',');
+                document.querySelectorAll(`#extraForceSearchContainer .tag-btn[data-${datasetKey}], #extraForceSearchContainer .extra-force-scope-btn`).forEach(btn => {
+                    const btnVal = btn.dataset[datasetKey] || btn.dataset.scope;
+                    if (vals.includes(btnVal)) btn.classList.add(stateClass);
+                });
+            }
+        };
+        setEfButtons('efT', 'efType', 'active');
+        setEfButtons('efE', 'efEffect', 'active');
+        setEfButtons('efS', 'scope', 'active');
+        setEfButtons('exEfT', 'efType', 'excluded');
+        setEfButtons('exEfE', 'efEffect', 'excluded');
+        setEfButtons('exEfS', 'scope', 'excluded');
+
+        // UI表示状態を同期して検索を実行
+        toggleSkillOptions();
+        updateSearchUIState();
+        performTagSearch();
+
+        // ▼ 検索結果へ自動スクロールさせる処理 ▼
+        setTimeout(() => {
+            const resultsTop = document.getElementById('search-results-top');
+            if (resultsTop) {
+                resultsTop.scrollIntoView({ behavior: 'auto', block: 'start' });
+            }
+        }, 10);
     }
 </script>
 </body>
