@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ページ移動中...</title>
+  <script>
+    const NEW_DOMAIN = "https://web-rs-apps.pages.dev";
+
+    // アクセスされたURLのパスを取得し、リポジトリ名を除去
+    let currentPath = window.location.pathname.replace(/^\/web-rs-tools/, '');
+
+    // .csv や .json などのデータファイル直接アクセスかどうかの判定
+    const isDataFile = /\.(csv|json)$/i.test(currentPath);
+
+    // 通常ページの場合は即座に転送（データファイルの場合は転送をスキップ）
+    if (!isDataFile) {
+      const targetUrl = NEW_DOMAIN + currentPath + window.location.search + window.location.hash;
+      window.location.replace(targetUrl);
+    }
+  </script>
+</head>
+<body style="background-color: #2A2A2A; color: #eee; text-align: center; padding: 50px; font-family: sans-serif;">
+  <div id="msg-area">
+    <h2>新しいサイトへ移動しています...</h2>
+    <p>自動的に切り替わらない場合は、以下のリンクをクリックしてください。</p>
+    <p><a id="redirect-link" href="#" style="color: #1D9BF0;">新しいサイトへ移動する</a></p>
+  </div>
+
+  <script>
+    if (isDataFile) {
+      // データファイルアクセスの場合は画面表示を切り替える
+      document.getElementById('msg-area').innerHTML = `
+        <h2>ファイル移動のお知らせ</h2>
+        <p>このデータファイルは新しいサイトへ移動しました。<br>トップページよりご利用ください。</p>
+        <p><a href="${NEW_DOMAIN}" style="color: #1D9BF0;">新サイトのトップページへ</a></p>
+      `;
+    } else {
+      const targetUrl = NEW_DOMAIN + currentPath + window.location.search + window.location.hash;
+      document.getElementById('redirect-link').href = targetUrl;
+    }
+  </script>
+</body>
+</html>

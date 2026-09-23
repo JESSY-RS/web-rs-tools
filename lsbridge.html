@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
+<title>data bridge</title>
+<style>
+  body {
+    margin: 0;
+    padding: 40px 20px;
+    background: #2A2A2A;
+    color: #ccc;
+    font-family: sans-serif;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<p>データを引き継いでいます…<br>このウィンドウは自動的に閉じます。</p>
+<script>
+  // ▼ この橋渡しページを埋め込む／開くことを許可する、新サイト側のオリジンだけを許可する ▼
+  const ALLOWED_ORIGINS = [
+    'https://web-rs-apps.pages.dev'
+  ];
+
+  window.addEventListener('message', (event) => {
+    // 許可していない送信元からの要求は完全に無視する
+    if (!ALLOWED_ORIGINS.includes(event.origin)) return;
+    if (!event.data || event.data.type !== 'REQUEST_LOCALSTORAGE') return;
+
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      data[key] = localStorage.getItem(key);
+    }
+
+    // 要求元（event.source）に対してのみ、要求元のオリジン（event.origin）宛に返す
+    event.source.postMessage(
+      { type: 'LOCALSTORAGE_DATA', data: data, from: location.origin },
+      event.origin
+    );
+
+    // ポップアップとして開かれている場合は、役目を終えたので自分で閉じる
+    // （iframeの場合はwindow.close()は何もしないだけなので無害）
+    try {
+      window.close();
+    } catch (e) {
+      // 閉じられない場合は呼び出し元(opener)側がpopup.close()で片付ける
+    }
+  });
+</script>
+</body>
+</html>
