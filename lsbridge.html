@@ -2,148 +2,21 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>data bridge</title>
 <style>
   body {
     margin: 0;
-    padding: 40px 20px 60px;
+    padding: 40px 20px;
     background: #2A2A2A;
     color: #ccc;
     font-family: sans-serif;
     text-align: center;
   }
-  #manual-section {
-    max-width: 680px;
-    margin: 40px auto 0;
-    text-align: left;
-    display: none;
-  }
-  #manual-section.show { display: block; }
-  #manual-toggle {
-    margin-top: 30px;
-    background: none;
-    border: 1px solid #555;
-    color: #999;
-    border-radius: 4px;
-    padding: 8px 14px;
-    font-size: 12px;
-    cursor: pointer;
-  }
-  #manual-toggle:hover { border-color: #888; color: #ccc; }
-  h2 {
-    color: #50b4f0;
-    font-size: 16px;
-    margin: 28px 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .step-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #50b4f0;
-    color: #1a1a1a;
-    font-size: 12px;
-    font-weight: bold;
-    flex-shrink: 0;
-  }
-  .desc {
-    font-size: 12px;
-    color: #999;
-    margin-bottom: 10px;
-    line-height: 1.6;
-  }
-  .card {
-    background-color: #333;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
-  }
-  .btn {
-    padding: 9px 16px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    color: #fff;
-    font-size: 13px;
-  }
-  .btn-primary { background-color: #50b4f0; color: #1a1a1a; }
-  .btn-secondary { background-color: #555; }
-  .btn-danger { background-color: #a83b45; }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
-  textarea {
-    width: 100%;
-    box-sizing: border-box;
-    background: #1a1a1a;
-    color: #eee;
-    border: 1px solid #444;
-    border-radius: 6px;
-    padding: 10px;
-    font-family: monospace;
-    font-size: 11px;
-    margin-top: 8px;
-    resize: vertical;
-  }
-  .status {
-    margin-top: 10px;
-    font-size: 12px;
-    padding: 8px 10px;
-    border-radius: 6px;
-    display: none;
-    text-align: left;
-  }
-  .status.show { display: block; }
-  .status.ok { background: rgba(40,167,69,0.15); color: #4ade80; }
-  .status.err { background: rgba(220,53,69,0.15); color: #f87171; }
-  .status.info { background: rgba(80,180,240,0.15); color: #7dc9f5; }
-  .origin-label { font-size: 11px; color: #888; margin-top: -4px; margin-bottom: 8px; }
-  .origin-label span { color: #50b4f0; }
 </style>
 </head>
 <body>
 <p>データを引き継いでいます…<br>このウィンドウは自動的に閉じます。</p>
-
-<button id="manual-toggle">閉じない場合はこちら（手動で移行する）</button>
-
-<div id="manual-section">
-  <div class="origin-label">現在のサイト: <span id="origin-label"></span></div>
-  <div class="desc">
-    アプリ内ブラウザ（X等）ではセキュリティ上、自動での引き継ぎができません。
-    下の手順で手動移行してください：① エクスポート → ②「インポート欄へコピー」→ ③ 内容を確認して反映。
-  </div>
-
-  <h2><span class="step-num">1</span>エクスポート</h2>
-  <div class="card">
-    <div class="desc" style="margin-bottom:0;">このサイトに保存されているデータを書き出します。</div>
-    <div class="row">
-      <button class="btn btn-primary" id="btn-export">エクスポートする</button>
-    </div>
-    <textarea id="export-area" rows="4" readonly placeholder="ここにエクスポートされた内容が表示されます"></textarea>
-    <div class="row">
-      <button class="btn btn-secondary" id="btn-copy-to-import">↓ インポート欄へコピー</button>
-    </div>
-    <div class="status" id="export-status"></div>
-  </div>
-
-  <h2><span class="step-num">2</span>インポート</h2>
-  <div class="card">
-    <div class="desc" style="margin-bottom:0;">上でコピーした内容（または貼り付けた内容）を、このサイトに反映します。</div>
-    <textarea id="import-area" rows="4" placeholder='ここに貼り付け、または上の「インポート欄へコピー」を使用'></textarea>
-    <div class="row">
-      <button class="btn btn-danger" id="btn-apply">反映する</button>
-    </div>
-    <div class="status" id="import-status"></div>
-  </div>
-</div>
-
 <script>
   // ▼ この橋渡しページを埋め込む／開くことを許可する、新サイト側のオリジンだけを許可する ▼
   const ALLOWED_ORIGINS = [
@@ -174,102 +47,6 @@
     } catch (e) {
       // 閉じられない場合は呼び出し元(opener)側がpopup.close()で片付ける
     }
-  });
-
-  // ▼ 手動移行UI（自動クローズが効かない環境向けのフォールバック） ▼
-  document.getElementById('origin-label').textContent = location.origin;
-
-  document.getElementById('manual-toggle').addEventListener('click', () => {
-    document.getElementById('manual-section').classList.toggle('show');
-  });
-
-  function showStatus(elId, type, msg) {
-    const el = document.getElementById(elId);
-    el.className = 'status show ' + type;
-    el.textContent = msg;
-  }
-
-  function collectAllLocalStorage() {
-    const data = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      data[key] = localStorage.getItem(key);
-    }
-    return data;
-  }
-
-  document.getElementById('btn-export').addEventListener('click', () => {
-    const data = collectAllLocalStorage();
-    const keys = Object.keys(data);
-    if (keys.length === 0) {
-      showStatus('export-status', 'err', 'エクスポートできるデータがありません。');
-      document.getElementById('export-area').value = '';
-      return;
-    }
-    const payload = {
-      __exported_from: location.origin,
-      __exported_at: new Date().toISOString(),
-      data: data
-    };
-    document.getElementById('export-area').value = JSON.stringify(payload);
-    showStatus('export-status', 'ok', `${keys.length}件のデータを書き出しました。「インポート欄へコピー」を押して次に進んでください。`);
-  });
-
-  document.getElementById('btn-copy-to-import').addEventListener('click', () => {
-    const text = document.getElementById('export-area').value.trim();
-    if (!text) {
-      showStatus('export-status', 'err', '先に「エクスポートする」を押してください。');
-      return;
-    }
-    document.getElementById('import-area').value = text;
-    showStatus('import-status', 'info', 'インポート欄に内容をコピーしました。内容を確認して「反映する」を押してください。');
-  });
-
-  document.getElementById('btn-apply').addEventListener('click', () => {
-    const text = document.getElementById('import-area').value.trim();
-    if (!text) {
-      showStatus('import-status', 'err', 'インポートする内容がありません。');
-      return;
-    }
-
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch (e) {
-      showStatus('import-status', 'err', 'JSONの形式が正しくありません。内容を確認してください。');
-      return;
-    }
-
-    let data;
-    if (parsed && typeof parsed === 'object' && parsed.data && typeof parsed.data === 'object') {
-      data = parsed.data;
-    } else if (parsed && typeof parsed === 'object') {
-      data = parsed;
-    } else {
-      showStatus('import-status', 'err', '対応していない形式です。');
-      return;
-    }
-
-    const keys = Object.keys(data);
-    if (keys.length === 0) {
-      showStatus('import-status', 'err', '反映できるデータが見つかりませんでした。');
-      return;
-    }
-
-    if (!confirm(`${keys.length}件のデータを このサイト（${location.origin}）に書き込みます。同名の既存データは上書きされます。よろしいですか？`)) {
-      return;
-    }
-
-    let count = 0;
-    keys.forEach(key => {
-      try {
-        localStorage.setItem(key, data[key]);
-        count++;
-      } catch (e) {
-        console.error('failed to set', key, e);
-      }
-    });
-    showStatus('import-status', 'ok', `${count}件のデータを反映しました。移行先サイトを開き直してご確認ください。`);
   });
 </script>
 </body>
