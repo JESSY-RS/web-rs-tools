@@ -116,8 +116,9 @@
 <div id="manual-section">
   <div class="origin-label">現在のサイト: <span id="origin-label"></span></div>
   <div class="desc">
-    アプリ内ブラウザ（X等）ではセキュリティ上、自動での引き継ぎができません。
-    下の手順で手動移行してください：① エクスポート → ②「インポート欄へコピー」→ ③ 内容を確認して反映。
+    アプリ内ブラウザ（X等）ではセキュリティ上、自動での引き継ぎができません。<br>
+    下の「エクスポートする」を押し、表示された内容を長押しして全選択→コピーしてください。<br>
+    新サイト側に戻り、表示されている引き継ぎパネルに貼り付ければ完了です。
   </div>
 
   <h2><span class="step-num">1</span>エクスポート</h2>
@@ -126,25 +127,8 @@
     <div class="row">
       <button class="btn btn-primary" id="btn-export">エクスポートする</button>
     </div>
-    <textarea id="export-area" rows="4" readonly placeholder="ここにエクスポートされた内容が表示されます"></textarea>
-    <div class="row">
-      <button class="btn btn-secondary" id="btn-copy-clipboard">📋 クリップボードにコピー</button>
-      <button class="btn btn-secondary" id="btn-copy-to-import">↓ インポート欄へコピー</button>
-    </div>
+    <textarea id="export-area" rows="5" readonly placeholder="ここにエクスポートされた内容が表示されます（長押しで全選択→コピー）"></textarea>
     <div class="status" id="export-status"></div>
-  </div>
-
-  <h2><span class="step-num">2</span>インポート</h2>
-  <div class="card">
-    <div class="desc" style="margin-bottom:0;">上でコピーした内容（または貼り付けた内容）を、このサイトに反映します。</div>
-    <div class="row">
-      <button class="btn btn-secondary" id="btn-paste-clipboard">📥 クリップボードから貼り付け</button>
-    </div>
-    <textarea id="import-area" rows="4" placeholder='ここに貼り付け（長押し→ペースト）、または上のボタンを使用'></textarea>
-    <div class="row">
-      <button class="btn btn-danger" id="btn-apply">反映する</button>
-    </div>
-    <div class="status" id="import-status"></div>
   </div>
 </div>
 
@@ -216,110 +200,7 @@
       data: data
     };
     document.getElementById('export-area').value = JSON.stringify(payload);
-    showStatus('export-status', 'ok', `${keys.length}件のデータを書き出しました。「インポート欄へコピー」を押して次に進んでください。`);
-  });
-
-  // クリップボードへコピー（execCommand方式）。
-  // navigator.clipboard.writeText() はXアプリ内ブラウザ等で失敗することがあるため、
-  // 隠しinput要素 + document.execCommand('copy') を使う（kiokucalc.htmlと同じ方式）。
-  document.getElementById('btn-copy-clipboard').addEventListener('click', () => {
-    const text = document.getElementById('export-area').value.trim();
-    if (!text) {
-      showStatus('export-status', 'err', '先に「エクスポートする」を押してください。');
-      return;
-    }
-    const tempInput = document.createElement('textarea');
-    tempInput.value = text;
-    tempInput.style.position = 'fixed';
-    tempInput.style.top = '0';
-    tempInput.style.left = '0';
-    tempInput.style.opacity = '0';
-    document.body.appendChild(tempInput);
-    tempInput.focus();
-    tempInput.select();
-    try {
-      const ok = document.execCommand('copy');
-      if (ok) {
-        showStatus('export-status', 'ok', 'クリップボードにコピーしました。新サイト側の「クリップボードから貼り付け」を押してください。');
-      } else {
-        throw new Error('execCommand returned false');
-      }
-    } catch (err) {
-      showStatus('export-status', 'err', 'コピーに失敗しました。テキストエリアを長押しして手動で選択・コピーしてください。');
-    }
-    document.body.removeChild(tempInput);
-  });
-
-  // クリップボードから読み込み（自動貼り付け）。失敗した場合は手動貼り付けを案内するだけに留める。
-  document.getElementById('btn-paste-clipboard').addEventListener('click', async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (!text) {
-        showStatus('import-status', 'err', 'クリップボードが空でした。手動で貼り付けてください。');
-        return;
-      }
-      document.getElementById('import-area').value = text;
-      showStatus('import-status', 'ok', 'クリップボードの内容を貼り付けました。内容を確認して「反映する」を押してください。');
-    } catch (err) {
-      showStatus('import-status', 'err', '自動貼り付けに失敗しました。お手数ですがテキストエリアを長押しして手動で貼り付けてください。');
-    }
-  });
-
-  document.getElementById('btn-copy-to-import').addEventListener('click', () => {
-    const text = document.getElementById('export-area').value.trim();
-    if (!text) {
-      showStatus('export-status', 'err', '先に「エクスポートする」を押してください。');
-      return;
-    }
-    document.getElementById('import-area').value = text;
-    showStatus('import-status', 'info', 'インポート欄に内容をコピーしました。内容を確認して「反映する」を押してください。');
-  });
-
-  document.getElementById('btn-apply').addEventListener('click', () => {
-    const text = document.getElementById('import-area').value.trim();
-    if (!text) {
-      showStatus('import-status', 'err', 'インポートする内容がありません。');
-      return;
-    }
-
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch (e) {
-      showStatus('import-status', 'err', 'JSONの形式が正しくありません。内容を確認してください。');
-      return;
-    }
-
-    let data;
-    if (parsed && typeof parsed === 'object' && parsed.data && typeof parsed.data === 'object') {
-      data = parsed.data;
-    } else if (parsed && typeof parsed === 'object') {
-      data = parsed;
-    } else {
-      showStatus('import-status', 'err', '対応していない形式です。');
-      return;
-    }
-
-    const keys = Object.keys(data);
-    if (keys.length === 0) {
-      showStatus('import-status', 'err', '反映できるデータが見つかりませんでした。');
-      return;
-    }
-
-    if (!confirm(`${keys.length}件のデータを このサイト（${location.origin}）に書き込みます。同名の既存データは上書きされます。よろしいですか？`)) {
-      return;
-    }
-
-    let count = 0;
-    keys.forEach(key => {
-      try {
-        localStorage.setItem(key, data[key]);
-        count++;
-      } catch (e) {
-        console.error('failed to set', key, e);
-      }
-    });
-    showStatus('import-status', 'ok', `${count}件のデータを反映しました。移行先サイトを開き直してご確認ください。`);
+    showStatus('export-status', 'ok', `${keys.length}件のデータを書き出しました。内容を長押しして全選択→コピーし、新サイト側の引き継ぎパネルに貼り付けてください。`);
   });
 </script>
 </body>
