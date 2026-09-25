@@ -13,10 +13,40 @@
     font-family: sans-serif;
     text-align: center;
   }
+  button {
+    margin-top: 16px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #btn-hide {
+    background: #a83b45;
+    color: #fff;
+  }
+  #btn-close {
+    background: #555;
+    color: #eee;
+  }
+  #hide-status {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #7dc9f5;
+    display: none;
+  }
 </style>
 </head>
 <body>
 <p>データを引き継いでいます…<br>このウィンドウは自動的に閉じます。</p>
+
+<button id="btn-hide">旧サイトの設定を引き継ぐボタンを非表示にする</button>
+<button id="btn-close">閉じる</button>
+<div id="hide-status">新サイト側に伝えました。このウィンドウを閉じてください。</div>
+
 <script>
   // ▼ この橋渡しページを埋め込む／開くことを許可する、新サイト側のオリジンだけを許可する ▼
   const ALLOWED_ORIGINS = [
@@ -46,6 +76,38 @@
       window.close();
     } catch (e) {
       // 閉じられない場合は呼び出し元(opener)側がpopup.close()で片付ける
+    }
+  });
+
+  // ▼ 手動で閉じるボタン ▼
+  document.getElementById('btn-close').addEventListener('click', () => {
+    try {
+      window.close();
+    } catch (e) {
+      // 無視
+    }
+  });
+
+  // ▼ 「旧サイトの設定を引き継ぐ」ボタンを新サイト側で非表示にする ▼
+  // 開き元（window.opener）に対して合図を送るだけ。新サイト側（lsmigrate.js）が
+  // これを受け取って、実際にボタンを消す・二度と出さないフラグを立てる処理を行う。
+  document.getElementById('btn-hide').addEventListener('click', () => {
+    if (window.opener) {
+      ALLOWED_ORIGINS.forEach((origin) => {
+        try {
+          window.opener.postMessage({ type: 'DISMISS_MIGRATION_BUTTON' }, origin);
+        } catch (e) {
+          // 無視
+        }
+      });
+      document.getElementById('hide-status').style.display = 'block';
+      try {
+        window.close();
+      } catch (e) {
+        // 無視
+      }
+    } else {
+      alert('新サイト側の「旧サイトの設定を引き継ぐ」ボタンから開いた場合のみ使用できます。');
     }
   });
 </script>
