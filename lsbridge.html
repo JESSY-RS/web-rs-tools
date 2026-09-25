@@ -32,12 +32,6 @@
     background: #555;
     color: #eee;
   }
-  #hide-status {
-    margin-top: 12px;
-    font-size: 12px;
-    color: #7dc9f5;
-    display: none;
-  }
 </style>
 </head>
 <body>
@@ -45,13 +39,13 @@
 
 <button id="btn-hide">旧サイトの設定を引き継ぐボタンを非表示にする</button>
 <button id="btn-close">閉じる</button>
-<div id="hide-status">新サイト側に伝えました。このウィンドウを閉じてください。</div>
 
 <script>
   // ▼ この橋渡しページを埋め込む／開くことを許可する、新サイト側のオリジンだけを許可する ▼
   const ALLOWED_ORIGINS = [
     'https://web-rs-apps.pages.dev'
   ];
+  const NEW_SITE_ORIGIN = ALLOWED_ORIGINS[0];
 
   window.addEventListener('message', (event) => {
     // 許可していない送信元からの要求は完全に無視する
@@ -79,36 +73,26 @@
     }
   });
 
-  // ▼ 手動で閉じるボタン ▼
+  // ▼ 閉じる（window.close()が効かないアプリ内ブラウザ向けに history.back() を併用） ▼
   document.getElementById('btn-close').addEventListener('click', () => {
     try {
       window.close();
     } catch (e) {
       // 無視
     }
+    // window.close()が効かない環境（Xアプリ内ブラウザ等）では、代わりに前の画面へ戻る。
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      location.href = NEW_SITE_ORIGIN + '/';
+    }
   });
 
   // ▼ 「旧サイトの設定を引き継ぐ」ボタンを新サイト側で非表示にする ▼
-  // 開き元（window.opener）に対して合図を送るだけ。新サイト側（lsmigrate.js）が
-  // これを受け取って、実際にボタンを消す・二度と出さないフラグを立てる処理を行う。
+  // postMessageやwindow.opener（ポップアップ連携）に頼らず、ただのページ遷移で伝える。
+  // 新サイト側は読み込み時にこのパラメータを見て、恒久的にボタンを消す。
   document.getElementById('btn-hide').addEventListener('click', () => {
-    if (window.opener) {
-      ALLOWED_ORIGINS.forEach((origin) => {
-        try {
-          window.opener.postMessage({ type: 'DISMISS_MIGRATION_BUTTON' }, origin);
-        } catch (e) {
-          // 無視
-        }
-      });
-      document.getElementById('hide-status').style.display = 'block';
-      try {
-        window.close();
-      } catch (e) {
-        // 無視
-      }
-    } else {
-      alert('新サイト側の「旧サイトの設定を引き継ぐ」ボタンから開いた場合のみ使用できます。');
-    }
+    location.href = NEW_SITE_ORIGIN + '/?__lsmigrate_dismiss=1';
   });
 </script>
 </body>
