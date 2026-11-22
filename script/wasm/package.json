@@ -1,0 +1,16 @@
+{
+  "name": "wasm-decrypt",
+  "type": "module",
+  "description": "AES-256-CBC復号用WASMモジュール",
+  "version": "0.1.0",
+  "files": [
+    "wasm_decrypt_bg.wasm",
+    "wasm_decrypt.js",
+    "wasm_decrypt.d.ts"
+  ],
+  "main": "wasm_decrypt.js",
+  "types": "wasm_decrypt.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
