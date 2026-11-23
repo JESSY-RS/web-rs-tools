@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="icon/favicon.ico">
+<link rel="apple-touch-icon" href="icon/favicon.ico">
+<title>接続先を自動判定中...</title>
+</head>
+<body style="background:#2A2A2A;color:#eee;font-family:sans-serif;text-align:center;padding-top:30vh;">
+  <h3 style="color:#50b4f0;">🔄 接続先を自動判定中...</h3>
+  <script>
+    const p = new URLSearchParams(location.search);
+    const localIp = p.get('l');
+    const vpnIp   = p.get('v');
+    const path    = "/web-rs-tools/index.html";
+
+    if (localIp && vpnIp) {
+      setTimeout(() => location.replace(`http://${vpnIp}${path}`), 1500);
+      location.href = `http://${localIp}${path}`;
+    }
+  </script>
+</body>
+</html>
