@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アリーナ編成DBに接続中...</title>
+<!-- ▼ アリーナ編成検索用のファビコンを指定 ▼ -->
+<link rel="shortcut icon" href="icon/favicon-arena.ico">
+<link rel="apple-touch-icon" href="icon/favicon-arena.ico">
+</head>
+<body style="background:#2A2A2A;color:#eee;font-family:sans-serif;text-align:center;padding-top:25vh;">
+  <h3 id="msg" style="color:#50b4f0;">🔄 アリーナ編成DBに接続中...</h3>
+  <p id="sub" style="color:#aaa;font-size:14px;"></p>
+  <button id="retry" onclick="location.reload()" style="display:none;margin:20px auto;padding:12px 24px;font-size:16px;background:#2A99E6;color:#fff;border:none;border-radius:6px;cursor:pointer;">再読み込み</button>
+
+  <script>
+    const p = new URLSearchParams(location.search);
+    const localTarget = p.get('l'); 
+    const vpnTarget   = p.get('v'); 
+
+    if (localTarget && vpnTarget) {
+      // 1.5秒後にZeroTierへ切り替え
+      setTimeout(() => {
+        document.getElementById('msg').textContent = "🌐 ZeroTier経由で接続中...";
+        location.href = `http://${vpnTarget}`;
+      }, 1500);
+
+      // 4秒経っても移動できていなければ警告を表示
+      setTimeout(() => {
+        document.getElementById('msg').textContent = "⚠️ 接続できません";
+        document.getElementById('msg').style.color = "#ff6b6b";
+        document.getElementById('sub').textContent = "ZeroTierがオフになっている可能性があります";
+        document.getElementById('retry').style.display = "block";
+      }, 4000);
+
+      // まず自宅LANへ移動を試みる
+      location.href = `http://${localTarget}`;
+    }
+  </script>
+</body>
+</html>
