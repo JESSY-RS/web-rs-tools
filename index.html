@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+  <meta http-equiv=Content-Type content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="icon/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <title>リユニのWeb版いろいろ</title>
+
+  <style>
+
+    /* --- 全体 --- */
+    body {
+      font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      margin: 20px;
+      text-align: left;
+      font-size: 24px;
+      background-color: #2A2A2A;
+      color: #eee;
+    }
+
+    /* ヘッダーのスタイル */
+    header {
+      text-align: left;
+      font-size: 30px;
+      color: #FF6E3D;
+      margin-bottom: 20px;
+    }
+
+    /* フッターのスタイル */
+    footer {
+      border-top: 1px solid #999;
+      padding-top: 10px;
+      font-size: 12pt;
+      margin-top: 20px;
+      color: #999;
+    }
+
+    /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+    #warning {
+      font-size: 12pt;
+      color: #FF0000;
+    }
+
+    #linkList {
+      display: none;
+      color: #7755FF;
+    }
+  
+    #linkList1 {
+      display: none;
+      color: #7755FF;
+    }
+  
+    #linkList2 {
+      display: none;
+      color: #7755FF;
+    }
+
+    #linkList3 {
+      display: none;
+      color: #7755FF;
+    }
+  
+    #linkList a {
+      display: inline;
+      margin: 5px 0;
+      text-decoration: none;
+      color: #7755FF;
+    }
+  
+    #linkList a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    #linkList a:hover {
+      text-decoration: underline;
+      color: #0CFF57;
+    }
+
+    #linkList a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+    .toggle-button {
+      cursor: pointer;
+      color: #7755FF;
+      text-decoration: underline;
+      user-select: none;
+    }
+  
+    .toggle-button:hover {
+      color: #0CFF57;
+      text-decoration: underline;
+    }
+
+    img[src="invisible.png"] {
+      user-select: none;
+    }
+
+    /* 自分専用(クラウドモード)のスタイル */
+    .cloud-only {
+      display: none;
+    }
+    
+    body.cloud-mode .cloud-only {
+      display: inline;
+    }
+
+    /* ▼▼ 追加：同期用ポップアップモーダルのスタイル ▼▼ */
+    .sync-modal-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 9999; justify-content: center; align-items: center;
+    }
+    .sync-modal-window {
+      background-color: #333; padding: 20px; border-radius: 8px;
+      width: 90%; max-width: 400px; text-align: center;
+      border: 1px solid #555; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .sync-modal-title-area {
+      display: flex; align-items: center; justify-content: center; gap: 10px; 
+      margin-bottom: 25px; font-size: 22px; font-weight: bold; color: #50b4f0; width: 100%;
+    }
+    .sync-modal-title-area img {
+      width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+    }
+    .sync-policy {
+      font-size: 14px; color: #ff4444; line-height: 1.6; text-align: left;
+      margin-top: 20px; border-top: 1px dashed #555; padding-top: 12px; width: 100%;
+    }
+    /* モーダル内リストの余白調整 */
+    .sync-policy ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .sync-policy li {
+      margin-bottom: 5px;
+    }
+    /* モーダル内リンク用のスタイル */
+    .sync-modal-links {
+      margin-top: 15px;
+      font-size: 13px;
+      border-top: 1px solid #444;
+      padding-top: 12px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    .sync-modal-links a {
+      color: #2A99E6;
+      text-decoration: none;
+    }
+    .sync-modal-links a:hover {
+      color: #55b8ff;
+      text-decoration: underline;
+    }
+    .sync-btn {
+      padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 4px;
+      cursor: pointer; border: none; width: 100%; margin-bottom: 10px; box-sizing: border-box;
+    }
+    .btn-login { background-color: #2A99E6; color: white; }
+    .btn-login:hover { background-color: #1e7ebd; }
+    .btn-logout { background-color: #dc3545; color: white; }
+    .btn-logout:hover { background-color: #a71d2a; }
+    .btn-close { background-color: #555; color: white; margin-top: 10px; }
+    /* ▲▲ 追加ここまで ▲▲ */
+
+  </style>
+  
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+  </head>
+<body>
+
+<header><span id="title-login-trigger" style="cursor: pointer;" title="クリックで同期設定を開く">リユニのWeb版いろいろ</span></header>
+  
+  <a href="kiokucalc.html">記憶再戦時間計算</a><br>
+  <a href="kiokucalc2.html">記憶再戦回数計算</a><br>
+  <br>
+  <a href="ikuseicalc.html">育成効率比較ツール</a><br>
+  <a href="clear.html">クリア目安計算ツール</a><br>
+  <br>
+  <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
+  <div id="linkList1">
+    ├ <a href="checker-astral.html">アストラルレリックチェッカー</a><br>
+    ├ <a href="checker-chaos.html">カオスレリックチェッカー</a><br>
+    ├ <a href="checker-relic.html">ファンタズムレリックチェッカー</a><br>
+    ├ <a href="checker-4gen.html">四元像ピアスチェッカー</a><br>
+    ├ <a href="checker-stella.html">ステライヤリングチェッカー</a><br>
+    └ <a href="checker-niji.html">虹瑠璃の腕輪チェッカー</a><br>
+  </div>
+  <br>
+  <span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span><br>
+  <div id="linkList2">
+    ├ <a href="report-astral.html">アストラルレリック報告用</a><br>
+    ├ <a href="report-chaos.html">カオスレリック報告用</a><br>
+    ├ <a href="report-relic.html">ファンタズムレリック報告用</a><br>
+    ├ <a href="report-4gen.html">四元像ピアス報告用</a><br>
+    ├ <a href="report-stella.html">ステライヤリング報告用</a><br>
+    └ <a href="report-niji.html">虹瑠璃の腕輪報告用</a><br>
+  </div>
+  <br>
+  <a href="gate.html">動画の関門</a><br>
+  <a href="mechaleo.html">多段斬りアプリ</a><br>
+  <br>
+
+  <footer>
+  Created by じぇ <a href="https://x.com/jessy_romasaga">@jessy_romasaga</a><br>
+  </footer>
+
+  <script>
+    
+    // アドミンモードの管理
+    const ADMIN_KEY = 'index_mode';
+    let isAdminMode = false;
+
+    function checkMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const modeParam = urlParams.get('mode');
+        
+        if (modeParam === 'secret_admin_on') {
+            localStorage.setItem(ADMIN_KEY, 'admin');
+            localStorage.removeItem('RenmaArmorCloudMode');
+        } else if (modeParam === 'secret_cloud_on') {
+            // ▼▼ secret_cloud_on に変更 ▼▼
+            localStorage.setItem(ADMIN_KEY, 'admin');
+            localStorage.setItem('RenmaArmorCloudMode', 'true');
+        } else if (modeParam === 'secret_debug_on') {
+            localStorage.setItem(ADMIN_KEY, 'debug');
+            localStorage.removeItem('RenmaArmorCloudMode');
+        }
+        
+        const savedMode = localStorage.getItem(ADMIN_KEY);
+        isAdminMode = (savedMode === 'admin');
+
+        // ▼▼ クラウドモード(自分専用モード)の時だけリンクを表示する ▼▼
+        const isCloudMode = (localStorage.getItem('RenmaArmorCloudMode') === 'true');
+        if (isCloudMode) {
+            document.body.classList.add('cloud-mode');
+        } else {
+            document.body.classList.remove('cloud-mode');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function(){
+      // 読み込み時にモードをチェック
+      checkMode();
+
+      var toggleButtons = document.querySelectorAll(".toggle-button");
+    
+      toggleButtons.forEach(function(button) {
+        var targetId = button.getAttribute("data-target");
+        var list = document.getElementById(targetId);
+        list.style.display = "none";
+    
+        button.addEventListener("click", function(){
+          if (list.style.display === "block") {
+            list.style.display = "none";
+          } else {
+            list.style.display = "block";
+          }
+        });
+      });
+    });
+    
+  </script>
+
+<div id="sync-modal" class="sync-modal-overlay">
+    <div class="sync-modal-window">
+      <div id="sync-modal-title" class="sync-modal-title-area">データ同期設定</div>
+      
+      <button id="modal-login-btn" class="sync-btn btn-login">Googleアカウントでログイン</button>
+      <button id="modal-logout-btn" class="sync-btn btn-logout" style="display: none;">ログアウト</button>
+
+      <button id="modal-close-btn" class="sync-btn btn-close">閉じる</button>
+
+      <div id="sync-modal-policy" class="sync-policy"></div>
+
+      <!-- ▼▼ 利用規約とプライバシーポリシーのリンクを追加 ▼▼ -->
+      <div class="sync-modal-links">
+        <a href="terms.html" target="_blank">利用規約</a>
+        <a href="privacy.html" target="_blank">プライバシーポリシー</a>
+      </div>
+    </div>
+  </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const modal = document.getElementById('sync-modal');
+      const titleTrigger = document.getElementById('title-login-trigger');
+      const loginBtn = document.getElementById('modal-login-btn');
+      const logoutBtn = document.getElementById('modal-logout-btn');
+      const closeBtn = document.getElementById('modal-close-btn');
+      const titleArea = document.getElementById('sync-modal-title');
+      const policyArea = document.getElementById('sync-modal-policy');
+
+      const isCloud = (localStorage.getItem('RenmaArmorCloudMode') === 'true');
+
+      // --- 各モード・状態ごとの説明文テキスト定義をリスト形式(ul/li)に変更 ---
+      // 1. 通常ドライブモード・ログイン前（全文表示）
+      const textDriveLoggedOut = `
+        <ul>
+          <li>ログインすると、あなたのデータは「あなた自身のGoogleドライブの隠し領域」にのみ保存され、複数の端末で自動同期されます。</li>
+          <li>アプリの管理者を含め、第三者があなたのメールアドレスや保存データを見ることはできません。</li>
+          <li>Googleのセキュリティ仕様により、ログイン状態は1時間で自動的に解除されます。</li>
+        </ul>
+      `;
+      
+      // 2. 通常ドライブモード・ログイン中（1時間の案内のみ）
+      const textDriveLoggedIn = `
+        <ul>
+          <li>Googleのセキュリティ仕様により、ログイン状態は1時間で自動的に解除されます。</li>
+        </ul>
+      `;
+      
+      // 3. クラウドモード（Firebase）・常に表示する免責事項
+      const textCloudCommon = `
+        <ul>
+          <li><strong>【警告】</strong>このモードは一般公開用ではなく、当プライバシーポリシーの適用外となる「開発者用テスト環境」です。</li>
+          <li>データはGoogle Driveではなく、外部サーバーに保存されます。</li>
+          <li>個人情報の保護は確約できず、保存されるメールアドレス等のデータが第三者に漏洩するリスクがゼロではありません。</li>
+          <li>万が一、ソースコードを解析等してこのモードにアクセスされた場合でも、完全な自己責任とし、管理者は一切の責任を負いません。</li>
+        </ul>
+      `;
+
+      // 初期状態のテキストと表題をセット
+      titleArea.textContent = 'データ同期設定';
+      policyArea.innerHTML = isCloud ? textCloudCommon : textDriveLoggedOut;
+
+      // マネージャーからの認証状態を受け取ってUIを動的に書き換える
+      setTimeout(() => {
+          if (window.syncManager) {
+              window.syncManager.onAuthChangeCallback = (isLoggedIn) => {
+                  titleArea.textContent = 'データ同期設定'; // 表題は常に固定
+                  policyArea.style.display = 'block';     // 領域は常に表示
+                  
+                  if (isCloud) {
+                      // 【クラウドモード（Firebase）時】
+                      // ログイン前・ログイン中に関わらず、指定された文章のみを固定表示
+                      policyArea.innerHTML = textCloudCommon;
+                      
+                      if (isLoggedIn) {
+                          loginBtn.style.display = 'none';
+                          logoutBtn.style.display = 'block';
+                      } else {
+                          loginBtn.style.display = 'block';
+                          logoutBtn.style.display = 'none';
+                      }
+                  } else {
+                      // 【通常のドライブモード時】
+                      if (isLoggedIn) {
+                          // ログイン中：1時間の説明のみ表示
+                          loginBtn.style.display = 'none';
+                          logoutBtn.style.display = 'block';
+                          policyArea.innerHTML = textDriveLoggedIn;
+                      } else {
+                          // ログイン前：全文表示
+                          loginBtn.style.display = 'block';
+                          logoutBtn.style.display = 'none';
+                          policyArea.innerHTML = textDriveLoggedOut;
+                      }
+                  }
+              };
+              
+              // 既に自動ログインが完了している場合の即時反映
+              if (window.syncManager.isLoggedIn) {
+                  window.syncManager.onAuthChangeCallback(true);
+              } else {
+                  window.syncManager.onAuthChangeCallback(false);
+              }
+          }
+      }, 600);
+
+      // ポップアップ開閉ロジック
+      titleTrigger.addEventListener('click', () => { modal.style.display = 'flex'; });
+      closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+      modal.addEventListener('click', (e) => { if(e.target === modal) modal.style.display = 'none'; });
+
+      // ボタンアクション
+      loginBtn.addEventListener('click', () => {
+          if (window.triggerSyncLogin) window.triggerSyncLogin();
+      });
+      logoutBtn.addEventListener('click', () => {
+          if (window.triggerSyncLogout) window.triggerSyncLogout();
+      });
+    });
+  </script>
+
+</body>
+</html>

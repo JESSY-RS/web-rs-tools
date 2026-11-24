@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="icon/favicon-fue.ico">
+  <link rel="apple-touch-icon" href="icon/apple-touch-icon-fue.png">
+  <link rel="icon" type="image/png" href="icon/web-app-manifest-192x192-fue.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <title>四元像ピアス報告用</title>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
+  <style>
+
+    /* 1. 基本の指定（Windows, Android, Mac用） */
+    .hamburger::before {
+      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+    }
+    
+    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+      }
+    }
+
+    /* --- 全体 --- */
+    body {
+      font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    .pierce-group {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 10px auto;
+      max-width: 430px;
+    }
+
+    .pierce-category {
+      border: 1px solid #ccc;
+      padding: 5px;
+    }
+
+    .pierce-category h2 {
+      font-size: 18px;
+      margin: 3px 0;
+    }
+
+    .attribute {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: -3px 0;
+    }
+
+    .attribute span:first-child {
+      margin-left: 5px;
+      font-size: 18px;
+    }
+
+    .stars {
+      font-size: 20px;
+    }
+
+    input[type="file"] {
+      margin: 10px 0;
+      font-size: 12px;
+    }
+
+    /* 大分類ごとの色指定 */
+    .緋 { color: hotpink; }
+    .憲 { color: red; }
+    .濡 { color: gray; }
+    .瑠 { color: royalblue; }
+
+    /* 小分類ごとの色指定 */
+    .斬 { color: lightgray; }
+    .打 { color: lightgray; }
+    .突 { color: lightgray; }
+    .熱 { color: orangered; }
+    .冷 { color: dodgerblue; }
+    .雷 { color: yellow; }
+    .陽 { color: darkorange; }
+    .陰 { color: darkorchid; }
+
+    /* 集計部分のスタイル */
+    #summary {
+      text-align: center;
+      font-size: 16px;
+    }
+
+    /* 拡大縮小ボタンのスタイル */
+    .zoom-buttons {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      color: #000;
+      background-color: #eee;
+      padding: 5px 10px;
+      font-size: 14px;
+      border: 1px solid #888;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      cursor: pointer;
+      margin-left: -5px;
+      margin-right: 8px;
+      user-select: none;
+      color: #eee;
+      display: inline-block;
+    }
+    
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 320px;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1001;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: limegreen;
+    }
+
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: inline-block;
+      padding: 12px 0;
+      color: #eee;
+      text-decoration: none;
+    }
+
+    .menu-item:hover {
+      color: #0CFF57;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
+  </style>
+
+</head>
+<body>
+
+  <!-- サイドメニューオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <!-- サイドメニュー -->
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">チェッカー関連リンク</div>
+    <a href="checker-astral.html" class="menu-item">アストラルレリックチェッカー</a><br>
+    <a href="checker-chaos.html" class="menu-item">カオスレリックチェッカー</a><br>
+    <a href="checker-relic.html" class="menu-item">ファンタズムレリックチェッカー</a><br>
+    <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a><br>
+    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a><br>
+    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a><br>
+    <div class="menu-spacer"></div>
+    <a href="report-astral.html" class="menu-item">アストラルレリック報告用</a><br>
+    <a href="report-chaos.html" class="menu-item">カオスレリック報告用</a><br>
+    <a href="report-relic.html" class="menu-item">ファンタズムレリック報告用</a><br>
+    <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a><br>
+    <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a><br>
+    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a><br>
+    <div class="menu-spacer"></div>
+    <div id="variable-links-4gen">
+      <a href="#緋Anchor" class="menu-item" onclick="closeMenu()">◆緋のピアス</a><br>
+      <a href="#憲法Anchor" class="menu-item" onclick="closeMenu()">◆憲法のピアス</a><br>
+      <a href="#濡羽Anchor" class="menu-item" onclick="closeMenu()">◆濡羽のピアス</a><br>
+      <a href="#瑠璃紺Anchor" class="menu-item" onclick="closeMenu()">◆瑠璃紺のピアス</a><br>
+      <div class="menu-spacer"></div>
+    </div>
+    <a href="index.html" class="menu-item">インデックスページ</a><br>
+  </div>
+
+  <!-- ハンバーガーメニューとヘッダー -->
+  <div class="header">
+    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger">四元像ピアス</span></h1>
+  </div>
+
+  <div class="zoom-buttons">
+    <button onclick="changeZoom(0.1)">＋</button>
+    <button onclick="changeZoom(-0.1)">－</button>
+  </div>
+
+  <input type="file" id="importJson" accept=".json">
+
+  <div class="pierce-group" id="pierceGroup"></div>
+
+  <div id="summary"></div>
+
+  <br><a href="checker-4gen.html">チェッカーへ戻る</a><br>
+
+  <script>
+
+    // サイドメニューの特定項目の表示設定
+    // キー：表示/非表示を切り替えたい要素のID
+    // 値：その要素を表示したいページの<title>の配列
+    const sideMenuVisibilityConfig = {
+      'variable-links-4gen': ['四元像ピアスチェッカー']
+    };
+
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+        // 現在のページのタイトルを取得
+        const currentPageTitle = document.title;
+
+        // 設定に基づいてメニュー項目の表示/非表示を切り替え
+        for (const elementId in sideMenuVisibilityConfig) {
+          const targetElement = document.getElementById(elementId);
+          if (targetElement) {
+            const visiblePages = sideMenuVisibilityConfig[elementId];
+            // 表示対象ページの配列に現在のページタイトルが含まれているかチェック
+            if (visiblePages.includes(currentPageTitle)) {
+              targetElement.style.display = 'block'; // 表示
+            } else {
+              targetElement.style.display = 'none';  // 非表示
+            }
+          }
+        }
+
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        }
+    }
+
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const menuClose = document.getElementById('menuClose');
+
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+        menuClose.style.color = '#eee';
+    }
+
+    // フリックでメニュー開閉（スクロール誤作動対策版）
+    let startX = 0, startY = 0;
+    let endX = 0, endY = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      // タッチ開始時のX座標とY座標を記録
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      // タッチ終了時のX座標とY座標を記録
+      endX = e.changedTouches[0].screenX;
+      endY = e.changedTouches[0].screenY;
+      handleGesture(); // ジェスチャーを判定する関数を呼び出し
+    }, false);
+
+    function handleGesture() {
+      const diffX = endX - startX; // 水平方向の移動量
+      const diffY = endY - startY; // 垂直方向の移動量
+
+      // 条件1: 水平方向の移動量が、垂直方向の移動量よりも大きい場合のみ処理（スワイプかスクロールかを判定）
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+
+        // 条件2-1: 右へのスワイプ（50px以上移動し、かつ画面の左端30px以内から開始）
+        if (diffX > 50 && startX < 30) {
+          // 右にフリックしてメニューを開く
+          toggleMenu();
+        } 
+        // 条件2-2: 左へのスワイプ（50px以上移動）
+        else if (diffX < -50) {
+          // 左にフリックしてメニューを閉じる
+          closeMenu();
+        }
+      }
+      // 垂直方向の移動量が大きい場合は、何もしない（ブラウザの標準スクロールに任せる）
+    }
+
+    const pierces = [
+      { name: "緋のピアス", className: "緋" },
+      { name: "濡羽のピアス", className: "濡" },
+      { name: "憲法のピアス", className: "憲" },
+      { name: "瑠璃紺のピアス", className: "瑠" }
+    ];
+
+    const attributes = ["斬", "打", "突", "熱", "冷", "雷", "陽", "陰"];
+    const pierceGroup = document.getElementById("pierceGroup");
+
+    // 星を色付きで装飾する関数
+    function decorateStars(text) {
+      let result = "";
+      for (let char of text) {
+        if (char === "★") {
+          result += `<span style="color: gold; font-size: inherit;">★</span>`;
+        } else if (char === "☆") {
+          result += `<span style="color: gray; font-size: inherit;">☆</span>`;
+        } else {
+          result += char;
+        }
+      }
+      return result;
+    }
+
+    // 初期表示生成
+    pierces.forEach(p => {
+      const category = document.createElement("div");
+      category.className = "pierce-category";
+      category.innerHTML = `<h2 class="${p.className}">◆${p.name}</h2>`;
+      attributes.forEach(attr => {
+        const div = document.createElement("div");
+        div.className = "attribute";
+        const id = `◆${p.name}_${attr}`;
+        div.innerHTML = `<span class="${attr}">${attr}</span> <span class="stars" id="${id}">${decorateStars("☆☆☆☆☆")}</span>`;
+        category.appendChild(div);
+      });
+      pierceGroup.appendChild(category);
+    });
+
+    // ★数を集計して表示する関数
+    function updateSummary() {
+      let total = 0;
+      let categoryTotals = { "緋": 0, "憲": 0, "濡": 0, "瑠": 0 };
+
+      pierces.forEach(p => {
+        attributes.forEach(attr => {
+          const el = document.getElementById(`◆${p.name}_${attr}`);
+          if (el) {
+            const starCount = (el.textContent.match(/★/g) || []).length;
+            categoryTotals[p.className] += starCount;
+            total += starCount;
+          }
+        });
+      });
+
+      // 表示文字列作成
+      const summaryHTML = `
+      <div>
+        <span class="緋">緋</span> ${categoryTotals["緋"]}/40　
+        <span class="憲">憲</span> ${categoryTotals["憲"]}/40　
+        <span class="濡">濡</span> ${categoryTotals["濡"]}/40　
+        <span class="瑠">瑠</span> ${categoryTotals["瑠"]}/40
+      </div>
+      <div style="margin-top: 4px;">
+        全 ${total}/160
+      </div>
+    `;
+
+      document.getElementById("summary").innerHTML = summaryHTML;
+    }
+
+    // ▼▼ 追加：データを画面に反映させる共通関数 ▼▼
+    function applyReportData(data) {
+      if (!data) return;
+      
+      for (let key in data) {
+        if (key === "_version") continue;
+        const el = document.getElementById(key);
+        if (el) {
+          el.innerHTML = decorateStars(data[key]);
+        }
+      }
+      updateSummary();
+    }
+
+    // JSON読込（手動インポート用）
+    document.getElementById("importJson").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          applyReportData(JSON.parse(e.target.result));
+        } catch(error) {
+          alert('ファイルの内容が不正です。');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // ローカルデータの読込（非ログイン時）
+    function loadLocalData() {
+        try {
+            // 四元像チェッカー側で保存されたローカルデータキーを参照
+            const savedData = localStorage.getItem('checker-4gen_admin_data');
+            if (savedData) applyReportData(JSON.parse(savedData));
+        } catch (e) {}
+    }
+
+    // 初期表示の時点でも集計実行
+    updateSummary();
+
+    // 拡大縮小の関数
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    let pageSettings = { 'report-4gen_zoom': 1.0 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'report-4gen_zoom';
+        let currentZoom = pageSettings[zoomKey];
+    
+        currentZoom += delta;
+        currentZoom = Math.round(currentZoom * 10) / 10;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        document.body.style.zoom = currentZoom;
+        pageSettings[zoomKey] = currentZoom;
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {}
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {}
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['report-4gen_zoom'];
+
+        // ▼▼ 同期マネージャーの起動 ▼▼
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'checker-4gen.json', // ★チェッカーと同じファイルを読み込む
+                firestoreDoc: 'checker-4gen',  // ★チェッカーと同じデータを読み込む
+                onLoad: (loadedData) => {
+                    if (loadedData) {
+                        applyReportData(loadedData); // クラウドから成功
+                    } else {
+                        loadLocalData(); // クラウドに無い、または未ログイン時はローカルを読む
+                    }
+                },
+                onSave: () => {
+                    return null; // 報告用ページからは保存しない
+                }
+            });
+        } else {
+            loadLocalData();
+        }
+    });
+
+    window.onload = function () {
+        if(typeof loadSideMenu === 'function') loadSideMenu();
+    }
+
+  </script>
+
+</body>
+</html>

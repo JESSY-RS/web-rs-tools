@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="icon/favicon-astral.ico">
+  <link rel="apple-touch-icon" href="icon/apple-touch-icon-astral.png">
+  <link rel="icon" type="image/png" href="icon/web-app-manifest-192x192-astral.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <title>アストラルレリックチェッカー</title>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
+  <style>
+
+    /* 1. 基本の指定（Windows, Android, Mac用） */
+    .hamburger::before {
+      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+    }
+    
+    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+      }
+    }
+
+    /* --- 全体 --- */
+    body {
+      font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+
+    .group-title {
+      font-size: 26px;
+      margin-top: 40px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      row-gap: 10px;
+      column-gap: 20px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    /* 文字部分のみをクリック領域にするためのクラス */
+    .clickable-title {
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.2s;
+      display: inline; /* 文字幅のみに制限 */
+    }
+
+    .stars {
+      display: inline-block;
+      margin-left: 5px;
+    }
+
+    .star {
+      font-size: 36px;
+      margin: 0 2px;
+      cursor: pointer;
+      color: darkgray;
+      user-select: none;
+    }
+
+    .star.on {
+      color: gold;
+    }
+
+    .line {
+      margin-bottom: 8px;
+    }
+
+    input[type="file"] {
+      font-size: 18px;
+    }
+
+    button {
+      padding: 5px 10px;
+      font-size: 18px;
+    }
+
+    .controls {
+      margin-bottom: -15px;
+    }
+
+    .M01 { color: fuchsia; }
+    .M02 { color: hotpink; }
+    .M03 { color: gray; }
+    .M04 { color: royalblue; }
+    .M05 { color: cyan; }
+
+    .S01 { color: darkorchid; }
+    .S02 { color: dodgerblue; }
+    .S03 { color: dodgerblue; }
+    .S04 { color: dodgerblue; }
+    .S05 { color: lime; }
+    .S06 { color: lime; }
+    .S07 { color: lime; }
+    .S08 { color: yellow; }
+    .S09 { color: yellow; }
+    .S10 { color: yellow; }
+    .S11 { color: orangered; }
+
+    .斬 { color: lightgray; }
+    .打 { color: lightgray; }
+    .突 { color: lightgray; }
+    .熱 { color: orangered; }
+    .冷 { color: dodgerblue; }
+    .雷 { color: yellow; }
+    .陽 { color: darkorange; }
+    .陰 { color: darkorchid; }
+    .詩 { color: darkgray; }
+
+    .S01, .S02, .S03, .S04, .S05, .S06, .S07, .S08, .S09, .S10, .S11 {
+      font-size: 30px;
+    }
+
+    .斬, .打, .突, .熱, .冷, .雷, .陽, .陰, .詩 {
+      font-size: 30px;
+    }
+
+    .line {
+      display: flex;
+      align-items: center;
+    }
+
+    .line .name {
+      width: 90px;
+      text-align: right;
+      margin-right: 10px;
+    }
+
+    a:link { color: #1D9BF0; text-decoration: underline; }
+    a:visited { color: #7755FF; text-decoration: underline; }
+    a:hover { color: #0CFF57; }
+    a:active { color: #FF0000; text-decoration: underline; }
+
+    .bottom {
+      font-size: 16pt;
+      margin-top: 20px;
+    }
+
+    footer {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      font-size: 16pt;
+      margin-top: 20px;
+    }
+
+    .scroll-buttons {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .scroll-button {
+      background-color: #444;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .scroll-button:hover { background-color: #666; }
+
+    .zoom-buttons, .column-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
+      flex-shrink: 0;
+      margin-right: -5px;
+    }
+    
+    .zoom-buttons { gap: 20px; }
+
+    .zoom-buttons button, .column-button {
+      color: #000;
+      background-color: #eee;
+      padding: 6px 12px;
+      font-size: 14px;
+      height: 32px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: none;
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
+    .zoom-buttons button:hover, .column-button:hover { background-color: #ccc; }
+    .zoom-controls { display: none; }
+    .zoom-controls.show { display: flex; gap: 8px; }
+
+    .column-button {
+      background-color: #444;
+      color: #fff;
+    }
+    .column-button:hover { background-color: #666; }
+    .column-button.active { background-color: #2A99E6; }
+
+    #statusContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #statusContainer.two-columns {
+      flex-direction: row;
+      flex-wrap: wrap;
+      column-gap: 60px;
+      row-gap: 20px;
+      align-items: flex-start;
+    }
+
+    .group-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hamburger {
+      cursor: pointer;
+      margin-right: 8px;
+      user-select: none;
+      color: #eee;
+      display: inline-block;
+    }
+    .hamburger:hover { color: #2A99E6; }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 320px;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1001;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .side-menu.open { left: 0; }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open { opacity: 1; visibility: visible; }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover { color: #ff6b6b; }
+
+    .menu-title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: limegreen;
+    }
+
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: inline-block;
+      padding: 12px 0;
+      color: #eee;
+      text-decoration: none;
+    }
+    .menu-item:hover { color: #0CFF57; }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-spacer { height: 30px; }
+
+  </style>
+
+</head>
+<body>
+
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">チェッカー関連リンク</div>
+    <a href="checker-astral.html" class="menu-item">アストラルレリックチェッカー</a><br>
+    <a href="checker-chaos.html" class="menu-item">カオスレリックチェッカー</a><br>
+    <a href="checker-relic.html" class="menu-item">ファンタズムレリックチェッカー</a><br>
+    <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a><br>
+    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a><br>
+    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a><br>
+    <div class="menu-spacer"></div>
+    <a href="report-astral.html" class="menu-item">アストラルレリック報告用</a><br>
+    <a href="report-chaos.html" class="menu-item">カオスレリック報告用</a><br>
+    <a href="report-relic.html" class="menu-item">ファンタズムレリック報告用</a><br>
+    <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a><br>
+    <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a><br>
+    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a><br>
+    <div class="menu-spacer"></div>
+    <div id="variable-links-4gen">
+      <a href="#緋Anchor" class="menu-item" onclick="closeMenu()">◆緋のピアス</a><br>
+      <a href="#憲法Anchor" class="menu-item" onclick="closeMenu()">◆憲法のピアス</a><br>
+      <a href="#濡羽Anchor" class="menu-item" onclick="closeMenu()">◆濡羽のピアス</a><br>
+      <a href="#瑠璃紺Anchor" class="menu-item" onclick="closeMenu()">◆瑠璃紺のピアス</a><br>
+      <div class="menu-spacer"></div>
+    </div>
+    <a href="index.html" class="menu-item">インデックスページ</a><br>
+  </div>
+
+  <div class="header">
+    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger">アストラルレリックチェッカー</span></h1>
+  </div>
+
+  <div class="controls" style="display: flex; align-items: center; gap: 15px;">
+    <input type="file" id="fileInput" accept=".json">
+  </div>
+
+  <div id="statusContainer"></div>
+
+  <div class="bottom">
+    <br>
+    <a href="report-astral.html">報告用ページへ</a>　<a href="checker-astral-ss2.html">SS2チェッカーへ</a>
+    <br>
+  </div>
+
+  <footer>
+    ※使用は自己責任にて。<br>
+    ※画面左端から右にフリックでサイドメニューが開きます。<br>
+    ※見出しをダブルクリックで<span style="color: gold;">★</span>→<span style="color: darkgray;">★</span>→☆→・に並び替える事ができます。大分類ですべて、小分類で項目ごと。<br>
+    <br>
+    <a href="index.html">INDEXへ戻る</a><br>
+  </footer>
+
+  <script>
+    const sideMenuVisibilityConfig = {
+      'variable-links-4gen': ['四元像ピアスチェッカー']
+    };
+
+    function toggleMenu() {
+        const currentPageTitle = document.title;
+        for (const elementId in sideMenuVisibilityConfig) {
+          const targetElement = document.getElementById(elementId);
+          if (targetElement) {
+            const visiblePages = sideMenuVisibilityConfig[elementId];
+            if (visiblePages.includes(currentPageTitle)) {
+              targetElement.style.display = 'block'; 
+            } else {
+              targetElement.style.display = 'none';  
+            }
+          }
+        }
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        }
+    }
+
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+    }
+
+    let startX = 0, startY = 0, endX = 0, endY = 0;
+    document.addEventListener('touchstart', function (e) {
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, false);
+    document.addEventListener('touchend', function (e) {
+      endX = e.changedTouches[0].screenX;
+      endY = e.changedTouches[0].screenY;
+      handleGesture(); 
+    }, false);
+
+    function handleGesture() {
+      const diffX = endX - startX; 
+      const diffY = endY - startY; 
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 50 && startX < 30) {
+          toggleMenu();
+        } else if (diffX < -50) {
+          closeMenu();
+        }
+      }
+    }
+
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    let pageSettings = { 'checker-astral_zoom': 1.0, 'checker-astral_column': 1 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'checker-astral_zoom';
+        let currentZoom = pageSettings[zoomKey];
+        currentZoom += delta;
+        currentZoom = Math.round(currentZoom * 10) / 10;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        document.body.style.zoom = currentZoom;
+        pageSettings[zoomKey] = currentZoom;
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+
+    // ★修正箇所：引数 index を追加し、固有のIDを操作するように変更
+    function toggleZoomControls(index) {
+      const zoomControls = document.getElementById('zoomControls-' + index);
+      const zoomToggle = document.getElementById('zoomToggle-' + index);
+      
+      if (zoomControls.classList.contains('show')) {
+        zoomControls.classList.remove('show');
+        zoomToggle.style.display = 'block';
+      } else {
+        zoomControls.classList.add('show');
+        zoomToggle.style.display = 'none';
+      }
+    }
+
+    const ADMIN_KEY = 'checker-astral_mode';
+    const DATA_KEY = 'checker-astral_admin_data';
+    let isAdminMode = false;
+
+    function checkMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const modeParam = urlParams.get('mode');
+        if (modeParam === 'secret_admin_on') {
+            localStorage.setItem(ADMIN_KEY, 'admin');
+        } else if (modeParam === 'secret_debug_on') {
+            localStorage.setItem(ADMIN_KEY, 'debug');
+        }
+        const savedMode = localStorage.getItem(ADMIN_KEY);
+        isAdminMode = (savedMode === 'admin');
+    }
+
+    // ▼▼ SS2の見えないデータを壊さないためのマージ用変数 ▼▼
+    let globalFullData = {};
+
+    function getCheckerData() {
+        // ベースを最新の読み込みデータ(SS2の全データ)にする
+        const rawResult = { ...globalFullData };
+        
+        const allStars = document.querySelectorAll('.stars');
+        allStars.forEach(stars => {
+            const key = stars.dataset.key;
+            const starElems = stars.querySelectorAll('.star');
+            let starString = '';
+            starElems.forEach(s => {
+                if (s.classList.contains('on')) starString += '★'; 
+                else if (s.textContent === '★') starString += '◆'; 
+                else if (s.textContent === '☆') starString += '☆'; 
+                else starString += '・'; 
+            });
+            
+            // 無印の画面にある項目を上書きする
+            rawResult[key] = starString; 
+
+            // SS2のコンボ項目(斬_斬など)も裏で同期させる
+            const attrName = key.replace('アストラルレリック_', '');
+            if (attrName !== '詩人') {
+                rawResult[`${attrName}_${attrName}`] = starString; 
+            }
+        });
+        
+        // ▼▼ 追加：エクスポートやクラウド保存用に、キーの並び順をSS2と同じ形に美しく整える ▼▼
+        const orderedResult = {};
+        const attrs = ["斬", "打", "突", "熱", "冷", "雷", "陽", "陰", "詩人"];
+        const comboAttrs = ["斬", "打", "突", "熱", "冷", "雷", "陽", "陰"];
+
+        // 1. 大分類（アストラルレリック）を順番に格納
+        attrs.forEach(a => {
+            const k = `アストラルレリック_${a}`;
+            if (rawResult[k]) orderedResult[k] = rawResult[k];
+        });
+
+        // 2. SS2の組み合わせ（コンボ）を規則正しく格納
+        comboAttrs.forEach(p => {
+            comboAttrs.forEach(c => {
+                const k = `${p}_${c}`;
+                if (rawResult[k]) orderedResult[k] = rawResult[k];
+            });
+        });
+
+        // 3. 万が一上記以外のデータが含まれていれば末尾に追加（安全対策）
+        Object.keys(rawResult).forEach(k => {
+            if (orderedResult[k] === undefined) orderedResult[k] = rawResult[k];
+        });
+
+        globalFullData = { ...orderedResult }; // 自分自身も整列された状態で更新しておく
+        return orderedResult;
+    }
+
+    // ▼▼ 修正：保存ロジック（クラウドを優先し、ローカルバックアップと切り分ける） ▼▼
+    function saveAdminData() {
+        // 星の状態が変わったら、クラウド保存のタイマーを発火させる
+        if (window.triggerSyncSave) window.triggerSyncSave();
+
+        // ログイン中はクラウドに任せるため、ローカル(ブラウザ)への保存はしない
+        if (window.syncManager && window.syncManager.isLoggedIn) {
+            return; 
+        }
+
+        // アドミンモードでない時はローカル保存しない
+        if (!isAdminMode) return; 
+        
+        localStorage.setItem(DATA_KEY, JSON.stringify(getCheckerData()));
+    }
+
+    function loadAdminData() {
+        if (!isAdminMode) return;
+        try {
+            const savedData = localStorage.getItem(DATA_KEY);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                applyData(data);
+            }
+        } catch (e) {
+            console.error('Data load error', e);
+        }
+    }
+
+    function applyData(data) {
+        if (!data) return;
+        // ▼▼ 追加：読み込んだ全データを裏側に保存しておく ▼▼
+        globalFullData = JSON.parse(JSON.stringify(data));
+
+        const isOldFile = Object.keys(data).some(key => key.startsWith('旧アストラルレリック_'));
+
+        for (const key in data) {
+            if (key === "_version") continue; 
+
+            let targetKey = key;
+            if (isOldFile && key.startsWith('旧アストラルレリック_')) {
+                targetKey = key.replace('旧アストラルレリック_', 'アストラルレリック_');
+            }
+
+            const stars = document.querySelector(`.stars[data-key="${targetKey}"]`);
+            if (stars) {
+                const starElems = stars.querySelectorAll('.star');
+                for (let i = 0; i < 5; i++) {
+                    let val = data[key][i] || '・';
+                    
+                    if (isOldFile && val === '☆') {
+                        val = '・';
+                    }
+
+                    if (val === '★') {
+                        starElems[i].textContent = '★';
+                        starElems[i].classList.add('on');
+                    } else if (val === '◆') {
+                        starElems[i].textContent = '★';
+                        starElems[i].classList.remove('on');
+                    } else if (val === '☆') {
+                        starElems[i].textContent = '☆';
+                        starElems[i].classList.remove('on');
+                    } else {
+                        starElems[i].textContent = '・';
+                        starElems[i].classList.remove('on');
+                    }
+                }
+            }
+        }
+    }
+
+    function sortStars(starsContainer) {
+        const starElems = Array.from(starsContainer.querySelectorAll('.star'));
+        const states = starElems.map(s => {
+            if (s.classList.contains('on')) return { text: '★', isOn: true, score: 4 };
+            if (s.textContent === '★') return { text: '★', isOn: false, score: 3 };
+            if (s.textContent === '☆') return { text: '☆', isOn: false, score: 2 };
+            return { text: '・', isOn: false, score: 1 };
+        });
+
+        states.sort((a, b) => b.score - a.score);
+
+        starElems.forEach((s, i) => {
+            s.textContent = states[i].text;
+            if (states[i].isOn) {
+                s.classList.add('on');
+            } else {
+                s.classList.remove('on');
+            }
+        });
+    }
+
+    function applyColumns(cols) {
+        const container = document.getElementById('statusContainer');
+        const oneBtn = document.getElementById('oneColumnBtn');
+        const twoBtn = document.getElementById('twoColumnsBtn');
+        
+        if (!container) return;
+
+        if (cols === 2) {
+            container.classList.add('two-columns');
+            if(oneBtn) oneBtn.classList.remove('active');
+            if(twoBtn) twoBtn.classList.add('active');
+        } else {
+            container.classList.remove('two-columns');
+            if(oneBtn) oneBtn.classList.add('active');
+            if(twoBtn) twoBtn.classList.remove('active');
+        }
+        pageSettings['checker-astral_column'] = cols;
+        savePageSettings();
+    }
+
+    const groups = [
+      { title: "アストラルレリック", color: "M05" },
+    ];
+
+    const attributes = [
+      { name: "斬", class: "斬" },
+      { name: "打", class: "打" },
+      { name: "突", class: "突" },
+      { name: "熱", class: "熱" },
+      { name: "冷", class: "冷" },
+      { name: "雷", class: "雷" },
+      { name: "陽", class: "陽" },
+      { name: "陰", class: "陰" },
+      { name: "詩人", class: "詩" }
+    ];
+
+    function init() {
+      const container = document.getElementById('statusContainer');
+      container.innerHTML = '';
+
+      const h1 = document.querySelector('h1');
+      if (h1) {
+          h1.innerHTML = h1.innerHTML.replace(/ <span.*?>\[Admin Mode:.*?<\/span>/g, '');
+          
+          if (isAdminMode) {
+              // 前回開いていた時のログイン状態を呼び出す
+              const wasLoggedIn = localStorage.getItem('Renma_LastLoginState') === 'true';
+              // ログインしていた記憶があれば最初から隠し、未ログインなら最初から出しておく
+              const initialDisplay = wasLoggedIn ? 'none' : 'inline';
+              
+              h1.innerHTML += ` <span id="admin-indicator" style="display:${initialDisplay}; color:red;">[Admin Mode: Auto-Save ON]</span>`;
+          }
+      }
+
+      groups.forEach((group, index) => {
+        const groupBlock = document.createElement('div');
+        groupBlock.className = 'group-block';
+
+        const groupTitle = document.createElement('div');
+        groupTitle.className = `group-title ${group.color}`;
+        groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
+
+        const titleWrapper = document.createElement('span');
+        
+        const titleText = document.createElement('span');
+        titleText.textContent = group.title;
+        titleText.className = 'clickable-title';
+        
+        titleText.addEventListener('dblclick', () => {
+            const groupStarsContainers = groupBlock.querySelectorAll(`.stars[data-group="${group.title}"]`);
+            groupStarsContainers.forEach(stars => sortStars(stars));
+            saveAdminData();
+        });
+
+        titleWrapper.appendChild(titleText);
+
+        const zoomButtons = document.createElement('div');
+        zoomButtons.className = 'zoom-buttons';
+        zoomButtons.innerHTML = `
+          <button id="zoomToggle-${index}" onclick="toggleZoomControls(${index})">±</button>
+          <div id="zoomControls-${index}" class="zoom-controls">
+            <button onclick="changeZoom(-0.1)">－</button>
+            <button onclick="changeZoom(0.1)">＋</button>
+          </div>
+        `;
+
+        groupTitle.appendChild(titleWrapper);
+        groupTitle.appendChild(zoomButtons);
+
+        if (group.title === "団結の証or詩人刻印のみ") {
+            const columnButtons = document.createElement('div');
+            columnButtons.className = 'column-buttons';
+            columnButtons.innerHTML = `
+              <button class="column-button active" id="oneColumnBtn" onclick="applyColumns(1)">１列</button>
+              <button class="column-button" id="twoColumnsBtn" onclick="applyColumns(2)">２列</button>
+            `;
+            groupTitle.appendChild(columnButtons);
+        }
+
+        groupBlock.appendChild(groupTitle);
+
+        attributes.forEach(attr => {
+          const isHiddenPoet = (group.title === "団結と詩人の混同" && attr.name === "詩人");
+
+          const line = document.createElement('div');
+          line.className = 'line';
+          if (isHiddenPoet) {
+             line.style.pointerEvents = 'none'; 
+          }
+
+          const nameContainer = document.createElement('span');
+          nameContainer.className = `${attr.class} name`;
+          
+          const nameText = document.createElement('span');
+          nameText.textContent = attr.name;
+
+          if (!isHiddenPoet) {
+              nameText.classList.add('clickable-title');
+              nameText.addEventListener('dblclick', () => {
+                  sortStars(line.querySelector('.stars'));
+                  saveAdminData();
+              });
+          } else {
+              nameText.style.color = '#2A2A2A'; 
+              nameText.style.userSelect = 'none';
+          }
+          
+          nameContainer.appendChild(nameText);
+
+          const stars = document.createElement('span');
+          stars.className = 'stars';
+          stars.dataset.key = `${group.title}_${attr.name}`;
+          stars.dataset.group = group.title;
+
+          for (let i = 0; i < 5; i++) {
+            const star = document.createElement('span');
+            star.textContent = '・'; 
+            star.className = 'star';
+            star.dataset.index = i;
+            
+            if (isHiddenPoet) {
+                star.style.color = '#2A2A2A'; 
+            } else {
+                star.addEventListener('click', function () {
+                  if (this.textContent === '・') {
+                    this.textContent = '☆';
+                    this.classList.remove('on');
+                  } else if (this.textContent === '☆') {
+                    this.textContent = '★';
+                    this.classList.remove('on');
+                  } else if (this.textContent === '★' && !this.classList.contains('on')) {
+                    this.classList.add('on');
+                  } else {
+                    this.textContent = '・';
+                    this.classList.remove('on');
+                  }
+                  saveAdminData();
+                });
+            }
+            stars.appendChild(star);
+          }
+
+          line.appendChild(nameContainer);
+          line.appendChild(stars);
+          groupBlock.appendChild(line);
+        });
+
+        const exportBtn = document.createElement('button');
+        exportBtn.textContent = '状態をエクスポート';
+        exportBtn.style.marginTop = '15px';
+        exportBtn.style.alignSelf = 'flex-start'; 
+        exportBtn.addEventListener('click', exportState);
+        groupBlock.appendChild(exportBtn);
+
+        container.appendChild(groupBlock);
+      });
+
+      const savedCols = pageSettings['checker-astral_column'] || 1;
+      applyColumns(savedCols);
+    }
+
+    function exportState() {
+      const result = getCheckerData();
+      const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "アストラルレリック獲得状況.json";
+      link.click();
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        try {
+          const data = JSON.parse(event.target.result);
+          applyData(data);
+          saveAdminData();
+        } catch (error) {
+          alert('ファイルの内容が不正です。');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        checkMode(); 
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['checker-astral_zoom'];
+        
+        init(); 
+
+        // ▼▼ 追加：同期マネージャーの起動 ▼▼
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'checker-astral.json', 
+                firestoreDoc: 'checker-astral',        
+                onLoad: (loadedData) => {
+                    if (loadedData) {
+                        applyData(loadedData); // クラウドからロード成功
+                    } else {
+                        loadAdminData(); // ロード失敗または未ログイン時はローカルを読む
+                    }
+                },
+                onSave: () => {
+                    return getCheckerData(); // 保存する星データを渡す
+                }
+            });
+        } else {
+            loadAdminData(); 
+        }
+
+        // ▼▼ 修正：監視機能（状態を記憶する処理を追加） ▼▼
+        if (isAdminMode) {
+            setInterval(() => {
+                if (window.syncManager) {
+                    const isLoggedIn = window.syncManager.isLoggedIn;
+                    // 今のログイン状態を、次回リロード時のために常に記憶しておく
+                    localStorage.setItem('Renma_LastLoginState', isLoggedIn ? 'true' : 'false');
+                    
+                    const indicator = document.getElementById('admin-indicator');
+                    if (indicator && window.syncManager.syncStatus === 'ready') {
+                        indicator.style.display = isLoggedIn ? 'none' : 'inline';
+                    }
+                }
+            }, 500);
+        }
+    });
+  </script>
+
+</body>
+</html>

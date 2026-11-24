@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="icon/favicon-stella.ico">
+  <link rel="apple-touch-icon" href="icon/apple-touch-icon-stella.png">
+  <link rel="icon" type="image/png" href="icon/web-app-manifest-192x192-stella.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <title>ステライヤリングチェッカー</title>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
+  <style>
+
+    /* 1. 基本の指定（Windows, Android, Mac用） */
+    .hamburger::before {
+      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+    }
+    
+    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+      }
+    }
+
+    /* --- 全体 --- */
+    body {
+      font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+
+    .group-title {
+      font-size: 26px;
+      margin-top: 40px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      row-gap: 10px;
+      column-gap: 20px;
+      flex-wrap: wrap;
+      min-width: 0; /* flex-shrinkを有効にするため */
+    }
+
+    .stars {
+      display: inline-block;
+      margin-left: 5px;
+    }
+
+    .star {
+      font-size: 36px;
+      margin: 0 2px;
+      cursor: pointer;
+      color: darkgray;
+      user-select: none;
+    }
+
+    .star.on {
+      color: gold;
+    }
+
+    .line {
+      margin-bottom: 8px;
+    }
+
+    input[type="file"] {
+      font-size: 18px;
+    }
+
+    button {
+      padding: 5px 10px;
+      font-size: 18px;
+    }
+
+    .controls {
+      margin-bottom: -15px;
+    }
+
+    /* 大分類ごとの色指定 */
+    .M01 { color: dodgerblue; }
+
+    /* 小分類ごとの色指定 */
+    .S01 { color: darkorange; }
+    .S02 { color: darkorange; }
+    .S03 { color: darkorange; }
+    .S04 { color: yellow; }
+    .S05 { color: yellow; }
+    .S06 { color: yellow; }
+    .S07 { color: yellow; }
+    .S08 { color: lime; }
+    .S09 { color: lime; }
+    .S10 { color: lime; }
+    .S11 { color: lime; }
+    .S12 { color: lime; }
+    .S13 { color: deepskyblue; }
+    .S14 { color: deepskyblue; }
+    .S15 { color: deepskyblue; }
+    .S16 { color: deepskyblue; }
+    .S17 { color: orangered; }
+    .S18 { color: orangered; }
+    .S19 { color: orangered; }
+    .S20 { color: darkgray; }
+    .S21 { color: darkgray; }
+    .S22 { color: darkgray; }
+    .S23 { color: darkgray; }
+    .S24 { color: dodgerblue; }
+    .S25 { color: dodgerblue; }
+    .S26 { color: darkorchid; }
+
+    .S01, 
+    .S02, 
+    .S03, 
+    .S04, 
+    .S05, 
+    .S06, 
+    .S07, 
+    .S08, 
+    .S09,
+    .S10,
+    .S11,
+    .S12,
+    .S13,
+    .S14,
+    .S15,
+    .S16,
+    .S17,
+    .S18,
+    .S19,
+    .S20,
+    .S21,
+    .S22,
+    .S23,
+    .S24,
+    .S25,
+    .S26 {
+      font-size: 30px;
+    }
+
+    .line {
+      display: flex;
+      align-items: center;
+    }
+
+    .line .name {
+      width: 100px;
+      text-align: right;
+      margin-right: 10px;
+    }
+
+    /* リンクのスタイル */
+    a:link {
+      color: #1D9BF0;
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #7755FF;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: #0CFF57;
+    }
+
+    a:active {
+      color: #FF0000;
+      text-decoration: underline;
+    }
+
+    .bottom {
+      font-size: 16pt;
+      margin-top: 20px;
+    }
+
+    /* フッターのスタイル */
+    footer {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      font-size: 16pt;
+      margin-top: 20px;
+    }
+
+    /* 列切り替えボタンのスタイル */
+    .column-buttons {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+      margin-right: -5px;
+    }
+
+    .column-button {
+      background-color: #444;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .column-button:hover {
+      background-color: #666;
+    }
+
+    .column-button.active {
+      background-color: #2A99E6;
+    }
+
+    /* ２列表示のスタイル */
+    .attributes-container {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .attributes-container.two-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      row-gap: 0px;
+      column-gap: 0px;
+      max-width: 650px;
+      grid-auto-flow: column;
+      grid-template-rows: repeat(13, auto);
+    }
+
+    .attributes-container.two-columns .line:nth-child(n+14) {
+      margin-left: 20px;
+    }
+
+    .attributes-container.two-columns .line {
+      margin-bottom: 8px;
+    }
+
+    .column-button {
+      padding: 6px 12px;
+      font-size: 14px;
+    }
+
+    /* 拡大縮小ボタンのスタイル */
+    .zoom-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      flex-shrink: 0;
+      margin-right: -5px;
+    }
+
+    .zoom-buttons button {
+      color: #000;
+      background-color: #eee;
+      padding: 6px 12px;
+      font-size: 14px;
+      height: 32px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: none;
+      box-sizing: border-box;
+    }
+
+    .zoom-buttons button:hover {
+      background-color: #ccc;
+    }
+
+    .zoom-controls {
+      display: none;
+    }
+
+    .zoom-controls.show {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      cursor: pointer;
+      margin-right: 8px;
+      user-select: none;
+      color: #eee;
+      display: inline-block;
+    }
+    
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 320px;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1001;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: limegreen;
+    }
+
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: inline-block;
+      padding: 12px 0;
+      color: #eee;
+      text-decoration: none;
+    }
+
+    .menu-item:hover {
+      color: #0CFF57;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
+  </style>
+
+</head>
+<body>
+
+  <!-- サイドメニューオーバーレイ -->
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <!-- サイドメニュー -->
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">チェッカー関連リンク</div>
+    <a href="checker-astral.html" class="menu-item">アストラルレリックチェッカー</a><br>
+    <a href="checker-chaos.html" class="menu-item">カオスレリックチェッカー</a><br>
+    <a href="checker-relic.html" class="menu-item">ファンタズムレリックチェッカー</a><br>
+    <a href="checker-4gen.html" class="menu-item">四元像ピアスチェッカー</a><br>
+    <a href="checker-stella.html" class="menu-item">ステライヤリングチェッカー</a><br>
+    <a href="checker-niji.html" class="menu-item">虹瑠璃の腕輪チェッカー</a><br>
+    <div class="menu-spacer"></div>
+    <a href="report-astral.html" class="menu-item">アストラルレリック報告用</a><br>
+    <a href="report-chaos.html" class="menu-item">カオスレリック報告用</a><br>
+    <a href="report-relic.html" class="menu-item">ファンタズムレリック報告用</a><br>
+    <a href="report-4gen.html" class="menu-item">四元像ピアス報告用</a><br>
+    <a href="report-stella.html" class="menu-item">ステライヤリング報告用</a><br>
+    <a href="report-niji.html" class="menu-item">虹瑠璃の腕輪報告用</a><br>
+    <div class="menu-spacer"></div>
+    <div id="variable-links-4gen">
+      <a href="#緋Anchor" class="menu-item" onclick="closeMenu()">◆緋のピアス</a><br>
+      <a href="#憲法Anchor" class="menu-item" onclick="closeMenu()">◆憲法のピアス</a><br>
+      <a href="#濡羽Anchor" class="menu-item" onclick="closeMenu()">◆濡羽のピアス</a><br>
+      <a href="#瑠璃紺Anchor" class="menu-item" onclick="closeMenu()">◆瑠璃紺のピアス</a><br>
+      <div class="menu-spacer"></div>
+    </div>
+    <a href="index.html" class="menu-item">インデックスページ</a><br>
+  </div>
+
+  <!-- ハンバーガーメニューとヘッダー -->
+  <div class="header">
+    <h1><span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger">ステライヤリングチェッカー</span></h1>
+  </div>
+
+  <div class="controls">
+    <input type="file" id="fileInput" accept=".json"><br>
+  </div>
+
+  <div id="statusContainer"></div>
+
+  <div class="bottom">
+    <br>
+    <a href="report-stella.html">報告用ページへ</a>　<a href="checker-stella-ss2.html">SS2チェッカーへ</a>
+    <br>
+  </div>
+
+  <footer>
+    ※使用は自己責任にて。<br>
+    ※画面左端から右にフリックでサイドメニューが開きます。<br>
+    <br>
+    <a href="index.html">INDEXへ戻る</a><br>
+  </footer>
+
+  <script>
+    // ▼▼ 追加：消えてしまっていたデータ定義を復活 ▼▼
+    const groups = [
+      { title: "ステライヤリング", color: "M01" }
+    ];
+
+    const attributes = [
+      { name: "人間", class: "S01" }, { name: "男性", class: "S02" }, { name: "女性", class: "S03" },
+      { name: "巨人", class: "S04" }, { name: "メカ", class: "S05" }, { name: "岩石", class: "S06" },
+      { name: "獣人", class: "S07" }, { name: "獣", class: "S08" }, { name: "竜", class: "S09" },
+      { name: "爬虫類", class: "S10" }, { name: "植物", class: "S11" }, { name: "虫", class: "S12" },
+      { name: "水棲", class: "S13" }, { name: "魚", class: "S14" }, { name: "両棲類", class: "S15" },
+      { name: "カエル", class: "S16" }, { name: "不死", class: "S17" }, { name: "骨", class: "S18" },
+      { name: "悪魔", class: "S19" }, { name: "火精", class: "S20" }, { name: "水精", class: "S21" },
+      { name: "風精", class: "S22" }, { name: "土精", class: "S23" }, { name: "鳥", class: "S24" },
+      { name: "浮遊", class: "S25" }, { name: "妖魔", class: "S26" }
+    ];
+    // ▲▲ 追加ここまで ▲▲
+
+    // サイドメニューの特定項目の表示設定
+    // キー：表示/非表示を切り替えたい要素のID
+    // 値：その要素を表示したいページの<title>の配列
+    const sideMenuVisibilityConfig = {
+      'variable-links-4gen': ['四元像ピアスチェッカー']
+    };
+
+    // ハンバーガーメニューの関数
+    function toggleMenu() {
+        // 現在のページのタイトルを取得
+        const currentPageTitle = document.title;
+
+        // 設定に基づいてメニュー項目の表示/非表示を切り替え
+        for (const elementId in sideMenuVisibilityConfig) {
+          const targetElement = document.getElementById(elementId);
+          if (targetElement) {
+            const visiblePages = sideMenuVisibilityConfig[elementId];
+            // 表示対象ページの配列に現在のページタイトルが含まれているかチェック
+            if (visiblePages.includes(currentPageTitle)) {
+              targetElement.style.display = 'block'; // 表示
+            } else {
+              targetElement.style.display = 'none';  // 非表示
+            }
+          }
+        }
+
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        }
+    }
+
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const menuClose = document.getElementById('menuClose');
+
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+        menuClose.style.color = '#eee';
+    }
+
+    // フリックでメニュー開閉（スクロール誤作動対策版）
+    let startX = 0, startY = 0;
+    let endX = 0, endY = 0;
+
+    document.addEventListener('touchstart', function (e) {
+      // タッチ開始時のX座標とY座標を記録
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, false);
+
+    document.addEventListener('touchend', function (e) {
+      // タッチ終了時のX座標とY座標を記録
+      endX = e.changedTouches[0].screenX;
+      endY = e.changedTouches[0].screenY;
+      handleGesture(); // ジェスチャーを判定する関数を呼び出し
+    }, false);
+
+    function handleGesture() {
+      const diffX = endX - startX; // 水平方向の移動量
+      const diffY = endY - startY; // 垂直方向の移動量
+
+      // 条件1: 水平方向の移動量が、垂直方向の移動量よりも大きい場合のみ処理（スワイプかスクロールかを判定）
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+
+        // 条件2-1: 右へのスワイプ（50px以上移動し、かつ画面の左端30px以内から開始）
+        if (diffX > 50 && startX < 30) {
+          // 右にフリックしてメニューを開く
+          toggleMenu();
+        } 
+        // 条件2-2: 左へのスワイプ（50px以上移動）
+        else if (diffX < -50) {
+          // 左にフリックしてメニューを閉じる
+          closeMenu();
+        }
+      }
+      // 垂直方向の移動量が大きい場合は、何もしない（ブラウザの標準スクロールに任せる）
+    }
+
+    // 列切り替え機能
+    function setColumns(columns) {
+      const container = document.querySelector('.attributes-container');
+      const oneBtn = document.getElementById('oneColumnBtn');
+      const twoBtn = document.getElementById('twoColumnsBtn');
+      
+      // コンテナがまだ生成されていない場合のガード
+      if (!container) return;
+
+      if (columns === 1) {
+        container.classList.remove('two-columns');
+        if(oneBtn) oneBtn.classList.add('active');
+        if(twoBtn) twoBtn.classList.remove('active');
+      } else {
+        container.classList.add('two-columns');
+        if(oneBtn) oneBtn.classList.remove('active');
+        if(twoBtn) twoBtn.classList.add('active');
+      }
+      pageSettings['checker-stella_column'] = columns;
+      savePageSettings();
+    }
+
+    // 拡大縮小の関数
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    
+    let pageSettings = { 'checker-stella_zoom': 1.0, 'checker-stella_column': 1 };
+    
+    function changeZoom(delta) {
+        const zoomKey = 'checker-stella_zoom';
+        let currentZoom = pageSettings[zoomKey];
+    
+        currentZoom += delta;
+
+        currentZoom = Math.round(currentZoom * 10) / 10;
+
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        
+        // 画面の表示に反映
+        document.body.style.zoom = currentZoom;
+        
+        // 設定オブジェクトの値を更新
+        pageSettings[zoomKey] = currentZoom;
+        
+        // localStorageに保存
+        savePageSettings();
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                // 保存済みの設定があれば、デフォルト値と結合して上書きします。
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) {
+            console.error("ページ設定の読み込みに失敗しました:", error);
+        }
+    }
+    
+    function savePageSettings() {
+        try {
+            localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings));
+        } catch (error) {
+            console.error("ページ設定の保存に失敗しました:", error);
+        }
+    }
+    
+    let zoomControlsVisible = false;
+
+    function toggleZoomControls() {
+      const zoomControls = document.getElementById('zoomControls');
+      const zoomToggle = document.getElementById('zoomToggle');
+      
+      zoomControlsVisible = !zoomControlsVisible;
+      
+      if (zoomControlsVisible) {
+        zoomControls.classList.add('show');
+        zoomToggle.style.display = 'none';
+      } else {
+        zoomControls.classList.remove('show');
+        zoomToggle.style.display = 'block';
+      }
+    }
+
+    // --- 管理者モード・自動保存機能 ---
+    const ADMIN_KEY = 'checker-stella_mode';
+    const DATA_KEY = 'checker-stella_admin_data';
+    let isAdminMode = false;
+
+    function checkMode() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('mode') === 'secret_admin_on') localStorage.setItem(ADMIN_KEY, 'admin');
+        else if (urlParams.get('mode') === 'secret_debug_on') localStorage.setItem(ADMIN_KEY, 'debug');
+        isAdminMode = (localStorage.getItem(ADMIN_KEY) === 'admin');
+    }
+
+    // ▼▼ 追加：SS2のデータを壊さないためのマージ用変数 ▼▼
+    let globalFullData = { version: 4, inventory: {}, reservations: {} };
+    attributes.forEach(a => globalFullData.inventory[a.name] = 0);
+
+    function getCheckerData() {
+        const result = JSON.parse(JSON.stringify(globalFullData));
+        const allStars = document.querySelectorAll('.stars');
+        allStars.forEach(stars => {
+            const key = stars.dataset.key;
+            const raceName = key.replace('ステライヤリング_', '');
+            const starElems = stars.querySelectorAll('.star');
+            let count = 0;
+            let starString = '';
+            starElems.forEach(s => {
+                if (s.classList.contains('on')) count++;
+                starString += s.textContent;
+            });
+            // 無印の画面にある項目を、SS2互換の inventory に上書きする
+            if (result.inventory.hasOwnProperty(raceName)) {
+                result.inventory[raceName] = count;
+            }
+            // 報告用などのために無印のプレーンなキーも保持する
+            result[key] = starString;
+        });
+        globalFullData = JSON.parse(JSON.stringify(result));
+        return result;
+    }
+
+    function saveAdminData() {
+        if (window.triggerSyncSave) window.triggerSyncSave();
+        if (window.syncManager && window.syncManager.isLoggedIn) return; 
+        if (!isAdminMode) return; 
+        localStorage.setItem(DATA_KEY, JSON.stringify(getCheckerData()));
+    }
+
+    function loadAdminData() {
+        if (!isAdminMode) return;
+        try {
+            const savedData = localStorage.getItem(DATA_KEY);
+            if (savedData) applyData(JSON.parse(savedData));
+        } catch (e) {}
+    }
+
+    function applyData(data) {
+        if (!data) return;
+        
+        // 読み込んだ全データを裏側に保存
+        if (data.inventory) {
+            globalFullData.inventory = { ...globalFullData.inventory, ...data.inventory };
+            if (data.reservations) globalFullData.reservations = { ...data.reservations };
+        } else {
+            // 旧ファイルの互換対応
+            for (const key in data) {
+                if (key === "_version") continue;
+                let raceName = key.replace('ステライヤリング_', '');
+                if (globalFullData.inventory.hasOwnProperty(raceName)) {
+                    globalFullData.inventory[raceName] = (data[key].match(/★/g) || []).length;
+                }
+            }
+        }
+
+        // 無印の画面へ反映（inventoryの数字を星に変換して表示）
+        attributes.forEach(attr => {
+            const key = `ステライヤリング_${attr.name}`;
+            const stars = document.querySelector(`.stars[data-key="${key}"]`);
+            if (stars) {
+                const count = globalFullData.inventory[attr.name] || 0;
+                const starElems = stars.querySelectorAll('.star');
+                for (let i = 0; i < 5; i++) {
+                    starElems[i].textContent = (i < count) ? '★' : '☆';
+                    if (i < count) starElems[i].classList.add('on');
+                    else starElems[i].classList.remove('on');
+                }
+            }
+        });
+    }
+
+    function init() {
+      const container = document.getElementById('statusContainer');
+      container.innerHTML = '';
+      
+      const h1 = document.querySelector('h1');
+      if (h1) {
+          h1.innerHTML = h1.innerHTML.replace(/ <span.*?>\[Admin Mode:.*?<\/span>/g, '');
+          if (isAdminMode) {
+              const wasLoggedIn = localStorage.getItem('Renma_LastLoginState') === 'true';
+              const initialDisplay = wasLoggedIn ? 'none' : 'inline';
+              h1.innerHTML += ` <span id="admin-indicator" style="display:${initialDisplay}; color:red;">[Admin Mode: Auto-Save ON]</span>`;
+          }
+      }
+
+      groups.forEach(group => {
+        const groupTitle = document.createElement('div');
+        groupTitle.className = `group-title ${group.color}`;
+        groupTitle.id = group.title.replace(/◆/g, '').replace(/のピアス/g, '') + 'Anchor';
+        
+        const titleText = document.createElement('span');
+        titleText.textContent = group.title;
+        // ▼ ダブルクリックでリセット
+        titleText.style.cursor = 'pointer';
+        titleText.style.userSelect = 'none';
+        titleText.addEventListener('dblclick', () => {
+            const starElems = attributesContainer.querySelectorAll('.star.on');
+            starElems.forEach(s => {
+                s.classList.remove('on');
+                s.textContent = '☆';
+            });
+            saveAdminData();
+        });
+        
+        const zoomButtons = document.createElement('div');
+        zoomButtons.className = 'zoom-buttons';
+        zoomButtons.innerHTML = `
+          <button id="zoomToggle" onclick="toggleZoomControls()">±</button>
+          <div id="zoomControls" class="zoom-controls">
+            <button onclick="changeZoom(-0.1)">－</button>
+            <button onclick="changeZoom(0.1)">＋</button>
+          </div>
+        `;
+        
+        const columnButtons = document.createElement('div');
+        columnButtons.className = 'column-buttons';
+        columnButtons.innerHTML = `
+          <button class="column-button active" id="oneColumnBtn" onclick="setColumns(1)">１列</button>
+          <button class="column-button" id="twoColumnsBtn" onclick="setColumns(2)">２列</button>
+        `;
+        
+        groupTitle.appendChild(titleText);
+        groupTitle.appendChild(zoomButtons);
+        groupTitle.appendChild(columnButtons);
+        container.appendChild(groupTitle);
+
+        const attributesContainer = document.createElement('div');
+        attributesContainer.className = 'attributes-container'; 
+        
+        attributes.forEach(attr => {
+          const line = document.createElement('div');
+          line.className = 'line';
+
+          const name = document.createElement('span');
+          name.textContent = attr.name;
+          name.className = `${attr.class} name`;
+          // ▼ ダブルクリック
+          name.style.cursor = 'pointer';
+          name.style.userSelect = 'none';
+          name.addEventListener('dblclick', () => {
+              const stars = line.querySelectorAll('.star.on');
+              stars.forEach(s => {
+                  s.classList.remove('on');
+                  s.textContent = '☆';
+              });
+              saveAdminData();
+          });
+
+          const stars = document.createElement('span');
+          stars.className = 'stars';
+          stars.dataset.key = `${group.title}_${attr.name}`;
+
+          for (let i = 0; i < 5; i++) {
+            const star = document.createElement('span');
+            star.textContent = '☆';
+            star.className = 'star';
+            star.dataset.index = i;
+            star.addEventListener('click', function () {
+              if (this.textContent === '☆') {
+                this.textContent = '★';
+                this.classList.add('on');
+              } else {
+                this.textContent = '☆';
+                this.classList.remove('on');
+              }
+              saveAdminData();
+            });
+            stars.appendChild(star);
+          }
+
+          line.appendChild(name);
+          line.appendChild(stars);
+          attributesContainer.appendChild(line);
+        });
+
+        container.appendChild(attributesContainer);
+
+        const exportBtn = document.createElement('button');
+        exportBtn.textContent = '状態をエクスポート';
+        exportBtn.style.marginTop = '15px';
+        exportBtn.addEventListener('click', exportState);
+        container.appendChild(exportBtn);
+      });
+    }
+
+    function exportState() {
+      const result = getCheckerData();
+      const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "ステライヤリング獲得状況.json";
+      link.click();
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        try {
+          applyData(JSON.parse(event.target.result));
+          saveAdminData();
+        } catch (error) {
+          alert('ファイルの内容が不正です。');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        checkMode(); 
+        loadPageSettings();
+        document.body.style.zoom = pageSettings['checker-stella_zoom'];
+        
+        init(); 
+        setColumns(pageSettings['checker-stella_column']);
+
+        if (window.setupSyncSystem) {
+            window.setupSyncSystem({
+                loginTriggerId: 'title-login-trigger',
+                fileName: 'checker-stella.json', 
+                firestoreDoc: 'checker-stella',  
+                onLoad: (loadedData) => {
+                    if (loadedData) applyData(loadedData);
+                    else loadAdminData();
+                },
+                onSave: () => getCheckerData()
+            });
+        } else {
+            loadAdminData(); 
+        }
+
+        if (isAdminMode) {
+            setInterval(() => {
+                if (window.syncManager) {
+                    const isLoggedIn = window.syncManager.isLoggedIn;
+                    localStorage.setItem('Renma_LastLoginState', isLoggedIn ? 'true' : 'false');
+                    const indicator = document.getElementById('admin-indicator');
+                    if (indicator && window.syncManager.syncStatus === 'ready') {
+                        indicator.style.display = isLoggedIn ? 'none' : 'inline';
+                    }
+                }
+            }, 500);
+        }
+    });
+  </script>
+
+</body>
+</html>

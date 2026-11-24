@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="icon/favicon-ikuseicalc.ico">
+  <link rel="apple-touch-icon" href="icon/apple-touch-icon-ikuseicalc.png">
+  <link rel="icon" type="image/png" href="icon/web-app-manifest-192x192-ikuseicalc.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <title>育成効率比較ツール</title>
+
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script type="module" src="script/sync-manager.js"></script>
+
+  <style>
+
+    /* 1. 基本の指定（Windows, Android, Mac用） */
+    .hamburger::before {
+      content: '☰'; /* 基本はハンバーガーアイコンを表示 */
+    }
+    
+    /* 2. iPhone (iOS Safari / Chrome) だけを狙い撃ちする指定 */
+    @supports (-webkit-touch-callout: none) {
+      .hamburger::before {
+        content: 'Ⲷ'; /* iPhoneの時だけ、この文字に上書きする */
+      }
+    }
+
+    /* --- 全体 --- */
+    body {
+      font-family: 'Segoe UI', Meiryo, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      margin: 20px;
+      background-color: #2A2A2A;
+      color: #eee;
+    }
+
+    #profileMessage {
+      color: red;
+      margin-top: 5px;
+      min-height: 1.2em;
+      font-weight: normal;
+      margin-bottom: 3px;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+
+    #title-login-trigger {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-top: 0px;
+      margin-bottom: 10px;
+    }
+
+    .section {
+      border: 1px solid #ccc;
+      padding: 12px;
+      margin-bottom: 20px;
+    }
+
+    #compareContainer {
+      display: block; 
+    }
+
+    #compareContainer.horizontal {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    #compareContainer.horizontal .section {
+      flex: 1;
+      min-width: 300px;
+      margin-bottom: 0;
+    }
+
+    .section h2 {
+      margin-top: 0;
+    }
+
+    .form-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .form-label {
+      width: 105px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      text-align: right;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .button-area {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-right: 8px;
+      flex-wrap: nowrap;
+    }
+
+    .form-label input {
+      width: 50px;
+      margin: 0 4px;
+    }
+
+    .form-input input {
+      font-size: 16px;
+      width: 50px;
+      margin-left: -1px;
+      margin-right: 2px;
+      padding-right: 1px;
+      text-align: right;
+      height: 28px;
+    }
+
+    .radio-group {
+      margin: 10px 0;
+    }
+
+    .radio-group label {
+      margin-right: 0px;
+    }
+
+    .radio-group input[type="radio"] {
+      margin-right: 10px;
+    }
+
+    .time-input {
+      width: 50px;
+      margin-right: 4px;
+    }
+
+    select {
+      height: 30px;
+      font-size: 14px;
+    }
+
+    .gray-bg {
+      background-color: #888;
+    }
+
+    button {
+      margin: 2px 5px 2px 0;
+      padding: 6px 10px;
+      color: #fff;
+      background-color: #2A99E6;
+      border: 1px solid #555;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button:disabled {
+      background-color: #555;
+      color: #aaa;
+      cursor: not-allowed;
+      border: 1px solid #444;
+    }
+
+    .delete-btn {
+      background-color: #dc3545;
+      border: 1px solid #a71d2a;
+    }
+
+    .delete-btn:disabled {
+      background-color: #555;
+      color: #aaa;
+      cursor: not-allowed;
+      border: 1px solid #444;
+    }
+
+    .updown-btn {
+      display: flex;
+      flex-direction: row;
+      margin-left: 5px;
+    }
+
+    .updown-btn button {
+      line-height: 0px;
+      margin: -2px 0px 0px 11px;
+      width: 28px;
+      height: 28px;
+      font-size: 14px;
+      background-color: #444;
+      color: #fff;
+      border: 1px solid #666;
+      cursor: pointer;
+    }
+
+    .updown-btn button:active {
+      background-color: #888;
+    }
+
+    .result {
+      font-size: 20px;
+      margin-top: 0px;
+      margin-left: 5px;
+      font-weight: bold;
+    }
+
+    .block {
+      border: 1px solid #fff;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .error {
+      color: #ff0000;
+      margin-top: 5px;
+      min-height: 1.5em;
+      display: block;
+      font-size: 14px;
+    }
+
+    .method {
+      font-size: 14px;
+      color: dodgerblue;
+    }
+
+    footer {
+      border-top: 1px solid #eee;
+      padding-top: 10px;
+      margin-top: 20px;
+    }
+
+    a:link { color: #1D9BF0; text-decoration: underline; }
+    a:visited { color: #7755FF; text-decoration: underline; }
+    a:hover { color: #0CFF57; }
+    a:active { color: #FF0000; text-decoration: underline; }
+
+    .zoom-buttons {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: row;
+      z-index: 1000;
+    }
+
+    .zoom-buttons button {
+      color: #000;
+      background-color: #eee;
+      padding: 5px 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+      margin: 5px 5px 5px 0;
+    }
+
+    /* ハンバーガーメニューのスタイル */
+    .hamburger {
+      cursor: pointer;
+      margin-right: 8px;
+      user-select: none;
+      color: #eee;
+      display: inline-block;
+    }
+    
+    .hamburger:hover {
+      color: #2A99E6;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: -360px;
+      width: 360px;
+      min-height: 100vh;
+      height: 100%;
+      text-align: left;
+      background-color: #242424;
+      border-right: 1px solid #555;
+      transition: left 0.3s ease;
+      z-index: 1001;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .side-menu.open {
+      left: 0;
+    }
+
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .menu-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .menu-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      color: #eee;
+      user-select: none;
+    }
+
+    .menu-close:hover {
+      color: #ff6b6b;
+    }
+
+    .menu-title {
+      font-size: 20px;
+      font-weight: bold;
+      text-align: left;
+      margin-bottom: 10px;
+      color: #FF6E3D;
+    }
+
+    .menu-item {
+      font-size: 18px;
+      text-align: left;
+      display: inline-block;
+      padding: 6px 0;
+      color: #eee;
+      text-decoration: underline;
+    }
+    .menu-item:hover {
+      color: #0CFF57;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-spacer {
+      height: 30px;
+    }
+
+    .toggle-button {
+      cursor: pointer;
+      color: #7755FF;
+      text-decoration: underline;
+      font-size: 18px;
+      text-align: left;
+      display: block;
+      padding: 6px 0;
+      user-select: none;
+    }
+
+    .toggle-button:hover {
+      color: #0CFF57;
+      text-decoration: underline;
+    }
+
+    #linkList, #linkList1, #linkList2, #linkList3 {
+      font-size: 18px;
+      text-align: left;
+      display: none;
+      color: #7755FF;
+    }
+
+    #toggleDisplayBtn {
+      cursor: pointer;
+      user-select: none;
+    }
+
+  </style>
+
+</head>
+<body>
+
+  <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+  <div class="side-menu" id="sideMenu">
+    <div class="menu-title">リユニのWeb版いろいろ</div>
+    <a class="menu-item" href="kiokucalc.html">記憶再戦時間計算</a><br>
+    <a class="menu-item" href="kiokucalc2.html">記憶再戦回数計算</a><br>
+    </br>
+    <a class="menu-item" href="ikuseicalc.html">育成効率比較ツール</a><br>
+    <a class="menu-item" href="clear.html">クリア目安計算ツール</a><br>
+    </br>
+    <span class="toggle-button" data-target="linkList1">アイテム獲得チェッカー</span>
+    <div id="linkList1">
+      ├ <a class="menu-item" href="checker-astral.html">アストラルレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-chaos.html">カオスレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-relic.html">ファンタズムレリックチェッカー</a><br>
+      ├ <a class="menu-item" href="checker-4gen.html">四元像ピアスチェッカー</a></br>
+      ├ <a class="menu-item" href="checker-stella.html">ステライヤリングチェッカー</a></br>
+      └ <a class="menu-item" href="checker-niji.html">虹瑠璃の腕輪チェッカー</a></br>
+    </div>
+    <span class="toggle-button" data-target="linkList2">アイテム獲得報告用</span>
+    <div id="linkList2">
+      ├ <a class="menu-item" href="report-astral.html">アストラルレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-chaos.html">カオスレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-relic.html">ファンタズムレリック報告用</a><br>
+      ├ <a class="menu-item" href="report-4gen.html">四元像ピアス報告用</a></br>
+      ├ <a class="menu-item" href="report-stella.html">ステライヤリング報告用</a></br>
+      └ <a class="menu-item" href="report-niji.html">虹瑠璃の腕輪報告用</a></br>
+    </div>
+    </br>
+    <a class="menu-item" href="gate.html">動画の関門</a><br>
+    <a class="menu-item" href="mechaleo.html">多段斬りアプリ</a><br>
+    </br>
+    <a class="menu-item" href="index.html">インデックスページ</a><br>
+    </br>
+  </div>
+
+  <div class="header">
+    <h1>
+      <span class="hamburger" onclick="toggleMenu()"></span><span id="title-login-trigger" title="クリックでログイン/同期">育成効率比較ツール</span>
+    </h1>
+  </div>
+
+  <div class="zoom-buttons">
+    <button onclick="changeZoom(-0.1)">－</button>
+    <button onclick="changeZoom(0.1)">＋</button>
+  </div>
+
+  <div id="compareContainer">
+
+    <div class="section">
+
+      <div class="form-row">
+        <div class="form-label" style="justify-content: flex-start;">
+          <h2><span style="cursor: pointer; user-select: none;" onclick="toggleLayout()" title="クリックで表示列の切り替え">比較①</span></h2>
+        </div>
+        <div class="radio-group">
+          <label><input type="radio" name="計算方式1" id="計算式1" value="J" onchange="syncRadio(1)" checked>J式で計算　</label>
+          <label><input type="radio" name="計算方式1" value="M" onchange="syncRadio(1)">M式で計算</label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">育成枠</div>
+        <div class="form-input"><input type="number" id="育成枠1" onfocus="this.select()" min="1" value="4">名</div>
+        <div class="updown-btn">
+          <button type="button" onclick="changeValue('育成枠1', -1)">↓</button>
+          <button type="button" onclick="changeValue('育成枠1', 1)">↑</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">1戦あたり</div>
+        <div class="form-input">
+          <input type="number" class="time-input gray-bg" id="戦闘時1" onfocus="this.select()" min="0" value="0">時
+          <input type="number" class="time-input" id="戦闘分1" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input" id="戦闘秒1" onfocus="this.select()" min="0" value="0">秒
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">インターバル</div>
+        <div class="form-input">
+          <input type="number" class="time-input gray-bg" id="間隔時1" onfocus="this.select()" min="0" value="0">時
+          <input type="number" class="time-input gray-bg" id="間隔分1" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input gray-bg" id="間隔秒1" onfocus="this.select()" min="0" value="13">秒
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">所要時間</div>
+        <div class="form-input">
+          <input type="number" class="time-input" id="所要時1" onfocus="this.select()" min="0" value="24">時
+          <input type="number" class="time-input" id="所要分1" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input" id="所要秒1" onfocus="this.select()" min="0" value="0">秒
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">成長確率</div>
+        <div class="form-input"><input type="number" class="time-input gray-bg" id="成長確率1" onfocus="this.select()" min="1" value="10">％</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">成長判定回数</div>
+        <div class="form-input"><input type="number" step="0.01" id="成長判定回数1" onfocus="this.select()" min="1" value="1">回</div>
+        <div class="updown-btn">
+          <button type="button" onclick="changeValue('成長判定回数1', -1)">↓</button>
+          <button type="button" onclick="changeValue('成長判定回数1', 1)">↑</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">ボーナス倍率</div>
+        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率1" onfocus="this.select()" min="1" value="1">倍　</div>
+        <select id="gradeSelect1" onchange="updateItemValue(1)"></select><br>
+      </div>
+
+      <div class="form-row">
+        <div class="button-area">
+          <button onclick="計算する(1)">期待値を計算</button>
+          <button id="reverseBtn1" onclick="逆算する(1)" disabled>比較②から逆算</button>
+        </div>
+        <div class="form-input"><div class="result" id="結果1"></div></div>
+      </div>
+
+      <div class="error" id="error1"></div>
+
+    </div>
+
+    <div class="section">
+
+      <div class="form-row">
+        <div class="form-label" style="justify-content: flex-start;"><h2>比較②</h2></div>
+        <div class="radio-group">
+          <label><input type="radio" name="計算方式2" id="計算式2" value="J" onchange="syncRadio(2)" checked>J式で計算　</label>
+          <label><input type="radio" name="計算方式2" value="M" onchange="syncRadio(2)">M式で計算</label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">育成枠</div>
+        <div class="form-input"><input type="number" id="育成枠2" onfocus="this.select()" min="1" value="4">名</div>
+        <div class="updown-btn">
+          <button type="button" onclick="changeValue('育成枠2', -1)">↓</button>
+          <button type="button" onclick="changeValue('育成枠2', 1)">↑</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">1戦あたり</div>
+        <div class="form-input">
+          <input type="number" class="time-input gray-bg" id="戦闘時2" onfocus="this.select()" min="0" value="0">時
+          <input type="number" class="time-input" id="戦闘分2" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input" id="戦闘秒2" onfocus="this.select()" min="0" value="0">秒
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">インターバル</div>
+        <div class="form-input">
+          <input type="number" class="time-input gray-bg" id="間隔時2" onfocus="this.select()" min="0" value="0">時
+          <input type="number" class="time-input gray-bg" id="間隔分2" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input gray-bg" id="間隔秒2" onfocus="this.select()" min="0" value="13">秒
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">所要時間</div>
+        <div class="form-input">
+          <input type="number" class="time-input" id="所要時2" onfocus="this.select()" min="0" value="24">時
+          <input type="number" class="time-input" id="所要分2" onfocus="this.select()" min="0" value="0">分
+          <input type="number" class="time-input" id="所要秒2" onfocus="this.select()" min="0" value="0">秒
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">成長確率</div>
+        <div class="form-input"><input type="number" class="time-input gray-bg" id="成長確率2" onfocus="this.select()" min="1" value="10">％</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">成長判定回数</div>
+        <div class="form-input"><input type="number" step="0.01" id="成長判定回数2" onfocus="this.select()" min="1" value="1">回</div>
+        <div class="updown-btn">
+          <button type="button" onclick="changeValue('成長判定回数2', -1)">↓</button>
+          <button type="button" onclick="changeValue('成長判定回数2', 1)">↑</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-label">ボーナス倍率</div>
+        <div class="form-input"><input type="number" step="0.01" id="ボーナス倍率2" onfocus="this.select()" min="1" value="3.6">倍　</div>
+
+        <select id="gradeSelect2" onchange="updateItemValue(2)"></select><br>
+      </div>
+
+      <div class="form-row">
+        <div class="button-area">
+          <button onclick="計算する(2)">期待値を計算</button>
+          <button id="reverseBtn2" onclick="逆算する(2)" disabled>比較①から逆算</button>
+        </div>
+        <div class="form-input"><div class="result" id="結果2"></div></div>
+      </div>
+
+      <div class="error" id="error2"></div>
+
+    </div>
+  </div>
+  <div id="toggleDisplayBtn" onclick="toggleFooter()">× 以下の項目を非表示にする</div>
+
+  <div id="footerArea">
+    <button onclick="saveDefaultProfile(1)">現在の状態をデフォルトに設定</button>
+    <button id="deleteProfileBtn" class="delete-btn" onclick="deleteAllProfiles()">プロファイル削除</button><br>
+    <div id="profileMessage">※現在の状態をプロファイルに保存し初期値に設定できます。</div><br><br>
+    <div class="method">
+      <span style="color: #FF6E3D; font-weight: bold;">【重要】J式とM式の比較について</span><br>
+      J式は「合計成長数(大きい方が良い)」、M式は「1成長あたりの秒数(小さい方が良い)」を算出します。育成枠数、所要時間、成長軽率など比較①と②で条件が異なる場合は正確に比較できませんので注意してください。<br>
+      <br>
+      <span style="color: lime;">【J式計算方法(改)】</span><br>
+      ※「1戦あたり」の定義をM式と同様に「1周の時間（戦闘+間隔）」に統一しました。<br>
+      所要時間 / (戦闘時間 + 間隔時間) = 周回数<br>
+      周回数 * 成長判定回数 * 育成枠数 * (成長確率/100) * ボーナス倍率 = 期待値(総成長回数)<br>
+      <br>
+      <span style="color: lime;">【M式計算方法】まこさん </span><a href="https://x.com/mima_ma_">@mima_ma_</a><span style="color: lime;"> 感謝</span><br>
+      (戦闘時間 + 間隔時間) / 育成枠数 / 成長判定回数 / ボーナス倍率 = 期待値(1UPあたりの秒数)<br>
+      <br>
+      ■関連記事<br>
+      <a href="https://x.com/jessy_romasaga/status/1994764774962573792">https://x.com/jessy_romasaga/status/1994764774962573792</a><br>
+      <a href="https://x.com/jessy_romasaga/status/1937498966339596381">https://x.com/jessy_romasaga/status/1937498966339596381</a><br>
+      <a href="https://x.com/mima_ma_/status/1937511702293282952">https://x.com/mima_ma_/status/1937511702293282952</a><br>
+    </div>
+
+    <footer>
+      ※使用は自己責任にて。<br>
+      ※ページをリロードすると各項目が初期値に戻ります。<br>
+      ※いろいろな要素でブレが出る可能性があるため、あくまで目安としてお考え下さい。<br>
+      <br>
+      <a href="index.html">INDEXへ戻る</a><br>
+    </footer>
+  </div>
+<script>
+
+    let calculatedResult1 = null;
+    let calculatedResult2 = null;
+
+    /* ▼▼▼▼▼▼▼▼ 自動切り替え設定ここから ▼▼▼▼▼▼▼▼ */
+
+    const switchTargetDate = new Date('2026-05-30T18:00:00+09:00');
+    const isDebugMode = document.title.indexOf('★') !== -1;
+    const isPastTargetDate = new Date() >= switchTargetDate;
+    const useNewData = isDebugMode || isPastTargetDate;
+
+    console.log('Switch Mode:', useNewData ? 'NEW (After 12/11 or Debug)' : 'OLD (Before 12/11)');
+
+
+    /* ---------------------------------------------------------
+       【データ定義】
+       --------------------------------------------------------- */
+    
+// ■ Pattern1
+    const gradeConfigPattern1_Old = [
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】5億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】50億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】100億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】150億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】200億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】250億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】300億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】350億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】400億" },
+      { id: 10, val: 9.3, count: 40, label: "【grade X】500億" }
+    ];
+    const gradeConfigPattern1_New = [
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】5億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】50億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】100億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】150億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】200億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】250億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】300億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】350億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】400億" },
+      { id: 10, val: 9.3, count: 40, label: "【grade X】500億" }
+    ];
+
+    // ■ Pattern2
+    const gradeConfigPattern2_Old = [
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】7億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】70億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】140億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】210億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】280億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】350億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】420億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】490億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】560億" },
+      { id: 10, val: 9.3, count: 40, label: "【grade X】700億" }
+    ];
+    const gradeConfigPattern2_New = [
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】7億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】70億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】140億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】210億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】280億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】350億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】420億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】490億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】560億" },
+      { id: 10, val: 9.3, count: 40, label: "【grade X】700億" }
+    ];
+
+    // ■ Pattern3
+    const gradeConfigPattern3_Old = [
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】8億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】80億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】160億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】240億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】320億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】400億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】480億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】560億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】640億" },
+      { id: 10, val: 9.3, count: 40, label: "【grade X】800億" }
+    ];
+    const gradeConfigPattern3_New = [
+      { id: 0,  val: 1.4, count: 3,  label: "【grade 0】0" },
+      { id: 1,  val: 1.9, count: 4,  label: "【grade 1】8億" },
+      { id: 2,  val: 2.3, count: 5,  label: "【grade 2】80億" },
+      { id: 3,  val: 2.8, count: 6,  label: "【grade 3】160億" },
+      { id: 4,  val: 3.7, count: 8,  label: "【grade 4】240億" },
+      { id: 5,  val: 4.7, count: 10, label: "【grade 5】320億" },
+      { id: 6,  val: 5.6, count: 12, label: "【grade 6】400億" },
+      { id: 7,  val: 6.5, count: 14, label: "【grade 7】480億" },
+      { id: 8,  val: 7.4, count: 18, label: "【grade 8】560億" },
+      { id: 9,  val: 8.4, count: 24, label: "【grade 9】640億" },
+      { id: 10, val: 9.3, count: 40, label: "【grade X】800億" }
+    ];
+
+    /* ---------------------------------------------------------
+       【初期値設定】
+       --------------------------------------------------------- */
+    
+    // ▼ 育成枠の初期値設定（Manual用）
+    const defaultIkuseiWaku1 = 5; 
+    const defaultIkuseiWaku2 = 5; 
+
+    // ▼ パターンごとのデフォルト値
+    // ★ waku, grade のみ定義（count, bonusはgradeから動的に取得）
+    const defaultValues_Old = {
+        pattern1: { waku: "5", grade: "9" },
+        pattern2: { waku: "5", grade: "10" },
+    };
+    const defaultValues_New = {
+        pattern1: { waku: "5", grade: "9" },
+        pattern2: { waku: "5", grade: "10" },
+    };
+
+    // ▼ 基準選択なし(manual)時のデフォルト値設定
+    const defaultValues_Manual = {
+        waku: null, // Manual時は個別の初期値を使用
+        count: "1",
+        bonus: "1",
+        grade: ""
+    };
+
+    // 使用データの決定
+    const gradeConfigPattern1 = useNewData ? gradeConfigPattern1_New : gradeConfigPattern1_Old;
+    const gradeConfigPattern2 = useNewData ? gradeConfigPattern2_New : gradeConfigPattern2_Old;
+    const gradeConfigPattern3 = useNewData ? gradeConfigPattern3_New : gradeConfigPattern3_Old;
+    const defaultValues       = useNewData ? defaultValues_New       : defaultValues_Old;
+
+    /* ▲▲▲▲▲▲▲▲ 自動切り替え設定ここから ▲▲▲▲▲▲▲▲ */
+
+    // メニュー関連
+    function toggleMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            sideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        }
+    }
+
+    function closeMenu() {
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        sideMenu.classList.remove('open');
+        menuOverlay.classList.remove('open');
+    }
+
+    // スワイプ操作
+    let startX = 0, startY = 0;
+    let endX = 0, endY = 0;
+    document.addEventListener('touchstart', e => {
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, false);
+    document.addEventListener('touchend', e => {
+      endX = e.changedTouches[0].screenX;
+      endY = e.changedTouches[0].screenY;
+      handleGesture();
+    }, false);
+    function handleGesture() {
+      const diffX = endX - startX;
+      const diffY = endY - startY;
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 50 && startX < 30) toggleMenu(); 
+        else if (diffX < -50) closeMenu();
+      }
+    }
+
+    // ページ設定
+    const PAGE_SETTING_KEY = 'PageSettings'; 
+    // デフォルトの grade_mode を 'manual' (OFF状態) に設定 ★★★初期値を変更したい場合ここを変更する↓★★★ or patternX
+    let pageSettings = { 'ikuseicalc_zoom': 1.0, 'ikuseicalc_column': 1, 'ikuseicalc_grade_mode': 'pattern1' };
+    
+    function changeZoom(delta) {
+        let currentZoom = pageSettings['ikuseicalc_zoom'];
+        currentZoom += delta;
+        currentZoom = Math.round(currentZoom * 10) / 10;
+        if (currentZoom < 0.5) currentZoom = 0.5;
+        if (currentZoom > 2.0) currentZoom = 2.0;
+        document.body.style.zoom = currentZoom;
+        pageSettings['ikuseicalc_zoom'] = currentZoom;
+        savePageSettings();
+    }
+
+    function toggleLayout() {
+      const current = pageSettings['ikuseicalc_column'] || 1;
+      pageSettings['ikuseicalc_column'] = current === 1 ? 2 : 1;
+      applyLayout();
+      savePageSettings();
+    }
+
+    function applyLayout() {
+      const container = document.getElementById('compareContainer');
+      const isHorizontal = pageSettings['ikuseicalc_column'] === 2;
+      if (isHorizontal) container.classList.add('horizontal');
+      else container.classList.remove('horizontal');
+    }
+    
+    function loadPageSettings() {
+        try {
+            const savedSettings = localStorage.getItem(PAGE_SETTING_KEY);
+            if (savedSettings) {
+                pageSettings = { ...pageSettings, ...JSON.parse(savedSettings) };
+            }
+        } catch (error) { console.error(error); }
+    }
+    
+    function savePageSettings() {
+        try { localStorage.setItem(PAGE_SETTING_KEY, JSON.stringify(pageSettings)); }
+        catch (error) { console.error(error); }
+    }
+
+    // ▼▼▼ 基準モード制御 ▼▼▼
+
+    let gradeConfig = []; 
+
+    function toggleGradeMode(radio) {
+      if (pageSettings['ikuseicalc_grade_mode'] === radio.value) {
+        // 同じボタンをクリックした場合は解除(manual)へ
+        radio.checked = false;
+        const mode = 'manual';
+        changeGradeMode(mode);
+        applyModeDefaults(mode); // デフォルト値を反映
+      } else {
+        // 新しいモードへ
+        const mode = radio.value;
+        changeGradeMode(mode);
+        applyModeDefaults(mode); // デフォルト値を反映
+      }
+    }
+
+    function changeGradeMode(mode) {
+      pageSettings['ikuseicalc_grade_mode'] = mode;
+      savePageSettings(); // 状態を保存
+
+      if (mode === 'pattern1') {
+        gradeConfig = gradeConfigPattern1;
+      } else if (mode === 'pattern2') {
+        gradeConfig = gradeConfigPattern2;
+      } else if (mode === 'pattern3') {
+        gradeConfig = gradeConfigPattern3;
+      } else {
+        gradeConfig = []; 
+      }
+
+      // UI同期: manualの場合はどのラジオもチェックしない
+      document.querySelectorAll('input[name="gradeMode"]').forEach(r => {
+        r.checked = (r.value === mode);
+      });
+
+      initGradeOptions();
+    }
+
+    // ★指定されたモードのデフォルト値を画面入力欄に適用する関数
+    // 【仕様変更】
+    // 1. プロファイルが存在し、かつ mode と一致する場合 -> プロファイル値を優先
+    // 2. それ以外の場合 -> 比較①=Pattern1初期値, 比較②=Pattern2初期値 (manual時はmanual初期値)
+    function applyModeDefaults(mode) {
+       const compareNum = [1, 2];
+       compareNum.forEach(num => {
+          const profileStr = localStorage.getItem(`ikusei_profile${num}`);
+          const profile = profileStr ? JSON.parse(profileStr) : null;
+          
+          // ★プロファイルがあり、かつ選択中のモードと一致する場合（またはManual同士の場合）はプロファイルを優先
+          if (profile && profile.savedMode === mode) {
+             // --- プロファイルから読み込み ---
+             const radio = document.querySelector(`input[name="計算方式${num}"][value="${profile.計算式}"]`);
+             if (radio) radio.checked = true;
+
+             document.getElementById(`育成枠${num}`).value = profile.育成枠;
+             document.getElementById(`戦闘時${num}`).value = profile.戦闘時;
+             document.getElementById(`戦闘分${num}`).value = profile.戦闘分;
+             document.getElementById(`戦闘秒${num}`).value = profile.戦闘秒;
+             document.getElementById(`間隔時${num}`).value = profile.間隔時;
+             document.getElementById(`間隔分${num}`).value = profile.間隔分;
+             document.getElementById(`間隔秒${num}`).value = profile.間隔秒;
+             document.getElementById(`所要時${num}`).value = profile.所要時;
+             document.getElementById(`所要分${num}`).value = profile.所要分;
+             document.getElementById(`所要秒${num}`).value = profile.所要秒;
+             document.getElementById(`成長確率${num}`).value = profile.成長確率;
+             document.getElementById(`成長判定回数${num}`).value = profile.成長判定回数;
+             document.getElementById(`ボーナス倍率${num}`).value = profile.ボーナス倍率;
+
+             if (mode !== 'manual' && profile.gradeSelect) {
+                 const select = document.getElementById(`gradeSelect${num}`);
+                 if(select) select.value = profile.gradeSelect;
+             }
+             
+          } else {
+             // --- デフォルト値を読み込み ---
+             let defaults;
+             
+             if (mode === 'manual') {
+                defaults = defaultValues_Manual;
+             } else {
+                // どのラジオボタンを選んでも、比較①はpattern1、比較②はpattern2の設定を維持
+                if (num === 1) {
+                   defaults = defaultValues.pattern1;
+                } else {
+                   defaults = defaultValues.pattern2;
+                }
+             }
+
+             // 1. 育成枠
+             let wakuVal;
+             if (defaults.waku) {
+                wakuVal = defaults.waku;
+             } else {
+                // Manualかつwaku定義なしの場合は個別のデフォルト値を使用
+                wakuVal = (num === 1) ? defaultIkuseiWaku1 : defaultIkuseiWaku2;
+             }
+             document.getElementById(`育成枠${num}`).value = wakuVal;
+
+             // 2 & 3. 判定回数・ボーナス・グレード選択
+             if (mode !== 'manual') {
+                if (defaults.grade !== undefined) {
+                   const select = document.getElementById(`gradeSelect${num}`);
+                   if (select) {
+                      select.value = defaults.grade;
+                      // 選択中の基準(gradeConfig)から対応するデータを取得して自動セット
+                      const targetConfig = gradeConfig.find(item => item.id === parseInt(defaults.grade, 10));
+                      if (targetConfig) {
+                         document.getElementById(`ボーナス倍率${num}`).value = targetConfig.val;
+                         document.getElementById(`成長判定回数${num}`).value = targetConfig.count;
+                      }
+                   }
+                }
+             } else {
+                // Manual時はdefaultValues_Manualの固定値をセット
+                document.getElementById(`成長判定回数${num}`).value = defaults.count;
+                document.getElementById(`ボーナス倍率${num}`).value = defaults.bonus;
+             }
+
+             // 4. 時間系のリセット (Manual/Pattern共通)
+             document.getElementById(`計算式${num}`).checked = true;
+             document.getElementById(`戦闘時${num}`).value = "0";
+             document.getElementById(`戦闘分${num}`).value = "";
+             document.getElementById(`戦闘秒${num}`).value = "";
+             document.getElementById(`間隔時${num}`).value = "0";
+             document.getElementById(`間隔分${num}`).value = "0";
+             document.getElementById(`間隔秒${num}`).value = "13";
+             document.getElementById(`所要時${num}`).value = "24";
+             document.getElementById(`所要分${num}`).value = "0";
+             document.getElementById(`所要秒${num}`).value = "0";
+             document.getElementById(`成長確率${num}`).value = "10";
+          }
+       });
+    }
+
+    function initGradeOptions() {
+      const targets = ['gradeSelect1', 'gradeSelect2'];
+      targets.forEach(id => {
+        const select = document.getElementById(id);
+        const currentVal = select.value; // 現在の選択値を保持
+        select.innerHTML = '';
+        if (gradeConfig.length === 0) {
+            const option = document.createElement('option');
+            option.value = "";
+            option.textContent = "任意設定 (Manual)";
+            select.appendChild(option);
+            select.disabled = true;
+        } else {
+            select.disabled = false;
+            gradeConfig.forEach(item => {
+              const option = document.createElement('option');
+              option.value = item.id;
+              option.textContent = item.label;
+              select.appendChild(option);
+            });
+        }
+      });
+    }
+
+    function updateItemValue(number) {
+      if (gradeConfig.length === 0) return;
+
+      const selectVal = parseInt(document.getElementById(`gradeSelect${number}`).value, 10);
+      const targetConfig = gradeConfig.find(item => item.id === selectVal);
+      
+      if (targetConfig) {
+        document.getElementById(`ボーナス倍率${number}`).value = targetConfig.val;
+        document.getElementById(`成長判定回数${number}`).value = targetConfig.count;
+      }
+    }
+
+    function syncRadio(sourceNum) {
+      const targetNum = (sourceNum === 1) ? 2 : 1;
+      const selectedValue = document.querySelector(`input[name="計算方式${sourceNum}"]:checked`).value;
+      const targetRadio = document.querySelector(`input[name="計算方式${targetNum}"][value="${selectedValue}"]`);
+      if (targetRadio) targetRadio.checked = true;
+
+      [1, 2].forEach(num => {
+        document.getElementById(`結果${num}`).textContent = "";
+        document.getElementById(`error${num}`).textContent = "";
+        document.getElementById(`reverseBtn${num}`).disabled = true;
+      });
+      calculatedResult1 = null;
+      calculatedResult2 = null;
+    }
+
+    function J式で計算する(number) {
+      const minutesField = document.getElementById(`戦闘分${number}`);
+      const secondsField = document.getElementById(`戦闘秒${number}`);
+      if (minutesField.value === "") minutesField.value = 0;
+      if (secondsField.value === "") secondsField.value = 0;
+
+      const 育成枠数 = Number(document.getElementById(`育成枠${number}`).value);
+      const 戦闘時間 = (Number(document.getElementById(`戦闘時${number}`).value) * 3600 +
+                        Number(document.getElementById(`戦闘分${number}`).value) * 60 +
+                        Number(document.getElementById(`戦闘秒${number}`).value));
+      const 間隔時間 = (Number(document.getElementById(`間隔時${number}`).value) * 3600 +
+                        Number(document.getElementById(`間隔分${number}`).value) * 60 +
+                        Number(document.getElementById(`間隔秒${number}`).value));
+      const 所要時間 = (Number(document.getElementById(`所要時${number}`).value) * 3600 +
+                        Number(document.getElementById(`所要分${number}`).value) * 60 +
+                        Number(document.getElementById(`所要秒${number}`).value));
+
+      const 成長判定回数 = Number(document.getElementById(`成長判定回数${number}`).value);
+      const 成長確率 = Number(document.getElementById(`成長確率${number}`).value);
+      const ボーナス倍率 = Number(document.getElementById(`ボーナス倍率${number}`).value);
+
+      const cycleTime = 戦闘時間 + 間隔時間;
+      if (cycleTime <= 0) {
+        alert("戦闘時間と間隔時間の合計が0秒です。");
+        return;
+      }
+
+      const 周回数 = 所要時間 / cycleTime;
+      const 期待値 = 周回数 * 育成枠数 * 成長判定回数 * (成長確率 / 100) * ボーナス倍率;
+
+      document.getElementById(`結果${number}`).textContent = `${期待値.toFixed(2)} J`;
+
+      const errorDiv = document.getElementById(`error${number}`);
+      errorDiv.textContent = '※J式: 値が大きい方が期待度が高くなります(総成長回数)';
+      errorDiv.style.display = 'block';
+
+      if (number === 1) {
+        calculatedResult1 = 期待値;
+        document.getElementById('reverseBtn2').disabled = false;
+      } else {
+        calculatedResult2 = 期待値;
+        document.getElementById('reverseBtn1').disabled = false;
+      }
+    }
+
+    function M式で計算する(number) {
+      const minutesField = document.getElementById(`戦闘分${number}`);
+      const secondsField = document.getElementById(`戦闘秒${number}`);
+      if (minutesField.value === "") minutesField.value = 0;
+      if (secondsField.value === "") secondsField.value = 0;
+
+      const 育成枠数 = Number(document.getElementById(`育成枠${number}`).value);
+      const 戦闘時間 = (Number(document.getElementById(`戦闘時${number}`).value) * 3600 +
+                        Number(document.getElementById(`戦闘分${number}`).value) * 60 +
+                        Number(document.getElementById(`戦闘秒${number}`).value));
+      const 間隔時間 = (Number(document.getElementById(`間隔時${number}`).value) * 3600 +
+                        Number(document.getElementById(`間隔分${number}`).value) * 60 +
+                        Number(document.getElementById(`間隔秒${number}`).value));
+      const 成長判定回数 = Number(document.getElementById(`成長判定回数${number}`).value);
+      const ボーナス倍率 = Number(document.getElementById(`ボーナス倍率${number}`).value);
+
+      const 期待値 = (戦闘時間 + 間隔時間) / 育成枠数 / 成長判定回数 / ボーナス倍率;
+
+      document.getElementById(`結果${number}`).textContent = `${期待値.toFixed(2)} M`;
+
+      const errorDiv = document.getElementById(`error${number}`);
+      errorDiv.textContent = '※M式: 値が小さい方が期待度が高くなります(1UP秒数)';
+      errorDiv.style.display = 'block';
+
+      if (number === 1) {
+        calculatedResult1 = 期待値;
+        document.getElementById('reverseBtn2').disabled = false;
+      } else {
+        calculatedResult2 = 期待値;
+        document.getElementById('reverseBtn1').disabled = false;
+      }
+    }
+
+    function 計算する(number) {
+      const selectedMethod = document.querySelector(`input[name="計算方式${number}"]:checked`).value;
+      if (selectedMethod === "J") J式で計算する(number);
+      else if (selectedMethod === "M") M式で計算する(number);
+    }
+
+    function 逆算する(targetNum) {
+      const sourceNum = targetNum === 1 ? 2 : 1;
+      const targetExpectation = sourceNum === 1 ? calculatedResult1 : calculatedResult2;
+      if (targetExpectation === null) return;
+
+      const selectedMethod = document.querySelector(`input[name="計算方式${targetNum}"]:checked`).value;
+      const 育成枠数 = Number(document.getElementById(`育成枠${targetNum}`).value);
+      const 間隔時間 = (Number(document.getElementById(`間隔時${targetNum}`).value) * 3600 +
+                        Number(document.getElementById(`間隔分${targetNum}`).value) * 60 +
+                        Number(document.getElementById(`間隔秒${targetNum}`).value));
+      const 成長判定回数 = Number(document.getElementById(`成長判定回数${targetNum}`).value);
+      const ボーナス倍率 = Number(document.getElementById(`ボーナス倍率${targetNum}`).value);
+
+      let requiredBattleTime = 0;
+
+      if (selectedMethod === "J") {
+        const 所要時間 = (Number(document.getElementById(`所要時${targetNum}`).value) * 3600 +
+                          Number(document.getElementById(`所要分${targetNum}`).value) * 60 +
+                          Number(document.getElementById(`所要秒${targetNum}`).value));
+        const 成長確率 = Number(document.getElementById(`成長確率${targetNum}`).value);
+
+        if (targetExpectation <= 0) {
+            alert("目標値が0以下のため計算できません。");
+            return;
+        }
+        const 係数 = 所要時間 * 育成枠数 * 成長判定回数 * (成長確率/100) * ボーナス倍率;
+        const cycleTime = 係数 / targetExpectation;
+        requiredBattleTime = cycleTime - 間隔時間;
+      } else {
+        requiredBattleTime = (targetExpectation * 育成枠数 * 成長判定回数 * ボーナス倍率) - 間隔時間;
+      }
+
+      if (requiredBattleTime < 0) {
+        alert("算出された戦闘時間がマイナスになりました。\n条件が厳しすぎるか、異なる計算式(J/M)間で比較している可能性があります。");
+        return;
+      }
+
+      const totalSeconds = Math.floor(requiredBattleTime);
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+
+      document.getElementById(`戦闘時${targetNum}`).value = h;
+      document.getElementById(`戦闘分${targetNum}`).value = m;
+      document.getElementById(`戦闘秒${targetNum}`).value = s;
+
+      計算する(targetNum);
+    }
+
+    function changeValue(id, delta) {
+      const input = document.getElementById(id);
+      let value = parseFloat(input.value) || 0;
+      value += delta;
+      value = Math.round(value * 100) / 100;
+      
+      if (value < 1) value = 1;
+      
+      // 上限設定
+      let max = 30; 
+      if (id.indexOf('育成枠') !== -1) max = 5;
+      if (value > max) value = max; 
+      
+      input.value = value;
+    }
+
+    function checkProfileExistence() {
+      const hasProfile = localStorage.getItem('ikusei_profile1') || localStorage.getItem('ikusei_profile2');
+      const deleteBtn = document.getElementById('deleteProfileBtn');
+      if (deleteBtn) deleteBtn.disabled = !hasProfile;
+    }
+
+    function saveDefaultProfile(btnNum) {
+      const compareNum = [1, 2];
+      const currentMode = pageSettings['ikuseicalc_grade_mode'];
+
+      compareNum.forEach(num => {
+        const profile = {
+          savedMode: currentMode, // ★ モード情報を保存
+          計算式: document.querySelector(`input[name="計算方式${num}"]:checked`).value,
+          育成枠: document.getElementById(`育成枠${num}`).value,
+          戦闘時: document.getElementById(`戦闘時${num}`).value,
+          戦闘分: document.getElementById(`戦闘分${num}`).value,
+          戦闘秒: document.getElementById(`戦闘秒${num}`).value,
+          間隔時: document.getElementById(`間隔時${num}`).value,
+          間隔分: document.getElementById(`間隔分${num}`).value,
+          間隔秒: document.getElementById(`間隔秒${num}`).value,
+          所要時: document.getElementById(`所要時${num}`).value,
+          所要分: document.getElementById(`所要分${num}`).value,
+          所要秒: document.getElementById(`所要秒${num}`).value,
+          成長確率: document.getElementById(`成長確率${num}`).value,
+          成長判定回数: document.getElementById(`成長判定回数${num}`).value,
+          ボーナス倍率: document.getElementById(`ボーナス倍率${num}`).value,
+          gradeSelect: document.getElementById(`gradeSelect${num}`).value 
+        };
+        localStorage.setItem(`ikusei_profile${num}`, JSON.stringify(profile));
+      });
+      
+      document.getElementById('profileMessage').textContent = '※プロファイルに現在の状態を保存しました。';
+      checkProfileExistence();
+
+      if (window.triggerSyncSave) window.triggerSyncSave();
+    }
+
+    function deleteAllProfiles() {
+      if (!window.confirm("プロファイルの情報を削除してよろしいですか？")) return;
+      const compareNum = [1, 2];
+      compareNum.forEach(num => {
+        localStorage.removeItem(`ikusei_profile${num}`);
+      });
+      document.getElementById('profileMessage').textContent = '※プロファイルの情報を削除しました。';
+
+      if (window.triggerSyncSave) window.triggerSyncSave();
+      location.reload(); 
+    }
+
+    function toggleFooter() {
+      const footerArea = document.getElementById('footerArea');
+      const btn = document.getElementById('toggleDisplayBtn');
+      if (footerArea.style.display === 'none') {
+        footerArea.style.display = 'block';
+        btn.textContent = '× 以下の項目を非表示にする';
+      } else {
+        footerArea.style.display = 'none';
+        btn.textContent = '▼ 以下の項目を再表示';
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function(){
+      var toggleButtons = document.querySelectorAll(".toggle-button");
+      toggleButtons.forEach(function(button) {
+        var targetId = button.getAttribute("data-target");
+        var list = document.getElementById(targetId);
+        list.style.display = "none";
+        button.addEventListener("click", function(){
+          list.style.display = (list.style.display === "block") ? "none" : "block";
+        });
+      });
+    });
+
+
+    // ▼▼▼ 初期化処理（統合・最終版） ▼▼▼
+
+    window.onload = function () {
+      // 1. 基本設定のロード
+      loadPageSettings();
+      
+      // ★★★ 追加・変更エリア開始 ★★★ 
+      // 新ファイル用のバージョン識別子（任意の文字列や数値でOK）
+      const CURRENT_VERSION = '7.0_new'; 
+
+      // バージョンが一致しない場合（＝旧ファイルから来た、または初回アクセス）
+      if (pageSettings['version'] !== CURRENT_VERSION) {
+         console.log('Update detected: Forcing mode to Manual.');
+         
+         // 強制的に Manual (OFF) に設定 manual pattern1 pattern2
+         pageSettings['ikuseicalc_grade_mode'] = 'manual';
+         
+         // バージョン情報を更新して保存（これで次回以降はこのif文に入らなくなります）
+         pageSettings['version'] = CURRENT_VERSION;
+         savePageSettings();
+      }
+      // ★★★ 追加・変更エリア終了 ★★★
+
+
+      document.body.style.zoom = pageSettings['ikuseicalc_zoom'];
+      applyLayout();
+
+      // 2. プロファイル存在チェック
+      const profile1Str = localStorage.getItem('ikusei_profile1');
+      const profile2Str = localStorage.getItem('ikusei_profile2');
+      const profile3Str = localStorage.getItem('ikusei_profile3');
+
+      // 3. 【修正】不整合修正ロジック
+      // (上のバージョンチェックで manual になっているので、ここは念の為の保険として残します)
+      if (!pageSettings['ikuseicalc_grade_mode']) {
+         pageSettings['ikuseicalc_grade_mode'] = 'manual';
+         savePageSettings();
+      }
+
+      // 4. 【修正】適用するモードの決定 (PageSettings優先)
+      // 初回は manual、2回目以降はユーザーが選んだ値が入ります
+      let modeToApply = pageSettings['ikuseicalc_grade_mode'] || 'manual';
+
+      // 5. モードの適用 (画面反映)
+      changeGradeMode(modeToApply);
+
+      // 6. 各入力フォームへの値適用 (applyModeDefaultsに集約)
+      applyModeDefaults(modeToApply);
+
+      checkProfileExistence();
+
+      if (window.setupSyncSystem) {
+          window.setupSyncSystem({
+              loginTriggerId: 'title-login-trigger',
+              fileName: 'ikuseicalc.json',
+              firestoreDoc: 'ikuseicalc',
+              onLoad: (loadedData) => {
+                  // 1. クラウド/ドライブにデータがある場合
+                  if (loadedData && (loadedData.profile1 || loadedData.profile2)) {
+                      // クラウドからプロファイルデータを復元
+                      if (loadedData.profile1) {
+                          localStorage.setItem('ikusei_profile1', JSON.stringify(loadedData.profile1));
+                      } else {
+                          localStorage.removeItem('ikusei_profile1');
+                      }
+                      
+                      if (loadedData.profile2) {
+                          localStorage.setItem('ikusei_profile2', JSON.stringify(loadedData.profile2));
+                      } else {
+                          localStorage.removeItem('ikusei_profile2');
+                      }
+
+                      if (loadedData.profile3) {
+                          localStorage.setItem('ikusei_profile3', JSON.stringify(loadedData.profile3));
+                      } else {
+                          localStorage.removeItem('ikusei_profile3');
+                      }
+                      
+                      checkProfileExistence();
+                      
+                      // 画面へ反映（最新のプロファイル設定で再描画）
+                      let currentMode = pageSettings['ikuseicalc_grade_mode'] || 'manual';
+                      applyModeDefaults(currentMode);
+                      
+                  } 
+                  // 2. クラウドが空で、ローカルにデータがあれば初回移行 (ドライブモードのみ)
+                  else {
+                      if (window.syncManager && !window.syncManager.isCloudMode) {
+                          const p1 = localStorage.getItem('ikusei_profile1');
+                          const p2 = localStorage.getItem('ikusei_profile2');
+                          const p3 = localStorage.getItem('ikusei_profile3');
+                          if ((p1 || p2 || p3) && window.triggerSyncSave) {
+                              window.triggerSyncSave();
+                          }
+                      }
+                  }
+              },
+              onSave: () => {
+                  // 保存するデータを返す（プロファイル1と2をまとめて送信）
+                  const p1 = localStorage.getItem('ikusei_profile1');
+                  const p2 = localStorage.getItem('ikusei_profile2');
+                  const p3 = localStorage.getItem('ikusei_profile3');
+                  return {
+                      profile1: p1 ? JSON.parse(p1) : null,
+                      profile2: p2 ? JSON.parse(p2) : null,
+                      profile3: p3 ? JSON.parse(p3) : null
+                  };
+              }
+          });
+      }
+    };
+
+  </script>
+
+</body>
+</html>
